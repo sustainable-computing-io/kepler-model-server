@@ -1,2 +1,2 @@
-# kepler-model-server
-Model Server for Kepler
+# Kepler Model Server
+Online ML model Server for Kepler
