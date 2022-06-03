@@ -1,6 +1,4 @@
-from flask import Flask, redirect, url_for, request, json, current_app, send_from_directory
-import os
-
+from flask import Flask, redirect, url_for, request, json
 app = Flask(__name__)
 
 @app.route('/model',methods = ['POST', 'GET'])
@@ -15,15 +13,6 @@ def data():
    if request.method == 'POST':
       app.logger.warn("BODY: %s" % request.get_data())
       return 'success'
-
-#Required to send models. There are no models created yet.
-@app.route('/models/<model_type>', methods=['GET'])
-def get_model(model_type='core'):
-    models_directory = os.path.join(current_app.root_path, '/models/')
-    if model_type == 'dram':
-        return send_from_directory(directory=models_directory, filename='dram_model.h5')
-    elif model_type == 'core':
-        return send_from_directory(directory=models_directory, filename='core_model.h5')
 
 
 def makeCoeff():
@@ -40,7 +29,6 @@ def makeCoeff():
         mimetype='application/json'
     )
     return response
-
 
 if __name__ == '__main__':
    app.run(host="0.0.0.0", debug=True, port=8100)
