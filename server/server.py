@@ -20,9 +20,9 @@ def data():
 def get_model(model_type='core'):
     models_directory = os.path.join(current_app.root_path, '/models/')
     if model_type == 'dram':
-        return send_from_directory(directory=models_directory, filename='dram_model.h5')
+        return send_from_directory(directory=models_directory, filename='dram_model')
     elif model_type == 'core':
-        return send_from_directory(directory=models_directory, filename='core_model.h5')
+        return send_from_directory(directory=models_directory, filename='core_model')
 
 
 def makeCoeff():
