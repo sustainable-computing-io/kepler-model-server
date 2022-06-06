@@ -55,7 +55,7 @@ def test_dram_regression_model():
     train_model_given_data_and_type(dram_train_features, dram_target_train, dram_test_features, dram_target_test, "DramEnergyConsumption")
 
 
-# DEMO: Run python kepler_regression_model_tests.py to test the linear regression models for Dram and Core Energy Consumption using mock data.
+# DEMO: Run python kepler_regression_model_tests.py (python -m tests.kepler_regression_model_tests) to test the linear regression models for Dram and Core Energy Consumption using mock data.
 # Note that you can also remove the folders in /server/models to test creating and saving new linear regression models.
 if __name__ == "__main__":
     print("Training Commencing\n--------------------------------------------------\n")
