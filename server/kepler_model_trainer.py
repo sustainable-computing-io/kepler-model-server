@@ -3,7 +3,6 @@ from keras.models import Sequential, load_model
 from keras import layers
 import numpy as np
 import os
-import pandas as pd
 
 # Dict to map model type with filepath
 model_type_to_filepath = {"CoreEnergyConsumption": "models/core_model", "DramEnergyConsumption": "models/dram_model"}
