@@ -1,8 +1,9 @@
 from ast import mod
 from flask import Flask, redirect, url_for, request, json, current_app, send_from_directory, make_response
 import os
-app = Flask(__name__)
 import shutil
+
+app = Flask(__name__)
 
 
 @app.route('/model',methods = ['POST', 'GET'])
@@ -31,11 +32,11 @@ def get_model(model_type='core_model'):
     if model_type == 'dram_model' and os.path.exists(os.path.join(models_directory, 'dram_model')): # must check whether the model was created or not
         shutil.make_archive(os.path.join(models_directory, 'dram_model'), 'zip', os.path.join(models_directory, 'dram_model')) # this function should overrite an existing zipped model
         return send_from_directory(models_directory, 'dram_model.zip')
-    elif model_type == 'core_model' and os.path.exists(os.path.join(models_directory, 'core_model')): # must check whether the model was created or not
+    if model_type == 'core_model' and os.path.exists(os.path.join(models_directory, 'core_model')): # must check whether the model was created or not
         shutil.make_archive(os.path.join(models_directory, 'core_model'), 'zip', os.path.join(models_directory, 'core_model')) # this function should overrite an existing zipped model
         return send_from_directory(models_directory, 'core_model.zip') 
-    else:
-        return make_response("Model '" + model_type + "' does not exist at the moment", 400)
+    
+    return make_response("Model '" + model_type + "' does not exist at the moment", 400)
 
 
 def makeCoeff():
