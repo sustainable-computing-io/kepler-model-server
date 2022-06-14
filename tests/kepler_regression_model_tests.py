@@ -28,7 +28,7 @@ def test_core_regression_model():
     #print(core_train_features)
 
     # Train core with the linear regression model    
-    train_model_given_data_and_type(core_train_features, core_target_train, core_test_features, core_target_test, "CoreEnergyConsumption")
+    train_model_given_data_and_type(core_train_features, core_target_train, core_test_features, core_target_test, "core_model")
 
 
 def test_dram_regression_model():
@@ -52,7 +52,7 @@ def test_dram_regression_model():
     dram_target_test = dram_test_features.pop('curr_energy_in_dram')
     #print(dram_train_features.loc[0])
     # Train dram with the linear regression model
-    train_model_given_data_and_type(dram_train_features, dram_target_train, dram_test_features, dram_target_test, "DramEnergyConsumption")
+    train_model_given_data_and_type(dram_train_features, dram_target_train, dram_test_features, dram_target_test, "dram_model")
 
 
 # DEMO: Run python kepler_regression_model_tests.py (python -m tests.kepler_regression_model_tests) to test the linear regression models for Dram and Core Energy Consumption using mock data.
