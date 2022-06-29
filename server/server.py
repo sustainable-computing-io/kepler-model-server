@@ -2,7 +2,7 @@ from ast import mod
 from multiprocessing.sharedctypes import Value
 from flask import Flask, redirect, url_for, request, json, current_app, send_from_directory, make_response
 import os
-from kepler_model_trainer import archive_saved_model
+from kepler_model_trainer import archive_saved_model, return_model_weights
 
 app = Flask(__name__)
 
@@ -50,6 +50,30 @@ def get_model(model_type='core_model'):
     #    return send_from_directory(models_directory, 'core_model.zip')
     #return make_response("Model '" + model_type + "' does not exist at the moment", 400)
 
+# Returns coefficients/weights of the trained regression model.
+@app.route('/model-weights/<model_type>', methods=['GET'])
+@app.route('/model-weights/')
+def get_model_weights(model_type='core_model'):
+    try:
+        #returned_coefficients = return_model_coefficients(model_type)
+        kernel_matrix, bias = return_model_weights(model_type)
+        #print(kernel_matrix)
+        #print(bias)
+        data = {
+            "kernel_matrix": kernel_matrix,
+            "bias": bias
+        }
+        response = app.response_class(
+        response=json.dumps(data),
+        status=200,
+        mimetype='application/json'
+        )
+        return response
+    except ValueError:
+        return make_response("Model '" + model_type + "' is not valid", 400)
+    except FileNotFoundError:
+        return make_response("Model '" + model_type + "' does not exist at the moment", 400)
+    
 
 def makeCoeff():
     data = {
