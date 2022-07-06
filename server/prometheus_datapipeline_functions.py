@@ -1,14 +1,18 @@
+from hashlib import new
 import tensorflow_io as tfio
 import numpy as np
 import tensorflow as tf
 
 #TODO: Test with Kepler on AWS
 def scrape_prometheus_metrics(query, length, endpoint):
-    return tfio.experimental.IODataset.from_prometheus(query, length, endpoint=endpoint)
+    return tfio.experimental.IODataset.from_prometheus(query=query, length=length, endpoint=endpoint)
 
+#Testing using a Prometheus exporter which monitors itself for metrics
+def retrieve_dummy_prometheus_metrics():
+    return scrape_prometheus_metrics("go_memstats_alloc_bytes_total", 5, "http://localhost:9090")
 
 def retrieve_and_clean_prometheus_energy_metrics():
-    energy_metrics_dataset = scrape_prometheus_metrics("PLACEHOLDER", 100, "http://localhost:9090/metrics/")
+    energy_metrics_dataset = scrape_prometheus_metrics("PLACEHOLDER", 100, "http://localhost:9090/")
     # Retrieve all the desired energy related features in the form of tensors
     curr_cpu_cycles = []
     curr_cpu_instructions = []
