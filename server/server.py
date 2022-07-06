@@ -6,22 +6,6 @@ from kepler_model_trainer import archive_saved_model, return_model_weights
 
 app = Flask(__name__)
 
-# Obsolete Test Legacy Code: June 13, 2022
-@app.route('/model',methods = ['POST', 'GET'])
-def model():
-   if request.method == 'GET':
-      ret = makeCoeff()
-      app.logger.warn("BODY: %s" % ret)
-      return ret
-
-# Obsolete Test Legacy Code: June 13, 2022
-@app.route('/data',methods = ['POST', 'GET'])
-def data():
-   if request.method == 'POST':
-      app.logger.warn("BODY: %s" % request.get_data())
-      return 'success'
-
-
 # Acceptable model_type values: core_model, dram_model
 
 # Returns a trained model given the model type/name. Currently, the route will return an archived file of keras's SavedModel.
@@ -74,23 +58,6 @@ def get_model_weights(model_type='core_model'):
     except FileNotFoundError:
         return make_response("Model '" + model_type + "' does not exist at the moment", 400)
     
-
-def makeCoeff():
-    data = {
-      "cpu_time": 0.6,
-      "cpu_cycles": 0.2,
-      "cpu_instructions": 0.2,
-      "memory_usage": 0.5,
-      "cache_misses": 0.5,
-    }
-    response = app.response_class(
-        response=json.dumps(data),
-        status=200,
-        mimetype='application/json'
-    )
-    return response
-
-
 if __name__ == '__main__':
    app.run(host="0.0.0.0", debug=True, port=8100)
    
