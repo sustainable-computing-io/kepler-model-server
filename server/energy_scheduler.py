@@ -27,6 +27,7 @@ def dummy_prometheus_pipeline():
 if __name__ == "__main__":
     #schedule.every().day.at("00:00").do(energy_prometheus_pipeline)
     #schedule.every(10).seconds.do(dummy_prometheus_pipeline)
+    time.sleep(5)
     dummy_prometheus_pipeline()
     #while True:
     #    schedule.run_pending()
