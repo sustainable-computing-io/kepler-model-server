@@ -3,6 +3,7 @@ import schedule
 from prometheus_datapipeline_functions import retrieve_and_clean_prometheus_energy_metrics, create_prometheus_core_dataset, create_prometheus_dram_dataset, retrieve_dummy_prometheus_metrics
 from kepler_model_trainer import train_model_given_data_and_type
 import time
+import os
 
 #TODO: Test with Kepler on AWS
 
@@ -15,20 +16,19 @@ def energy_prometheus_pipeline():
     train_model_given_data_and_type(dram_train, dram_val, dram_test, 'dram_model')
 
 # Scheduler to scrape prometheus dummy test metrics every 5 seconds 
-def dummy_prometheus_pipeline():
-    test_dataset = retrieve_dummy_prometheus_metrics()
-
-    refined_dataset = test_dataset.map(lambda _, y: y['prometheus']['localhost:9090']['go_memstats_alloc_bytes_total'])
-    for value in refined_dataset:
-        print("{}".format(value))
+def dummy_prometheus_pipeline(query, interval, endpoint):
+    test_dataset = retrieve_and_clean_prometheus_energy_metrics(query, interval, endpoint)
+    print(test_dataset)
 
         
 
 if __name__ == "__main__":
     #schedule.every().day.at("00:00").do(energy_prometheus_pipeline)
     #schedule.every(10).seconds.do(dummy_prometheus_pipeline)
-    time.sleep(5)
-    dummy_prometheus_pipeline()
+    endpoint = os.getenv('PROMETHEUS_ENDPOINT', default='http://localhost:9090/api/v1/query')
+    query = os.getenv('PROMETHEUS_QUERY', default='node_energy_stat')
+    interval = os.getenv('PROMETHEUS_QUERY_INTERVAL', default='20s')
+    dummy_prometheus_pipeline(query, interval, endpoint)
     #while True:
     #    schedule.run_pending()
     #    time.sleep(1)
