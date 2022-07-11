@@ -29,7 +29,7 @@ def retrieve_and_clean_prometheus_energy_metrics():
         refined_metrics = energy_metric['metric']
 
         curr_cpu_cycles.append(refined_metrics['curr_cpu_cycles'])
-        curr_cpu_instructions.append(refined_metrics['current_cpu_instructions'])
+        curr_cpu_instructions.append(refined_metrics['curr_cpu_instructions'])
         curr_cpu_time.append(refined_metrics['curr_cpu_time'])
         cpu_architecture.append(refined_metrics['cpu_architecture'])
         curr_energy_in_core.append(refined_metrics['curr_energy_in_core'])
