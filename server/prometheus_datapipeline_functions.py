@@ -1,18 +1,21 @@
 from hashlib import new
-import tensorflow_io as tfio
+import requests
 import numpy as np
 import tensorflow as tf
 
 #TODO: Test with Kepler on AWS
-def scrape_prometheus_metrics(query, length, endpoint):
-    return tfio.experimental.IODataset.from_prometheus(query=query, length=length, endpoint=endpoint)
+
+# Returns the list for each metric
+def scrape_prometheus_metrics(length):
+    #requests.get("http://10.43.221.48:9090/api/v1/query?query=node_energy_stat[{}]".format(length))
+    pass
 
 #Testing using a Prometheus exporter which monitors itself for metrics
 def retrieve_dummy_prometheus_metrics():
-    return scrape_prometheus_metrics("go_memstats_alloc_bytes_total", 5, "http://localhost:9090")
+    return scrape_prometheus_metrics("go_memstats_alloc_bytes_total", 5, "http://localhost:9091")
 
 def retrieve_and_clean_prometheus_energy_metrics():
-    energy_metrics_dataset = scrape_prometheus_metrics("PLACEHOLDER", 100, "http://localhost:9090/")
+    energy_metrics = scrape_prometheus_metrics(100) # expects result list
     # Retrieve all the desired energy related features in the form of tensors
     curr_cpu_cycles = []
     curr_cpu_instructions = []
@@ -22,8 +25,8 @@ def retrieve_and_clean_prometheus_energy_metrics():
     curr_resident_memory = []
     curr_cache_misses = []
     curr_energy_in_dram = []
-    for _, raw_metrics in energy_metrics_dataset:
-        refined_metrics = raw_metrics['job_name_PLACEHOLDER']['instance_name_PLACEHOLDER']
+    for energy_metric in energy_metrics:
+        refined_metrics = energy_metric['metric']
 
         curr_cpu_cycles.append(refined_metrics['curr_cpu_cycles'])
         curr_cpu_instructions.append(refined_metrics['current_cpu_instructions'])
