@@ -34,14 +34,16 @@ def retrieve_and_clean_prometheus_energy_metrics(query, interval, endpoint):
     for x in range(len(result)):
         raw_metrics = result[x]
         refined_metrics = raw_metrics['metric']
-        curr_cpu_cycles.append(refined_metrics['curr_cpu_cycles'])
-        curr_cpu_instructions.append(refined_metrics['curr_cpu_instructions'])
-        curr_cpu_time.append(refined_metrics['curr_cpu_time'])
+        curr_cpu_cycles.append(float(refined_metrics['curr_cpu_cycles']))
+        curr_cpu_instructions.append(float(refined_metrics['curr_cpu_instructions']))
+        curr_cpu_time.append(float(refined_metrics['curr_cpu_time']))
+        
         cpu_architecture.append(refined_metrics['cpu_architecture'])
-        curr_energy_in_core.append(refined_metrics['curr_energy_in_core'])
-        curr_energy_in_dram.append(refined_metrics['curr_energy_in_dram'])
-        curr_cache_misses.append(refined_metrics['curr_cache_misses'])
-        curr_resident_memory.append(refined_metrics['curr_resident_memory'])
+        
+        curr_energy_in_core.append(float(refined_metrics['curr_energy_in_core']))
+        curr_energy_in_dram.append(float(refined_metrics['curr_energy_in_dram']))
+        curr_cache_misses.append(float(refined_metrics['curr_cache_misses']))
+        curr_resident_memory.append(float(refined_metrics['curr_resident_memory']))
 
     curr_cpu_cycles = np.hstack(curr_cpu_cycles)
     curr_cpu_instructions = np.hstack(curr_cpu_instructions)
