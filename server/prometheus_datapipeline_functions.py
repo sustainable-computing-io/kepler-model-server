@@ -2,20 +2,25 @@ from hashlib import new
 import requests
 import numpy as np
 import tensorflow as tf
+import requests
+
+def query_prometheus(query, interval, endpoint):
+    query_str= 'query={}[{}]'.format(query, interval)
+    return requests.get(url = endpoint, params = query_str).json()
+
 
 #TODO: Test with Kepler on AWS
 
-# Returns the list for each metric
-def scrape_prometheus_metrics(length):
-    #requests.get("http://10.43.221.48:9090/api/v1/query?query=node_energy_stat[{}]".format(length))
-    pass
+
+def scrape_prometheus_metrics(query, interval, endpoint):
+    return query_prometheus(query, interval, endpoint)
 
 #Testing using a Prometheus exporter which monitors itself for metrics
-def retrieve_dummy_prometheus_metrics():
-    return scrape_prometheus_metrics("go_memstats_alloc_bytes_total", 5, "http://localhost:9091")
+def retrieve_dummy_prometheus_metrics(query, interval, endpoint):
+    return scrape_prometheus_metrics(query, interval, endpoint)
 
-def retrieve_and_clean_prometheus_energy_metrics():
-    energy_metrics = scrape_prometheus_metrics(100) # expects result list
+def retrieve_and_clean_prometheus_energy_metrics(query, interval, endpoint):
+    energy_metrics_dataset = scrape_prometheus_metrics(query, interval, endpoint)
     # Retrieve all the desired energy related features in the form of tensors
     curr_cpu_cycles = []
     curr_cpu_instructions = []
@@ -25,23 +30,26 @@ def retrieve_and_clean_prometheus_energy_metrics():
     curr_resident_memory = []
     curr_cache_misses = []
     curr_energy_in_dram = []
-    for energy_metric in energy_metrics:
-        refined_metrics = energy_metric['metric']
-
-        curr_cpu_cycles.append(refined_metrics['curr_cpu_cycles'])
-        curr_cpu_instructions.append(refined_metrics['curr_cpu_instructions'])
-        curr_cpu_time.append(refined_metrics['curr_cpu_time'])
+    result = energy_metrics_dataset['data']['result']
+    for x in range(len(result)):
+        raw_metrics = result[x]
+        refined_metrics = raw_metrics['metric']
+        curr_cpu_cycles.append(float(refined_metrics['curr_cpu_cycles']))
+        curr_cpu_instructions.append(float(refined_metrics['curr_cpu_instructions']))
+        curr_cpu_time.append(float(refined_metrics['curr_cpu_time']))
+        
         cpu_architecture.append(refined_metrics['cpu_architecture'])
-        curr_energy_in_core.append(refined_metrics['curr_energy_in_core'])
-        curr_energy_in_dram.append(refined_metrics['curr_energy_in_dram'])
-        curr_cache_misses.append(refined_metrics['curr_cache_misses'])
-        curr_resident_memory.append(refined_metrics['curr_resident_memory'])
+        
+        curr_energy_in_core.append(float(refined_metrics['curr_energy_in_core']))
+        curr_energy_in_dram.append(float(refined_metrics['curr_energy_in_dram']))
+        curr_cache_misses.append(float(refined_metrics['curr_cache_misses']))
+        curr_resident_memory.append(float(refined_metrics['curr_resident_memory']))
 
-    curr_cpu_cycles = np.concatenate(curr_cpu_cycles)
-    curr_cpu_instructions = np.concatenate(curr_cpu_instructions)
-    curr_cpu_time = np.concatenate(curr_cpu_time)
-    cpu_architecture = np.concatenate(cpu_architecture)
-    curr_energy_in_core = np.concatenate(curr_energy_in_core)
+    curr_cpu_cycles = np.hstack(curr_cpu_cycles)
+    curr_cpu_instructions = np.hstack(curr_cpu_instructions)
+    curr_cpu_time = np.hstack(curr_cpu_time)
+    cpu_architecture = np.hstack(cpu_architecture)
+    curr_energy_in_core = np.hstack(curr_energy_in_core)
     energy_data_dict = {'curr_cpu_cycles': curr_cpu_cycles, 'current_cpu_instructions': curr_cpu_instructions,
                         'curr_cpu_time': curr_cpu_time, 'cpu_architecture': cpu_architecture, 'curr_energy_in_core': curr_energy_in_core,
                         'curr_energy_in_dram': curr_energy_in_dram, 'curr_cache_misses': curr_cache_misses, 'curr_resident_memory': 
