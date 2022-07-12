@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kepler-model-server
+  labels:
+    app: sustainable-computing.io
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sustainable-computing.io
+  template:
+    metadata:
+      labels:
+        app: sustainable-computing.io
+    spec:
+      containers:
+      - name: kepler-model-server
+        image: quay.io/sustainable_computing_io/kepler_model_server_base:latest
+        ports:
+        - containerPort: 8100
+...
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kepler-model-trainer
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      containers:
+      - name: kepler-model-trainer
+        image: quay.io/sustainable_computing_io/kepler_model_server_base:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python",  "energy_scheduler.py'"]
+      restartPolicy: OnFailure
+  backoffLimit: 4
+
+
