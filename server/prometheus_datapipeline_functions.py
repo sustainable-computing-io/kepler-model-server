@@ -6,6 +6,7 @@ import requests
 
 def query_prometheus(query, interval, endpoint):
     query_str= 'query={}[{}]'.format(query, interval)
+    print('query {}'.format(query_str))
     return requests.get(url = endpoint, params = query_str).json()
 
 
@@ -39,7 +40,7 @@ def retrieve_and_clean_prometheus_energy_metrics(query, interval, endpoint):
         curr_cpu_time.append(float(refined_metrics['curr_cpu_time']))
         
         cpu_architecture.append(refined_metrics['cpu_architecture'])
-        
+
         curr_energy_in_core.append(float(refined_metrics['curr_energy_in_core']))
         curr_energy_in_dram.append(float(refined_metrics['curr_energy_in_dram']))
         curr_cache_misses.append(float(refined_metrics['curr_cache_misses']))
