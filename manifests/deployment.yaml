@@ -2,39 +2,58 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kepler-model-server
+  namespace: monitoring
   labels:
-    app: sustainable-computing.io
+    app.kubernetes.io/component: model-server
+    app.kubernetes.io/name: kepler-model-server
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: sustainable-computing.io
+      app.kubernetes.io/component: model-server
+      app.kubernetes.io/name: kepler-model-server
   template:
     metadata:
       labels:
-        app: sustainable-computing.io
+        app.kubernetes.io/component: kepler-model-server
+        app.kubernetes.io/name: kepler-model-server
     spec:
+      volumes:
+      - name: models
+        hostPath:
+          path: /tmp/kepler-model-server
       containers:
       - name: kepler-model-server
         image: quay.io/sustainable_computing_io/kepler_model_server_base:latest
         ports:
         - containerPort: 8100
-...
-
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: kepler-model-trainer
-spec:
-  schedule: "* * * * *"
-  jobTemplate:
-    spec:
-      containers:
+        volumeMounts:
+          - name: models
+            mountPath: /tmp/kepler-model-server/models
       - name: kepler-model-trainer
         image: quay.io/sustainable_computing_io/kepler_model_server_base:latest
-        imagePullPolicy: IfNotPresent
         command: ["python",  "energy_scheduler.py'"]
-      restartPolicy: OnFailure
-  backoffLimit: 4
+        volumeMounts:
+          - name: models
+            mountPath: /tmp/kepler-model-server/models
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: kepler-model-server
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: model-server
+    app.kubernetes.io/name: kepler-model-server
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/component: model-server
+    app.kubernetes.io/name: kepler-model-server
+  ports:
+  - name: http
+    port: 8100
+    targetPort: http        
+
 
 
