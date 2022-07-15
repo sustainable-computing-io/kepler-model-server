@@ -1,6 +1,6 @@
 import tensorflow as tf
 from keras.models import Sequential, load_model
-from keras import layers, Model, Input, metrics, optimizers
+from keras import layers, Model, Input, metrics, optimizers, losses
 import numpy as np
 import os
 import shutil
@@ -9,15 +9,15 @@ import shutil
 model_type_to_filepath = {"core_model": "models/core_model", "dram_model": "models/dram_model"}
 
 core_model_labels = {
-                "categorical_string_labels": ["cpu_architecture"], 
-                "numerical_lables": ["curr_cpu_cycles", "current_cpu_instructions", "curr_cpu_time"]}
+                "numerical_labels": ["curr_cpu_cycles", "current_cpu_instructions", "curr_cpu_time"],
+                "categorical_string_labels": ["cpu_architecture"] }
 
 dram_model_labels = {
-                    "categorical_string_labels": ["cpu_architecture"],
-                    "numerical_lables": ["curr_resident_memory", "curr_cache_misses"]}
+                    "numerical_labels": ["curr_resident_memory", "curr_cache_misses"],
+                    "categorical_string_labels": ["cpu_architecture"]}
 
-cpu_architecture_vocab = ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"]
-
+categorical_label_to_vocab = {
+                            "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"] }
 
 # Generates a Core regression model which predicts curr_energy_in_core given
 # numerical features (curr_cpu_cycles, current_cpu_instructions, curr_cpu_time).
@@ -27,25 +27,24 @@ def generate_core_regression_model(core_train_dataset: tf.data.Dataset) -> Model
     all_features_to_modify = []
     input_list = []
     #normalizing numerical features with given dataset
-    for numerical_column in core_model_labels["numerical_lables"]:
+    for numerical_column in core_model_labels["numerical_labels"]:
         new_input = Input(shape=(1,), name=numerical_column) # single list with one constant
-        new_normalizer = layers.Normalization(axis=None)
+        new_normalizer_name = "normalization_" + numerical_column
+        new_normalizer = layers.Normalization(axis=None, name=new_normalizer_name)
         new_normalizer.adapt(core_train_dataset.map(lambda x, y: x[numerical_column]))
         all_features_to_modify.append(new_normalizer(new_input))
         input_list.append(new_input)
     # encoding categorical feature with given data immediately (can also write this as a new model)
     for categorical_column in core_model_labels["categorical_string_labels"]:
         new_input = Input(shape=(1, ), name=categorical_column, dtype='string') # single list with one constant
-        new_int_index = layers.StringLookup(vocabulary=cpu_architecture_vocab)
-        #print(new_int_index(tf.constant(["Coffee Lake", "Sandy Bridge", "Haswell", "Coffee Lake", "Haswell"])))
+        new_int_index = layers.StringLookup(vocabulary=categorical_label_to_vocab[categorical_column], num_oov_indices=0)
         #new_int_index.adapt(core_train_dataset.map(lambda x, y: x[categorical_column]))
-        new_layer = layers.CategoryEncoding(num_tokens=new_int_index.vocabulary_size(), output_mode="one_hot") # no relationship between categories
+        new_layer = layers.CategoryEncoding(num_tokens=new_int_index.vocabulary_size(), output_mode='one_hot') # no relationship between categories
         all_features_to_modify.append(new_layer(new_int_index(new_input)))
         input_list.append(new_input)
     
     all_features = layers.concatenate(all_features_to_modify)
     single_regression_layer = layers.Dense(units=1, activation='linear', name="linear_regression_layer")(all_features)
-
     new_linear_model = Model(input_list, single_regression_layer)
     new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.01), loss='mse', metrics=[metrics.RootMeanSquaredError()])
     return new_linear_model
@@ -59,23 +58,23 @@ def generate_core_regression_model(core_train_dataset: tf.data.Dataset) -> Model
     #])
     #new_linear_model.compile(optimizer=tf.optimizers.Adam(learning_rate=0.1), loss='mean_squared_error')
     #return new_linear_model
-    pass
 
 
 def generate_dram_regression_model(dram_train_dataset: tf.data.Dataset) -> Model:
     all_features_to_modify = []
     input_list = []
     #normalizing numerical features with given dataset
-    for numerical_column in dram_model_labels["numerical_lables"]:
+    for numerical_column in dram_model_labels["numerical_labels"]:
         new_input = Input(shape=(1,), name=numerical_column) # single list with one constant
-        new_normalizer = layers.Normalization(axis=None)
+        new_normalizer_name = "normalization_" + numerical_column
+        new_normalizer = layers.Normalization(axis=None, name=new_normalizer_name)
         new_normalizer.adapt(dram_train_dataset.map(lambda x, y: x[numerical_column]))
         all_features_to_modify.append(new_normalizer(new_input))
         input_list.append(new_input)
     # encoding categorical feature with given data immediately (can also write this as a new model)
     for categorical_column in dram_model_labels["categorical_string_labels"]:
         new_input = Input(shape=(1, ), name=categorical_column, dtype='string') # single list with one constant
-        new_int_index = layers.StringLookup(vocabulary=cpu_architecture_vocab)
+        new_int_index = layers.StringLookup(vocabulary=categorical_label_to_vocab[categorical_column], num_oov_indices=0)
         #new_int_index.adapt(dram_train_dataset.map(lambda x, y: x[categorical_column]))
         new_layer = layers.CategoryEncoding(num_tokens=new_int_index.vocabulary_size(), output_mode='one_hot') # no relationship between categories
         all_features_to_modify.append(new_layer(new_int_index(new_input)))
@@ -126,9 +125,8 @@ def train_model_given_data_and_type(train_dataset, validation_dataset, test_data
     # TODO: Include While loop to ensure loss_result is within acceptable ranges. When to stop?
 
     # These will be stored in a database containing a timestamp so the most recent loss can be used to determine if the model can be exported
-    print("Mean Absolute Error Loss: " + str(loss_result))
+    print("Mean Squared Error Loss: " + str(loss_result))
     print("Root Mean Squared Error Loss metric: " + str(rmse_metric))
-    #print(str(new_model.layers))
     new_model.save(filepath, save_format='tf', include_optimizer=True)
 
     #try:
@@ -158,23 +156,85 @@ def archive_saved_model(model_type):
     return os.path.join(os.path.dirname(__file__), 'models/'), model_type + '.zip'
 
 
+def create_numerical_labels_weights_relation(numerical_labels, numerical_weights, mean_variance_for_each_label):
+    return {numerical_labels[i]: {'weight': weight, "mean": mean_variance_for_each_label[i][0], "variance": mean_variance_for_each_label[i][1]} for i, weight in enumerate(numerical_weights)}
+
+
+def create_categorical_vocab_weights_relation(categorical_labels, list_of_all_categorical_labels_vocab, list_of_all_categorical_labels_weights):
+    return {label: {list_of_all_categorical_labels_vocab[i][j]: {'weight': list_of_all_categorical_labels_weights[i][j]} for j in range(len(list_of_all_categorical_labels_vocab[i]))} for i, label in enumerate(categorical_labels)}
+
 # Returns the weights and bias from the desired model.
 def return_model_weights(model_type):
     filepath, model_exists = return_model_filepath(model_type)
     if filepath is not None:
         if model_exists:
-            # Retrieve coefficients
-            returned_model = load_model(filepath)  
-            for layer in returned_model.layers:
-                print(layer.name)          
-            kernel_matrix = np.ndarray.tolist(returned_model.get_layer(name="linear_regression_layer").get_weights()[0])
-            linear_bias = np.ndarray.tolist(returned_model.get_layer(name="linear_regression_layer").get_weights()[1])
-            #print(kernel_matrix)
-            #print(linear_bias)
-            return kernel_matrix, linear_bias
+            # Retrieve Model
+            returned_model = load_model(filepath)
+            #TODO: In future, create a dict to divide the model algorithm type (Linear, NN, etc.) for better
+            # abstraction and to avoid repeat code. Currently, all models are Regression with Normalized Numerical
+            # Labels and String Categorical Labels. All Models have the same name for the regression layer and same naming
+            # convention for normalized preprocessing layers.
+
+            # Retrieve Coefficients
+            kernel_matrix = returned_model.get_layer(name="linear_regression_layer").get_weights()[0]
+            bias = returned_model.get_layer(name="linear_regression_layer").get_weights()[1][0].item()
+            weights_list = np.ndarray.tolist(np.squeeze(kernel_matrix))
+            print(weights_list)
+            print(bias)
+            if model_type == "core_model":
+                # Retrieve Numerical Labels for Core Model
+                numerical_labels = core_model_labels["numerical_labels"]
+                # Retrieve Categorical Labels for Core Model
+                categorical_labels = core_model_labels["categorical_string_labels"]
+            if model_type == "dram_model":
+                # Retrieve Numerical Labels for Core Model
+                numerical_labels = dram_model_labels["numerical_labels"]
+                # Retrieve Categorical Labels for Core Model
+                categorical_labels = dram_model_labels["categorical_string_labels"]
+                
+            # Numerical Weights
+            start_index = len(numerical_labels)
+            numerical_weights = weights_list[0:start_index]
+            # Normalization Weights
+            normalization_weights = []
+            for numerical_label in numerical_labels:
+                name = "normalization_" + numerical_label
+                normalization_weight = np.float_(returned_model.get_layer(name=name).get_weights())
+                normalization_weights.append(normalization_weight)
+
+            # Numerical Label and Weights Dict
+            numerical_weights_dict = create_numerical_labels_weights_relation(numerical_labels, numerical_weights, normalization_weights)
+            
+            # Categorical Weights
+            list_of_all_categorical_labels_vocab = []
+            list_of_all_categorical_labels_weights = []
+            for categorical_label in categorical_labels:
+                categorical_label_vocab = categorical_label_to_vocab[categorical_label]
+                list_of_all_categorical_labels_vocab.append(categorical_label_vocab)
+                end_index = start_index + len(categorical_label_vocab)
+                categorical_label_weights = weights_list[start_index:end_index]
+                list_of_all_categorical_labels_weights.append(categorical_label_weights)
+                start_index = end_index
+            
+            #Categorical Label and Weights Dict
+            categorical_weights_dict = create_categorical_vocab_weights_relation(categorical_labels, list_of_all_categorical_labels_vocab, list_of_all_categorical_labels_weights)
+            # Combine all features and weights into a single dictionary
+            final_dict = {"All_Weights": {"Numerical_Variables": numerical_weights_dict, "Categorical_Variables": categorical_weights_dict, "Bias_Weight": bias} }
+            print(final_dict)
+            return final_dict
+            # return this dict and the json.dumps it. Once this is done, push. update rmse issue ideally. 
+            # implement prometheus endpoint
+            # implement elastic search opentelemetry.
+            # medium issue b/c of investigation for next week to try and improve model for remse problem (setup test environ)
+            # start work on both scheduler and vpa next week (xl issue)
+            
         raise FileNotFoundError("The desired trained model is valid, but the model has not been created/saved yet")
     else:
         raise ValueError("Provided Model Type is invalid and/or not included")
+
+
+
+
 
 # Test function
 def return_model_test_coefficients(model_type):
