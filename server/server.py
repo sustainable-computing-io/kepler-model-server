@@ -39,16 +39,9 @@ def get_model(model_type='core_model'):
 @app.route('/model-weights/')
 def get_model_weights(model_type='core_model'):
     try:
-        #returned_coefficients = return_model_coefficients(model_type)
-        kernel_matrix, bias = return_model_weights(model_type)
-        #print(kernel_matrix)
-        #print(bias)
-        data = {
-            "kernel_matrix": kernel_matrix,
-            "bias": bias
-        }
+        model_weights_dict = return_model_weights(model_type)
         response = app.response_class(
-        response=json.dumps(data),
+        response=json.dumps(model_weights_dict),
         status=200,
         mimetype='application/json'
         )
