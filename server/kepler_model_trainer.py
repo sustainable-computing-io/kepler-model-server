@@ -222,11 +222,6 @@ def return_model_weights(model_type):
             final_dict = {"All_Weights": {"Numerical_Variables": numerical_weights_dict, "Categorical_Variables": categorical_weights_dict, "Bias_Weight": bias} }
             print(final_dict)
             return final_dict
-            # return this dict and the json.dumps it. Once this is done, push. update rmse issue ideally. 
-            # implement prometheus endpoint
-            # implement elastic search opentelemetry.
-            # medium issue b/c of investigation for next week to try and improve model for remse problem (setup test environ)
-            # start work on both scheduler and vpa next week (xl issue)
             
         raise FileNotFoundError("The desired trained model is valid, but the model has not been created/saved yet")
     else:
