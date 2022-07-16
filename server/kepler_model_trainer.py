@@ -4,6 +4,7 @@ from keras import layers, Model, Input, metrics, optimizers, losses
 import numpy as np
 import os
 import shutil
+from keras import backend as K
 
 # Dict to map model type with filepath
 model_type_to_filepath = {"core_model": "models/core_model", "dram_model": "models/dram_model"}
@@ -18,6 +19,12 @@ dram_model_labels = {
 
 categorical_label_to_vocab = {
                             "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"] }
+
+
+def coeff_determination(y_true, y_pred):
+    SS_res =  K.sum(K.square( y_true-y_pred )) 
+    SS_tot = K.sum(K.square( y_true - K.mean(y_true) ) ) 
+    return ( 1 - SS_res/(SS_tot + K.epsilon()) )
 
 # Generates a Core regression model which predicts curr_energy_in_core given
 # numerical features (curr_cpu_cycles, current_cpu_instructions, curr_cpu_time).
@@ -46,7 +53,7 @@ def generate_core_regression_model(core_train_dataset: tf.data.Dataset) -> Model
     all_features = layers.concatenate(all_features_to_modify)
     single_regression_layer = layers.Dense(units=1, activation='linear', name="linear_regression_layer")(all_features)
     new_linear_model = Model(input_list, single_regression_layer)
-    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.01), loss='mse', metrics=[metrics.RootMeanSquaredError()])
+    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.01), loss='mse', metrics=[coeff_determination, metrics.RootMeanSquaredError()])
     return new_linear_model
     
     #normalizer = layers.Normalization(axis=-1)
@@ -85,7 +92,7 @@ def generate_dram_regression_model(dram_train_dataset: tf.data.Dataset) -> Model
 
     new_linear_model = Model(input_list, single_regression_layer)
 
-    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.01), loss='mse', metrics=[metrics.RootMeanSquaredError()])
+    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.01), loss='mse', metrics=[coeff_determination, metrics.RootMeanSquaredError()])
     return new_linear_model
 
 
@@ -121,12 +128,13 @@ def train_model_given_data_and_type(train_dataset, validation_dataset, test_data
     elif model_type == "dram_model":
         new_model = generate_dram_regression_model(train_dataset)
     new_model.fit(train_dataset, epochs=10, validation_data=validation_dataset)
-    loss_result, rmse_metric = new_model.evaluate(test_dataset)
+    loss_result, r_squared, rmse_metric = new_model.evaluate(test_dataset)
     # TODO: Include While loop to ensure loss_result is within acceptable ranges. When to stop?
 
     # These will be stored in a database containing a timestamp so the most recent loss can be used to determine if the model can be exported
     print("Mean Squared Error Loss: " + str(loss_result))
     print("Root Mean Squared Error Loss metric: " + str(rmse_metric))
+    print("Correlation Coefficient:" + str(r_squared))
     new_model.save(filepath, save_format='tf', include_optimizer=True)
 
     #try:
