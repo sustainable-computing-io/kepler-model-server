@@ -17,7 +17,7 @@ dram_model_labels = {
                     "categorical_string_labels": ["cpu_architecture"]}
 
 categorical_label_to_vocab = {
-                            "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"] }
+                            "cpu_architecture": ["unknown", "Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"] }
 
 # Generates a Core regression model which predicts curr_energy_in_core given
 # numerical features (curr_cpu_cycles, current_cpu_instructions, curr_cpu_time).

@@ -25,11 +25,13 @@ if __name__ == "__main__":
     endpoint = os.getenv('PROMETHEUS_ENDPOINT', default='http://localhost:9090/api/v1/query')
     query = os.getenv('PROMETHEUS_QUERY', default='node_energy_stat')
     interval_sec = os.getenv('PROMETHEUS_QUERY_INTERVAL', default=20)
+    first_interval_sec = os.getenv('PROMETHEUS_QUERY_FIRST_INTERVAL', default=2000)
     interval = '{}s'.format(interval_sec)
+    first_interval = '{}s'.format(first_interval_sec)
     # To test:
     # dummy_prometheus_pipeline(query, interval, endpoint) 
     start = time.time()
-    energy_prometheus_pipeline(query, interval, endpoint)
+    energy_prometheus_pipeline(query, first_interval, endpoint)
     end = time.time()
     while True:
         time_lapsed = end - start
