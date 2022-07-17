@@ -5,6 +5,7 @@ import numpy as np
 import os
 import shutil
 from keras import backend as K
+from keras.callbacks import History
 
 # Dict to map model type with filepath
 model_type_to_filepath = {"core_model": "models/core_model", "dram_model": "models/dram_model"}
@@ -122,12 +123,13 @@ def train_model_given_data_and_type(train_dataset, validation_dataset, test_data
         raise ValueError("Provided Model Type is invalid and/or not included")
 
     if model_exists:
-        new_model = load_model(filepath)
+        new_model = load_model(filepath, custom_objects={'coeff_determination': coeff_determination})
     elif model_type == "core_model":
         new_model = generate_core_regression_model(train_dataset)
     elif model_type == "dram_model":
         new_model = generate_dram_regression_model(train_dataset)
-    new_model.fit(train_dataset, epochs=10, validation_data=validation_dataset)
+    history = History()
+    new_model.fit(train_dataset, epochs=10, validation_data=validation_dataset, callbacks=[history])
     loss_result, r_squared, rmse_metric = new_model.evaluate(test_dataset)
     # TODO: Include While loop to ensure loss_result is within acceptable ranges. When to stop?
 
@@ -135,6 +137,12 @@ def train_model_given_data_and_type(train_dataset, validation_dataset, test_data
     print("Mean Squared Error Loss: " + str(loss_result))
     print("Root Mean Squared Error Loss metric: " + str(rmse_metric))
     print("Correlation Coefficient:" + str(r_squared))
+    print("Training MSE Results per epoch: {}".format(history.history['loss']))
+    print("Training RMSE Results per epoch: {}".format(history.history['root_mean_squared_error']))
+    print("Training Correlation Coefficient per epoch: {}".format(history.history['coeff_determination']))
+    print("Validation MSE per epoch: {}".format(history.history['val_loss']))
+    print("Validation RMSE per epoch: {}".format(history.history['val_root_mean_squared_error']))
+    print("Validation Correlation Coefficient per epoch: {}".format(history.history['val_coeff_determination']))
     new_model.save(filepath, save_format='tf', include_optimizer=True)
 
     #try:
@@ -177,7 +185,7 @@ def return_model_weights(model_type):
     if filepath is not None:
         if model_exists:
             # Retrieve Model
-            returned_model = load_model(filepath)
+            returned_model = load_model(filepath, custom_objects={'coeff_determination': coeff_determination})
             #TODO: In future, create a dict to divide the model algorithm type (Linear, NN, etc.) for better
             # abstraction and to avoid repeat code. Currently, all models are Regression with Normalized Numerical
             # Labels and String Categorical Labels. All Models have the same name for the regression layer and same naming
