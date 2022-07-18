@@ -8,7 +8,7 @@ from keras import backend as K
 from keras.callbacks import History
 
 # Dict to map model type with filepath
-model_type_to_filepath = {"core_model": "models/core_model", "dram_model": "models/dram_model"}
+model_type_to_filepath = {"core_model": "/models/core_model", "dram_model": "/models/dram_model"}
 
 core_model_labels = {
                 "numerical_labels": ["curr_cpu_cycles", "current_cpu_instructions", "curr_cpu_time"],
