@@ -6,9 +6,10 @@ import os
 import shutil
 from keras import backend as K
 from keras.callbacks import History
+import requests
 
 # Dict to map model type with filepath
-model_type_to_filepath = {"core_model": "/models/core_model", "dram_model": "/models/dram_model"}
+model_type_to_filepath = {"core_model": "models/core_model", "dram_model": "models/dram_model"}
 
 core_model_labels = {
                 "numerical_labels": ["curr_cpu_cycles", "current_cpu_instructions", "curr_cpu_time"],
@@ -111,8 +112,6 @@ def return_model_filepath(model_type):
         #return filepath, False
     return None, False
         
-#create prometheus scraper
-
 # This function creates a new model and trains it given train_features, train_labels, test_features, test_labels.
 # If the desired model already exists, it will be retrained, refitted, evaluated and saved.
 # takes dataframe
@@ -129,14 +128,13 @@ def train_model_given_data_and_type(train_dataset, validation_dataset, test_data
     elif model_type == "dram_model":
         new_model = generate_dram_regression_model(train_dataset)
     history = History()
-    new_model.fit(train_dataset, epochs=10, validation_data=validation_dataset, callbacks=[history])
+    new_model.fit(train_dataset, epochs=50, validation_data=validation_dataset, callbacks=[history])
     loss_result, r_squared, rmse_metric = new_model.evaluate(test_dataset)
-    # TODO: Include While loop to ensure loss_result is within acceptable ranges. When to stop?
+    # TODO: Include While loop to ensure loss_result is within acceptable ranges (Save only if loss is acceptable)
 
-    # These will be stored in a database containing a timestamp so the most recent loss can be used to determine if the model can be exported
     print("Mean Squared Error Loss: " + str(loss_result))
     print("Root Mean Squared Error Loss metric: " + str(rmse_metric))
-    print("Correlation Coefficient:" + str(r_squared))
+    print("Correlation of Determination:" + str(r_squared))
     print("Training MSE Results per epoch: {}".format(history.history['loss']))
     print("Training RMSE Results per epoch: {}".format(history.history['root_mean_squared_error']))
     print("Training Correlation Coefficient per epoch: {}".format(history.history['coeff_determination']))
@@ -144,7 +142,6 @@ def train_model_given_data_and_type(train_dataset, validation_dataset, test_data
     print("Validation RMSE per epoch: {}".format(history.history['val_root_mean_squared_error']))
     print("Validation Correlation Coefficient per epoch: {}".format(history.history['val_coeff_determination']))
     new_model.save(filepath, save_format='tf', include_optimizer=True)
-
     #try:
     #    returned_model = load_model('models/core_model.h5')
         # after retrieving saved model, call fit
@@ -236,15 +233,11 @@ def return_model_weights(model_type):
             categorical_weights_dict = create_categorical_vocab_weights_relation(categorical_labels, list_of_all_categorical_labels_vocab, list_of_all_categorical_labels_weights)
             # Combine all features and weights into a single dictionary
             final_dict = {"All_Weights": {"Numerical_Variables": numerical_weights_dict, "Categorical_Variables": categorical_weights_dict, "Bias_Weight": bias} }
-            print(final_dict)
             return final_dict
             
         raise FileNotFoundError("The desired trained model is valid, but the model has not been created/saved yet")
     else:
         raise ValueError("Provided Model Type is invalid and/or not included")
-
-
-
 
 
 # Test function
@@ -286,4 +279,3 @@ def return_model_test_coefficients(model_type):
         # new_model.fit(train_features, train_labels, epochs=100)
         # new_model.evaluate(test_features, test_labels, verbose=0)
     #    save_model(returned_model, 'models/dram_model.h5')
-
