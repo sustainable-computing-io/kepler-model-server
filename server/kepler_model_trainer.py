@@ -9,7 +9,7 @@ from keras.callbacks import History
 import requests
 
 # Dict to map model type with filepath
-model_type_to_filepath = {"core_model": "models/core_model", "dram_model": "models/dram_model"}
+model_type_to_filepath = {"core_model": "/models/core_model", "dram_model": "/models/dram_model"}
 
 core_model_labels = {
                 "numerical_labels": ["curr_cpu_cycles", "current_cpu_instructions", "curr_cpu_time"],
@@ -55,7 +55,7 @@ def generate_core_regression_model(core_train_dataset: tf.data.Dataset) -> Model
     all_features = layers.concatenate(all_features_to_modify)
     single_regression_layer = layers.Dense(units=1, activation='linear', name="linear_regression_layer")(all_features)
     new_linear_model = Model(input_list, single_regression_layer)
-    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.01), loss='mse', metrics=[coeff_determination, metrics.RootMeanSquaredError()])
+    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.5), loss='mse', metrics=[coeff_determination, metrics.RootMeanSquaredError()])
     return new_linear_model
     
     #normalizer = layers.Normalization(axis=-1)
@@ -94,7 +94,7 @@ def generate_dram_regression_model(dram_train_dataset: tf.data.Dataset) -> Model
 
     new_linear_model = Model(input_list, single_regression_layer)
 
-    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.01), loss='mse', metrics=[coeff_determination, metrics.RootMeanSquaredError()])
+    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.5), loss='mse', metrics=[coeff_determination, metrics.RootMeanSquaredError()])
     return new_linear_model
 
 
@@ -105,7 +105,7 @@ def generate_dram_regression_model(dram_train_dataset: tf.data.Dataset) -> Model
 # of the desired type has not been created. If str is None, then Bool is False.
 def return_model_filepath(model_type):
     if model_type in model_type_to_filepath:
-        filepath = os.path.join(os.path.dirname(__file__), model_type_to_filepath[model_type])
+        filepath = os.path.dirname(__file__) + model_type_to_filepath[model_type]
         return filepath, os.path.exists(filepath)
         #if os.path.exists(filepath):
         #    return filepath, True
@@ -128,7 +128,7 @@ def train_model_given_data_and_type(train_dataset, validation_dataset, test_data
     elif model_type == "dram_model":
         new_model = generate_dram_regression_model(train_dataset)
     history = History()
-    new_model.fit(train_dataset, epochs=50, validation_data=validation_dataset, callbacks=[history])
+    new_model.fit(train_dataset, epochs=125, validation_data=validation_dataset, callbacks=[history])
     loss_result, r_squared, rmse_metric = new_model.evaluate(test_dataset)
     # TODO: Include While loop to ensure loss_result is within acceptable ranges (Save only if loss is acceptable)
 
@@ -166,7 +166,7 @@ def archive_saved_model(model_type):
     
     shutil.make_archive(filepath, 'zip', filepath)
     # return archived zipped filepath directory
-    return os.path.join(os.path.dirname(__file__), 'models/'), model_type + '.zip'
+    return os.path.dirname(__file__) + '/models/', model_type + '.zip'
 
 
 def create_numerical_labels_weights_relation(numerical_labels, numerical_weights, mean_variance_for_each_label):
