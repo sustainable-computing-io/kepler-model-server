@@ -4,13 +4,11 @@ import numpy as np
 import tensorflow as tf
 import requests
 
+
 def query_prometheus(query, interval, endpoint):
     query_str= 'query={}[{}]'.format(query, interval)
     print('query {}'.format(query_str))
     return requests.get(url = endpoint, params = query_str).json()
-
-
-#TODO: Test with Kepler on AWS
 
 
 def scrape_prometheus_metrics(query, interval, endpoint):
@@ -35,16 +33,23 @@ def retrieve_and_clean_prometheus_energy_metrics(query, interval, endpoint):
     for x in range(len(result)):
         raw_metrics = result[x]
         refined_metrics = raw_metrics['metric']
-        curr_cpu_cycles.append(float(refined_metrics['curr_cpu_cycles']))
-        curr_cpu_instructions.append(float(refined_metrics['curr_cpu_instructions']))
-        curr_cpu_time.append(float(refined_metrics['curr_cpu_time']))
-        
-        cpu_architecture.append(refined_metrics['cpu_architecture'])
-
-        curr_energy_in_core.append(float(refined_metrics['curr_energy_in_core']))
-        curr_energy_in_dram.append(float(refined_metrics['curr_energy_in_dram']))
-        curr_cache_misses.append(float(refined_metrics['curr_cache_misses']))
-        curr_resident_memory.append(float(refined_metrics['curr_resident_memory']))
+        curr_cpu_cycles_val = float(refined_metrics['curr_cpu_cycles'])
+        curr_cpu_instructions_val = float(refined_metrics['curr_cpu_instructions'])
+        curr_cpu_time_val = float(refined_metrics['curr_cpu_time'])
+        cpu_architecture_val = refined_metrics['cpu_architecture']
+        curr_energy_in_core_val = float(refined_metrics['curr_energy_in_core'])
+        curr_energy_in_dram_val = float(refined_metrics['curr_energy_in_dram'])
+        curr_cache_misses_val = float(refined_metrics['curr_cache_misses'])
+        curr_resident_memory_val = float(refined_metrics['curr_resident_memory'])
+        print("{}:{}:{}:{}:{}:{}:{}:{}".format(curr_cpu_cycles_val, curr_cpu_instructions_val, curr_cpu_time_val, cpu_architecture_val, curr_energy_in_core_val, curr_energy_in_dram_val, curr_cache_misses_val, curr_resident_memory_val))
+        curr_cpu_cycles.append(curr_cpu_cycles_val)
+        curr_cpu_instructions.append(curr_cpu_instructions_val)
+        curr_cpu_time.append(curr_cpu_time_val)
+        cpu_architecture.append(cpu_architecture_val)
+        curr_energy_in_core.append(curr_energy_in_core_val)
+        curr_energy_in_dram.append(curr_energy_in_dram_val)
+        curr_cache_misses.append(curr_cache_misses_val)
+        curr_resident_memory.append(curr_resident_memory_val)
 
     curr_cpu_cycles = np.hstack(curr_cpu_cycles)
     curr_cpu_instructions = np.hstack(curr_cpu_instructions)
