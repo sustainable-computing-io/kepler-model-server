@@ -25,10 +25,14 @@ services:
 
   app:
     build:
-      context: ./server
+      context: .
       dockerfile: dockerfiles/Dockerfile.weights
     depends_on:
       - prometheus
     ports:
       - "8100:8100"
-    command: ["python3", "server.py"]
+    entrypoint: 
+
+        python3 server.py
+
+    
