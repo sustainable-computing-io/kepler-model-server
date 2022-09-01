@@ -1,0 +1,6 @@
+FROM python:latest
+COPY requirements.txt requirements.txt
+RUN pip3 install --user -r requirements.txt
+COPY . .
+
+#ENTRYPOINT [ "python3", "server.py"]
