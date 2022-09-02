@@ -1,4 +1,5 @@
 # models
+server/train/local/
 server/models
 
 # Byte-compiled / optimized / DLL files

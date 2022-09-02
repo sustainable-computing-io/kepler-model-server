@@ -1,0 +1,6 @@
+flask==2.1.2
+tensorflow==2.9.1
+keras==2.9.0
+protobuf==3.19.4
+prometheus-client==0.14.1
+pandas==1.4.4
