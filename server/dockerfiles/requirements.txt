@@ -4,3 +4,4 @@ keras==2.9.0
 protobuf==3.19.4
 prometheus-client==0.14.1
 pandas==1.4.4
+numpy==1.22.4

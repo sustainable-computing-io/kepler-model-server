@@ -1,5 +1,5 @@
 FROM python:latest
-COPY requirements.txt requirements.txt
+COPY dockerfiles/requirements.txt requirements.txt
 RUN pip3 install --user -r requirements.txt
 COPY . .
 
