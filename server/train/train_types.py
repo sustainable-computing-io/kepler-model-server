@@ -13,10 +13,10 @@ import random
 
 SYSTEM_FEATURES = ["cpu_architecture"]
 
-COUNTER_FEAUTRES = ["curr_cache_miss", "curr_cpu_cycles", "curr_cpu_instr"]
-CGROUP_FEATURES = ["curr_cgroupfs_cpu_usage_us", "curr_cgroupfs_memory_usage_bytes", "curr_cgroupfs_system_cpu_usage_us", "curr_cgroupfs_user_cpu_usage_us"]
-IO_FEATURES = ["curr_bytes_read", "curr_bytes_writes"]
-BPF_FEATURES = ["curr_cpu_time"]
+COUNTER_FEAUTRES = ["cache_miss", "cpu_cycles", "cpu_instr"]
+CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"]
+IO_FEATURES = ["bytes_read", "bytes_writes"]
+BPF_FEATURES = ["cpu_time"]
 KUBELET_FEATURES =['container_cpu_usage_seconds_total', 'container_memory_working_set_bytes']
 WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + IO_FEATURES + BPF_FEATURES + KUBELET_FEATURES
 
@@ -24,7 +24,7 @@ CATEGORICAL_LABEL_TO_VOCAB = {
                     "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"] 
                     }
 
-NODE_STAT_POWER_LABEL = ["node_curr_energy_in_pkg_joule", "node_curr_energy_in_core_joule", "node_curr_energy_in_dram_joule", "node_curr_energy_in_uncore_joule", "node_curr_energy_in_gpu_joule", "node_curr_energy_in_other_joule"]
+NODE_STAT_POWER_LABEL = ["energy_in_pkg_joule", "energy_in_core_joule", "energy_in_dram_joule", "energy_in_uncore_joule", "energy_in_gpu_joule", "energy_in_other_joule"]
 
 class FeatureGroup(enum.Enum):
    Full = 1

@@ -1,19 +1,18 @@
+import os
+import sys
+
+server_path = os.path.join(os.path.dirname(__file__), '..')
+sys.path.append(server_path)
+
 from abc import ABCMeta, abstractmethod
 from train_types import FeatureGroup, get_feature_group
-
-import os
 import json
 
-TRAIN_MODEL_PATH_ENV = 'TRAIN_MODEL_PATH'
+from util.config import getConfig, getPath
+
 METADATA_FILENAME = 'metadata.json'
 
-if TRAIN_MODEL_PATH_ENV not in os.environ:
-    model_path = os.path.join(os.path.dirname(__file__), 'local')
-else:
-    model_path = os.getenv(TRAIN_MODEL_PATH_ENV)
-
-if not os.path.exists(model_path):
-    os.mkdir(model_path)
+model_path =  getPath(getConfig('MODEL_PATH', 'models'))
 
 for g in FeatureGroup:
     group_path = os.path.join(model_path, g.name)
@@ -45,9 +44,8 @@ class TrainPipeline(metaclass=ABCMeta):
         with open(metadata_file, "w") as f:
             json.dump(item, f)
         
-
     @abstractmethod
-    def train(self, pod_stat_data, node_stat_data, freq_data, pkg_data):
+    def train(self, prom_client):
         return NotImplemented
 
     def get_model_specific_metadata(self):

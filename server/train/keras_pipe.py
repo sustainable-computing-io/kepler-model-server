@@ -1,16 +1,21 @@
-from random import random
+import os
+import sys
+
+prom_path = os.path.join(os.path.dirname(__file__), '../prom')
+sys.path.append(prom_path)
+
 from pipeline import TrainPipeline
 from train_types import FeatureGroup, FeatureGroups
-from kepler_model_trainer import train_model_given_data_and_type, create_prometheus_core_dataset, create_prometheus_dram_dataset, coeff_determination
-from kepler_model_trainer import generate_core_regression_model, generate_dram_regression_model
-from kepler_model_trainer import dram_model_labels, core_model_labels
-from kepler_model_trainer import merge_model
+from keras_pipe_util import train_model_given_data_and_type, create_prometheus_core_dataset, create_prometheus_dram_dataset, coeff_determination
+from keras_pipe_util import generate_core_regression_model, generate_dram_regression_model
+from keras_pipe_util import dram_model_labels, core_model_labels
+from keras_pipe_util import merge_model
 from keras.models import load_model
 import pickle
 import tensorflow as tf
-
-import os
 import numpy as np
+
+from prom.query import NODE_STAT_QUERY
 
 MODEL_NAME = 'KerasLR_Full'
 MODEL_CLASS = 'keras'
@@ -56,12 +61,13 @@ class KerasFullPipeline(TrainPipeline):
             pickle.dump(self.fe, f)
             self.fe_files = [FE_FILE]
 
-    def train(self, pod_stat_data, node_stat_data, freq_data, pkg_data):
-        if int(node_stat_data['node_curr_energy_in_pkg_joule'].sum()) == 0:
+    def train(self, prom_client):
+        node_stat_data = prom_client.get_data(NODE_STAT_QUERY, None)
+        if int(node_stat_data['energy_in_pkg_joule'].sum()) == 0:
             # cannot train with package-level info
             return
-        core_train, core_val, core_test = create_prometheus_core_dataset(node_stat_data['cpu_architecture'], node_stat_data['curr_cpu_cycles'], node_stat_data['curr_cpu_instr'], node_stat_data['curr_cpu_time'], node_stat_data['node_curr_energy_in_core_joule'])
-        dram_train, dram_val, dram_test = create_prometheus_dram_dataset(node_stat_data['cpu_architecture'], node_stat_data['curr_cache_miss'], node_stat_data['container_memory_working_set_bytes'], node_stat_data['node_curr_energy_in_dram_joule'])
+        core_train, core_val, core_test = create_prometheus_core_dataset(node_stat_data['cpu_architecture'], node_stat_data['cpu_cycles'], node_stat_data['cpu_instr'], node_stat_data['cpu_time'], node_stat_data['energy_in_core_joule'])
+        dram_train, dram_val, dram_test = create_prometheus_dram_dataset(node_stat_data['cpu_architecture'], node_stat_data['cache_miss'], node_stat_data['container_memory_working_set_bytes'], node_stat_data['energy_in_dram_joule'])
         core_model = self.load_model(core_train, CORE_MODEL_TYPE)
         dram_model = self.load_model(dram_train, DRAM_MODEL_TYPE)
         core_model, _, _, core_mae_metric = train_model_given_data_and_type(core_model, core_train, core_val, core_test, CORE_MODEL_TYPE)
@@ -99,33 +105,3 @@ class KerasFullPipeline(TrainPipeline):
         merged_model = load_model(model_filepath, compile=False)
         result = merged_model.predict(transformed_values)
         print(result)
-
-
-if __name__ == '__main__':
-    from train_types import WORKLOAD_FEATURES, SYSTEM_FEATURES, CATEGORICAL_LABEL_TO_VOCAB, NODE_STAT_POWER_LABEL
-    import pandas as pd
-    import numpy as np
-    item = dict()
-
-    for f in WORKLOAD_FEATURES:
-        item[f] = random()
-    for f in SYSTEM_FEATURES:
-        if f in CATEGORICAL_LABEL_TO_VOCAB:
-            item[f] = CATEGORICAL_LABEL_TO_VOCAB[f][0]
-        else:
-            item[f] = random()
-    for l in NODE_STAT_POWER_LABEL:
-        item[l] = random()*1000
-
-    data_items = [item]
-    node_stat_data = pd.DataFrame(data_items)
-    for f in WORKLOAD_FEATURES:
-        node_stat_data[f] = node_stat_data[f].astype(np.float32)
-    for f in SYSTEM_FEATURES:
-        if f not in CATEGORICAL_LABEL_TO_VOCAB:
-            node_stat_data[f] = node_stat_data[f].astype(np.float32)
-
-    node_stat_data = pd.concat([node_stat_data]*10, ignore_index=True)
-    pipeline = KerasFullPipeline()
-    pipeline.train(None, node_stat_data, None, None)
-    pipeline.predict(node_stat_data[pipeline.features].values)
