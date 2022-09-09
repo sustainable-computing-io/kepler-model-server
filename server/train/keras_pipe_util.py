@@ -12,11 +12,11 @@ from train_types import CATEGORICAL_LABEL_TO_VOCAB
 model_type_to_filepath = {"core": "/models/core_model", "dram": "/models/dram_model"}
 
 core_model_labels = {
-                "numerical_labels": ["curr_cpu_cycles", "curr_cpu_instr", "curr_cpu_time"],
+                "numerical_labels": ["cpu_cycles", "cpu_instr", "cpu_time"],
                 "categorical_string_labels": ["cpu_architecture"] }
 
 dram_model_labels = {
-                    "numerical_labels": ["container_memory_working_set_bytes", "curr_cache_miss"],
+                    "numerical_labels": ["container_memory_working_set_bytes", "cache_miss"],
                     "categorical_string_labels": ["cpu_architecture"]}
 
 
@@ -27,8 +27,8 @@ def coeff_determination(y_true, y_pred):
     SS_tot = K.sum(K.square( y_true - K.mean(y_true) ) ) 
     return ( 1 - SS_res/(SS_tot + K.epsilon()) )
 
-# Generates a Core regression model which predicts curr_energy_in_core given
-# numerical features (curr_cpu_cycles, curr_cpu_instructions, curr_cpu_time).
+# Generates a Core regression model which predicts energy_in_core given
+# numerical features (cpu_cycles, cpu_instructions, cpu_time).
 # Consumes a tensorflow dataset with no missing data and all required features and 
 # target. This Regression model will be saved on server.
 def generate_core_regression_model(core_train_dataset: tf.data.Dataset) -> Model:
@@ -273,11 +273,11 @@ def return_model_test_coefficients(model_type):
         # new_model.evaluate(test_features, test_labels, verbose=0)
     #    save_model(returned_model, 'models/dram_model.h5')
 
-def create_prometheus_core_dataset(cpu_architecture, curr_cpu_cycles, curr_cpu_instructions, curr_cpu_time, curr_energy_in_core): #query: str, length: int, endpoint: str
+def create_prometheus_core_dataset(cpu_architecture, cpu_cycles, cpu_instructions, cpu_time, energy_in_core): #query: str, length: int, endpoint: str
     prefix = 'core_'
     # Create Desired Datasets for Core Model
-    features_dict_core = {prefix + 'cpu_architecture': cpu_architecture, prefix + 'curr_cpu_cycles': curr_cpu_cycles, prefix + 'curr_cpu_instr': curr_cpu_instructions, prefix + 'curr_cpu_time': curr_cpu_time}
-    refined_dataset_core = tf.data.Dataset.from_tensor_slices((features_dict_core, curr_energy_in_core))
+    features_dict_core = {prefix + 'cpu_architecture': cpu_architecture, prefix + 'cpu_cycles': cpu_cycles, prefix + 'cpu_instr': cpu_instructions, prefix + 'cpu_time': cpu_time}
+    refined_dataset_core = tf.data.Dataset.from_tensor_slices((features_dict_core, energy_in_core))
 
     refined_dataset_core_size = refined_dataset_core.cardinality().numpy()
 
@@ -295,11 +295,11 @@ def create_prometheus_core_dataset(cpu_architecture, curr_cpu_cycles, curr_cpu_i
     return train_dataset_core, val_dataset_core, test_dataset_core
 
 
-def create_prometheus_dram_dataset(cpu_architecture, curr_cache_misses, curr_resident_memory, curr_energy_in_dram):
+def create_prometheus_dram_dataset(cpu_architecture, cache_misses, resident_memory, energy_in_dram):
     prefix = 'dram_'
     # Create Desired Dataset for Dram Model
-    features_dict_dram = {prefix + 'cpu_architecture': cpu_architecture, prefix + 'container_memory_working_set_bytes': curr_resident_memory, prefix + 'curr_cache_miss': curr_cache_misses}
-    refined_dataset_dram = tf.data.Dataset.from_tensor_slices((features_dict_dram, curr_energy_in_dram))
+    features_dict_dram = {prefix + 'cpu_architecture': cpu_architecture, prefix + 'container_memory_working_set_bytes': resident_memory, prefix + 'cache_miss': cache_misses}
+    refined_dataset_dram = tf.data.Dataset.from_tensor_slices((features_dict_dram, energy_in_dram))
     refined_dataset_dram_size = refined_dataset_dram.cardinality().numpy()
     assert(refined_dataset_dram_size >= 5)
     train_size = int(refined_dataset_dram_size*0.6)
