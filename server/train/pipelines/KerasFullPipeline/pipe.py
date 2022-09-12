@@ -62,7 +62,7 @@ class KerasFullPipeline(TrainPipeline):
 
     def train(self, prom_client):
         node_stat_data = prom_client.get_data(NODE_STAT_QUERY, None)
-        if int(node_stat_data['energy_in_pkg_joule'].sum()) == 0:
+        if node_stat_data is None or int(node_stat_data['energy_in_pkg_joule'].sum()) == 0:
             # cannot train with package-level info
             return
         core_train, core_val, core_test = create_prometheus_core_dataset(node_stat_data['cpu_architecture'], node_stat_data['cpu_cycles'], node_stat_data['cpu_instr'], node_stat_data['cpu_time'], node_stat_data['energy_in_core_joule'])
