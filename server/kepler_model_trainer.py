@@ -174,7 +174,7 @@ def create_numerical_labels_weights_relation(numerical_labels, numerical_weights
 
 
 def create_categorical_vocab_weights_relation(categorical_labels, list_of_all_categorical_labels_vocab, list_of_all_categorical_labels_weights):
-    return {label: {list_of_all_categorical_labels_vocab[i][j]: {'weight': list_of_all_categorical_labels_weights[i][j]} for j in range(len(list_of_all_categorical_labels_vocab[i]))} for i, label in enumerate(categorical_labels)}
+    return {label: [{'name': list_of_all_categorical_labels_vocab[i][j], 'weight': list_of_all_categorical_labels_weights[i][j]} for j in range(len(list_of_all_categorical_labels_vocab[i]))] for i, label in enumerate(categorical_labels)}
 
 # Returns the weights and bias from the desired model.
 def return_model_weights(model_type):
@@ -187,7 +187,7 @@ def return_model_weights(model_type):
             # abstraction and to avoid repeat code. Currently, all models are Regression with Normalized Numerical
             # Labels and String Categorical Labels. All Models have the same name for the regression layer and same naming
             # convention for normalized preprocessing layers.
-
+            
             # Retrieve Coefficients
             kernel_matrix = returned_model.get_layer(name="linear_regression_layer").get_weights()[0]
             bias = returned_model.get_layer(name="linear_regression_layer").get_weights()[1][0].item()
@@ -228,11 +228,11 @@ def return_model_weights(model_type):
                 categorical_label_weights = weights_list[start_index:end_index]
                 list_of_all_categorical_labels_weights.append(categorical_label_weights)
                 start_index = end_index
-            
             #Categorical Label and Weights Dict
             categorical_weights_dict = create_categorical_vocab_weights_relation(categorical_labels, list_of_all_categorical_labels_vocab, list_of_all_categorical_labels_weights)
             # Combine all features and weights into a single dictionary
             final_dict = {"All_Weights": {"Numerical_Variables": numerical_weights_dict, "Categorical_Variables": categorical_weights_dict, "Bias_Weight": bias} }
+            print(final_dict)
             return final_dict
             
         raise FileNotFoundError("The desired trained model is valid, but the model has not been created/saved yet")
