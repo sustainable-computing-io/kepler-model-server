@@ -11,14 +11,15 @@ import pandas as pd
 from util.config import getConfig
 
 PROM_SERVER = 'http://localhost:9090'
-PROM_SSL_DISABLE = True
-PROM_HEADERS = None
+PROM_SSL_DISABLE = 'True'
+PROM_HEADERS = ''
 PROM_QUERY_INTERVAL = 20
 PROM_QUERY_STEP = 3
 
-ROM_SERVER = getConfig('PROM_SERVER', PROM_SERVER)
+PROM_SERVER = getConfig('PROM_SERVER', PROM_SERVER)
 PROM_HEADERS = getConfig('PROM_HEADERS', PROM_HEADERS)
-PROM_SSL_DISABLE = getConfig('PROM_SSL_DISABLE', PROM_SSL_DISABLE)
+PROM_HEADERS = None if PROM_HEADERS == '' else PROM_HEADERS
+PROM_SSL_DISABLE = True if getConfig('PROM_SSL_DISABLE', PROM_SSL_DISABLE).lower() == 'true' else False
 PROM_QUERY_INTERVAL = getConfig('PROM_QUERY_INTERVAL', PROM_QUERY_INTERVAL)
 
 NODE_STAT_QUERY = 'node_energy_stat'
@@ -71,10 +72,11 @@ class PrometheusClient():
             df = pd.DataFrame(items) 
             df.columns = df.columns.str.replace("curr_", "")
             df.columns = df.columns.str.replace("node_", "")
-            df[query_metric] = df['value']
-            for col in df.columns:
-                df[col] = df[col].transform(transform_float)
-            df.drop(columns=['value'], inplace=True)
+            if len(df) > 0:
+                df[query_metric] = df['value']
+                for col in df.columns:
+                    df[col] = df[col].transform(transform_float)
+                df.drop(columns=['value'], inplace=True)
             self.latest_query_result[query_metric] = df
         
     def get_data(self, query_metric, features):
