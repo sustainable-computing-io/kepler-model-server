@@ -1,15 +1,17 @@
 import os
 import sys
 
-prom_path = os.path.join(os.path.dirname(__file__), '../prom')
+train_path = os.path.join(os.path.dirname(__file__), '../../')
+prom_path = os.path.join(os.path.dirname(__file__), '../../../prom')
+sys.path.append(train_path)
 sys.path.append(prom_path)
 
 from pipeline import TrainPipeline
-from train_types import FeatureGroup, FeatureGroups
-from keras_pipe_util import train_model_given_data_and_type, create_prometheus_core_dataset, create_prometheus_dram_dataset, coeff_determination
-from keras_pipe_util import generate_core_regression_model, generate_dram_regression_model
-from keras_pipe_util import dram_model_labels, core_model_labels
-from keras_pipe_util import merge_model
+from train_types import FeatureGroup, FeatureGroups, CORE_COMPONENT, DRAM_COMPONENT, ModelOutputType
+from pipe_util import train_model_given_data_and_type, create_prometheus_core_dataset, create_prometheus_dram_dataset, coeff_determination
+from pipe_util import generate_core_regression_model, generate_dram_regression_model
+from pipe_util import dram_model_labels, core_model_labels
+from pipe_util import merge_model
 from keras.models import load_model
 import pickle
 import tensorflow as tf
@@ -21,9 +23,6 @@ MODEL_NAME = 'KerasLR_Full'
 MODEL_CLASS = 'keras'
 MODEL_FILENAME = MODEL_NAME + '.h5'
 FE_FILE = 'merge.pkl'
-
-CORE_MODEL_TYPE = 'core'
-DRAM_MODEL_TYPE = 'dram'
 
 class KerasFullPipelineFeatureTransformer():
     def __init__(self, features, dram_model_labels, core_model_labels):
@@ -54,7 +53,7 @@ class KerasFullPipeline(TrainPipeline):
         self.mae = None
         self.mae_val = None
 
-        super(KerasFullPipeline, self).__init__(MODEL_NAME, MODEL_CLASS, MODEL_FILENAME, FeatureGroups[FeatureGroup.Full])
+        super(KerasFullPipeline, self).__init__(MODEL_NAME, MODEL_CLASS, MODEL_FILENAME, FeatureGroups[FeatureGroup.Full], ModelOutputType.AbsPower)
         self.fe = KerasFullPipelineFeatureTransformer(self.features, dram_model_labels, core_model_labels)
         fe_file_path = os.path.join(self.save_path, FE_FILE)
         with open(fe_file_path, 'wb') as f:
@@ -68,12 +67,12 @@ class KerasFullPipeline(TrainPipeline):
             return
         core_train, core_val, core_test = create_prometheus_core_dataset(node_stat_data['cpu_architecture'], node_stat_data['cpu_cycles'], node_stat_data['cpu_instr'], node_stat_data['cpu_time'], node_stat_data['energy_in_core_joule'])
         dram_train, dram_val, dram_test = create_prometheus_dram_dataset(node_stat_data['cpu_architecture'], node_stat_data['cache_miss'], node_stat_data['container_memory_working_set_bytes'], node_stat_data['energy_in_dram_joule'])
-        core_model = self.load_model(core_train, CORE_MODEL_TYPE)
-        dram_model = self.load_model(dram_train, DRAM_MODEL_TYPE)
-        core_model, _, _, core_mae_metric = train_model_given_data_and_type(core_model, core_train, core_val, core_test, CORE_MODEL_TYPE)
-        dram_model, _, _, dram_mae_metric = train_model_given_data_and_type(dram_model, dram_train, dram_val, dram_test, DRAM_MODEL_TYPE)
-        core_model.save(self._get_model_path(CORE_MODEL_TYPE), include_optimizer=True)
-        dram_model.save(self._get_model_path(DRAM_MODEL_TYPE), include_optimizer=True)
+        core_model = self.load_model(core_train, CORE_COMPONENT)
+        dram_model = self.load_model(dram_train, DRAM_COMPONENT)
+        core_model, _, _, core_mae_metric = train_model_given_data_and_type(core_model, core_train, core_val, core_test, CORE_COMPONENT)
+        dram_model, _, _, dram_mae_metric = train_model_given_data_and_type(dram_model, dram_train, dram_val, dram_test, DRAM_COMPONENT)
+        core_model.save(self._get_model_path(CORE_COMPONENT), include_optimizer=True)
+        dram_model.save(self._get_model_path(DRAM_COMPONENT), include_optimizer=True)
         merged_model = merge_model(core_model, dram_model)
         merged_model.save(self._get_model_path(MODEL_NAME), include_optimizer=True)
         metadata = dict()
@@ -88,9 +87,9 @@ class KerasFullPipeline(TrainPipeline):
         model_exists = os.path.exists(filepath)
         if model_exists:
             new_model = load_model(filepath, custom_objects={'coeff_determination': coeff_determination})
-        elif model_type == CORE_MODEL_TYPE:
+        elif model_type == CORE_COMPONENT:
             new_model = generate_core_regression_model(train_dataset)
-        elif model_type == DRAM_MODEL_TYPE:
+        elif model_type == DRAM_COMPONENT:
             new_model = generate_dram_regression_model(train_dataset)
         else:
             "wrong type: " + model_type
