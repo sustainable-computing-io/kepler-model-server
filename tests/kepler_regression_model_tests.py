@@ -6,8 +6,8 @@ import numpy as np
 
 
 # Test Names
-core_names = ['curr_energy_in_core', 'cpu_architecture', 'curr_cpu_cycles', 'current_cpu_instructions', 'curr_cpu_time']
-dram_names = ['curr_energy_in_dram', 'cpu_architecture', 'curr_resident_memory', 'curr_cache_misses']
+core_names = ['curr_energy_in_core', 'cpu_architecture', 'cpu_cycles', 'cpu_instr', 'cpu_time']
+dram_names = ['curr_energy_in_dram', 'cpu_architecture', 'container_memory_working_set_bytes', 'cache_misses']
 
 # Function to convert test csv files to dataset. Modified from the tensorflow keras website. This will not be
 # needed for the prometheus data pipeline
