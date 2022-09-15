@@ -12,11 +12,11 @@ from keras.callbacks import History
 model_type_to_filepath = {"core_model": "/models/core_model", "dram_model": "/models/dram_model"}
 
 core_model_labels = {
-                "numerical_labels": ["curr_cpu_cycles", "current_cpu_instructions", "curr_cpu_time"],
+                "numerical_labels": ["cpu_cycles", "cpu_instr", "cpu_time"],
                 "categorical_string_labels": ["cpu_architecture"] }
 
 dram_model_labels = {
-                    "numerical_labels": ["curr_resident_memory", "curr_cache_misses"],
+                    "numerical_labels": ["container_memory_working_set_bytes", "cache_misses"],
                     "categorical_string_labels": ["cpu_architecture"]}
 
 categorical_label_to_vocab = {
@@ -231,7 +231,7 @@ def return_model_weights(model_type):
             #Categorical Label and Weights Dict
             categorical_weights_dict = create_categorical_vocab_weights_relation(categorical_labels, list_of_all_categorical_labels_vocab, list_of_all_categorical_labels_weights)
             # Combine all features and weights into a single dictionary
-            final_dict = {"All_Weights": {"Numerical_Variables": numerical_weights_dict, "Categorical_Variables": categorical_weights_dict, "Bias_Weight": bias} }
+            final_dict = {"All_Weights_{}".format(model_type): {"Numerical_Variables": numerical_weights_dict, "Categorical_Variables": categorical_weights_dict, "Bias_Weight": bias} }
             print(final_dict)
             return final_dict
             
