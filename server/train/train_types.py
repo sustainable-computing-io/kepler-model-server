@@ -72,6 +72,29 @@ def get_feature_group(features):
             return g
     return FeatureGroup.Unknown
 
+def get_valid_feature_groups(features):
+    valid_fgs = []
+    for fg_key, fg_features in FeatureGroups.items():
+        valid = True
+        for f in fg_features:
+            if f not in features:
+                valid = False
+                break
+        if valid:
+            valid_fgs += [fg_key]
+    return valid_fgs
+
+def is_weight_output(output_type):
+    if output_type == ModelOutputType.AbsModelWeight:
+        return True
+    if output_type == ModelOutputType.AbsComponentModelWeight:
+        return True
+    if output_type == ModelOutputType.DynModelWeight:
+        return True
+    if output_type == ModelOutputType.DynComponentModelWeight:
+        return True
+    return False
+
 if __name__ == '__main__':
     for g, g_features in FeatureGroups.items():
         shuffled_features = g_features.copy()
