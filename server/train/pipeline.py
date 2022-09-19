@@ -5,7 +5,7 @@ server_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(server_path)
 
 from abc import ABCMeta, abstractmethod
-from train_types import FeatureGroup, get_feature_group
+from train_types import FeatureGroup, get_feature_group, ModelOutputType
 import json
 
 from util.config import getConfig, getPath
@@ -14,19 +14,25 @@ METADATA_FILENAME = 'metadata.json'
 
 model_path =  getPath(getConfig('MODEL_PATH', 'models'))
 
-for g in FeatureGroup:
-    group_path = os.path.join(model_path, g.name)
-    if not os.path.exists(group_path):
-        os.mkdir(group_path)
+for ot in ModelOutputType:
+    ot_group_path = os.path.join(model_path, ot.name)
+    if not os.path.exists(ot_group_path):
+        os.mkdir(ot_group_path)
+    for g in FeatureGroup:
+        group_path = os.path.join(ot_group_path, g.name)
+        if not os.path.exists(group_path):
+            os.mkdir(group_path)
+    
 
 class TrainPipeline(metaclass=ABCMeta):
-    def __init__(self, model_name, model_class, model_file, features):
+    def __init__(self, model_name, model_class, model_file, features, output_type):
         self.model_name = model_name
         self.model_class = model_class
         self.model_file = model_file
         self.features = features
+        self.output_type = output_type
         self.model_group = get_feature_group(features)
-        group_path = os.path.join(model_path, self.model_group.name)
+        group_path = os.path.join(model_path, self.output_type.name, self.model_group.name)
         print(group_path)
         self.save_path = os.path.join(group_path, self.model_name)
         if not os.path.exists(self.save_path):
