@@ -6,7 +6,7 @@ server_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(server_path)
 
 from abc import ABCMeta, abstractmethod
-from train_types import FeatureGroup, get_feature_group, ModelOutputType, is_weight_output
+from train_types import FeatureGroup, get_feature_group, ModelOutputType, is_weight_output, POWER_COMPONENTS
 import json
 
 from util.config import getConfig, getPath
@@ -68,3 +68,14 @@ class TrainPipeline(metaclass=ABCMeta):
         print("achive model ", archived_file, self.save_path)
         shutil.make_archive(self.save_path, 'zip', self.save_path)
 
+    def save_comp_model(self, model_file_dict, model_features_dict, model_fe_file_dicts={}):
+        model_dict = dict()
+        for comp in POWER_COMPONENTS:
+            model_dict[comp] = {
+                'model_file': model_file_dict[comp],
+                'features': model_features_dict[comp],
+                'fe_files': [] if comp not in model_fe_file_dicts else model_fe_file_dicts[comp]  # optional
+            }
+        model_file = os.path.join(self.save_path, self.model_file)
+        with open(model_file, "w") as f:
+            json.dump(model_dict, f)

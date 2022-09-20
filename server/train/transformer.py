@@ -4,10 +4,10 @@ import numpy as np
 class KerasFullPipelineFeatureTransformer():
     def __init__(self, features, dram_model_labels, core_model_labels):
         self.features = features
-        self.core_numerical_indexes = [self.features.index(label) for label in core_model_labels['numerical_labels']]
-        self.dram_numerical_indexes = [self.features.index(label) for label in dram_model_labels['numerical_labels']]
-        self.core_categorical_indexes = [self.features.index(label) for label in core_model_labels['categorical_string_labels']]
-        self.dram_categorical_indexes = [self.features.index(label) for label in core_model_labels['categorical_string_labels']]
+        self.core_numerical_indexes = [] if 'numerical_labels' not in core_model_labels else  [self.features.index(label) for label in core_model_labels['numerical_labels'] if label in self.features]
+        self.dram_numerical_indexes = [] if 'numerical_labels' not in dram_model_labels else  [self.features.index(label) for label in dram_model_labels['numerical_labels'] if label in self.features]
+        self.core_categorical_indexes = [] if 'categorical_string_labels' not in core_model_labels else  [self.features.index(label) for label in core_model_labels['categorical_string_labels'] if label in self.features]
+        self.dram_categorical_indexes = [] if 'categorical_string_labels' not in dram_model_labels else  [self.features.index(label) for label in dram_model_labels['categorical_string_labels'] if label in self.features]
 
     def transform(self, x_values):
         inputs = []

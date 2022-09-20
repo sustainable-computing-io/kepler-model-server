@@ -20,7 +20,7 @@ SAMPLING_INTERVAL = PROM_QUERY_INTERVAL
 SAMPLING_INTERVAL = getConfig('SAMPLING_INTERVAL', SAMPLING_INTERVAL)
 SAMPLING_INTERVAL = int(SAMPLING_INTERVAL)
 
-pipeline_names = ['KerasFullPipeline', 'KerasCompWeightFullPipeline']
+pipeline_names = ['KerasFullPipeline', 'KerasCompWeightFullPipeline', 'KerasCompFullPipeline']
 grouped_pipelines = dict()
 
 for pipeline_name in pipeline_names:

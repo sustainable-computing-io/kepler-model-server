@@ -79,4 +79,6 @@ class KerasCompWeightFullPipeline(TrainPipeline):
             "wrong type: " + model_type
         return new_model
 
-
+    def predict(self, x_values):
+        # TO-DO
+        pass

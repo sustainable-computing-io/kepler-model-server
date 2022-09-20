@@ -1,4 +1,3 @@
-## TO-DO: change to train for absolute power not components
 import os
 import sys
 
@@ -10,41 +9,52 @@ sys.path.append(prom_path)
 from pipeline import TrainPipeline
 from train_types import FeatureGroup, FeatureGroups, CORE_COMPONENT, DRAM_COMPONENT, ModelOutputType
 from pipe_util import train_model_given_data_and_type, create_prometheus_core_dataset, create_prometheus_dram_dataset
-from pipe_util import generate_core_regression_model, generate_dram_regression_model
-from pipe_util import dram_model_labels, core_model_labels
-from pipe_util import merge_model
-from transformer import KerasFullPipelineFeatureTransformer
+from pipe_util import generate_core_regression_model, generate_dram_regression_model, dram_model_labels, core_model_labels
 from keras.models import load_model
 from keras import backend as K
-import pickle
+from transformer import KerasFullPipelineFeatureTransformer
 
+import json
+import pickle
 
 from prom.query import NODE_STAT_QUERY
 
 MODEL_CLASS = 'keras'
-FE_FILE = 'merge.pkl'
 
 def coeff_determination(y_true, y_pred):
     SS_res =  K.sum(K.square( y_true-y_pred )) 
     SS_tot = K.sum(K.square( y_true - K.mean(y_true) ) ) 
     return ( 1 - SS_res/(SS_tot + K.epsilon()) )
 
-
-class KerasFullPipeline(TrainPipeline):
+class KerasCompFullPipeline(TrainPipeline):
     def __init__(self):
         self.mse = None
         self.mse_val = None
         self.mae = None
         self.mae_val = None
-        model_name = KerasFullPipeline.__name__
-        model_file = model_name
+        model_name = KerasCompFullPipeline.__name__
+        model_file = model_name + ".json"
 
-        super(KerasFullPipeline, self).__init__(model_name, MODEL_CLASS, model_file, FeatureGroups[FeatureGroup.Full], ModelOutputType.AbsPower)
-        self.fe = KerasFullPipelineFeatureTransformer(self.features, dram_model_labels, core_model_labels)
-        fe_file_path = os.path.join(self.save_path, FE_FILE)
+        super(KerasCompFullPipeline, self).__init__(model_name, MODEL_CLASS, model_file, FeatureGroups[FeatureGroup.Full], ModelOutputType.AbsComponentPower)
+        self.fe_files = []
+
+        self.model_file_dict = {CORE_COMPONENT: CORE_COMPONENT, DRAM_COMPONENT: DRAM_COMPONENT}
+        self.model_features_dict = {CORE_COMPONENT: ['cpu_architecture', 'cpu_cycles', 'cpu_instr', 'cpu_time'], DRAM_COMPONENT: ['cpu_architecture', 'cache_miss', 'container_memory_working_set_bytes']}
+        self.model_fe_file_dict = dict()
+        self.prepare_fe(CORE_COMPONENT)
+        self.prepare_fe(DRAM_COMPONENT)
+
+
+    def prepare_fe(self, model_type):
+        if model_type == CORE_COMPONENT:
+            fe = KerasFullPipelineFeatureTransformer(self.model_features_dict[model_type], {}, core_model_labels)
+        elif model_type == DRAM_COMPONENT:
+            fe = KerasFullPipelineFeatureTransformer(self.model_features_dict[model_type], dram_model_labels, {})
+        fe_filename = "{}_transform.pkl".format(model_type)
+        fe_file_path = os.path.join(self.save_path, fe_filename)
         with open(fe_file_path, 'wb') as f:
-            pickle.dump(self.fe, f)
-            self.fe_files = [FE_FILE]
+            pickle.dump(fe, f)
+            self.model_fe_file_dict[model_type] = [fe_filename]
 
     def train(self, prom_client):
         node_stat_data = prom_client.get_data(NODE_STAT_QUERY, None)
@@ -59,8 +69,9 @@ class KerasFullPipeline(TrainPipeline):
         dram_model, _, _, dram_mae_metric = train_model_given_data_and_type(dram_model, dram_train, dram_val, dram_test, DRAM_COMPONENT)
         core_model.save(self._get_model_path(CORE_COMPONENT), save_format='tf', include_optimizer=True)
         dram_model.save(self._get_model_path(DRAM_COMPONENT), save_format='tf', include_optimizer=True)
-        merged_model = merge_model(core_model, dram_model)
-        merged_model.save(self._get_model_path(self.model_file), save_format='tf', include_optimizer=True)
+
+        self.save_comp_model(self.model_file_dict, self.model_features_dict, self.model_fe_file_dict)
+
         metadata = dict()
         metadata['mae'] = core_mae_metric + dram_mae_metric
         self.update_metadata(metadata)
@@ -82,12 +93,19 @@ class KerasFullPipeline(TrainPipeline):
         return new_model
 
     def predict(self, data):
-        x_values = data[self.features].values
-        print(x_values.shape)
-        fe_filepath = os.path.join(self.save_path, FE_FILE)
-        fe_item = pickle.load(open(fe_filepath, 'rb'))
-        transformed_values = fe_item.transform(x_values)
-        model_filepath = os.path.join(self.save_path, self.model_file)
-        merged_model = load_model(model_filepath, custom_objects={'coeff_determination': coeff_determination})
-        result = merged_model.predict(transformed_values)
-        print(result)
+        results = dict()
+        model_file = self._get_model_path(self.model_file)
+        with open(model_file) as f:
+            model_info = json.load(f)
+        for comp, model_metadata in model_info.items():
+            model = load_model(self._get_model_path(model_metadata['model_file']), custom_objects={'coeff_determination': coeff_determination})
+            features = model_metadata['features']
+            fe_files = model_metadata['fe_files']
+            x_values = data[features].values
+            for fe_filename in fe_files:
+                fe_filepath = self._get_model_path(fe_filename)
+                with open(fe_filepath, 'rb') as f:
+                    fe = pickle.load(f)
+                    x_values = fe.transform(x_values)
+            results[comp] = model.predict(x_values)
+        return results

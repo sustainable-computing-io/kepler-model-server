@@ -1,4 +1,3 @@
-from pydoc import describe
 import requests
 
 import os
@@ -51,9 +50,9 @@ if __name__ == '__main__':
     # archived model
     output_type = ModelOutputType.AbsPower
     make_request(metrics, output_type)
-    # model weight
-    output_type = ModelOutputType.AbsModelWeight
-    make_request(metrics, output_type)
     # model component weight
     output_type = ModelOutputType.AbsComponentModelWeight
     make_request(metrics, output_type)
+    # # model weight #TODO
+    # output_type = ModelOutputType.AbsModelWeight
+    # make_request(metrics, output_type)
