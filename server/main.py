@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import requests
+import numpy as np
 
 util_path = os.path.join(os.path.dirname(__file__), 'util')
 train_path = os.path.join(os.path.dirname(__file__), 'train')
@@ -34,8 +36,64 @@ for pipeline_name in pipeline_names:
 def run_train(pipeline, prom_client):
     pipeline.train(prom_client)
 
-from prometheus_datapipeline_functions import retrieve_and_clean_prometheus_energy_metrics, create_prometheus_core_dataset, create_prometheus_dram_dataset
+from train.pipelines.KerasFullPipeline.pipe import create_prometheus_core_dataset, create_prometheus_dram_dataset
 from train.pipelines.KerasFullPipeline.pipe_util import train_model_given_data_and_type
+
+
+def query_prometheus(query, interval, endpoint):
+    query_str= 'query={}[{}]'.format(query, interval)
+    print('query {}'.format(query_str))
+    return requests.get(url = endpoint, params = query_str).json()
+
+
+#Testing using a Prometheus exporter which monitors itself for metrics
+def retrieve_dummy_prometheus_metrics(query, interval, endpoint):
+    return query_prometheus(query, interval, endpoint)
+
+
+def retrieve_and_clean_prometheus_energy_metrics(query, interval, endpoint):
+    energy_metrics_dataset = query_prometheus(query, interval, endpoint)
+    # Retrieve all the desired energy related features in the form of tensors
+    curr_cpu_cycles = []
+    curr_cpu_instructions = []
+    curr_cpu_time = []
+    curr_energy_in_core = []
+    cpu_architecture = []
+    curr_resident_memory = []
+    curr_cache_misses = []
+    curr_energy_in_dram = []
+    result = energy_metrics_dataset['data']['result']
+    for x in range(len(result)):
+        raw_metrics = result[x]
+        refined_metrics = raw_metrics['metric']
+        curr_cpu_cycles_val = float(refined_metrics['curr_cpu_cycles'])
+        curr_cpu_instructions_val = float(refined_metrics['curr_cpu_instructions'])
+        curr_cpu_time_val = float(refined_metrics['curr_cpu_time'])
+        cpu_architecture_val = refined_metrics['cpu_architecture']
+        curr_energy_in_core_val = float(refined_metrics['curr_energy_in_core'])
+        curr_energy_in_dram_val = float(refined_metrics['curr_energy_in_dram'])
+        curr_cache_misses_val = float(refined_metrics['curr_cache_misses'])
+        curr_resident_memory_val = float(refined_metrics['curr_resident_memory'])
+        print("{}:{}:{}:{}:{}:{}:{}:{}".format(curr_cpu_cycles_val, curr_cpu_instructions_val, curr_cpu_time_val, cpu_architecture_val, curr_energy_in_core_val, curr_energy_in_dram_val, curr_cache_misses_val, curr_resident_memory_val))
+        curr_cpu_cycles.append(curr_cpu_cycles_val)
+        curr_cpu_instructions.append(curr_cpu_instructions_val)
+        curr_cpu_time.append(curr_cpu_time_val)
+        cpu_architecture.append(cpu_architecture_val)
+        curr_energy_in_core.append(curr_energy_in_core_val)
+        curr_energy_in_dram.append(curr_energy_in_dram_val)
+        curr_cache_misses.append(curr_cache_misses_val)
+        curr_resident_memory.append(curr_resident_memory_val)
+
+    curr_cpu_cycles = np.hstack(curr_cpu_cycles)
+    curr_cpu_instructions = np.hstack(curr_cpu_instructions)
+    curr_cpu_time = np.hstack(curr_cpu_time)
+    cpu_architecture = np.hstack(cpu_architecture)
+    curr_energy_in_core = np.hstack(curr_energy_in_core)
+    energy_data_dict = {'curr_cpu_cycles': curr_cpu_cycles, 'current_cpu_instructions': curr_cpu_instructions,
+                        'curr_cpu_time': curr_cpu_time, 'cpu_architecture': cpu_architecture, 'curr_energy_in_core': curr_energy_in_core,
+                        'curr_energy_in_dram': curr_energy_in_dram, 'curr_cache_misses': curr_cache_misses, 'curr_resident_memory': 
+                        curr_resident_memory}
+    return energy_data_dict
 
 # scrape prometheus energy metrics and train models
 def energy_prometheus_pipeline(query, interval, endpoint):
