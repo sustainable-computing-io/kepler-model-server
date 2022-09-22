@@ -1,5 +1,5 @@
 from random import random
-from pipe import KerasFullPipeline
+from pipe import KerasCompWeightFullPipeline
 
 import os
 import sys
@@ -37,6 +37,6 @@ if __name__ == '__main__':
     node_stat_data = pd.concat([node_stat_data]*10, ignore_index=True)
     prom_client = PrometheusClient()
     prom_client.latest_query_result[NODE_STAT_QUERY] = node_stat_data
-    pipeline = KerasFullPipeline()
+    pipeline = KerasCompWeightFullPipeline()
     pipeline.train(prom_client)
-    pipeline.predict(node_stat_data)
+    pipeline.predict(node_stat_data[pipeline.features].values)

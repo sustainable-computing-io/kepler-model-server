@@ -2,8 +2,6 @@ import tensorflow as tf
 from keras.models import load_model
 from keras import layers, Model, Input, metrics, optimizers
 import numpy as np
-import os
-import shutil
 from keras import backend as K
 from keras.callbacks import History
 
@@ -18,9 +16,6 @@ core_model_labels = {
 dram_model_labels = {
                     "numerical_labels": ["container_memory_working_set_bytes", "cache_miss"],
                     "categorical_string_labels": ["cpu_architecture"]}
-
-
-
 
 def coeff_determination(y_true, y_pred):
     SS_res =  K.sum(K.square( y_true-y_pred )) 
@@ -98,21 +93,6 @@ def generate_dram_regression_model(dram_train_dataset: tf.data.Dataset) -> Model
     new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.5), loss='mae', metrics=[coeff_determination, metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])
     return new_linear_model
 
-
-# Helper function to verify model_type is valid, check whether the model has been created or not,
-# and create a filepath to the model.
-# Returns type (str, Bool) where str is the filepath to the model_type or None if the model_type
-# is invalid, and Bool is True if the model of the desired type was already created and False if the model
-# of the desired type has not been created. If str is None, then Bool is False.
-def return_model_filepath(model_type):
-    if model_type in model_type_to_filepath:
-        filepath = os.path.dirname(__file__) + model_type_to_filepath[model_type]
-        return filepath, os.path.exists(filepath)
-        #if os.path.exists(filepath):
-        #    return filepath, True
-        #return filepath, False
-    return None, False
-        
 # This function creates a new model and trains it given train_features, train_labels, test_features, test_labels.
 # If the desired model already exists, it will be retrained, refitted, evaluated and saved.
 # takes dataframe
@@ -148,20 +128,6 @@ def train_model_given_data_and_type(new_model, train_dataset, validation_dataset
     return new_model, loss_result, rmse_metric, mae_metric
 
 
-# This function archives the SavedModel according to model_type. It returns the filepath to zipped SavedModel
-# and the filename (which is just the model type with .zip appended to the end)
-def archive_saved_model(model_type):
-    filepath, model_exists = return_model_filepath(model_type)
-    if filepath is None:
-        raise ValueError("Provided Model Type is invalid and/or not included")
-    if not model_exists:
-        raise FileNotFoundError("The desired trained model is valid, but the model has not been created/saved yet")
-    
-    shutil.make_archive(filepath, 'zip', filepath)
-    # return archived zipped filepath directory
-    return os.path.dirname(__file__) + '/models/', model_type + '.zip'
-
-
 def create_numerical_labels_weights_relation(numerical_labels, numerical_weights, mean_variance_for_each_label):
     return {numerical_labels[i]: {'weight': weight, "mean": mean_variance_for_each_label[i][0], "variance": mean_variance_for_each_label[i][1]} for i, weight in enumerate(numerical_weights)}
 
@@ -170,108 +136,60 @@ def create_categorical_vocab_weights_relation(categorical_labels, list_of_all_ca
     return {label: {list_of_all_categorical_labels_vocab[i][j]: {'weight': list_of_all_categorical_labels_weights[i][j]} for j in range(len(list_of_all_categorical_labels_vocab[i]))} for i, label in enumerate(categorical_labels)}
 
 # Returns the weights and bias from the desired model.
-def return_model_weights(model_type):
-    filepath, model_exists = return_model_filepath(model_type)
-    if filepath is not None:
-        if model_exists:
-            # Retrieve Model
-            returned_model = load_model(filepath, custom_objects={'coeff_determination': coeff_determination})
-            #TODO: In future, create a dict to divide the model algorithm type (Linear, NN, etc.) for better
-            # abstraction and to avoid repeat code. Currently, all models are Regression with Normalized Numerical
-            # Labels and String Categorical Labels. All Models have the same name for the regression layer and same naming
-            # convention for normalized preprocessing layers.
+def return_model_weights(filepath, model_type):
+    # Retrieve Model
+    returned_model = load_model(filepath, custom_objects={'coeff_determination': coeff_determination})
+    #TODO: In future, create a dict to divide the model algorithm type (Linear, NN, etc.) for better
+    # abstraction and to avoid repeat code. Currently, all models are Regression with Normalized Numerical
+    # Labels and String Categorical Labels. All Models have the same name for the regression layer and same naming
+    # convention for normalized preprocessing layers.
 
-            # Retrieve Coefficients
-            kernel_matrix = returned_model.get_layer(name=model_type +"_linear_regression_layer").get_weights()[0]
-            bias = returned_model.get_layer(name=model_type +"linear_regression_layer").get_weights()[1][0].item()
-            weights_list = np.ndarray.tolist(np.squeeze(kernel_matrix))
-            print(weights_list)
-            print(bias)
-            if model_type == "core":
-                # Retrieve Numerical Labels for Core Model
-                numerical_labels = core_model_labels["numerical_labels"]
-                # Retrieve Categorical Labels for Core Model
-                categorical_labels = core_model_labels["categorical_string_labels"]
-            if model_type == "dram":
-                # Retrieve Numerical Labels for Core Model
-                numerical_labels = dram_model_labels["numerical_labels"]
-                # Retrieve Categorical Labels for Core Model
-                categorical_labels = dram_model_labels["categorical_string_labels"]
-                
-            # Numerical Weights
-            start_index = len(numerical_labels)
-            numerical_weights = weights_list[0:start_index]
-            # Normalization Weights
-            normalization_weights = []
-            for numerical_label in numerical_labels:
-                name = "normalization_" + numerical_label
-                normalization_weight = np.float_(returned_model.get_layer(name=name).get_weights())
-                normalization_weights.append(normalization_weight)
+    # Retrieve Coefficients
+    kernel_matrix = returned_model.get_layer(name=model_type +"_linear_regression_layer").get_weights()[0]
+    bias = returned_model.get_layer(name=model_type +"_linear_regression_layer").get_weights()[1][0].item()
+    weights_list = np.ndarray.tolist(np.squeeze(kernel_matrix))
+    print(weights_list)
+    print(bias)
+    if model_type == "core":
+        # Retrieve Numerical Labels for Core Model
+        numerical_labels = core_model_labels["numerical_labels"]
+        # Retrieve Categorical Labels for Core Model
+        categorical_labels = core_model_labels["categorical_string_labels"]
+    if model_type == "dram":
+        # Retrieve Numerical Labels for Core Model
+        numerical_labels = dram_model_labels["numerical_labels"]
+        # Retrieve Categorical Labels for Core Model
+        categorical_labels = dram_model_labels["categorical_string_labels"]
+        
+    # Numerical Weights
+    start_index = len(numerical_labels)
+    numerical_weights = weights_list[0:start_index]
+    # Normalization Weights
+    normalization_weights = []
+    for numerical_label in numerical_labels:
+        name = "normalization_" + numerical_label
+        normalization_weight = np.float_(returned_model.get_layer(name=name).get_weights())
+        normalization_weights.append(normalization_weight)
 
-            # Numerical Label and Weights Dict
-            numerical_weights_dict = create_numerical_labels_weights_relation(numerical_labels, numerical_weights, normalization_weights)
-            
-            # Categorical Weights
-            list_of_all_categorical_labels_vocab = []
-            list_of_all_categorical_labels_weights = []
-            for categorical_label in categorical_labels:
-                categorical_label_vocab = CATEGORICAL_LABEL_TO_VOCAB[categorical_label]
-                list_of_all_categorical_labels_vocab.append(categorical_label_vocab)
-                end_index = start_index + len(categorical_label_vocab)
-                categorical_label_weights = weights_list[start_index:end_index]
-                list_of_all_categorical_labels_weights.append(categorical_label_weights)
-                start_index = end_index
-            
-            #Categorical Label and Weights Dict
-            categorical_weights_dict = create_categorical_vocab_weights_relation(categorical_labels, list_of_all_categorical_labels_vocab, list_of_all_categorical_labels_weights)
-            # Combine all features and weights into a single dictionary
-            final_dict = {"All_Weights": {"Numerical_Variables": numerical_weights_dict, "Categorical_Variables": categorical_weights_dict, "Bias_Weight": bias} }
-            return final_dict
-            
-        raise FileNotFoundError("The desired trained model is valid, but the model has not been created/saved yet")
-    else:
-        raise ValueError("Provided Model Type is invalid and/or not included")
-
-
-# Test function
-def return_model_test_coefficients(model_type):
-    filepath, model_exists = return_model_filepath(model_type)
-    if filepath is not None:
-        if model_exists:
-            # Retrieve coefficients
-            #returned_model = load_model(filepath)
-            #for layer in returned_model.layers: print(layer.get_config(), layer.get_weights())
-            #print(returned_model.get_weights())
-            #for layer in returned_model.layers:
-            #    print(layer.name)
-            #    if(layer.name == "string_lookup"):
-            #        print(layer.get_vocabulary())
-            #    if(layer.name == "concatenate"):
-            #        print(layers.Concatenate(layer))
-            #    if(layer.name == "linear_regression_layer"):
-            #        print(layer.variables)
-            #        print(layer.weights)
-            return "Placeholder"
-        raise FileNotFoundError("The desired trained model is valid, but the model has not been created/saved yet")
-    else:
-        raise ValueError("Provided Model Type is invalid and/or not included")
-
-
-#def train_dram_model(train_features, train_labels, test_features, test_labels):
-    # TODO: Include Demo using dataset in the form of an excel file - returns evaluation details and coefficients    
-    #try:
-    #    returned_model = load_model('models/dram_model.h5')
-        # after retrieving saved model, train and evaluate
-        # returned_model.fit(train_features, train_labels, epochs=100)
-        # returned_model.evaluate(test_features, test_labels, verbose=0)
-    #    save_model(returned_model, 'models/dram_model.h5')
-
-    #except IOError:
-        # indicates file does not exist
-    #    new_model = generate_regression_model(train_features)
-        # new_model.fit(train_features, train_labels, epochs=100)
-        # new_model.evaluate(test_features, test_labels, verbose=0)
-    #    save_model(returned_model, 'models/dram_model.h5')
+    # Numerical Label and Weights Dict
+    numerical_weights_dict = create_numerical_labels_weights_relation(numerical_labels, numerical_weights, normalization_weights)
+    
+    # Categorical Weights
+    list_of_all_categorical_labels_vocab = []
+    list_of_all_categorical_labels_weights = []
+    for categorical_label in categorical_labels:
+        categorical_label_vocab = CATEGORICAL_LABEL_TO_VOCAB[categorical_label]
+        list_of_all_categorical_labels_vocab.append(categorical_label_vocab)
+        end_index = start_index + len(categorical_label_vocab)
+        categorical_label_weights = weights_list[start_index:end_index]
+        list_of_all_categorical_labels_weights.append(categorical_label_weights)
+        start_index = end_index
+    
+    #Categorical Label and Weights Dict
+    categorical_weights_dict = create_categorical_vocab_weights_relation(categorical_labels, list_of_all_categorical_labels_vocab, list_of_all_categorical_labels_weights)
+    # Combine all features and weights into a single dictionary
+    final_dict = {"All_Weights": {"Numerical_Variables": numerical_weights_dict, "Categorical_Variables": categorical_weights_dict, "Bias_Weight": bias} }
+    return final_dict
 
 def create_prometheus_core_dataset(cpu_architecture, cpu_cycles, cpu_instructions, cpu_time, energy_in_core): #query: str, length: int, endpoint: str
     prefix = 'core_'
@@ -313,6 +231,7 @@ def create_prometheus_dram_dataset(cpu_architecture, cache_misses, resident_memo
     test_dataset_dram = test_dataset_dram.batch(32)
 
     return train_dataset_dram, val_dataset_dram, test_dataset_dram
+
 
 def merge_model(core_model, dram_model):
     # concat_layer = layers.Concatenate([core_model, dram_model])

@@ -1,0 +1,1 @@
+{"mae": 99999999.0, "model_name": "Sample", "model_class": "weight", "model_file": "Sample.json", "features": ["cpu_cycles", "cpu_instr", "cache_miss"], "fe_files": []}
