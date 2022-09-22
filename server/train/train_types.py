@@ -35,6 +35,21 @@ class FeatureGroup(enum.Enum):
    KubeletOnly = 6
    Unknown = 99
 
+class ModelOutputType(enum.Enum):
+    AbsPower = 1
+    AbsModelWeight = 2
+    AbsComponentPower = 3
+    AbsComponentModelWeight = 4
+    DynPower = 5
+    DynModelWeight = 6
+    DynComponentPower = 7
+    DynComponentModelWeight = 8
+
+CORE_COMPONENT = 'core'
+DRAM_COMPONENT = 'dram'
+
+POWER_COMPONENTS = [CORE_COMPONENT, DRAM_COMPONENT]
+
 def sort_features(features):
     sorted_features = features.copy()
     sorted_features.sort()

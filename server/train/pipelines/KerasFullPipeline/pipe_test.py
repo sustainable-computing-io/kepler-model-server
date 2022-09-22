@@ -1,5 +1,11 @@
 from random import random
-from keras_pipe import KerasFullPipeline
+from pipe import KerasFullPipeline
+
+import os
+import sys
+prom_path = os.path.join(os.path.dirname(__file__), '../../../prom')
+sys.path.append(prom_path)
+
 from prom.query import NODE_STAT_QUERY
 
 if __name__ == '__main__':
