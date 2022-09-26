@@ -1,0 +1,15 @@
+,__name__,container,core,dram,endpoint,exported_instance,instance,job,namespace,pkg_id,pod,service,uncore,timestamp,node_package_energy_millijoule
+0,node_package_energy_millijoule,kepler-exporter,0.0,23564832.0,http,node1,node1,kepler-exporter,monitoring,0.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135891.0,116691606.0
+1,node_package_energy_millijoule,kepler-exporter,0.0,23626648.0,http,node1,node1,kepler-exporter,monitoring,0.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135894.0,116776477.0
+2,node_package_energy_millijoule,kepler-exporter,0.0,23694135.0,http,node1,node1,kepler-exporter,monitoring,0.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135897.0,116871269.0
+3,node_package_energy_millijoule,kepler-exporter,0.0,23760570.0,http,node1,node1,kepler-exporter,monitoring,0.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135900.0,116962878.0
+4,node_package_energy_millijoule,kepler-exporter,0.0,23824505.0,http,node1,node1,kepler-exporter,monitoring,0.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135903.0,117046858.0
+5,node_package_energy_millijoule,kepler-exporter,0.0,23888187.0,http,node1,node1,kepler-exporter,monitoring,0.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135906.0,117133485.0
+6,node_package_energy_millijoule,kepler-exporter,0.0,23951648.0,http,node1,node1,kepler-exporter,monitoring,0.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135909.0,117218167.0
+7,node_package_energy_millijoule,kepler-exporter,0.0,46363699.0,http,node1,node1,kepler-exporter,monitoring,1.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135891.0,65826389.0
+8,node_package_energy_millijoule,kepler-exporter,0.0,46423601.0,http,node1,node1,kepler-exporter,monitoring,1.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135894.0,65908953.0
+9,node_package_energy_millijoule,kepler-exporter,0.0,46485439.0,http,node1,node1,kepler-exporter,monitoring,1.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135897.0,65998212.0
+10,node_package_energy_millijoule,kepler-exporter,0.0,46548249.0,http,node1,node1,kepler-exporter,monitoring,1.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135900.0,66086245.0
+11,node_package_energy_millijoule,kepler-exporter,0.0,46606904.0,http,node1,node1,kepler-exporter,monitoring,1.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135903.0,66165451.0
+12,node_package_energy_millijoule,kepler-exporter,0.0,46666056.0,http,node1,node1,kepler-exporter,monitoring,1.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135906.0,66247496.0
+13,node_package_energy_millijoule,kepler-exporter,0.0,46726220.0,http,node1,node1,kepler-exporter,monitoring,1.0,kepler-exporter-9qlzt,kepler-exporter,0.0,1664135909.0,66328354.0
