@@ -14,7 +14,11 @@ on:
       load_initial_models:
         required: false
         type: boolean
-        default: false   
+        default: false
+      namespace:
+        required: false
+        type: string
+        default: monitoring
 
 jobs:
   cluster_deploy:
@@ -50,13 +54,21 @@ jobs:
         docker tag kind-registry:5000/kepler_model_server:latest quay.io/sustainable_computing_io/kepler_model_server:latest
 
     - name: Create monitoring namespace if no online trainer pre-creation
-      if: ${{ !inputs.online_trainer }}
-      run: kubectl create namespace monitoring
-
+      if: ${{ (!inputs.online_trainer) || (inputs.namespace != 'monitoring') }}
+      run: kubectl create namespace ${{ inputs.namespace }}
 
     - name: Deploy Model Server
       run: kubectl create -f manifests/${{ inputs.storage }}/deployment.yaml
     
     - name: Patch online trainer if enabled
       if: ${{ inputs.online_trainer }}
-      run: kubectl patch deployment kepler-model-server --patch-file manifests/${{ inputs.storage }}/trainer-patch.yaml -n monitoring
+      run: kubectl patch deployment kepler-model-server --patch-file manifests/${{ inputs.storage }}/trainer-patch.yaml -n ${{ inputs.namespace }}
+
+    - name: Describe deployment
+      run: kubectl describe deployment kepler-model-server -n ${{ inputs.namespace }}
+
+    - name: Get pod
+      run: kubectl get pod --selector app.kubernetes.io/name=kepler-model-server -n ${{ inputs.namespace }} -o yaml
+
+    - name: Check deployment availablility
+      run: kubectl wait deployment kepler-model-server -n ${{ inputs.namespace }} --for condition=Available=True --timeout=120s

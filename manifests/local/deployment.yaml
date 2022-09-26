@@ -32,15 +32,13 @@ spec:
         app.kubernetes.io/name: kepler-model-server
     spec:
       volumes:
-      - name: mnt
-        persistentVolumeClaim:
-          claimName: kepler-model-server-pvc
       - name: cfm
         configMap:
           name: kepler-model-server-cfm
       containers:
       - name: server-api
         image: quay.io/sustainable_computing_io/kepler_model_server:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8100
         volumeMounts:

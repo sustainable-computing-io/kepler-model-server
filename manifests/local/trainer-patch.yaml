@@ -4,6 +4,7 @@ spec:
       containers:
       - name: online-trainer
         image: quay.io/sustainable_computing_io/kepler_model_server:latest
+        imagePullPolicy: IfNotPresent
         volumeMounts:
           - name: cfm
             mountPath: /etc/config
