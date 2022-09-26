@@ -1,32 +1,15 @@
 apiVersion: v1
-kind: PersistentVolume
+kind: ConfigMap
 metadata:
-  name: kepler-model-server-pv
-  labels:
-    type: local
-    app.kubernetes.io/component: kepler-model-server-pv
-    app.kubernetes.io/name: kepler-model-server-pv
-spec:
-  storageClassName: default
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/mnt/data"
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: kepler-model-server-pvc
+  name: kepler-model-server-cfm
   namespace: monitoring
-spec:
-  storageClassName: default
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
+data:
+  MODEL_PATH: models
+  PROM_SERVER: 'http://prometheus-k8s.monitoring.svc.cluster.local:9090'
+  PROM_QUERY_INTERVAL: '20'
+  PROM_QUERY_STEP: '3'
+  PROM_HEADERS: ''
+  PROM_SSL_DISABLE: 'true'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -49,26 +32,22 @@ spec:
         app.kubernetes.io/name: kepler-model-server
     spec:
       volumes:
-      - name: models
+      - name: mnt
         persistentVolumeClaim:
           claimName: kepler-model-server-pvc
+      - name: cfm
+        configMap:
+          name: kepler-model-server-cfm
       containers:
-      - name: kepler-model-server
+      - name: server-api
         image: quay.io/sustainable_computing_io/kepler_model_server:latest
         ports:
         - containerPort: 8100
         volumeMounts:
-          - name: models
-            mountPath: /models
-      - name: kepler-model-trainer
-        image: quay.io/sustainable_computing_io/kepler_model_server:latest
-        command: ["python3.8",  "energy_scheduler.py"]
-        env:
-        - name: PROMETHEUS_ENDPOINT
-          value: "http://prometheus-k8s:9090/api/v1/query"
-        volumeMounts:
-          - name: models
-            mountPath: /models
+          - name: cfm
+            mountPath: /etc/config
+            readOnly: true
+        command: ["python3.8",  "model_server.py"]
 ---
 kind: Service
 apiVersion: v1
