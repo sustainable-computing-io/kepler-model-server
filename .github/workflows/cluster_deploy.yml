@@ -1,0 +1,53 @@
+name: Create Kind Cluster with Kepler Model Server
+
+on:
+  workflow_call:
+    inputs:
+      storage:
+        required: false
+        type: string
+        default: local
+      online_trainer:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  cluster_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Create Kind Cluster
+      uses: helm/kind-action@v1.3.0
+
+    - name: Checkout prometheus if online_trainer enabled
+      if: ${{ inputs.online_trainer }}
+      uses: actions/checkout@v3
+      with:
+        repository: prometheus-operator/kube-prometheus
+
+    - name: Deploy prometheus operator if online_trainer enabled
+      if: ${{ inputs.online_trainer }}
+      run: |
+        kubectl create -f manifests/setup
+        until kubectl get servicemonitors --all-namespaces ; do date; sleep 1; echo ""; done
+        kubectl create -f manifests/
+
+    - uses: actions/checkout@v3
+
+    - name: Build docker image and tag target registry
+      run: |
+        docker build -t kind-registry:5000/kepler_model_server:latest server/ -f server/dockerfiles/Dockerfile
+        docker tag kind-registry:5000/kepler_model_server:latest quay.io/sustainable_computing_io/kepler_model_server:latest
+
+    - name: Create monitoring namespace if no online trainer pre-creation
+      if: ${{ !inputs.online_trainer }}
+      run: kubectl create namespace monitoring
+
+
+    - name: Deploy Model Server
+      run: kubectl create -f manifests/${{ inputs.storage }}/deployment.yaml
+    
+    - name: Patch online trainer if enabled
+      if: ${{ inputs.online_trainer }}
+      run: kubectl patch deployment kepler-model-server --patch-file manifests/${{ inputs.storage }}/trainer-patch.yaml -n monitoring

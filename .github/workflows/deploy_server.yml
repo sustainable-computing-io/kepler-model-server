@@ -1,0 +1,14 @@
+on:
+  push:
+
+jobs:
+  server_only_with_local:
+    uses: ./.github/workflows/cluster_deploy.yml
+  server_only_with_host_local:
+    uses: ./.github/workflows/cluster_deploy.yml
+    with:
+      storage: host-local
+  with_online_trainer:
+    uses: ./.github/workflows/cluster_deploy.yml
+    with:
+      online_trainer: true
