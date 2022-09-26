@@ -72,18 +72,11 @@ class PrometheusClient():
             df = pd.DataFrame(items) 
             df.columns = df.columns.str.replace("curr_", "")
             df.columns = df.columns.str.replace("node_", "")
-<<<<<<< HEAD
             if len(df) > 0:
                 df[query_metric] = df['value']
                 for col in df.columns:
                     df[col] = df[col].transform(transform_float)
                 df.drop(columns=['value'], inplace=True)
-=======
-            df[query_metric] = df['value']
-            for col in df.columns:
-                df[col] = df[col].transform(transform_float)
-            df.drop(columns=['value'], inplace=True)
->>>>>>> 2f0c7be (refactor prom query)
             self.latest_query_result[query_metric] = df
         
     def get_data(self, query_metric, features):
