@@ -9,7 +9,7 @@ sys.path.append(util_path)
 sys.path.append(train_path)
 
 from train.pipeline import get_model_group_path, METADATA_FILENAME
-from train.train_types import get_valid_feature_groups, is_weight_output, ModelOutputType
+from train.train_types import get_valid_feature_groups, is_weight_output, ModelOutputType, FeatureGroups, FeatureGroup
 from util.config import getConfig
 from util.loader import parse_filters, is_valid_model, load_json, get_model_weight, get_archived_file
 
@@ -99,6 +99,49 @@ def get_model():
             return send_file(best_response, as_attachment=True)
         except ValueError as err:
             return make_response("Send archived model error: {}".format(err), 400)
+
+# return name list of best-candidate pipelines
+@app.route('/best-models', methods=['GET'])
+def get_available_models():
+    fg = request.args.get('fg')
+    ot = request.args.get('ot')
+    filter = request.args.get('filter')
+
+    try:
+        if fg is None:
+            valid_fgs = [fg_key for fg_key in FeatureGroups.keys()]
+        else:
+            valid_fgs = [FeatureGroup[fg]]
+
+        if ot is None:
+            output_types = [ot for ot in ModelOutputType] 
+        else:
+            output_types = [ModelOutputType[ot]]
+
+        if filter is None:
+            filters = dict()
+        else:
+            filters = parse_filters(filter)
+
+        model_names = dict()
+        for output_type in output_types:
+            model_names[output_type.name] = dict()
+            for fg in valid_fgs:
+                valid_groupath = get_model_group_path(output_type, fg)
+                if os.path.exists(valid_groupath):
+                    best_candidate, _ = select_best_model(output_type, valid_groupath, filters)
+                    if best_candidate is None:
+                        continue
+                    model_names[output_type.name][fg.name] = best_candidate['model_name']
+        response = app.response_class(
+            response=json.dumps(model_names),
+            status=200,
+            mimetype='application/json'
+            )
+        return response
+    except (ValueError, Exception) as err:
+        return make_response("Failed to get best model list: {}".format(err), 400)
+
 
 if __name__ == '__main__':
    app.run(host="0.0.0.0", debug=True, port=MODEL_SERVER_PORT)
