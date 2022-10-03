@@ -11,7 +11,7 @@ import json
 from pipeline import TrainPipeline
 from train_types import FeatureGroup, FeatureGroups, CORE_COMPONENT, DRAM_COMPONENT, ModelOutputType
 from pipe_util import train_model_given_data_and_type, create_prometheus_core_dataset, create_prometheus_dram_dataset
-from pipe_util import generate_core_regression_model, generate_dram_regression_model
+from pipe_util import generate_core_regression_model, generate_dram_regression_model, coeff_determination
 from pipe_util import return_model_weights
 from keras.models import load_model
 from keras import backend as K
@@ -19,11 +19,6 @@ from keras import backend as K
 from prom.query import NODE_STAT_QUERY
 
 MODEL_CLASS = 'keras'
-
-def coeff_determination(y_true, y_pred):
-    SS_res =  K.sum(K.square( y_true-y_pred )) 
-    SS_tot = K.sum(K.square( y_true - K.mean(y_true) ) ) 
-    return ( 1 - SS_res/(SS_tot + K.epsilon()) )
 
 class KerasCompWeightFullPipeline(TrainPipeline):
     def __init__(self):

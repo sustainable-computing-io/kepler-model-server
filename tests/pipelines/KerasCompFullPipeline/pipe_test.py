@@ -1,10 +1,16 @@
+pipeline_name = 'KerasCompFullPipeline'
+
 from random import random
-from pipe import KerasCompFullPipeline
 
 import os
 import sys
-prom_path = os.path.join(os.path.dirname(__file__), '../../../prom')
+prom_path = os.path.join(os.path.dirname(__file__), '../../../server/train/prom')
 sys.path.append(prom_path)
+train_path = os.path.join(os.path.dirname(__file__), '../../../server/train')
+sys.path.append(train_path)
+import importlib
+pipeline_module = importlib.import_module('pipelines.{}.pipe'.format(pipeline_name))
+pipeline = getattr(pipeline_module, pipeline_name)()
 
 from prom.query import NODE_STAT_QUERY
 
@@ -37,7 +43,6 @@ if __name__ == '__main__':
     node_stat_data = pd.concat([node_stat_data]*10, ignore_index=True)
     prom_client = PrometheusClient()
     prom_client.latest_query_result[NODE_STAT_QUERY] = node_stat_data
-    pipeline = KerasCompFullPipeline()
     pipeline.train(prom_client)
     results = pipeline.predict(node_stat_data)
     print(results)

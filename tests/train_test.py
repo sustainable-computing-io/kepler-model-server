@@ -13,8 +13,10 @@ sys.path.append(util_path)
 sys.path.append(train_path)
 sys.path.append(prom_path)
 
-from prom.query import PrometheusClient, PROM_QUERY_INTERVAL
+from prom.query import PrometheusClient, PROM_QUERY_INTERVAL, QUERIES
 from util.config import getConfig
+
+import pandas as pd
 
 SAMPLING_INTERVAL = PROM_QUERY_INTERVAL
 SAMPLING_INTERVAL = getConfig('SAMPLING_INTERVAL', SAMPLING_INTERVAL)
@@ -34,17 +36,22 @@ for pipeline_name in pipeline_names:
         grouped_pipelines[output_type] = []
     grouped_pipelines[output_type] += [pipeline]
 
+def load_query_data(prom_client):
+    prom_output_path = os.path.join(os.path.dirname(__file__), 'query_data')
+    # save query data in csv
+    for query in QUERIES:
+        csv_filepath = "{}/{}.csv".format(prom_output_path, query)
+        if os.path.exists(csv_filepath):
+            data = pd.read_csv(csv_filepath)
+            if len(data) > 0:
+                prom_client.latest_query_result[query] = data
+
+
 def run_train(pipeline, prom_client):
     pipeline.train(prom_client)
     return "{} Done".format(pipeline.model_name)
 
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import as_completed
-
-if __name__ == '__main__':
-    prom_client = PrometheusClient()
-    prom_client.query()
-    # start the thread pool
+def execute():
     with ThreadPoolExecutor(2) as executor:
         futures = []
         for output_type, pipelines in grouped_pipelines.items():
@@ -52,8 +59,17 @@ if __name__ == '__main__':
                 future = executor.submit(run_train, pipeline, prom_client)
                 futures += [future]
         print('Waiting for {} tasks to complete...'.format(len(futures)))
-        # wait(futures, return_when=ALL_COMPLETED)
         for ret in as_completed(futures):
             print(ret.result())
         print('All trained!')
-    
+
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
+
+if __name__ == '__main__':
+    prom_client = PrometheusClient()
+    load_query_data(prom_client)
+    # initial train
+    execute()
+    # online train
+    execute()
