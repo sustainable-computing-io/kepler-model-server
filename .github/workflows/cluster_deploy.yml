@@ -1,0 +1,91 @@
+name: Create Kind Cluster with Kepler Model Server
+
+on:
+  workflow_call:
+    inputs:
+      storage:
+        required: false
+        type: string
+        default: local
+      online_trainer:
+        required: false
+        type: boolean
+        default: false
+      load_initial_models:
+        required: false
+        type: boolean
+        default: false
+      namespace:
+        required: false
+        type: string
+        default: monitoring
+      image-build:
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  cluster_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Create Kind Cluster
+      uses: helm/kind-action@v1.3.0
+
+    - name: Checkout prometheus if online_trainer enabled
+      if: ${{ inputs.online_trainer }}
+      uses: actions/checkout@v3
+      with:
+        repository: prometheus-operator/kube-prometheus
+
+    - name: Deploy prometheus operator if online_trainer enabled
+      if: ${{ inputs.online_trainer }}
+      run: |
+        kubectl create -f manifests/setup
+        until kubectl get servicemonitors --all-namespaces ; do date; sleep 1; echo ""; done
+        kubectl create -f manifests/
+
+    - uses: actions/checkout@v3
+
+    - name: Copy inital model to server path
+      if: ${{ inputs.load_initial_models }}
+      run: |
+        cp -r tests/test_models server/models
+
+    - name: Build docker image and tag target registry
+      if: ${{ inputs.image-build }}
+      run: |
+        docker build -t kind-registry:5000/kepler_model_server:latest server/ -f server/dockerfiles/Dockerfile
+        docker tag kind-registry:5000/kepler_model_server:latest quay.io/sustainable_computing_io/kepler_model_server:latest
+
+    - name: Login to Quay
+      if: ${{ !inputs.image-build }}
+      uses: docker/login-action@v1
+      with:
+          registry: quay.io/sustainable_computing_io
+          username: ${{ secrets.BOT_NAME }}
+          password: ${{ secrets.BOT_TOKEN }}      
+
+    - name: Pull image
+      if: ${{ !inputs.image-build }}
+      run: docker pull quay.io/sustainable_computing_io/kepler_model_server:latest
+
+    - name: Create monitoring namespace if no online trainer pre-creation
+      if: ${{ (!inputs.online_trainer) || (inputs.namespace != 'monitoring') }}
+      run: kubectl create namespace ${{ inputs.namespace }}
+
+    - name: Deploy Model Server
+      run: kubectl create -f manifests/${{ inputs.storage }}/deployment.yaml
+    
+    - name: Patch online trainer if enabled
+      if: ${{ inputs.online_trainer }}
+      run: kubectl patch deployment kepler-model-server --patch-file manifests/${{ inputs.storage }}/trainer-patch.yaml -n ${{ inputs.namespace }}
+
+    - name: Describe deployment
+      run: kubectl describe deployment kepler-model-server -n ${{ inputs.namespace }}
+
+    - name: Get pod
+      run: kubectl get pod --selector app.kubernetes.io/name=kepler-model-server -n ${{ inputs.namespace }} -o yaml
+
+    - name: Check deployment availablility
+      run: kubectl wait deployment kepler-model-server -n ${{ inputs.namespace }} --for condition=Available=True --timeout=120s
