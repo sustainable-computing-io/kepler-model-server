@@ -1,0 +1,1 @@
+{"model_name": "ScikitMixed", "model_class": "scikit", "features": ["cache_miss", "cpu_cycles", "cpu_instr"], "fe_files": [], "output_type": "DynComponentPower", "model_file": "ScikitMixed.json", "avg_mae": 1062.5311305292198, "mae": 940.8795247430719, "mae_val": 1184.1827363153677, "mse": 913018.1127755155, "mse_val": 1414800.6775787594}
