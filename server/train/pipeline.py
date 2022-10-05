@@ -10,11 +10,46 @@ from train_types import FeatureGroup, get_feature_group, ModelOutputType, is_wei
 import json
 
 from util.config import getConfig, getPath
-from util.loader import get_save_path, get_archived_file
+from util.loader import get_save_path, get_archived_file, download_and_save
 
 METADATA_FILENAME = 'metadata.json'
 
 model_path =  getPath(getConfig('MODEL_PATH', 'models'))
+
+initial_models_location = getConfig('INITIAL_MODELS_LOC', None)
+if initial_models_location is not None:
+    initial_model_names = {m.split('=')[0]: m.split('=')[1] for m in  getConfig('INITIAL_MODEL_NAMES', "").split('\n') if m != ''}
+else:
+    initial_model_names = dict()
+
+def get_model_group_path(output_type, feature_group):
+    return os.path.join(model_path, output_type.name, feature_group.name)
+
+def load_inital_model(output_type, feature_group):
+    output_type_name = output_type.name
+    feature_group_name = feature_group.name
+    if output_type_name not in initial_model_names:
+        return
+    model_name = initial_model_names[output_type_name]
+    # prepare directory
+    group_path = get_model_group_path(output_type, feature_group)
+    save_path = get_save_path(group_path, model_name) 
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+    metadata_url = os.path.join(initial_models_location, output_type_name, feature_group_name, model_name, METADATA_FILENAME)
+    metadata_file = os.path.join(save_path, METADATA_FILENAME)
+    metadata_file = download_and_save(metadata_url, metadata_file)
+    if metadata_file is not None:
+        # weight-type
+        if output_type == ModelOutputType.AbsComponentModelWeight or output_type == ModelOutputType.AbsModelWeight \
+            or output_type == ModelOutputType.DynComponentModelWeight or output_type == ModelOutputType.DynModelWeight:
+            model_filename = model_name + ".json"
+            model_file = os.path.join(save_path, model_filename)
+            model_url = os.path.join(initial_models_location, output_type_name, feature_group_name, model_name, model_file)
+        else:
+            model_file = save_path + ".zip"
+            model_url = os.path.join(initial_models_location, output_type_name, feature_group_name, model_name  + ".zip")
+        download_and_save(model_url, model_file)
 
 for ot in ModelOutputType:
     ot_group_path = os.path.join(model_path, ot.name)
@@ -24,9 +59,7 @@ for ot in ModelOutputType:
         group_path = os.path.join(ot_group_path, g.name)
         if not os.path.exists(group_path):
             os.mkdir(group_path)
-
-def get_model_group_path(output_type, feature_group):
-    return os.path.join(model_path, output_type.name, feature_group.name)
+        load_inital_model(ot, g)
 
 class TrainPipeline(metaclass=ABCMeta):
     def __init__(self, model_name, model_class, model_file, features, output_type):

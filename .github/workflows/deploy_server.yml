@@ -4,10 +4,6 @@ on:
 jobs:
   server_only_with_local:
     uses: ./.github/workflows/cluster_deploy.yml
-  local_server_with_inital_models:
-    uses: ./.github/workflows/cluster_deploy.yml
-    with:
-      load_initial_models: true
   with_online_trainer:
     uses: ./.github/workflows/cluster_deploy.yml
     with:

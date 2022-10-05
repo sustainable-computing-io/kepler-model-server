@@ -10,6 +10,11 @@ data:
   PROM_QUERY_STEP: '3'
   PROM_HEADERS: ''
   PROM_SSL_DISABLE: 'true'
+  INITIAL_MODELS_LOC: https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-server/main/tests/test_models
+  INITIAL_MODEL_NAMES: |
+    AbsComponentModelWeight=KerasCompWeightFullPipeline
+    AbsComponentPower=KerasCompFullPipeline
+    DynComponentPower=ScikitMixed
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -39,6 +44,9 @@ spec:
       - name: server-api
         image: quay.io/sustainable_computing_io/kepler_model_server:latest
         imagePullPolicy: IfNotPresent
+        env:
+        - name: INITIAL_MODELS_LOC
+          value: https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-server/main/tests/test_models
         ports:
         - containerPort: 8100
         volumeMounts:

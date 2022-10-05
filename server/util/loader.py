@@ -1,6 +1,9 @@
 import os
 import json
 
+import requests
+import codecs
+
 FILTER_ITEM_DELIMIT = ';'
 VALUE_DELIMIT = ':'
 ARRAY_DELIMIT = ','
@@ -58,3 +61,17 @@ def get_archived_file(group_path, model_name):
 def get_model_weight(group_path, model_name, model_file):
     save_path = get_save_path(group_path, model_name)
     return load_json(save_path, model_file)
+
+def download_and_save(url, filepath):
+    try:
+        response = requests.get(url)
+    except Exception as e:
+        print("Failed to load {} to {}: {}:".format(url, filepath, e))
+        return None
+    if response.status_code != 200:
+        print("Failed to load {} to {}: {}:".format(url, filepath, response.status_code))
+        return None
+    with codecs.open(filepath, 'wb') as f:
+        f.write(response.content)
+    print("Successfully load {} to {}".format(url, filepath))
+    return filepath
