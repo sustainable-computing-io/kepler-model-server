@@ -54,10 +54,10 @@ if __name__ == '__main__':
     output_type = ModelOutputType.AbsComponentModelWeight
     make_request(metrics, output_type)
     # dyn power #TODO
-    output_type = ModelOutputType.DynPower
+    output_type = ModelOutputType.DynComponentPower
     make_request(metrics, output_type)
     # dyn power with cgroup only #TODO
-    output_type = ModelOutputType.DynPower
+    output_type = ModelOutputType.DynComponentPower
     make_request(FeatureGroups[FeatureGroup.CgroupOnly], output_type)
     # # model weight #TODO
     # output_type = ModelOutputType.AbsModelWeight
