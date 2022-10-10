@@ -11,10 +11,6 @@ on:
         required: false
         type: boolean
         default: false
-      load_initial_models:
-        required: false
-        type: boolean
-        default: false
       namespace:
         required: false
         type: string
@@ -47,11 +43,6 @@ jobs:
 
     - uses: actions/checkout@v3
 
-    - name: Copy inital model to server path
-      if: ${{ inputs.load_initial_models }}
-      run: |
-        cp -r tests/test_models server/models
-
     - name: Build docker image and tag target registry
       if: ${{ inputs.image-build }}
       run: |
@@ -75,7 +66,7 @@ jobs:
       run: kubectl create namespace ${{ inputs.namespace }}
 
     - name: Deploy Model Server
-      run: kubectl create -f manifests/${{ inputs.storage }}/deployment.yaml
+      run: kubectl apply -f manifests/${{ inputs.storage }}/deployment.yaml
     
     - name: Patch online trainer if enabled
       if: ${{ inputs.online_trainer }}

@@ -11,6 +11,11 @@ data:
   PROM_HEADERS: ''
   PROM_SSL_DISABLE: 'true'
   MNT_PATH: /mnt
+  INITIAL_MODELS_LOC: https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-server/main/tests/test_models
+  INITIAL_MODEL_NAMES: |
+    AbsComponentModelWeight=KerasCompWeightFullPipeline
+    AbsComponentPower=KerasCompFullPipeline
+    DynComponentPower=ScikitMixed
 ---
 apiVersion: v1
 kind: PersistentVolume
