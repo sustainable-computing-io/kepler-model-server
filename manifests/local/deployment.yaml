@@ -43,10 +43,7 @@ spec:
       containers:
       - name: server-api
         image: quay.io/sustainable_computing_io/kepler_model_server:latest
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: INITIAL_MODELS_LOC
-          value: https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-server/main/tests/test_models
+        imagePullPolicy: Always
         ports:
         - containerPort: 8100
         volumeMounts:

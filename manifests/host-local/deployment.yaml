@@ -77,7 +77,7 @@ spec:
       containers:
       - name: server-api
         image: quay.io/sustainable_computing_io/kepler_model_server:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8100
         volumeMounts:
