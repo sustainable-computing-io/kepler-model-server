@@ -22,19 +22,19 @@ filters (optional)|string|expression in the form *attribute1*:*threshold1*; *att
 ##### AbsPower
 |Pipeline Name|Learning Approach|Features|Online|
 |---|---|---|---|
-|KerasFullPipeline|Single-layer Linear Regression with Adam optimizer (learning_rate=0.5), loss='mae'|Full|O
+|KerasFullPipeline|Single-layer Linear Regression with Adam optimizer (learning_rate=0.5), loss='mae'|Full|:heavy_check_mark:
 
 ##### AbsModelWeight (WIP)
 
 ##### AbsComponentPower (core,dram)
 |Pipeline Name|Learning Approach|Features|Online|
 |---|---|---|---|
-|KerasCompFullPipeline|Single-layer Linear Regression with Adam optimizer (learning_rate=0.5), loss='mae'|Full|O
+|KerasCompFullPipeline|Single-layer Linear Regression with Adam optimizer (learning_rate=0.5), loss='mae'|Full|:heavy_check_mark:
 
 ##### AbsComponentModelWeight (core, dram)
 |Pipeline Name|Learning Approach|Features|Online|
 |---|---|---|---|
-|KerasCompWeightFullPipeline|Single-layer Linear Regression with Adam optimizer (learning_rate=0.5), loss='mae'|Full|O
+|KerasCompWeightFullPipeline|Single-layer Linear Regression with Adam optimizer (learning_rate=0.5), loss='mae'|Full|:heavy_check_mark:
 
 ##### DynPower 
 |Pipeline Name|Learning Approach|Features|Online|
