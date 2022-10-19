@@ -11,11 +11,11 @@ model_type_to_filepath = {"core": "/models/core_model", "dram": "/models/dram_mo
 
 core_model_labels = {
                 "numerical_labels": ["cpu_cycles", "cpu_instr", "cpu_time"],
-                "categorical_string_labels": ["cpu_architecture"] }
+                "categorical_string_labels": [] }
 
 dram_model_labels = {
-                    "numerical_labels": ["container_memory_working_set_bytes", "cache_miss"],
-                    "categorical_string_labels": ["cpu_architecture"]}
+                    "numerical_labels": ["cache_miss"],
+                    "categorical_string_labels": []}
 
 def coeff_determination(y_true, y_pred):
     SS_res =  K.sum(K.square( y_true-y_pred )) 
@@ -47,7 +47,11 @@ def generate_core_regression_model(core_train_dataset: tf.data.Dataset) -> Model
         all_features_to_modify.append(new_layer(new_int_index(new_input)))
         input_list.append(new_input)
     
-    all_features = layers.concatenate(all_features_to_modify)
+    if len(all_features_to_modify) > 1:
+        all_features = layers.concatenate(all_features_to_modify)
+    else:
+        all_features = all_features_to_modify[0]
+    
     single_regression_layer = layers.Dense(units=1, activation='linear', name="core_linear_regression_layer")(all_features)
     new_linear_model = Model(input_list, single_regression_layer)
     new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.5), loss='mae', metrics=[coeff_determination, metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])
@@ -85,7 +89,11 @@ def generate_dram_regression_model(dram_train_dataset: tf.data.Dataset) -> Model
         all_features_to_modify.append(new_layer(new_int_index(new_input)))
         input_list.append(new_input)
     
-    all_features = layers.concatenate(all_features_to_modify)
+    if len(all_features_to_modify) > 1:
+        all_features = layers.concatenate(all_features_to_modify)
+    else:
+        all_features = all_features_to_modify[0]
+
     single_regression_layer = layers.Dense(units=1, activation='linear', name="dram_linear_regression_layer")(all_features)
 
     new_linear_model = Model(input_list, single_regression_layer)
@@ -99,7 +107,7 @@ def generate_dram_regression_model(dram_train_dataset: tf.data.Dataset) -> Model
 def train_model_given_data_and_type(new_model, train_dataset, validation_dataset, test_dataset, model_type):
     # TODO: Include Demo using excel data - returns evaluation details and coefficients
     history = History()
-    new_model.fit(train_dataset, epochs=5, validation_data=validation_dataset, callbacks=[history])
+    new_model.fit(train_dataset, epochs=500, validation_data=validation_dataset, callbacks=[history])
     loss_result, r_squared, rmse_metric, mae_metric = new_model.evaluate(test_dataset)
     # TODO: Include While loop to ensure loss_result is within acceptable ranges (Save only if loss is acceptable)
 
@@ -113,6 +121,7 @@ def train_model_given_data_and_type(new_model, train_dataset, validation_dataset
     print("Validation MSE per epoch: {}".format(history.history['val_loss']))
     print("Validation RMSE per epoch: {}".format(history.history['val_root_mean_squared_error']))
     print("Validation Correlation Coefficient per epoch: {}".format(history.history['val_coeff_determination']))
+
     # new_model.save(filepath, save_format='tf', include_optimizer=True)
     #try:
     #    returned_model = load_model('models/core_model.h5')
