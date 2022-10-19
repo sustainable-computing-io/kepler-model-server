@@ -1,0 +1,1 @@
+{"core": {"model_file": "core", "features": ["cpu_architecture", "cpu_cycles", "cpu_instr", "cpu_time"], "fe_files": ["core_transform.pkl"]}, "dram": {"model_file": "dram", "features": ["cpu_architecture", "cache_miss", "container_memory_working_set_bytes"], "fe_files": ["dram_transform.pkl"]}}
