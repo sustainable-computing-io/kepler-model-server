@@ -1,0 +1,31 @@
+on:
+  push:
+
+jobs:
+  run-test-cases:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+  
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.8' 
+
+    - name: Load requirements
+      run: python3 -m pip install -r server/dockerfiles/requirements.txt
+    
+    - name: Test model server
+      run: |
+         python3 server/model_server.py&
+         sleep 5; python3 tests/model_server_test.py
+
+  test-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: Build image
+      run: docker build -t quay.io/sustainable_computing_io/kepler_model_server:latest server/ -f server/dockerfiles/Dockerfile
+  
+

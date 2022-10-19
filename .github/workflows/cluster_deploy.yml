@@ -61,6 +61,10 @@ jobs:
       if: ${{ !inputs.image-build }}
       run: docker pull quay.io/sustainable_computing_io/kepler_model_server:latest
 
+    - name: Load image to kind node
+      if: ${{ inputs.image-build && inputs.storage == 'dev' }}
+      run: kind load docker-image quay.io/sustainable_computing_io/kepler_model_server:latest --name chart-testing
+
     - name: Create monitoring namespace if no online trainer pre-creation
       if: ${{ (!inputs.online_trainer) || (inputs.namespace != 'monitoring') }}
       run: kubectl create namespace ${{ inputs.namespace }}
