@@ -9,3 +9,10 @@ This folder includes offline collected data, trained initial model and predicted
 - `test_predict.py `
   - apply trained model with collected data and save predicted results in `predicted_data/<data>.csv`
 - `predicted_data/core.txt` and `predicted_data/dram.txt` are MAE over epoch for each trained component.
+
+
+### Build demo image and Test
+```bash
+make build-demo
+make test
+```
