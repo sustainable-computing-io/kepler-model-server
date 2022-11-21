@@ -54,7 +54,7 @@ def generate_core_regression_model(core_train_dataset: tf.data.Dataset) -> Model
     
     single_regression_layer = layers.Dense(units=1, activation='linear', name="core_linear_regression_layer")(all_features)
     new_linear_model = Model(input_list, single_regression_layer)
-    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.5), loss='mae', metrics=[coeff_determination, metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])
+    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.01), loss='mae', metrics=[coeff_determination, metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])
     return new_linear_model
     
     #normalizer = layers.Normalization(axis=-1)
@@ -98,7 +98,7 @@ def generate_dram_regression_model(dram_train_dataset: tf.data.Dataset) -> Model
 
     new_linear_model = Model(input_list, single_regression_layer)
 
-    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.5), loss='mae', metrics=[coeff_determination, metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])
+    new_linear_model.compile(optimizer=optimizers.Adam(learning_rate=0.01), loss='mae', metrics=[coeff_determination, metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])
     return new_linear_model
 
 # This function creates a new model and trains it given train_features, train_labels, test_features, test_labels.
