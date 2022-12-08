@@ -65,9 +65,8 @@ jobs:
       if: ${{ inputs.image-build && inputs.storage == 'dev' }}
       run: kind load docker-image quay.io/sustainable_computing_io/kepler_model_server:latest --name chart-testing
 
-    - name: Create kepler namespace if no online trainer pre-creation
-      if: ${{ (!inputs.online_trainer) || (inputs.namespace != 'kepler') }}
-      run: kubectl create namespace ${{ inputs.namespace }}
+    - name: Create kepler namespace and ignore errors
+      run: kubectl create namespace ${{ inputs.namespace }} || true
 
     - name: Deploy Model Server
       run: kubectl apply -f manifests/${{ inputs.storage }}/deployment.yaml
