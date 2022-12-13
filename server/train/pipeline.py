@@ -19,6 +19,7 @@ model_path =  getPath(getConfig('MODEL_PATH', 'models'))
 initial_models_location = getConfig('INITIAL_MODELS_LOC', None)
 if initial_models_location is not None:
     initial_model_names = {m.split('=')[0]: m.split('=')[1] for m in  getConfig('INITIAL_MODEL_NAMES', "").split('\n') if m != ''}
+    print("Initial Model Names: {}".format(initial_model_names))
 else:
     initial_model_names = dict()
 
@@ -45,7 +46,7 @@ def load_inital_model(output_type, feature_group):
             or output_type == ModelOutputType.DynComponentModelWeight or output_type == ModelOutputType.DynModelWeight:
             model_filename = model_name + ".json"
             model_file = os.path.join(save_path, model_filename)
-            model_url = os.path.join(initial_models_location, output_type_name, feature_group_name, model_name, model_file)
+            model_url = os.path.join(initial_models_location, output_type_name, feature_group_name, model_name, model_filename)
         else:
             model_file = save_path + ".zip"
             model_url = os.path.join(initial_models_location, output_type_name, feature_group_name, model_name  + ".zip")
