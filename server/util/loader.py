@@ -66,10 +66,10 @@ def download_and_save(url, filepath):
     try:
         response = requests.get(url)
     except Exception as e:
-        print("Failed to load {} to {}: {}:".format(url, filepath, e))
+        print("Failed to load {} to {}: {}".format(url, filepath, e))
         return None
     if response.status_code != 200:
-        print("Failed to load {} to {}: {}:".format(url, filepath, response.status_code))
+        print("Failed to load {} to {}: {}".format(url, filepath, response.status_code))
         return None
     with codecs.open(filepath, 'wb') as f:
         f.write(response.content)
