@@ -30,3 +30,6 @@ Check the [tests directory](./tests/)
 │   └── query_data # sample query data for testing the pipelines
 ``` 
 
+#### Providing offline trained model
+- Check model format in [here](./doc/model_format.md)
+- To use pipeline framework, check offline train example in [train_test.py](./tests/train_test.py)
