@@ -17,7 +17,7 @@ COUNTER_FEAUTRES = ["cache_miss", "cpu_cycles", "cpu_instr"]
 CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"]
 IO_FEATURES = ["bytes_read", "bytes_writes"]
 BPF_FEATURES = ["cpu_time"]
-KUBELET_FEATURES =['container_cpu_usage_seconds_total', 'container_memory_working_set_bytes']
+KUBELET_FEATURES =['kubelet_memory_bytes', 'kubelet_cpu_usage']
 WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + IO_FEATURES + BPF_FEATURES + KUBELET_FEATURES
 
 CATEGORICAL_LABEL_TO_VOCAB = {

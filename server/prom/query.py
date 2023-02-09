@@ -24,6 +24,14 @@ PROM_QUERY_INTERVAL = getConfig('PROM_QUERY_INTERVAL', PROM_QUERY_INTERVAL)
 
 metric_prefix = "kepler_"
 TIMESTAMP_COL = "timestamp"
+PACKAGE_COL = "package"
+SOURCE_COL = "source"
+MODE_COL = "mode"
+
+def get_energy_unit(component):
+    if component in ["package", "core", "uncore", "dram"]:
+        return "package"
+    return None
 
 def generate_dataframe_from_response(query_metric, prom_response):
     items = []
