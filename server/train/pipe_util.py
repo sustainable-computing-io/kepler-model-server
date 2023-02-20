@@ -1,11 +1,20 @@
+import datetime
+import json
+import os
+from typing import Any, Dict, List, Optional, Tuple
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split, RepeatedKFold, cross_val_score
 import tensorflow as tf
 from keras.models import load_model
 from keras import layers, Model, Input, metrics, optimizers
 import numpy as np
 from keras import backend as K
 from keras.callbacks import History
+import xgboost as xgb
+import pandas as pd
+ 
 
-from train_types import CATEGORICAL_LABEL_TO_VOCAB
+from train_types import CATEGORICAL_LABEL_TO_VOCAB, XGBoostRegressionTrainType, XGBoostMissingModelXOrModelDescException, XGBoostModelFeatureOrLabelIncompatabilityException
 # Dict to map model type with filepath
 model_type_to_filepath = {"core": "/models/core_model", "dram": "/models/dram_model"}
 
@@ -17,10 +26,12 @@ dram_model_labels = {
                     "numerical_labels": ["cache_miss"],
                     "categorical_string_labels": []}
 
+
 def coeff_determination(y_true, y_pred):
     SS_res =  K.sum(K.square( y_true-y_pred )) 
     SS_tot = K.sum(K.square( y_true - K.mean(y_true) ) ) 
     return ( 1 - SS_res/(SS_tot + K.epsilon()) )
+
 
 # Generates a Core regression model which predicts energy_in_core given
 # numerical features (cpu_cycles, cpu_instructions, cpu_time).
@@ -248,3 +259,205 @@ def merge_model(core_model, dram_model):
     output = layers.Add()([core_model.output, dram_model.output])
     model = Model(inputs=core_model.inputs + dram_model.inputs, outputs=output)
     return model
+
+
+# XGBoost (Gradient Boosting Regressor) Base Model Generation
+class XGBoostRegressionModelGenerationPipeline():
+    """A class used to handle XGBoost Regression Model Incremental Training. This class currently only handles numerical features.
+
+    ...
+
+    Attributes
+    ----------
+    TODO
+
+    Methods
+    -------
+    TODO
+
+    """
+
+    feature_names: List[str]
+    label_names: List[str]
+    save_location: str
+    model_name: str
+
+    def __init__(self, feature_names_in_order: List[str], label_names_in_order: List[str], save_location: str, model_name: str) -> None:
+        # model data will be generated consistently using the list of feature names and labels (Order does not matter)
+
+        self.feature_names = feature_names_in_order.copy().sort()
+        self.label_names = label_names_in_order.copy().sort()
+        self.save_location = save_location
+        self.model_name = model_name
+        self.model_filename = model_name + '.model'
+        self.model_desc = 'model_desc.json'
+
+
+    @staticmethod
+    def _generate_base_model() -> xgb.XGBRegressor:
+        # n_estimators, max_depth, eta (learning rate)
+        return xgb.XGBRegressor(n_estimators=1000, learning_rate=0.1)
+
+
+    def _generate_model_data_filepath(self) -> str:
+        return os.path.join(self.save_location, self.model_name + "_package")
+
+            
+    def model_exists(self) -> bool:
+        filename_path = self._generate_model_data_filepath()
+        return os.path.exists(os.path.join(filename_path, self.model_filename))
+
+
+    def model_json_data_exists(self) -> bool:
+        filename_path = self._generate_model_data_filepath()
+        return os.path.exists(os.path.join(filename_path, self.model_desc))
+
+
+    def retrieve_all_model_data(self) -> Tuple[Optional[xgb.XGBRegressor], Optional[Dict[Any, Any]]]:
+        # Note that when generating base model, it does not need to contain default hyperparameters if it will just be
+        # used for prediction 
+        # Returns model and model_desc
+        filename_path = self._generate_model_data_filepath()
+        new_model = self._generate_base_model()
+        if (not self.model_exists()) ^ (not self.model_json_data_exists()):
+            raise XGBoostMissingModelXOrModelDescException(missing_model=self.model_exists(), missing_model_desc=self.model_json_data_exists())
+        if self.model_exists() and self.model_json_data_exists():
+            new_model.load_model(os.path.join(filename_path, self.model_filename))
+            with open(os.path.join(filename_path, self.model_desc), 'r') as f:
+                json_data = json.load(f)
+            if json_data['feature_names'] != self.feature_names or json_data['label_names'] != self.label_names:
+                raise XGBoostModelFeatureOrLabelIncompatabilityException(json_data['feature_names'], json_data['label_names'], self.feature_names, self.label_names)
+            return new_model, json_data        
+        return None, None
+
+
+    def _save_model(self, model: xgb.XGBRegressor, model_desc: Dict[Any, Any]) -> None:
+        filename_path = self._generate_model_data_filepath()
+        model.save_model(os.path.join(filename_path, self.model_filename))
+        if "feature_names" not in model_desc:
+            model_desc["feature_names"] = self.feature_names
+        if "label_names" not in model_desc:
+            model_desc["label_names"] = self.label_names
+        print(model_desc)
+        with open(os.path.join(filename_path, self.model_desc), "w") as f:
+            json.dump(model_desc, f)
+
+
+    def _clean_model_data(self, model_data: pd.DataFrame) -> pd.DataFrame:
+        # Create df with relevant feature names and label names
+        new_df = pd.DataFrame()
+        for feature in self.feature_names:
+            new_df[feature] = model_data[feature]
+        for label in self.label_names:
+            new_df[label] = model_data[label]
+
+        new_df.dropna(inplace=True)
+        return new_df
+        
+
+    def train(self, train_type: XGBoostRegressionTrainType, model_data: pd.DataFrame) -> None:
+        # train_type must contain feature_names columns and label_names columns
+        retrieved_model, retrieved_model_desc = self.retrieve_all_model_data()
+        all_model_data_exists = retrieved_model is not None and retrieved_model_desc is not None
+        cleaned_model_data = self._clean_model_data(model_data)
+
+        # Either cross evaluate or perform simple test and train (Include more training styles if necessary in the future)
+        # Note: We can use GridSearchCV to acquire the best hyperparameters (possible automatic feature in the future)
+        if train_type == XGBoostRegressionTrainType.TrainTestSplitFit:
+            self.__perform_train_test_split(all_model_data_exists, cleaned_model_data)
+        elif train_type == XGBoostRegressionTrainType.KFoldCrossValidation:
+            self.__perform_kfold_train(all_model_data_exists, cleaned_model_data)
+    
+        
+    def __perform_train_test_split(self, all_model_data_exists: bool, ready_model_data: pd.DataFrame) -> None:
+        # Generate new model 
+        new_model = self._generate_base_model()
+        X = ready_model_data.loc[:,self.feature_names].values
+        y = ready_model_data.loc[:,self.label_names].values
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=7)
+        if all_model_data_exists:
+            # fit old model with new data
+            old_model_filepath = os.path.join(self._generate_model_data_filepath, self.model_filename)
+            new_model.fit(X_train, y_train, xgb_model=old_model_filepath)
+        else:
+            # fit model from scratch
+            new_model.fit(X_train, y_train)
+        # Evaluate Results and store in model_desc.json
+        y_predictions = new_model.predict(X_test)
+        
+        results = [value for value in y_predictions]
+
+        rmse_res = mean_squared_error(y_test, results, squared=False)
+        mae_res = mean_absolute_error(y_test, results)
+        r2_res = r2_score(y_test, results)
+        # Results
+        print(f"rmse: {rmse_res}")
+        print(f"r2: {r2_res}")
+        print(f"mae: {mae_res}")
+        # TODO: Determine acceptable rmse, and r2 values?
+        # Note that this feature could also be implemented in kepler-models
+        # Generate new model_desc.json
+        model_data = {
+            "timestamp": datetime.datetime.now().timestamp(),
+            "train_type": "fit_train_and_predict_with_test",
+            "rmse": rmse_res,
+            "r2": r2_res,
+            "mae": mae_res,
+        }
+        # Save Model and model_desc.json
+        self._save_model(new_model, model_data)
+
+
+    def __perform_kfold_train(self, all_model_data_exists: bool, ready_model_data: pd.DataFrame) -> None:
+        # Generate new model 
+        new_model = self._generate_base_model()
+        X = ready_model_data.loc[:,self.feature_names].values
+        y = ready_model_data.loc[:,self.label_names].values
+
+        # In the future, contemplate including RepeatedKFold
+        kFoldCV = RepeatedKFold(n_splits=10, n_repeats=3, random_state=7)
+        old_model_filepath = os.path.join(self._generate_model_data_filepath, self.model_filename)
+
+        if all_model_data_exists:
+            params = {
+                "xgb_model": old_model_filepath,
+            }
+            cv_scores = cross_val_score(estimator=new_model, X=X, y=y, scoring="neg_mean_absolute_error", cv=kFoldCV, fit_params=params)
+            cv_scores = np.absolute(cv_scores)
+        else:
+            cv_scores = cross_val_score(estimator=new_model, X=X, y=y, scoring="neg_mean_absolute_error", cv=kFoldCV)
+            cv_scores = np.absolute(cv_scores)
+
+        print(f"average_mae: {cv_scores.mean()}")
+        print(f"std: {cv_scores.std()}")
+        model_data = {
+            "timestamp": datetime.datetime.now().timestamp(),
+            "train_type": "cross_val_score_Repeated3KFold",
+            "average_mae": cv_scores.mean(),
+            "std": cv_scores.std(),
+        }
+        # TODO: Determine acceptable average_mae?
+        # Note that this feature could also be implemented in kepler-models
+
+        if all_model_data_exists:
+            new_model.fit(X, y, xgb_model=old_model_filepath)
+        else:
+            # If Model is acceptable, fit it from scratch
+            new_model.fit(X, y)
+
+        # Save Model and model_desc.json
+        self._save_model(new_model, model_data)
+        
+    # Receives list of features and returns a list of predictions in order
+    # Return None if no available model
+    def predict(self, input_values: List[List[float]]) -> Optional[List[float]]:
+        retrieved_model, _ = self.retrieve_all_model_data()
+        predicted_results = []
+        if retrieved_model is not None:
+            for feature_input in input_values:
+                predict_features = np.asarray([feature_input])
+                predicted_result = retrieved_model.predict(predict_features)
+                predicted_results.append(predicted_result)
+            return predicted_results
+        
