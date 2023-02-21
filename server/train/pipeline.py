@@ -2,8 +2,13 @@ import os
 import sys
 import shutil
 
+
 server_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(server_path)
+
+prom_path = os.path.join(os.path.dirname(__file__), '../prom')
+sys.path.append(prom_path)
+from prom.query import PrometheusClient
 
 from abc import ABCMeta, abstractmethod
 from train_types import FeatureGroup, get_feature_group, ModelOutputType, is_weight_output, POWER_COMPONENTS
@@ -62,6 +67,7 @@ for ot in ModelOutputType:
             os.mkdir(group_path)
         load_inital_model(ot, g)
 
+# TODO: TrainPipeline needs to be made more abstract
 class TrainPipeline(metaclass=ABCMeta):
     def __init__(self, model_name, model_class, model_file, features, output_type):
         self.model_name = model_name
@@ -94,7 +100,7 @@ class TrainPipeline(metaclass=ABCMeta):
             self.archive_model()
             
     @abstractmethod
-    def train(self, prom_client):
+    def train(self, prom_client:PrometheusClient):
         return NotImplemented
 
     def archive_model(self):

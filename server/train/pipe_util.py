@@ -279,14 +279,16 @@ class XGBoostRegressionModelGenerationPipeline():
 
     feature_names: List[str]
     label_names: List[str]
-    save_location: str
     model_name: str
 
     def __init__(self, feature_names_in_order: List[str], label_names_in_order: List[str], save_location: str, model_name: str) -> None:
         # model data will be generated consistently using the list of feature names and labels (Order does not matter)
 
-        self.feature_names = feature_names_in_order.copy().sort()
-        self.label_names = label_names_in_order.copy().sort()
+        self.feature_names = feature_names_in_order.copy()
+        self.feature_names.sort()
+        self.label_names = label_names_in_order.copy()
+        self.label_names.sort()
+        # allow save_location to be modified
         self.save_location = save_location
         self.model_name = model_name
         self.model_filename = model_name + '.model'
@@ -302,7 +304,10 @@ class XGBoostRegressionModelGenerationPipeline():
     def _generate_model_data_filepath(self) -> str:
         return os.path.join(self.save_location, self.model_name + "_package")
 
-            
+    def _model_data_filepath_exists(self) -> str:
+        filepath = self._generate_model_data_filepath()
+        return os.path.exists(filepath)
+
     def model_exists(self) -> bool:
         filename_path = self._generate_model_data_filepath()
         return os.path.exists(os.path.join(filename_path, self.model_filename))
@@ -333,24 +338,28 @@ class XGBoostRegressionModelGenerationPipeline():
 
     def _save_model(self, model: xgb.XGBRegressor, model_desc: Dict[Any, Any]) -> None:
         filename_path = self._generate_model_data_filepath()
+        if not self._model_data_filepath_exists():
+            os.makedirs(filename_path)
+
         model.save_model(os.path.join(filename_path, self.model_filename))
         if "feature_names" not in model_desc:
             model_desc["feature_names"] = self.feature_names
         if "label_names" not in model_desc:
             model_desc["label_names"] = self.label_names
         print(model_desc)
+
         with open(os.path.join(filename_path, self.model_desc), "w") as f:
             json.dump(model_desc, f)
 
 
-    def _clean_model_data(self, model_data: pd.DataFrame) -> pd.DataFrame:
+    def _clone_and_clean_model_data(self, model_data: pd.DataFrame) -> pd.DataFrame:
         # Create df with relevant feature names and label names
         new_df = pd.DataFrame()
         for feature in self.feature_names:
             new_df[feature] = model_data[feature]
         for label in self.label_names:
             new_df[label] = model_data[label]
-
+        print(new_df.columns.tolist())
         new_df.dropna(inplace=True)
         return new_df
         
@@ -359,26 +368,25 @@ class XGBoostRegressionModelGenerationPipeline():
         # train_type must contain feature_names columns and label_names columns
         retrieved_model, retrieved_model_desc = self.retrieve_all_model_data()
         all_model_data_exists = retrieved_model is not None and retrieved_model_desc is not None
-        cleaned_model_data = self._clean_model_data(model_data)
-
+        print(all_model_data_exists)
+        cleaned_model_data = self._clone_and_clean_model_data(model_data)
         # Either cross evaluate or perform simple test and train (Include more training styles if necessary in the future)
         # Note: We can use GridSearchCV to acquire the best hyperparameters (possible automatic feature in the future)
-        if train_type == XGBoostRegressionTrainType.TrainTestSplitFit:
+        if train_type.value == XGBoostRegressionTrainType.TrainTestSplitFit.value:
             self.__perform_train_test_split(all_model_data_exists, cleaned_model_data)
-        elif train_type == XGBoostRegressionTrainType.KFoldCrossValidation:
+        elif train_type.value == XGBoostRegressionTrainType.KFoldCrossValidation.value:
             self.__perform_kfold_train(all_model_data_exists, cleaned_model_data)
-    
-        
+
     def __perform_train_test_split(self, all_model_data_exists: bool, ready_model_data: pd.DataFrame) -> None:
         # Generate new model 
         new_model = self._generate_base_model()
         X = ready_model_data.loc[:,self.feature_names].values
         y = ready_model_data.loc[:,self.label_names].values
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=7)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=10)
         if all_model_data_exists:
             # fit old model with new data
-            old_model_filepath = os.path.join(self._generate_model_data_filepath, self.model_filename)
+            old_model_filepath = os.path.join(self._generate_model_data_filepath(), self.model_filename)
             new_model.fit(X_train, y_train, xgb_model=old_model_filepath)
         else:
             # fit model from scratch
@@ -416,8 +424,8 @@ class XGBoostRegressionModelGenerationPipeline():
         y = ready_model_data.loc[:,self.label_names].values
 
         # In the future, contemplate including RepeatedKFold
-        kFoldCV = RepeatedKFold(n_splits=10, n_repeats=3, random_state=7)
-        old_model_filepath = os.path.join(self._generate_model_data_filepath, self.model_filename)
+        kFoldCV = RepeatedKFold(n_splits=10, n_repeats=3, random_state=10)
+        old_model_filepath = os.path.join(self._generate_model_data_filepath(), self.model_filename)
 
         if all_model_data_exists:
             params = {
@@ -451,13 +459,14 @@ class XGBoostRegressionModelGenerationPipeline():
         
     # Receives list of features and returns a list of predictions in order
     # Return None if no available model
-    def predict(self, input_values: List[List[float]]) -> Optional[List[float]]:
-        retrieved_model, _ = self.retrieve_all_model_data()
+    def predict(self, input_values: List[List[float]]) -> Tuple[Optional[List[float]], Optional[Dict[Any, Any]]]:
+        retrieved_model, retrieved_model_desc = self.retrieve_all_model_data()
         predicted_results = []
         if retrieved_model is not None:
             for feature_input in input_values:
                 predict_features = np.asarray([feature_input])
                 predicted_result = retrieved_model.predict(predict_features)
-                predicted_results.append(predicted_result)
-            return predicted_results
+                predicted_results.append(predicted_result.astype(float)[0])
+            return predicted_results, retrieved_model_desc
+        return None, None
         

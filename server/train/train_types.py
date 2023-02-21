@@ -19,7 +19,7 @@ CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgro
 IO_FEATURES = ["bytes_read", "bytes_writes"]
 BPF_FEATURES = ["cpu_time"]
 KUBELET_FEATURES = ['kubelet_memory_bytes', 'kubelet_cpu_usage']
-IRQ_FEATURES = ["", "", ""]
+IRQ_FEATURES = ["block_irq", "net_tx_irq", "net_rx_irq"]
 WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + IO_FEATURES + BPF_FEATURES + KUBELET_FEATURES
 
 CATEGORICAL_LABEL_TO_VOCAB = {
@@ -27,6 +27,8 @@ CATEGORICAL_LABEL_TO_VOCAB = {
                     }
 
 NODE_STAT_POWER_LABEL = ["energy_in_pkg_joule", "energy_in_core_joule", "energy_in_dram_joule", "energy_in_uncore_joule", "energy_in_gpu_joule", "energy_in_other_joule"]
+
+PACKAGE_LABEL = ["total_package_power"]
 
 class FeatureGroup(enum.Enum):
    Full = 1
@@ -48,7 +50,7 @@ class ModelOutputType(enum.Enum):
     DynComponentPower = 7
     DynComponentModelWeight = 8
     DynComponentStandalonePower = 9
-    
+
 
 
 # XGBoostRegressionTrainType
@@ -161,8 +163,6 @@ def is_weight_output(output_type):
     if output_type == ModelOutputType.DynModelWeight:
         return True
     if output_type == ModelOutputType.DynComponentModelWeight:
-        return True
-    if output_type == ModelOutputType.DynComponentStandaloneModelWeight:
         return True
     return False
 

@@ -1,64 +1,73 @@
 import os
 import sys
-from typing import Optional
-import logging
+from typing import List, Tuple, Dict, Any
+import pandas as pd
 
 train_path = os.path.join(os.path.dirname(__file__), '../../')
 prom_path = os.path.join(os.path.dirname(__file__), '../../../prom')
 sys.path.append(train_path)
 sys.path.append(prom_path)
 
-import prom.query as q
-import pipeline as p
-import train_types as tt
-import extractor as e
-import pandas as pd
-from sklearn.model_selection import train_test_split
-import xgboost as xgb
+from pipeline import TrainPipeline
+from train_types import FeatureGroup, FeatureGroups, PACKAGE_LABEL, ModelOutputType, XGBoostRegressionTrainType
+from pipe_util import XGBoostRegressionModelGenerationPipeline
+from prom.query import PrometheusClient
+from extractor import DefaultExtractor
 
-# CREATE SEPARATE UTIL TOOL IN PIPE_UTIL TO HANDLE ALL XGBOOSTREGRESSION RELATED TO MODEL SERVER! CERTAIN FIELDS ARE REQUIRED
-# WHICH WILL BE PROVIDED BY A SEPARATE FUNCTION (SEPARATE FUNCTION? OR JUST STORED IN MODEL_SERVER.PY)
-# ALSO SET UP FUNCTIONALITY TO PUSH MODEL TO KEPLER-MODELS
-# THESE PIPES WILL JUST FEED THE DESIRED FIELDS TO THE UTIL FUNCTION AND WILL BE DIRECTLY
-# USED IN MODEL_SERVER.PY (CALL DESIRED PIPELINE FOR UP TO DATE PREDICTION)
-# USED IN ONLINE_TRAINER.PY TO TRAIN - INCLUDE FUNCTION THAT ALLOWS RETURNING OF MODEL?
-# NEED TO CHECK HOW THIS WORKS
-MODEL_CLASS = "xgboost"
-energy_components = []
-energy_source = 'rapl'
+# Currently Cgroup Metrics are not exported
+class XGBoostRegressionStandalonePipeline(TrainPipeline):
 
-class XGBoostRegressionPipeline(p.TrainPipeline):
-    def __init__(self) -> None:
-        model_name = XGBoostRegressionPipeline.__name__
-        model_file = model_name + ".json" # may require changes
-        self.fe_files = []
-        
-        super().__init__(model_name, MODEL_CLASS, model_file, tt.FeatureGroups[tt.FeatureGroup.IRQOnly], tt.ModelOutputType.DynComponentModelWeight)
+    def __init__(self, train_type: XGBoostRegressionTrainType, save_location: str) -> None:
+        self.train_type = train_type
+        model_name = XGBoostRegressionStandalonePipeline.__name__ + "_" + self.train_type.name
+        model_file = model_name + ".model"
+        self.model = None
+        model_class = 'xgboost'
+        self.energy_source = 'rapl'
+        self.save_location = save_location
+        self.energy_components = ['package', 'dram']
+        features = FeatureGroups[FeatureGroup.IRQOnly]
+        model_output = ModelOutputType.DynComponentStandalonePower
+        self.labels = PACKAGE_LABEL
+        super().__init__(model_name, model_class, model_file, features, model_output)
+        self.initialize_relevant_models()
 
-    def __extract_prom_data(self, prom_client: q.PrometheusClient) -> pd.DataFrame:
+    # This pipeline is responsible for initializing one or more needed models
+    # (Can vary depending on variables like isolator)
+    def initialize_relevant_models(self) -> None:
+        self.model = XGBoostRegressionModelGenerationPipeline(self.features, self.labels, self.save_location, self.model_name)
+
+    def _generate_clean_model_training_data(self, extracted_data: pd.DataFrame) -> pd.DataFrame:
+        # Merge Package data columns
+        # Retrieve columns that end in "package_power"
+        cloned_extracted_data = extracted_data.copy()
+        # Column names should always be a string
+        package_power_dataset = pd.DataFrame()
+        for _, col_name in enumerate(cloned_extracted_data):
+            if col_name.endswith("_package_power"):
+                package_power_dataset[col_name] = cloned_extracted_data[col_name]
+        # Sum to form total_package_power
+        package_power_dataset['total_package_power'] = package_power_dataset.sum(axis=1)
+        # Append total_package_power to cloned_extracted_data
+        cloned_extracted_data['total_package_power'] = package_power_dataset['total_package_power']
+        # Return cloned_extracted_data
+        return cloned_extracted_data
+
+    def train(self, prom_client: PrometheusClient) -> None:
         prom_client.query()
-        retrieved_snapshot = prom_client.snapshot_query_result()
-        # TODO: retrieve desired feature names and label
-        extractor = e.DefaultExtractor()
-        retrieved_df = extractor.extract(retrieved_snapshot, energy_components, self.features, energy_source)
-        return None
-        # return two dataframes, one with features, one with the label
+        results = prom_client.snapshot_query_result()
+        # results can be used directly by extractor.py
+        extractor = DefaultExtractor()
 
-    def load_model(self, model_name) -> Optional[xgb.XGBRegressor]:
-        # Require a save folder path
-        pass
-        
-    def train(self, prom_client) -> None:
-        dyn_comp_full_df = self.__extract_prom_data(prom_client)
-        # dyn_comp_full_df contains features and label of desired model 
-        # dyn_comp_full_df is assumed to be a regression problem as it extracts 
-        if dyn_comp_full_df is None:
-            return
-        # important parameters to consider tuning:
-        # n_estimators, max_depth, eta (learning rate)
-        standalone_model = self.load_model(self.model_name)
-        if standalone_model is None:
-            # Generate new model
-            standalone_model = xgb.XGBRegressor(n_estimators=1000, learning_rate=0.1) 
+        extracted_data = extractor.extract(results, self.energy_components, self.feature_group.name, self.energy_source, node_level=True)
+        if extracted_data is not None:
+            clean_df = self._generate_clean_model_training_data(extracted_data)
+            self.model.train(self.train_type, clean_df)
+        else:
+            raise Exception("extractor failed")
+
+ 
+    def predict(self, list_of_features: List[List[float]]) -> Tuple[List[float], Dict[Any, Any]]:
+        return self.model.predict(list_of_features)
         
 
