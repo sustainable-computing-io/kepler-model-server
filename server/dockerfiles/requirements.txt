@@ -7,3 +7,4 @@ numpy==1.22.4
 prometheus-client==0.14.1
 prometheus-api-client==0.5.1
 xgboost==1.6.2
+scikit-learn==1.1.2
