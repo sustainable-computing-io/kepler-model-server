@@ -2,19 +2,19 @@ import os
 import sys
 import time
 
-#util_path = os.path.join(os.path.dirname(__file__), 'util')
+util_path = os.path.join(os.path.dirname(__file__), 'util')
 train_path = os.path.join(os.path.dirname(__file__), 'train')
 prom_path = os.path.join(os.path.dirname(__file__), 'prom')
-#sys.path.append(util_path)
+sys.path.append(util_path)
 sys.path.append(train_path)
 sys.path.append(prom_path)
 
-from prom.query import PrometheusClient
+from prom.query import PrometheusClient, PROM_QUERY_INTERVAL
+from util.config import getConfig
 
-#SAMPLING_INTERVAL = PROM_QUERY_INTERVAL
-#SAMPLING_INTERVAL = getConfig('SAMPLING_INTERVAL', SAMPLING_INTERVAL)
-#SAMPLING_INTERVAL = int(SAMPLING_INTERVAL)
-SAMPLING_INTERVAL = 20
+SAMPLING_INTERVAL = PROM_QUERY_INTERVAL
+SAMPLING_INTERVAL = getConfig('SAMPLING_INTERVAL', SAMPLING_INTERVAL)
+SAMPLING_INTERVAL = int(SAMPLING_INTERVAL)
 
 
 from train.pipelines.XGBoostRegressionStandalonePipeline.pipe import XGBoostRegressionStandalonePipeline
