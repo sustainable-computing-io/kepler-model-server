@@ -2,40 +2,47 @@ import os
 import sys
 from typing import List, Tuple, Dict, Any
 import pandas as pd
+import copy
 
 train_path = os.path.join(os.path.dirname(__file__), '../../')
 prom_path = os.path.join(os.path.dirname(__file__), '../../../prom')
 sys.path.append(train_path)
 sys.path.append(prom_path)
 
-from pipeline import TrainPipeline
-from train_types import FeatureGroup, FeatureGroups, PACKAGE_LABEL, ModelOutputType, XGBoostRegressionTrainType
+from train_types import FeatureGroup, FeatureGroups, EnergyComponentLabelGroups, EnergyComponentLabelGroup, ModelOutputType, XGBoostRegressionTrainType
 from pipe_util import XGBoostRegressionModelGenerationPipeline
 from prom.query import PrometheusClient
 from extractor import DefaultExtractor
 
-# Currently Cgroup Metrics are not exported
-class XGBoostRegressionCompDynPipeline(TrainPipeline):
 
-    def __init__(self, train_type: XGBoostRegressionTrainType, save_location: str) -> None:
-        self.train_type = train_type
-        self.save_location = save_location
-        model_name = XGBoostRegressionCompDynPipeline.__name__ + "_" + self.train_type.name
-        model_file = model_name + ".model"
+# Currently Cgroup Metrics are not exported
+class XGBoostRegressionStandalonePipeline():
+
+    def __init__(self, train_type: XGBoostRegressionTrainType, save_location: str, node_level: bool) -> None:
         self.model = None
-        model_class = 'xgboost'
+        self.train_type = train_type
+        self.model_class = 'xgboost'
         self.energy_source = 'rapl'
-        self.energy_components = ['package', 'dram']
-        features = FeatureGroups[FeatureGroup.CgroupOnly]
-        model_output = ModelOutputType.DynComponentPower
-        self.labels = PACKAGE_LABEL
-        super().__init__(model_name, model_class, model_file, features, model_output)
+        self.feature_group = FeatureGroup.CounterOnly
+        self.save_location = save_location
+        self.energy_components_labels = EnergyComponentLabelGroups[EnergyComponentLabelGroup.PackageEnergyComponentOnly]
+        self.features = FeatureGroups[self.feature_group]
+        print(self.energy_components_labels)
+        self.model_labels = ["total_package_power"]
+        # Define key model names
+        if node_level:
+            self.model_name = XGBoostRegressionStandalonePipeline.__name__ + "_" + "Node_Level" + "_" + self.train_type.name
+        else:
+            self.model_name = XGBoostRegressionStandalonePipeline.__name__ + "_" + "Container_Level" + "_" + self.train_type.name
+        self.node_level = node_level
         self.initialize_relevant_models()
 
     # This pipeline is responsible for initializing one or more needed models
     # (Can vary depending on variables like isolator)
     def initialize_relevant_models(self) -> None:
-        self.model = XGBoostRegressionModelGenerationPipeline(self.features, self.labels, self.save_location, self.model_name)
+        # Generate models and store in dict
+        self.model = XGBoostRegressionModelGenerationPipeline(self.features, self.model_labels, self.save_location, self.model_name)
+        
 
     def _generate_clean_model_training_data(self, extracted_data: pd.DataFrame) -> pd.DataFrame:
         # Merge Package data columns
@@ -47,27 +54,34 @@ class XGBoostRegressionCompDynPipeline(TrainPipeline):
             if col_name.endswith("_package_power"):
                 package_power_dataset[col_name] = cloned_extracted_data[col_name]
         # Sum to form total_package_power
-        package_power_dataset['total_package_power'] = package_power_dataset.sum(axis=1)
+        package_power_dataset[self.model_labels[0]] = package_power_dataset.sum(axis=1)
         # Append total_package_power to cloned_extracted_data
-        cloned_extracted_data['total_package_power'] = package_power_dataset['total_package_power']
+        cloned_extracted_data[self.model_labels[0]] = package_power_dataset[self.model_labels[0]]
         # Return cloned_extracted_data
         return cloned_extracted_data
+
 
     def train(self, prom_client: PrometheusClient) -> None:
         prom_client.query()
         results = prom_client.snapshot_query_result()
         # results can be used directly by extractor.py
         extractor = DefaultExtractor()
+        # Train all models with extractor
+        extracted_data = extractor.extract(results, self.energy_components_labels, self.feature_group.name, self.energy_source, node_level=self.node_level)
 
-        extracted_data = extractor.extract(results, self.energy_components, self.feature_group.name, self.energy_source)
         if extracted_data is not None:
-            print(extracted_data.head())
             clean_df = self._generate_clean_model_training_data(extracted_data)
             self.model.train(self.train_type, clean_df)
         else:
             raise Exception("extractor failed")
-
  
-    def predict(self, list_of_features: List[List[float]]) -> Tuple[List[float], Dict[Any, Any]]:
-        return self.model.predict(list_of_features)
-        
+    # Accepts JSON Input with feature and corresponding prediction
+    def predict(self, features_and_predictions: List[Dict[str,float]]) -> Tuple[List[float], Dict[Any, Any]]:
+        # features Convert to List[List[float]]
+        list_of_predictions = []
+        for prediction in features_and_predictions:
+            feature_values = []
+            for feature in self.features:
+                feature_values.append(prediction[feature])
+            list_of_predictions.append(feature_values)
+        return self.model.predict(list_of_predictions)
