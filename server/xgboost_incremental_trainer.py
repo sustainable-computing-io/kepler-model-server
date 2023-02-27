@@ -34,9 +34,9 @@ def read_sample_query_results():
 if __name__ == '__main__':
    prom_client = PrometheusClient()
    while True:
-      xgb_container_pipeline = XGBoostRegressionStandalonePipeline(XGBoostRegressionTrainType.KFoldCrossValidation, "XGBoost/", node_level=False)
+      #xgb_container_pipeline = XGBoostRegressionStandalonePipeline(XGBoostRegressionTrainType.KFoldCrossValidation, "XGBoost/", node_level=False)
       xgb_node_pipeline = XGBoostRegressionStandalonePipeline(XGBoostRegressionTrainType.KFoldCrossValidation, "XGBoost/", node_level=True)
-      xgb_container_pipeline.train(prom_client)
+      #xgb_container_pipeline.train(prom_client)
       xgb_node_pipeline.train(prom_client)
         
       time.sleep(SAMPLING_INTERVAL)
