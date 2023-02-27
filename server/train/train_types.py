@@ -18,17 +18,19 @@ COUNTER_FEAUTRES = ["cache_miss", "cpu_cycles", "cpu_instr"]
 CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"]
 IO_FEATURES = ["bytes_read", "bytes_writes"]
 BPF_FEATURES = ["cpu_time"]
-KUBELET_FEATURES = ['kubelet_memory_bytes', 'kubelet_cpu_usage']
 IRQ_FEATURES = ["block_irq", "net_tx_irq", "net_rx_irq"]
+KUBELET_FEATURES = ['kubelet_memory_bytes', 'kubelet_cpu_usage']
 WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + IO_FEATURES + BPF_FEATURES + KUBELET_FEATURES
 
 CATEGORICAL_LABEL_TO_VOCAB = {
                     "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"] 
                     }
 
-NODE_STAT_POWER_LABEL = ["energy_in_pkg_joule", "energy_in_core_joule", "energy_in_dram_joule", "energy_in_uncore_joule", "energy_in_gpu_joule", "energy_in_other_joule"]
+#NODE_STAT_POWER_LABEL = ["energy_in_pkg_joule", "energy_in_core_joule", "energy_in_dram_joule", "energy_in_uncore_joule", "energy_in_gpu_joule", "energy_in_other_joule"]
 
-PACKAGE_LABEL = ["total_package_power"]
+PACKAGE_ENERGY_COMPONENT_LABEL = ["package"]
+DRAM_ENERGY_COMPONENT_LABEL = ["dram"]
+CORE_ENERGY_COMPONENT_LABEL = ["core"]
 
 class FeatureGroup(enum.Enum):
    Full = 1
@@ -38,7 +40,14 @@ class FeatureGroup(enum.Enum):
    BPFOnly = 5
    KubeletOnly = 6
    IRQOnly = 7
+   CounterIRQCombined = 8
    Unknown = 99
+
+class EnergyComponentLabelGroup(enum.Enum):
+    PackageEnergyComponentOnly = 1
+    DRAMEnergyComponentOnly = 2
+    CoreEnergyComponentOnly = 3
+    PackageDRAMEnergyComponents = 4
 
 class ModelOutputType(enum.Enum):
     AbsPower = 1
@@ -49,8 +58,6 @@ class ModelOutputType(enum.Enum):
     DynModelWeight = 6
     DynComponentPower = 7
     DynComponentModelWeight = 8
-    DynComponentStandalonePower = 9
-
 
 
 # XGBoostRegressionTrainType
@@ -120,23 +127,31 @@ DRAM_COMPONENT = 'dram'
 
 POWER_COMPONENTS = [CORE_COMPONENT, DRAM_COMPONENT]
 
-def sort_features(features):
-    sorted_features = features.copy()
-    sorted_features.sort()
-    return sorted_features
+def deep_sort(elements):
+    sorted_elements = elements.copy()
+    sorted_elements.sort()
+    return sorted_elements
 
 FeatureGroups = {
-    FeatureGroup.Full: sort_features(WORKLOAD_FEATURES + SYSTEM_FEATURES),
-    FeatureGroup.WorkloadOnly: sort_features(WORKLOAD_FEATURES),
-    FeatureGroup.CounterOnly: sort_features(COUNTER_FEAUTRES),
-    FeatureGroup.CgroupOnly: sort_features(CGROUP_FEATURES + IO_FEATURES),
-    FeatureGroup.BPFOnly: sort_features(BPF_FEATURES),
-    FeatureGroup.KubeletOnly: sort_features(KUBELET_FEATURES),
-    FeatureGroup.IRQOnly: sort_features(IRQ_FEATURES)
+    FeatureGroup.Full: deep_sort(WORKLOAD_FEATURES + SYSTEM_FEATURES),
+    FeatureGroup.WorkloadOnly: deep_sort(WORKLOAD_FEATURES),
+    FeatureGroup.CounterOnly: deep_sort(COUNTER_FEAUTRES),
+    FeatureGroup.CgroupOnly: deep_sort(CGROUP_FEATURES + IO_FEATURES),
+    FeatureGroup.BPFOnly: deep_sort(BPF_FEATURES),
+    FeatureGroup.KubeletOnly: deep_sort(KUBELET_FEATURES),
+    FeatureGroup.IRQOnly: deep_sort(IRQ_FEATURES),
+    FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + IRQ_FEATURES),
+}
+
+EnergyComponentLabelGroups = {
+    EnergyComponentLabelGroup.PackageEnergyComponentOnly: deep_sort(PACKAGE_ENERGY_COMPONENT_LABEL),
+    EnergyComponentLabelGroup.DRAMEnergyComponentOnly: deep_sort(DRAM_ENERGY_COMPONENT_LABEL),
+    EnergyComponentLabelGroup.CoreEnergyComponentOnly: deep_sort(CORE_ENERGY_COMPONENT_LABEL),
+    EnergyComponentLabelGroup.PackageDRAMEnergyComponents: deep_sort(PACKAGE_ENERGY_COMPONENT_LABEL + DRAM_ENERGY_COMPONENT_LABEL)
 }
 
 def get_feature_group(features):
-    sorted_features = sort_features(features)
+    sorted_features = deep_sort(features)
     for g, g_features in FeatureGroups.items():
         print(g_features, features)
         if sorted_features == g_features:

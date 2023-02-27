@@ -43,20 +43,12 @@ spec:
       containers:
       - name: xgboost-incremental-trainer
         image: quay.io/sustainable_computing_io/kepler_model_server:latest
-        imagePullPolicy: Always
-        volumeMounts:
-          - name: cfm
-            mountPath: /etc/config
-            readOnly: true
-        command: ["python3.8",  "xgboost_incremental_trainer.py"]
-      - name: xgboost-expose-model
-        image: quay.io/sustainable_computing_io/kepler_model_server:latest
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - name: cfm
             mountPath: /etc/config
             readOnly: true
-        command: ["python3.8",  "xgboost_expose_model.py"]
+        command: ["python3.8",  "xgboost_incremental_trainer.py"]
 
 ---
 kind: Service
