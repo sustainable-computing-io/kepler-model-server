@@ -23,7 +23,7 @@ class XGBoostRegressionStandalonePipeline():
         self.train_type = train_type
         self.model_class = 'xgboost'
         self.energy_source = 'rapl'
-        self.feature_group = FeatureGroup.CounterOnly
+        self.feature_group = FeatureGroup.CounterIRQCombined
         self.save_location = save_location
         self.energy_components_labels = EnergyComponentLabelGroups[EnergyComponentLabelGroup.PackageEnergyComponentOnly]
         self.features = FeatureGroups[self.feature_group]

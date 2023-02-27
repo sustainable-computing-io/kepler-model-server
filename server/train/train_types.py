@@ -40,6 +40,7 @@ class FeatureGroup(enum.Enum):
    BPFOnly = 5
    KubeletOnly = 6
    IRQOnly = 7
+   CounterIRQCombined = 8
    Unknown = 99
 
 class EnergyComponentLabelGroup(enum.Enum):
@@ -139,6 +140,7 @@ FeatureGroups = {
     FeatureGroup.BPFOnly: deep_sort(BPF_FEATURES),
     FeatureGroup.KubeletOnly: deep_sort(KUBELET_FEATURES),
     FeatureGroup.IRQOnly: deep_sort(IRQ_FEATURES),
+    FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + IRQ_FEATURES),
 }
 
 EnergyComponentLabelGroups = {
