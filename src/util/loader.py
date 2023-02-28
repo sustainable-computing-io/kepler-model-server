@@ -23,8 +23,7 @@ def load_json(path, json_file):
     try:
         with open(filepath) as f:
             res = json.load(f)
-    except Exception as e:
-        print(e)
+    except:
         return None
     return res
 

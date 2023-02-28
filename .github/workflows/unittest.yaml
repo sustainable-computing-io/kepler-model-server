@@ -33,7 +33,7 @@ jobs:
 
     - name: Test model server
       run: |
-         python3 server/model_server.py&
+         python3 src/server/model_server.py&
          sleep 5; python3 tests/model_server_test.py
 
   test-build:
