@@ -1,5 +1,6 @@
 on:
   push:
+  pull_request:
 
 jobs:
   run-test-cases:
@@ -14,6 +15,22 @@ jobs:
     - name: Load requirements
       run: python3 -m pip install -r server/dockerfiles/requirements.txt
     
+    - name: Test extractor
+      run: |
+         python3 tests/extractor_test.py
+
+    - name: Test isolator
+      run: |
+         python3 tests/isolator_test.py
+
+    - name: Test trainer
+      run: |
+         python3 tests/trainer_test.py
+
+    - name: Test pipeline
+      run: |
+         python3 tests/pipeline_test.py
+
     - name: Test model server
       run: |
          python3 server/model_server.py&

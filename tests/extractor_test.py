@@ -1,68 +1,76 @@
-# extractor_test.py
-#   call 
-
 import os
 import sys
 from copy import deepcopy
 
-server_path = os.path.join(os.path.dirname(__file__), '../server')
-util_path = os.path.join(os.path.dirname(__file__), '../server/util')
-train_path = os.path.join(os.path.dirname(__file__), '../server/train')
-prom_path = os.path.join(os.path.dirname(__file__), '../server/prom')
+src_path = os.path.join(os.path.dirname(__file__), '../src')
+train_path = os.path.join(os.path.dirname(__file__), '../src/train')
+profile_path = os.path.join(os.path.dirname(__file__), '../src/profile')
 
-
-sys.path.append(server_path)
-sys.path.append(util_path)
+sys.path.append(src_path)
 sys.path.append(train_path)
-sys.path.append(prom_path)
+sys.path.append(profile_path)
 
+import json
 
-from train.extractor import DefaultExtractor
-from train.train_types import FeatureGroups, FeatureGroup
-from prom.query import PrometheusClient
-
+from train import DefaultExtractor, node_info_column, component_to_col, FeatureGroups, FeatureGroup
+from train import load_class
+from profiler import response_to_result
 
 from prom_test import prom_output_path
 
+energy_components = ["package", "core", "uncore", "dram"]
+num_of_package = 2
+feature_groups = [fg.name for fg in FeatureGroups.keys()]
+energy_source = "rapl"
 
-test_extractors = [DefaultExtractor]
+extractor_output_path = os.path.join(os.path.dirname(__file__), 'data', 'extractor_output')
+prom_response_file = os.path.join(os.path.dirname(__file__), 'data', 'prom_response.json')
+
+if not os.path.exists(extractor_output_path):
+    os.mkdir(extractor_output_path)
+
+expected_power_columns = [component_to_col(component, "package", unit_val) for component in energy_components for unit_val in range(0,num_of_package)]
+
+test_extractors = [DefaultExtractor()]
+# Add customize extractor here
+customize_extractors = []
+for extractor_name in customize_extractors:
+    test_extractors += [load_class("extractor", extractor_name)]
 
 import pandas as pd
 
 def read_sample_query_results():
-    results = dict()
-    metric_filenames = [ metric_filename for metric_filename in os.listdir(prom_output_path) ]
-    for metric_filename in metric_filenames:
-        metric = metric_filename.replace(".csv", "")
-        filepath = os.path.join(prom_output_path, metric_filename)
-        results[metric] = pd.read_csv(filepath)
-    return results
+    with open(prom_response_file) as f:
+        response = json.load(f)
+        return response_to_result(response)
+    return dict()
 
-def extract_kubelet_features_package_power_label_test(query_results, extractor_instance):
-    extracted_data = extractor_instance.extract(query_results, ["package", "core", "uncore", "dram"], 'KubeletOnly', "rapl", node_level=True)
-    expected_col_size = len(["package", "core", "uncore", "dram"]) * 4 + len(FeatureGroups[FeatureGroup["KubeletOnly"]])
-    assert len(extracted_data.columns) == expected_col_size, "Unmatched columns: expected {}, got {}".format(expected_col_size, len(extracted_data.columns))
+def save_results(instance, feature_group, extracted_data, node_level):
+    filename = "{}_{}_{}.csv".format(instance.__class__.__name__, feature_group, node_level)
+    filepath = os.path.join(extractor_output_path, filename)
+    extracted_data.to_csv(filepath)
 
-def extract_bpf_features_package_power_label_node_test(query_results, extractor_instance):
-    extracted_data_node_level = extractor_instance.extract(query_results, ["package", "dram"], 'IRQOnly', "rapl", node_level=True)
-    assert(extracted_data_node_level is not None)
-    print(extracted_data_node_level.columns.tolist())
-
-
-def extract_bpf_features_package_power_label_container_test(query_results, extractor_instance):
-    extracted_data_container_level = extractor_instance.extract(query_results, ["package", "dram"], 'IRQOnly', "rapl", node_level=False)
-    assert(extracted_data_container_level is not None)
-    print(extracted_data_container_level.columns.tolist())
-    print(len(extracted_data_container_level))
-
-
+def assert_extract(extracted_data, power_columns):
+    extracted_data_column_names = extracted_data.columns
+    # basic assert
+    assert extracted_data is not None, "extracted data is None"
+    assert len(power_columns) > 0, "no power label column {}".format(extracted_data_column_names)
+    assert node_info_column in extracted_data_column_names, "no {} in column {}".format(node_info_column, extracted_data_column_names)
+    expected_power_column_length = len(energy_components) * num_of_package
+    # detail assert
+    assert len(power_columns) == expected_power_column_length, "unexpected power label columns {}, expected {}".format(power_columns, expected_power_column_length)
+    expected_col_size = expected_power_column_length + len(FeatureGroups[FeatureGroup[feature_group]]) + 1
+    assert len(extracted_data_column_names) == expected_col_size, "unexpected column length: expected {}, got {}({}) ".format(expected_col_size, extracted_data_column_names, len(extracted_data_column_names))
+        
 if __name__ == '__main__':
     # Note that extractor mutates the query results
     query_results = read_sample_query_results()
-    query_results_container = deepcopy(query_results)
-    for extractor in test_extractors:
-        extractor_instance = extractor()
-        extract_bpf_features_package_power_label_node_test(query_results, extractor_instance)
-        extract_bpf_features_package_power_label_container_test(query_results_container, extractor_instance)
-
-        extract_kubelet_features_package_power_label_test(query_results, extractor_instance)
+    assert len(query_results) > 0, "cannot read_sample_query_results"
+    for test_instance in test_extractors:
+        for feature_group in feature_groups:
+            extracted_data, power_columns = test_instance.extract(query_results, energy_components, feature_group, energy_source, node_level=True)
+            assert_extract(extracted_data, power_columns)
+            save_results(test_instance, feature_group, extracted_data, True)
+            extracted_data, power_columns = test_instance.extract(query_results, energy_components, feature_group, energy_source, node_level=False)
+            assert_extract(extracted_data, power_columns)
+            save_results(test_instance, feature_group, extracted_data, False)
