@@ -1,0 +1,10 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: BenchmarkOperator
+metadata:
+  name: none
+  namespace: default
+spec:
+  apiVersion: batch/v1
+  kind: Job
+  deploySpec:
+    namespace: default

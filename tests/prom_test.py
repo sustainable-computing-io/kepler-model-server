@@ -4,12 +4,14 @@
 import os
 import sys
 
-server_path = os.path.join(os.path.dirname(__file__), '../server')
-util_path = os.path.join(os.path.dirname(__file__), '../server/util')
-prom_path = os.path.join(os.path.dirname(__file__), '../server/prom')
+server_path = os.path.join(os.path.dirname(__file__), '../src')
+util_path = os.path.join(os.path.dirname(__file__), '../src/util')
+train_path = os.path.join(os.path.dirname(__file__), '../src/train')
+prom_path = os.path.join(os.path.dirname(__file__), '../src/train/prom')
 
 sys.path.append(server_path)
 sys.path.append(util_path)
+sys.path.append(train_path)
 sys.path.append(prom_path)
 
 prom_output_path = os.path.join(os.path.dirname(__file__), 'data', 'prom_output')
@@ -22,4 +24,5 @@ if __name__ == '__main__':
     results = prom_client.snapshot_query_result()
     # save query data in csv
     for metric, data in results.items():
-        data.to_csv("{}/{}.csv".format(prom_output_path, metric))
+        print(metric)
+        print(data.head())
