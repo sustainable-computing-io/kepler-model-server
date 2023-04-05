@@ -48,7 +48,7 @@ spec:
         - containerPort: 8100
         volumeMounts:
           - name: cfm
-            mountPath: /etc/config
+            mountPath: /etc/kepler/kepler.config
             readOnly: true
         command: ["python3.8",  "model_server.py"]
 ---

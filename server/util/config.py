@@ -17,7 +17,7 @@ import os
 # must be writable (for shared volume mount)
 MNT_PATH = "/mnt"
 # can be read only (for configmap mount)
-CONFIG_PATH = "/etc/config"
+CONFIG_PATH = "/etc/kepler/kepler.config"
 
 def getConfig(key, default):
     # check configmap path

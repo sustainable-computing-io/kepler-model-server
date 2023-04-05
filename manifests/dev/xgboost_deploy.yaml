@@ -46,7 +46,7 @@ spec:
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - name: cfm
-            mountPath: /etc/config
+            mountPath: /etc/kepler/kepler.config
             readOnly: true
         command: ["python3.8",  "xgboost_incremental_trainer.py"]
 

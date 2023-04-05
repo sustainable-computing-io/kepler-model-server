@@ -84,7 +84,7 @@ spec:
           - name: mnt
             mountPath: /mnt
           - name: cfm
-            mountPath: /etc/config
+            mountPath: /etc/kepler/kepler.config
             readOnly: true
         command: ["python3.8",  "model_server.py"]
 ---
