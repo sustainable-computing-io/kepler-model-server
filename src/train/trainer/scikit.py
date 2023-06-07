@@ -1,45 +1,60 @@
-from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error
-import joblib
-from urllib.request import urlopen
 
 import os
 import sys
+
+util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
+sys.path.append(util_path)
+
+from util import save_pkl, load_pkl, load_remote_pkl
 
 from . import Trainer
 
 model_class = "scikit"
 
+def get_save_path(model_filepath):
+    return "/".join(model_filepath.split("/")[0:-1])
+
 class ScikitTrainer(Trainer):
-    def __init__(self, profiles, energy_components, feature_group, energy_source, node_level, scaler_type="minmax"):
+    def __init__(self, profiles, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="minmax"):
         self.is_standard_scaler = scaler_type == "standard"
-        super(ScikitTrainer, self).__init__(profiles, model_class, energy_components, feature_group, energy_source, node_level, scaler_type=scaler_type)
+        super(ScikitTrainer, self).__init__(profiles, model_class, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type=scaler_type)
         self.fe_files = []
  
     def train(self, node_type, component, X_values, y_values):
+        if hasattr(self, 'fe'):
+            for index in range(len(self.fe)):
+                X_values = self.fe[index].fit_transform(X_values)
         model = self.node_models[node_type][component]
         model.fit(X_values, y_values)
 
     def save_checkpoint(self, model, filepath):
-        filepath += ".pkl"
-        joblib.dump(model, filepath)
+        if hasattr(self, 'fe'):
+            save_path = get_save_path(filepath)
+            for index in range(len(self.fe)):
+                save_pkl(save_path, self.fe_files[index], self.fe[index])
+        save_pkl("", filepath, model)
 
     def load_local_checkpoint(self, filepath):
-        filepath += ".pkl"
-        try:
-            loaded_model = joblib.load(filepath)
-            return loaded_model, True
-        except:
-            return None, False
-
+        if hasattr(self, 'fe_files'):
+            save_path = get_save_path(filepath)
+            for index in range(len(self.fe_files)):
+                loaded_fe = load_pkl(save_path, self.fe_files[index])
+                if loaded_fe is not None:
+                    self.fe[index] = loaded_fe
+        loaded_model = load_pkl("", filepath)
+        return loaded_model, loaded_model is not None
+    
     def load_remote_checkpoint(self, url_path):
-        url_path += ".pkl"
-        try:        
-            response = urlopen(url_path)
-            loaded_model = joblib.load(response)
-            return loaded_model, True
-        except:
-            return None, False
+        if hasattr(self, 'fe_files'):
+            save_path = get_save_path(url_path)
+            for index in range(len(self.fe_files)):
+                fe_url_path = os.path.join(save_path, self.fe_files[index])
+                loaded_fe = load_remote_pkl(fe_url_path)
+                if loaded_fe is not None:
+                    self.fe[index] = loaded_fe
+        loaded_model = load_remote_pkl(url_path)
+        return loaded_model, loaded_model is not None
 
     def should_archive(self, node_type):
         return True
@@ -48,8 +63,7 @@ class ScikitTrainer(Trainer):
         return dict()
 
     def get_mae(self, node_type, component, X_test, y_test):
-        model = self.node_models[node_type][component]
-        predicted_values = model.predict(X_test)
+        predicted_values = self.predict(node_type, component, X_test)
         mae = mean_absolute_error(y_test,predicted_values)
         return mae
 

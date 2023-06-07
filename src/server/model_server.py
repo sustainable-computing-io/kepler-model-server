@@ -4,15 +4,13 @@ import os
 import sys
 src_path = os.path.join(os.path.dirname(__file__), '..')
 util_path = os.path.join(os.path.dirname(__file__), 'util')
-train_path = os.path.join(os.path.dirname(__file__), '..', 'train')
 
 sys.path.append(src_path)
 sys.path.append(util_path)
-sys.path.append(train_path)
 
-from train import get_valid_feature_groups, is_weight_output, ModelOutputType, FeatureGroups, FeatureGroup
-from util.config import getConfig
-from util.loader import parse_filters, is_valid_model, load_json, get_model_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME
+from util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup
+from util.config import getConfig, model_toppath
+from util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME
 
 ###############################################
 # model request 
@@ -42,6 +40,8 @@ MODEL_SERVER_PORT = 8100
 MODEL_SERVER_PORT = getConfig('MODEL_SERVER_PORT', MODEL_SERVER_PORT)
 MODEL_SERVER_PORT = int(MODEL_SERVER_PORT)
 
+
+
 def select_best_model(valid_groupath, filters, trainer_name="", node_type=-1, weight=False):
     model_names = [f for f in os.listdir(valid_groupath) if \
                     f != CHECKPOINT_FOLDERNAME \
@@ -58,7 +58,7 @@ def select_best_model(valid_groupath, filters, trainer_name="", node_type=-1, we
             # invalid metadata
             continue
         if weight:
-            response = get_model_weight(valid_groupath, model_name)
+            response = load_weight(model_savepath)
             if response is None:
                 # fail to get weight file
                 continue
@@ -96,7 +96,7 @@ def get_model():
     best_response = None
     # find best model comparing best candidate from each valid feature group complied with filtering conditions
     for fg in valid_fgs:
-        valid_groupath = get_model_group_path(output_type, fg, req.source)
+        valid_groupath = get_model_group_path(model_toppath, output_type, fg, req.source)
         if os.path.exists(valid_groupath):
             best_candidate, response = select_best_model(valid_groupath, filters, req.trainer_name, req.node_type, req.weight)
             if best_candidate is None:
@@ -149,7 +149,7 @@ def get_available_models():
         for output_type in output_types:
             model_names[output_type.name] = dict()
             for fg in valid_fgs:
-                valid_groupath = get_model_group_path(output_type, fg)
+                valid_groupath = get_model_group_path(model_toppath, output_type, fg)
                 if os.path.exists(valid_groupath):
                     best_candidate, _ = select_best_model(valid_groupath, filters)
                     if best_candidate is None:

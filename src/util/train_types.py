@@ -21,9 +21,17 @@ KUBELET_FEATURES =['kubelet_memory_bytes', 'kubelet_cpu_usage']
 WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + KUBELET_FEATURES
 
 PowerSourceMap = {
-    "rapl": ["package", "core", "uncore", "dram"],
+# "rapl": ["package", "core", "uncore", "dram"],
+    "rapl": ["package"],
     "acpi": ["platform"]
 }
+
+CATEGORICAL_LABEL_TO_VOCAB = {
+                    "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"],
+                    "nodeInfo": ["1"],
+                    "cpu_scaling_frequency_hertz": ["1GHz", "2GHz", "3GHz"],
+                    }
+
 
 class FeatureGroup(enum.Enum):
    Full = 1
@@ -34,11 +42,15 @@ class FeatureGroup(enum.Enum):
    KubeletOnly = 6
    IRQOnly = 7
    CounterIRQCombined = 8
+   Basic = 9
    Unknown = 99
 
 class ModelOutputType(enum.Enum):
     AbsPower = 1
     DynPower = 2
+
+def is_support_output_type(output_type_name):
+    return any(output_type_name == item.name for item in ModelOutputType)
 
 def deep_sort(elements):
     sorted_elements = elements.copy()
@@ -54,10 +66,13 @@ FeatureGroups = {
     FeatureGroup.KubeletOnly: deep_sort(KUBELET_FEATURES),
     FeatureGroup.IRQOnly: deep_sort(IRQ_FEATURES),
     FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + IRQ_FEATURES),
+    FeatureGroup.Basic: deep_sort(COUNTER_FEAUTRES+CGROUP_FEATURES+KUBELET_FEATURES+BPF_FEATURES),
 }
 
+all_feature_groups = [fg.name for fg in FeatureGroups.keys()]
+
 def get_feature_group(features):
-    sorted_features = sort_features(features)
+    sorted_features = deep_sort(features)
     for g, g_features in FeatureGroups.items():
         print(g_features, features)
         if sorted_features == g_features:

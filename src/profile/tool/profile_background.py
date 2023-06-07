@@ -24,7 +24,10 @@ sys.path.append(train_path)
 
 from sklearn.preprocessing import StandardScaler
 
-from train import DefaultExtractor, node_info_column, component_to_col, PowerSourceMap
+from train import DefaultExtractor
+from util import  PowerSourceMap
+from util.prom_types import node_info_column
+from util.extract_types import component_to_col
 
 import pandas as pd
 import json
@@ -65,14 +68,14 @@ def save_profile(profile, source):
     with open(profile_filename, "w") as f:
         json.dump(profile, f)
 
-def process(query_results):
-    node_info_data = extractor.get_system_category(query_results)
+def process(query_results, save=True):
+    node_types, node_info_data = extractor.get_node_types(query_results)
     if node_info_data is None:
-        print("No Node Info")
         return None
-    node_types = pd.unique(node_info_data[node_info_column])
+    result = dict()
     for source, energy_components in PowerSourceMap.items():
-        profile = load_profile(source)
+        # profile = load_profile(source)
+        profile = dict()
         for node_type in node_types:
             power_data= extractor.get_power_data(query_results, energy_components, source)
             power_data = power_data.join(node_info_data)
@@ -86,8 +89,10 @@ def process(query_results):
                 seconds = time_values[1] - time_values[0]
                 max_watt = power_values.max()/seconds
                 min_watt = power_values.min()/seconds
-                node_type_key = str(node_type)
+                node_type_key = str(int(node_type))
                 print(component, node_type, min_watt, seconds)
+                if component not in profile:
+                    profile[component] = dict()
                 if node_type_key not in profile[component]:
                     profile[component][node_type_key] = {
                         min_watt_key: min_watt,
@@ -100,4 +105,12 @@ def process(query_results):
                         profile[component][node_type_key][max_watt_key] = max_watt
                 print("update:", component, node_type_key, min_watt_key, profile[component][node_type_key][min_watt_key])
         print(profile)
-        save_profile(profile, source)
+        if save:
+            save_profile(profile, source)
+        result[source] = profile 
+    return result
+
+
+def get_min_max_watt(profiles, component, node_type):
+    profile = profiles[component][node_type]
+    return profile[min_watt_key], profile[max_watt_key]

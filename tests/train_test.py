@@ -1,3 +1,4 @@
+# deprecated
 import os
 import sys
 
@@ -13,7 +14,7 @@ sys.path.append(util_path)
 sys.path.append(train_path)
 sys.path.append(prom_path)
 
-from prom.query import PrometheusClient, PROM_QUERY_INTERVAL, QUERIES
+from prom.prom_query import PrometheusClient, PROM_QUERY_INTERVAL, QUERIES
 from util.config import getConfig
 
 import pandas as pd
