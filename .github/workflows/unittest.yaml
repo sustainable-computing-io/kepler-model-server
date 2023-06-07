@@ -6,43 +6,15 @@ jobs:
   run-test-cases:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-  
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.8' 
-
-    - name: Load requirements
-      run: python3 -m pip install -r server/dockerfiles/requirements.txt
-    
-    - name: Test extractor
-      run: |
-         python3 tests/extractor_test.py
-
-    - name: Test isolator
-      run: |
-         python3 tests/isolator_test.py
-
-    - name: Test trainer
-      run: |
-         python3 tests/trainer_test.py
-
-    - name: Test pipeline
-      run: |
-         python3 tests/pipeline_test.py
-
-    - name: Test model server
-      run: |
-         python3 src/server/model_server.py&
-         sleep 5; python3 tests/model_server_test.py
-
-  test-build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-      
-    - name: Build image
-      run: docker build -t quay.io/sustainable_computing_io/kepler_model_server:latest server/ -f server/dockerfiles/Dockerfile
-  
-
+      - uses: actions/checkout@v2
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v1
+      - name: Test
+        run: make build-test
+      - name: Test pipeline
+        run: make test-pipeline
+      - name: Test model server
+        run: make test-model-server
+      - name: Test estimator
+        run: make test-estimator
+        timeout-minutes: 5
