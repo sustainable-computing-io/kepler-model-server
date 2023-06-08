@@ -12,10 +12,10 @@ import importlib
 pipeline_module = importlib.import_module('pipelines.{}.pipe'.format(pipeline_name))
 pipeline = getattr(pipeline_module, pipeline_name)()
 
-from prom.query import NODE_STAT_QUERY
+from prom.prom_query import NODE_STAT_QUERY
 
 if __name__ == '__main__':
-    from prom.query import PrometheusClient
+    from prom.prom_query import PrometheusClient
     from train_types import WORKLOAD_FEATURES, SYSTEM_FEATURES, CATEGORICAL_LABEL_TO_VOCAB, NODE_STAT_POWER_LABEL
     import pandas as pd
     import numpy as np

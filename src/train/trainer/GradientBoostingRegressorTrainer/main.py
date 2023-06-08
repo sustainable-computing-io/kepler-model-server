@@ -1,7 +1,4 @@
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.metrics import mean_absolute_error
-import joblib
-from urllib.request import urlopen
 
 import os
 import sys
@@ -13,8 +10,8 @@ from trainer.scikit import ScikitTrainer
 model_class = "scikit"
 
 class GradientBoostingRegressorTrainer(ScikitTrainer):
-    def __init__(self, profiles, energy_components, feature_group, energy_source, node_level):
-        super(GradientBoostingRegressorTrainer, self).__init__(profiles, energy_components, feature_group, energy_source, node_level)
+    def __init__(self, profiles, energy_components, feature_group, energy_source, node_level, pipeline_name):
+        super(GradientBoostingRegressorTrainer, self).__init__(profiles, energy_components, feature_group, energy_source, node_level, pipeline_name=pipeline_name)
         self.fe_files = []
     
     def init_model(self):

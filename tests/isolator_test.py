@@ -1,60 +1,101 @@
 import os
 import sys
+import numpy as np
 
-src_path = os.path.join(os.path.dirname(__file__), '../src')
-train_path = os.path.join(os.path.dirname(__file__), '../src/train')
-
+#################################################################
+# import internal src 
+src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
-sys.path.append(train_path)
 
+profile_tool_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'profile', 'tool')
+sys.path.append(profile_tool_path)
+#################################################################
+
+from util import assure_path, save_csv, load_csv, FeatureGroups, FeatureGroup
+from util.train_types import all_feature_groups
+from util.extract_types import container_level_index, node_level_index
+
+from train import MinIdleIsolator, ProfileBackgroundIsolator, TrainIsoltor, NoneIsolator
+from train import generate_profiles
+from train.prom import prom_responses_to_results
+from train.extractor.preprocess import find_correlations
+
+from profile_background import process as profile_background_process
+
+from extractor_test import test_energy_source, get_extract_results, get_expected_power_columns, test_extractors, extractor_output_path
+from prom_test import get_prom_response
 isolator_output_path = os.path.join(os.path.dirname(__file__), 'data', 'isolator_output')
+assure_path(isolator_output_path)
 
-if not os.path.exists(isolator_output_path):
-    os.mkdir(isolator_output_path)
+test_idle_response = get_prom_response(save_name="idle")
+test_idle_data = prom_responses_to_results(test_idle_response)
+profile_map = profile_background_process(test_idle_data)
+test_profiles = generate_profiles(profile_map)
+test_isolators = [MinIdleIsolator(), NoneIsolator()]
 
-from train import MinIdleIsolator, ProfileBackgroundIsolator
-from train import load_class, load_all_profiles
-from extractor.extractor import container_id_colname, TIMESTAMP_COL
+def get_filename(isolator_name, extractor_name, feature_group):
+    return "{}_{}_{}_{}".format(isolator_name, extractor_name, feature_group, False)
 
-from extractor_test import energy_source, extractor_output_path, expected_power_columns
+def get_isolate_result(isolator_name, extractor_name, feature_group, save_path=isolator_output_path):
+    filename = get_filename(isolator_name, extractor_name, feature_group)
+    return load_csv(save_path, filename)
 
-import pandas as pd
+def get_isolate_results(isolator_name, extractor_name, save_path=isolator_output_path):
+    all_results = dict()
+    for feature_group in all_feature_groups:
+        result = get_isolate_result(isolator_name, extractor_name, feature_group, save_path=save_path) 
+        if result is not None:
+            all_results[feature_group] = result
+    return all_results
 
-target_suffix = "_False.csv"
-
-test_isolators = [MinIdleIsolator(), ProfileBackgroundIsolator(load_all_profiles())]
-
-def save_results(instance, extractor_name, isolated_data):
-    filename = "{}_{}.csv".format(instance.__class__.__name__, extractor_name)
-    filepath = os.path.join(isolator_output_path, filename)
-    isolated_data.to_csv(filepath)
-
-def read_extractor_results():
-    results = dict()
-    isolate_target_filenames = [ filename for filename in os.listdir(extractor_output_path) if filename[len(filename)-len(target_suffix):] == "_False.csv" ]
-    for filename in isolate_target_filenames:
-        extractor_name = filename[0:len(filename)-len(target_suffix)] # remove "_False.csv"
-        filepath = os.path.join(extractor_output_path, filename)
-        results[extractor_name] = pd.read_csv(filepath).set_index([TIMESTAMP_COL, container_id_colname])
-    return results
+def save_results(instance, extractor_name, feature_group, isolated_data, save_path=isolator_output_path):
+    filename = get_filename(instance.__class__.__name__, extractor_name, feature_group)
+    save_csv(save_path, filename, isolated_data)
 
 def assert_isolate(extractor_result, isolated_data):
     isolated_data_column_names = isolated_data.columns
     assert isolated_data is not None, "isolated data is None"
-    negative_df = isolated_data[(isolated_data<0).all(1)]
+    value_df = isolated_data.drop(columns=container_level_index)
+    negative_df = value_df[(value_df<0).all(1)]
     assert len(negative_df) == 0, "all data must be non-negative \n {}".format(negative_df) 
     assert len(extractor_result.columns) == len(isolated_data_column_names), "unexpected column length: expected {}, got {}({}) ".format(len(extractor_result.columns), isolated_data_column_names, len(isolated_data_column_names))
-        
-if __name__ == '__main__':
-    
-    # Add customize isolator here
-    customize_isolators = []
-    for isolator_name in customize_isolators:
-        test_isolators += [load_class("isolator", isolator_name)]
 
-    extractor_results = read_extractor_results()
+def find_correlation_of_isolated_data(isolated_data, workload_features, energy_source=test_energy_source, power_columns=get_expected_power_columns()):
+    feature_power_data = isolated_data.groupby(node_level_index).sum()
+    corr = find_correlations(energy_source, feature_power_data, power_columns, workload_features)
+    return corr
+
+def get_max_corr(isolated_data, workload_features, energy_source=test_energy_source, power_columns=get_expected_power_columns()):
+    corr_data = find_correlation_of_isolated_data(isolated_data, workload_features, energy_source=energy_source, power_columns=power_columns)
+    try:
+        corr = corr_data.values.max()
+        if np.isnan(corr) or corr < 0:
+            corr = 0
+    except Exception as e:
+        print(e)
+    return corr
+
+def process(test_isolators=test_isolators, customize_isolators=[], extract_path=extractor_output_path, save_path=isolator_output_path):
+    for custom_isolator in customize_isolators:
+        test_isolators += [custom_isolator]
     for test_instance in test_isolators:
-        for extractor_name, extractor_result in extractor_results.items():
-            isolated_data = test_instance.isolate(extractor_result, energy_source, label_cols=expected_power_columns)
-            assert_isolate(extractor_result, isolated_data)
-            save_results(test_instance, extractor_name, isolated_data)
+        isolator_name = test_instance.__class__.__name__
+        for extractor in test_extractors:
+            extractor_name = extractor.__class__.__name__
+            extractor_results = get_extract_results(extractor_name, node_level=False, save_path=extract_path)
+            for feature_group, extract_result in extractor_results.items():
+                print("{} isolate {}_{}".format(isolator_name, extractor_name, feature_group))
+                isolated_data = test_instance.isolate(extract_result,label_cols=get_expected_power_columns(), energy_source=test_energy_source)
+                workload_features = FeatureGroups[FeatureGroup[feature_group]]
+                corr = find_correlation_of_isolated_data(isolated_data, workload_features)
+                print(corr)
+                assert_isolate(extract_result, isolated_data)
+                save_results(test_instance, extractor_name, feature_group, isolated_data, save_path=save_path)
+
+
+
+if __name__ == '__main__':
+    # Add customize isolator here
+    customize_isolators = [TrainIsoltor(idle_data=test_idle_data)]
+    customize_isolators += [ProfileBackgroundIsolator(test_profiles, test_idle_data)]
+    process(customize_isolators=customize_isolators)

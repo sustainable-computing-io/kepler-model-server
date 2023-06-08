@@ -1,43 +1,34 @@
-import os
-import sys
 import shutil
-import json
-import pickle
-
-src_path = os.path.join(os.path.dirname(__file__), '..', '..')
-sys.path.append(src_path)
 
 from abc import ABCMeta, abstractmethod
 
-from train import PowerSourceMap, ModelOutputType, FeatureGroup, FeatureGroups
-from train import is_weight_output, node_info_column, component_to_col
+import os
+import sys
 
-from util.loader import model_path, get_model_group_path, get_save_path, download_and_save, get_model_name, get_archived_file, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME, CHECKPOINT_FOLDERNAME
-from util.config import getConfig
+util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
+sys.path.append(util_path)
 
-default_initial_models_location = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models"
-initial_models_location = getConfig('INITIAL_MODELS_LOC', default_initial_models_location)
+from util import assure_path, getConfig, PowerSourceMap, ModelOutputType, FeatureGroups, FeatureGroup,save_json, save_metadata, load_metadata, save_scaler, save_weight
 
-def get_checkpoint_path(group_path):
-    return os.path.join(group_path, CHECKPOINT_FOLDERNAME)
+from util.prom_types import  node_info_column
+from util.extract_types import component_to_col, get_unit_vals, ratio_to_col
+from util.loader import get_model_group_path, get_save_path, get_model_name, get_archived_file, CHECKPOINT_FOLDERNAME
+from util.config import model_toppath, initial_models_location
 
+def get_assured_checkpoint_path(group_path, assure=True):
+    checkpoint_path = os.path.join(group_path, CHECKPOINT_FOLDERNAME)
+    if assure:
+        assure_path(checkpoint_path)
+    return checkpoint_path
+
+# initlize path 
 for energy_source in PowerSourceMap.keys():
-    src_group_path = os.path.join(model_path, energy_source)
-    if not os.path.exists(src_group_path):
-        os.mkdir(src_group_path)
     for ot in ModelOutputType:
-        ot_group_path = os.path.join(src_group_path, ot.name)
-        if not os.path.exists(ot_group_path):
-            os.mkdir(ot_group_path)
-        for g in FeatureGroup:
-            if g == FeatureGroup.Unknown:
+        for fg in FeatureGroup:
+            if fg == FeatureGroup.Unknown:
                 continue
-            group_path = os.path.join(ot_group_path, g.name)
-            if not os.path.exists(group_path):
-                os.mkdir(group_path)
-            checkpoint_path = get_checkpoint_path(group_path)
-            if not os.path.exists(checkpoint_path):
-                os.mkdir(checkpoint_path)
+            group_path = get_model_group_path(model_toppath, ot, fg, energy_source, assure=True)
+            checkpoint_path = get_assured_checkpoint_path(group_path)
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -50,7 +41,7 @@ def normalize_and_split(X_values, y_values, scaler, test_size=0.1):
 
 
 class Trainer(metaclass=ABCMeta):
-    def __init__(self, profiles, model_class, energy_components, feature_group, energy_source, node_level, scaler_type="minmax"):
+    def __init__(self, profiles, model_class, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="minmax"):
         self.profiles = profiles
         self.energy_components = energy_components
         self.feature_group_name = feature_group
@@ -62,17 +53,15 @@ class Trainer(metaclass=ABCMeta):
         self.trainer_name = self.__class__.__name__
         self.model_class = model_class
         self.output_type = ModelOutputType.AbsPower if node_level else ModelOutputType.DynPower
-        self.group_path = get_model_group_path(self.output_type, self.feature_group, self.energy_source)
-        self.checkpoint_toppath = get_checkpoint_path(self.group_path)
+        self.group_path = get_model_group_path(model_toppath, self.output_type, self.feature_group, self.energy_source, pipeline_name=pipeline_name)
+        self.checkpoint_toppath = get_assured_checkpoint_path(self.group_path)
         self.node_models = dict()
         self.node_scalers = dict()
         self.scaler_type = scaler_type
 
     def _get_save_path(self, node_type):
         save_path = get_save_path(self.group_path, self.trainer_name, node_type=node_type) 
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
-        return save_path
+        return assure_path(save_path)
 
     def _model_filename(self, node_type):
         model_name = get_model_name(self.trainer_name, node_type)
@@ -165,33 +154,63 @@ class Trainer(metaclass=ABCMeta):
         else:
             return self.profiles[node_type].get_minmax_scaler(self.feature_group_name)
 
-    def process(self, data, power_labels):
+    def process(self, data, power_labels, pipeline_lock):
         node_types = pd.unique(data[node_info_column])
         for node_type in node_types:
+            node_type = int(node_types)
+            # self.node_scalers[node_type] = self.load_scaler(node_type)
+            self.node_scalers[node_type] = None
             self.load_model(node_type)
-            scaler = self.load_scaler(node_type)
             node_type_filtered_data = data[data[node_info_column] == node_type]
-            if scaler is None:
+            if self.node_scalers[node_type] is None:
                 # no profiled scaler
                 x_values = node_type_filtered_data[self.features].values
                 if self.scaler_type == "standard":
-                    scaler = StandardScaler()
+                    self.node_scalers[node_type] = StandardScaler()
                 else:
-                    scaler = MinMaxScaler()
-                scaler.fit(x_values)
+                    self.node_scalers[node_type] = MinMaxScaler()
+                self.node_scalers[node_type].fit(x_values)
                 self.print_log("Cannot load scaler for {}/{}, fit scaler to latest data".format(node_type, self.feature_group_name))
-            self.node_scalers[node_type] = scaler
             
             for component in self.energy_components:
-                power_label = component_to_col(component) 
-                related_labels = [label for label in power_labels if power_label in label]
-                X_values = node_type_filtered_data[self.features].values
-                y_values = node_type_filtered_data[related_labels].mean(axis=1)
+                X_values, y_values = self.apply_ratio(component, node_type_filtered_data, power_labels)
                 X_train, X_test, y_train, y_test = normalize_and_split(X_values, y_values, scaler=self.node_scalers[node_type])
                 self.train(node_type, component, X_train, y_train)
                 self.save_checkpoint(self.node_models[node_type][component], self._checkpoint_filepath(component, node_type))
             if self.should_archive(node_type):
-                self.save_model_and_metadata(node_type, X_test, y_test)
+                pipeline_lock.acquire()
+                try:
+                    self.save_model_and_metadata(node_type, X_test, y_test)
+                finally:
+                    pipeline_lock.release()
+
+    def apply_ratio(self, component, node_type_filtered_data, power_labels):
+        power_label = component_to_col(component) 
+        related_labels = [label for label in power_labels if power_label in label]
+        unit_vals = get_unit_vals(power_labels)
+        if len(unit_vals) == 0:
+            X_values = node_type_filtered_data[self.features].values
+            y_values = node_type_filtered_data[related_labels].sum(axis=1)
+            return X_values, y_values
+        X_values = None
+        y_values = None
+        for unit_val in unit_vals:
+            ratio_colname = ratio_to_col(unit_val)
+            y_col = component_to_col(component, unit_col='package', unit_val=unit_val)
+            multiplied_data = node_type_filtered_data[self.features].astype(float).copy()
+            for feature in self.features:
+                multiplied_data[feature] = node_type_filtered_data[feature] * node_type_filtered_data[ratio_colname]
+            unit_X_values = multiplied_data.values
+            unit_y_values = node_type_filtered_data[y_col].values
+            if X_values is None:
+                X_values = unit_X_values
+            else:
+                X_values += unit_X_values
+            if y_values is None:
+                y_values =  unit_y_values
+            else:
+                y_values += unit_y_values
+        return X_values, y_values
 
     def save_metadata(self, node_type, mae, item):
         save_path = self._get_save_path(node_type)
@@ -204,45 +223,39 @@ class Trainer(metaclass=ABCMeta):
         item['output_type'] = self.output_type.name
         item['mae'] = mae
         self.metadata = item
-        metadata_file = os.path.join(save_path, METADATA_FILENAME)
-        with open(metadata_file, "w") as f:
-            json.dump(item, f)
+        save_metadata(save_path, item)
 
     def archive_model(self, node_type):
         save_path = self._get_save_path(node_type)
         model_name, _ = self._model_filename(node_type)
         archived_file = get_archived_file(self.group_path, model_name) 
-        print("archive model ", archived_file)
+        self.print_log("archive model :" + archived_file)
+        self.print_log("save_path :" + save_path)
         shutil.make_archive(save_path, 'zip', save_path)
         weight_dict = self.get_weight_dict(node_type)
         if weight_dict is not None:
-            weight_file = os.path.join(save_path, WEIGHT_FILENAME)
-            with open(weight_file, "w") as f:
-                json.dump(weight_dict, f)
+            save_weight(save_path, weight_dict)
 
     def save_scaler(self, save_path, node_type):
-        filename = os.path.join(save_path, SCALER_FILENAME)
-        with open(filename, "wb") as f:
-            pickle.dump(self.node_scalers[node_type], f)
+        return save_scaler(save_path, self.node_scalers[node_type])
 
     def save_model_and_metadata(self, node_type, X_test, y_test):
         save_path = self._get_save_path(node_type)
-        _, model_file = self._model_filename(node_type)
+        scaler_filename = self.save_scaler(save_path, node_type)
+
+        _, model_dict_filename = self._model_filename(node_type)
         model_dict = dict()
         for component in self.energy_components:
             component_save_file = self.component_model_filename(component)
             model_dict[component] = {
                 'model_file': component_save_file,
                 'features': self.features,
-                'fe_files': [SCALER_FILENAME]
+                'fe_files': [scaler_filename] + ([] if not hasattr(self, 'fe_files') else self.fe_files)
             }
             # save component model
             self.save_model(save_path, node_type, component)
-        self.save_scaler(save_path, node_type)
         # save model dict
-        model_filepath = os.path.join(save_path, model_file)
-        with open(model_filepath, "w") as f:
-            json.dump(model_dict, f)
+        save_json(save_path, model_dict_filename, model_dict)
         self.archive_model(node_type)
         # save metadata
         max_mae = None
@@ -255,21 +268,20 @@ class Trainer(metaclass=ABCMeta):
 
     def predict(self, node_type, component, X_values):
         features = self.node_scalers[node_type].transform(X_values)
+        if hasattr(self, 'fe'):
+            for fe in self.fe:
+                features = fe.transform(features)
         model = self.node_models[node_type][component]
         return model.predict(features)
 
     def print_log(self, message):
         print("{} trainer ({}/{}/{}): {}".format(self.trainer_name, "Abs" if self.node_level else "Dyn", self.feature_group, self.energy_source, message))
-
+        
     def get_metadata(self):
         items = []
         for node_type in self.node_models.keys():
             save_path = self._get_save_path(node_type)
-            metadata_file = os.path.join(save_path, METADATA_FILENAME)
-            with open(metadata_file, "r") as f:
-                item = json.load(f)
-                item['node_type'] = node_type
-                items += [item]
+            item = load_metadata(save_path)
+            item['node_type'] = node_type
+            items += [item]
         return pd.DataFrame(items)
-        
-                

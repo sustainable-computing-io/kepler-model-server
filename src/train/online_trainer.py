@@ -5,7 +5,7 @@ import time
 util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
 
-from prom.query import PrometheusClient, PROM_QUERY_INTERVAL
+from prom.prom_query import PrometheusClient, PROM_QUERY_INTERVAL
 from util.config import getConfig
 
 SAMPLING_INTERVAL = PROM_QUERY_INTERVAL
@@ -18,24 +18,12 @@ default_trainers = ['GradientBoostingRegressorTrainer']
 abs_trainer_names = default_trainers + []
 dyn_trainer_names = default_trainers + []
 
-def initial_trainers(profiles, trainer_names, node_level):
-    trainers = []
-    for energy_source, energy_components in PowerSourceMap.items():
-        for feature_group in FeatureGroups.Keys():
-            for trainer_name in trainer_names:
-                trainer_class = load_class("trainer", trainer_name)
-                trainer = trainer_class(profiles, energy_components, feature_group.name, energy_source, node_level)
-                trainers += [trainer]
-    return trainers
 
 def initial_pipelines():
     profiles = load_all_profiles()
     pipeline_name = "DefaultPipeline"
-    abs_trainers = initial_trainers(profiles, abs_trainer_names, node_level=True)
-    dyn_trainers = initial_trainers(profiles, dyn_trainer_names, node_level=False)
-    trainers = abs_trainers + dyn_trainers
-    profile_pipeline = NewPipeline(pipeline_name, trainers, extractor=DefaultExtractor(), isolator=ProfileIsolator(profiles))
-    non_profile_pipeline = NewPipeline(pipeline_name, trainers, extractor=DefaultExtractor(), isolator=MinIdleIsolator())
+    profile_pipeline = NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=DefaultExtractor(), isolator=ProfileIsolator(profiles))
+    non_profile_pipeline = NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=DefaultExtractor(), isolator=MinIdleIsolator())
     return profile_pipeline, non_profile_pipeline
 
 if __name__ == '__main__':

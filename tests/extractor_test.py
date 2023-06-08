@@ -1,76 +1,101 @@
+# extractor_test.py
+# - extractor.extract
+#
+# To use response:
+# from extractor_test import get_extract_results
+# extract_results = get_extract_results(extractor_name, feature_group, node_level)
+
+# import external src
 import os
 import sys
-from copy import deepcopy
 
-src_path = os.path.join(os.path.dirname(__file__), '../src')
-train_path = os.path.join(os.path.dirname(__file__), '../src/train')
-profile_path = os.path.join(os.path.dirname(__file__), '../src/profile')
-
+#################################################################
+# import internal src 
+src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
-sys.path.append(train_path)
-sys.path.append(profile_path)
+#################################################################
 
-import json
-
-from train import DefaultExtractor, node_info_column, component_to_col, FeatureGroups, FeatureGroup
 from train import load_class
-from profiler import response_to_result
+from train import DefaultExtractor
+from train.extractor.preprocess import time_filter
+from util.extract_types import component_to_col
+from util.prom_types import node_info_column
+from util.train_types import all_feature_groups
+from util import FeatureGroups, FeatureGroup, PowerSourceMap
+from util import assure_path, get_valid_feature_group_from_queries
+from util import save_csv, load_csv
 
-from prom_test import prom_output_path
+from prom_test import get_query_results
 
-energy_components = ["package", "core", "uncore", "dram"]
-num_of_package = 2
-feature_groups = [fg.name for fg in FeatureGroups.keys()]
-energy_source = "rapl"
-
-extractor_output_path = os.path.join(os.path.dirname(__file__), 'data', 'extractor_output')
-prom_response_file = os.path.join(os.path.dirname(__file__), 'data', 'prom_response.json')
+data_path = os.path.join(os.path.dirname(__file__), 'data')
+assure_path(data_path)
+extractor_output_path = os.path.join(data_path, 'extractor_output')
+assure_path(extractor_output_path)
 
 if not os.path.exists(extractor_output_path):
     os.mkdir(extractor_output_path)
 
-expected_power_columns = [component_to_col(component, "package", unit_val) for component in energy_components for unit_val in range(0,num_of_package)]
-
 test_extractors = [DefaultExtractor()]
-# Add customize extractor here
-customize_extractors = []
-for extractor_name in customize_extractors:
-    test_extractors += [load_class("extractor", extractor_name)]
 
-import pandas as pd
+test_energy_source = "rapl"
+test_energy_components = PowerSourceMap[test_energy_source]
+test_num_of_unit = 2
+test_customize_extractors = []
 
-def read_sample_query_results():
-    with open(prom_response_file) as f:
-        response = json.load(f)
-        return response_to_result(response)
-    return dict()
+def get_filename(extractor_name, feature_group, node_level):
+    return "{}_{}_{}".format(extractor_name, feature_group, node_level)
 
-def save_results(instance, feature_group, extracted_data, node_level):
-    filename = "{}_{}_{}.csv".format(instance.__class__.__name__, feature_group, node_level)
-    filepath = os.path.join(extractor_output_path, filename)
-    extracted_data.to_csv(filepath)
+def get_extract_result(extractor_name, feature_group, node_level, save_path=extractor_output_path):
+    filename = get_filename(extractor_name, feature_group, node_level)
+    return load_csv(save_path, filename)
 
-def assert_extract(extracted_data, power_columns):
+def get_extract_results(extractor_name, node_level, save_path=extractor_output_path):
+    all_results = dict()
+    for feature_group in all_feature_groups:
+        result = get_extract_result(extractor_name, feature_group, node_level, save_path=save_path) 
+        if result is not None:
+            all_results[feature_group] = result
+    return all_results
+    
+def save_extract_results(instance, feature_group, extracted_data, node_level, save_path=extractor_output_path):
+    extractor_name = instance.__class__.__name__
+    filename = get_filename(extractor_name, feature_group, node_level)
+    save_csv(save_path, filename, extracted_data)
+
+def get_expected_power_columns(energy_components=test_energy_components, num_of_unit=test_num_of_unit):
+    return[component_to_col(component, "package", unit_val) for component in energy_components for unit_val in range(0,num_of_unit)]
+
+def assert_extract(extracted_data, power_columns, energy_components, num_of_unit, feature_group):
     extracted_data_column_names = extracted_data.columns
     # basic assert
     assert extracted_data is not None, "extracted data is None"
     assert len(power_columns) > 0, "no power label column {}".format(extracted_data_column_names)
     assert node_info_column in extracted_data_column_names, "no {} in column {}".format(node_info_column, extracted_data_column_names)
-    expected_power_column_length = len(energy_components) * num_of_package
+    expected_power_column_length = len(energy_components) * num_of_unit
     # detail assert
     assert len(power_columns) == expected_power_column_length, "unexpected power label columns {}, expected {}".format(power_columns, expected_power_column_length)
-    expected_col_size = expected_power_column_length + len(FeatureGroups[FeatureGroup[feature_group]]) + 1
+    expected_col_size = expected_power_column_length + len(FeatureGroups[FeatureGroup[feature_group]]) + 1 + num_of_unit # power ratio
     assert len(extracted_data_column_names) == expected_col_size, "unexpected column length: expected {}, got {}({}) ".format(expected_col_size, extracted_data_column_names, len(extracted_data_column_names))
+
+def process(query_results, feature_group, save_path=extractor_output_path, customize_extractors=test_customize_extractors, energy_source=test_energy_source, num_of_unit=2):
+    energy_components = PowerSourceMap[energy_source]
+    global test_extractors
+    for extractor_name in customize_extractors:
+        test_extractors += [load_class("extractor", extractor_name)]
+    for test_instance in test_extractors:
+        extracted_data, power_columns, corr = test_instance.extract(query_results, energy_components, feature_group, energy_source, node_level=True)
+        assert_extract(extracted_data, power_columns, energy_components, num_of_unit, feature_group)
+        save_extract_results(test_instance, feature_group, extracted_data, True, save_path=save_path)
+        extracted_data, power_columns, corr = test_instance.extract(query_results, energy_components, feature_group, energy_source, node_level=False)
+        assert_extract(extracted_data, power_columns, energy_components, num_of_unit, feature_group)
+        save_extract_results(test_instance, feature_group, extracted_data, False, save_path=save_path)
+        print("Correlations:\n")
+        print(corr)
         
 if __name__ == '__main__':
-    # Note that extractor mutates the query results
-    query_results = read_sample_query_results()
+    query_results = get_query_results()
     assert len(query_results) > 0, "cannot read_sample_query_results"
-    for test_instance in test_extractors:
-        for feature_group in feature_groups:
-            extracted_data, power_columns = test_instance.extract(query_results, energy_components, feature_group, energy_source, node_level=True)
-            assert_extract(extracted_data, power_columns)
-            save_results(test_instance, feature_group, extracted_data, True)
-            extracted_data, power_columns = test_instance.extract(query_results, energy_components, feature_group, energy_source, node_level=False)
-            assert_extract(extracted_data, power_columns)
-            save_results(test_instance, feature_group, extracted_data, False)
+    valid_feature_groups = get_valid_feature_group_from_queries(query_results.keys())    
+    for fg in valid_feature_groups:
+        feature_group = fg.name
+        process(query_results, feature_group)

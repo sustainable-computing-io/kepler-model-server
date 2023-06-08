@@ -1,0 +1,1 @@
+{"model_name": "PolynomialRegressionTrainer_1", "model_class": "scikit", "model_file": "PolynomialRegressionTrainer_1.json", "features": ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"], "fe_files": ["poly_scaler.pkl"], "output_type": "DynPower", "mae": 51.184493215883}
