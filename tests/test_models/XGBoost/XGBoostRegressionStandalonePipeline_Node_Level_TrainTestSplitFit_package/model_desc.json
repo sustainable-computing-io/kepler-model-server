@@ -1,0 +1,1 @@
+{"timestamp": 1686710024.467984, "train_type": "fit_train_and_predict_with_test", "rmse": 55.899220218397176, "r2": 0.2684169909414945, "mae": 33.80731110174119, "average_y_val": 370.68407476635537, "feature_names": ["bpf_block_irq", "bpf_cpu_time_us", "bpf_net_rx_irq", "bpf_net_tx_irq"], "label_names": ["total_package_power"]}
