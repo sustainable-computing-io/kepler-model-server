@@ -17,8 +17,8 @@ SYSTEM_FEATURES = ["cpu_architecture"]
 COUNTER_FEAUTRES = ["cache_miss", "cpu_cycles", "cpu_instr"]
 CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"]
 IO_FEATURES = ["bytes_read", "bytes_writes"]
-BPF_FEATURES = ["cpu_time"]
-IRQ_FEATURES = ["block_irq", "net_tx_irq", "net_rx_irq"]
+SOLE_IRQ_FEATURES = ["block_irq", "net_tx_irq", "net_rx_irq"]
+BPF_FEATURES = ["cpu_time"] + SOLE_IRQ_FEATURES
 KUBELET_FEATURES = ['kubelet_memory_bytes', 'kubelet_cpu_usage']
 WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + IO_FEATURES + BPF_FEATURES + KUBELET_FEATURES
 
@@ -39,8 +39,7 @@ class FeatureGroup(enum.Enum):
    CgroupOnly = 4
    BPFOnly = 5
    KubeletOnly = 6
-   IRQOnly = 7
-   CounterIRQCombined = 8
+   CounterIRQCombined = 7
    Unknown = 99
 
 class EnergyComponentLabelGroup(enum.Enum):
@@ -48,6 +47,7 @@ class EnergyComponentLabelGroup(enum.Enum):
     DRAMEnergyComponentOnly = 2
     CoreEnergyComponentOnly = 3
     PackageDRAMEnergyComponents = 4
+
 
 class ModelOutputType(enum.Enum):
     AbsPower = 1
@@ -58,6 +58,7 @@ class ModelOutputType(enum.Enum):
     DynModelWeight = 6
     DynComponentPower = 7
     DynComponentModelWeight = 8
+    XGBoostStandalonePower = 9
 
 
 # XGBoostRegressionTrainType
@@ -139,8 +140,7 @@ FeatureGroups = {
     FeatureGroup.CgroupOnly: deep_sort(CGROUP_FEATURES + IO_FEATURES),
     FeatureGroup.BPFOnly: deep_sort(BPF_FEATURES),
     FeatureGroup.KubeletOnly: deep_sort(KUBELET_FEATURES),
-    FeatureGroup.IRQOnly: deep_sort(IRQ_FEATURES),
-    FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + IRQ_FEATURES),
+    FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + SOLE_IRQ_FEATURES),
 }
 
 EnergyComponentLabelGroups = {

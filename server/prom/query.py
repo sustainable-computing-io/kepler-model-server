@@ -10,7 +10,7 @@ import datetime
 import pandas as pd
 from util.config import getConfig
 
-PROM_SERVER = 'http://localhost:9090'
+PROM_SERVER = 'http://localhost:9100'
 PROM_SSL_DISABLE = 'True'
 PROM_HEADERS = ''
 PROM_QUERY_INTERVAL = 300

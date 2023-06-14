@@ -1,1 +1,0 @@
-{"timestamp": 1676948134.48151, "train_type": "cross_val_score_Repeated3KFold", "average_mae": 0.0020485294593709114, "std": 0.0004049548568712666, "feature_names": ["block_irq", "net_rx_irq", "net_tx_irq"], "label_names": ["total_package_power"]}
