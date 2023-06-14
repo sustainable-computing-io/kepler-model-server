@@ -1,0 +1,1 @@
+{"timestamp": 1686710017.116774, "train_type": "cross_val_score_Repeated3KFold", "average_mae": 31.299883392791774, "std": 2.6890705254408487, "average_y_val": 370.95177072843256, "feature_names": ["bpf_block_irq", "bpf_cpu_time_us", "bpf_net_rx_irq", "bpf_net_tx_irq"], "label_names": ["total_package_power"]}
