@@ -1,71 +1,83 @@
+# trainer_test.py
+
 import os
 import sys
 
-src_path = os.path.join(os.path.dirname(__file__), '../src')
-train_path = os.path.join(os.path.dirname(__file__), '../src/train')
-
+#################################################################
+# import internal src 
+src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
-sys.path.append(train_path)
+#################################################################
 
-from train import load_class, load_all_profiles
-from isolator_test import isolator_output_path
-from extractor_test import extractor_output_path, energy_components, energy_source, expected_power_columns, node_info_column
+from train import load_class
+from util import PowerSourceMap
+from util.loader import DEFAULT_PIPELINE
+
+from isolator_test import test_isolators, test_profiles, get_isolate_results
+from extractor_test import test_extractors, get_extract_results, test_energy_source, get_expected_power_columns, node_info_column
 
 import pandas as pd
+import threading
 
-target_suffix = "_True.csv"
+test_trainer_names = [ 'PolynomialRegressionTrainer', 'GradientBoostingRegressorTrainer', 'SGDRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer','SVRRegressorTrainer']
 
-trainer_names = ['GradientBoostingRegressorTrainer', 'SGDRegressorTrainer']
-
-def read_extractor_results():
-    results = dict()
-    target_filenames = [ filename for filename in os.listdir(extractor_output_path) if filename[len(filename)-len(target_suffix):] == "_True.csv" ]
-    for filename in target_filenames:
-        extractor_name = filename[0:len(filename)-len(target_suffix)] # remove "_True.csv"
-        filepath = os.path.join(extractor_output_path, filename)
-        results[extractor_name] = pd.read_csv(filepath)
-    return results
-
-def read_isolator_results():
-    results = dict()
-    target_filenames = [ filename for filename in os.listdir(isolator_output_path)]
-    for filename in target_filenames:
-        # isolator_name = filename.split("_")[0]
-        isolator_name = filename[0:len(filename)-4] # remove ".csv"
-        filepath = os.path.join(isolator_output_path, filename)
-        results[isolator_name] = pd.read_csv(filepath)
-    return results
+pipeline_lock = threading.Lock()
 
 def assert_train(trainer, data, energy_components):
+    trainer.print_log("assert train")
     node_types = pd.unique(data[node_info_column])
     for node_type in node_types:
+        node_type_str = int(node_type)
         node_type_filtered_data = data[data[node_info_column] == node_type]
         X_values = node_type_filtered_data[trainer.features].values
         for component in energy_components:
-            output = trainer.predict(node_type, component, X_values)
+            output = trainer.predict(node_type_str, component, X_values)
             assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
 
-if __name__ == '__main__':
-    profiles = load_all_profiles()
-    extractor_results = read_extractor_results()
-    isolated_results = read_isolator_results()
+def process(node_level, feature_group, result, trainer_names=test_trainer_names, energy_source=test_energy_source, power_columns=get_expected_power_columns(), profiles=test_profiles, pipeline_name=DEFAULT_PIPELINE):
+    energy_components = PowerSourceMap[energy_source]
+    train_items = []
     for trainer_name in trainer_names:
         trainer_class = load_class("trainer", trainer_name)
+        trainer = trainer_class(profiles, energy_components, feature_group, energy_source, node_level=node_level, pipeline_name=pipeline_name)
+        trainer.process(result, power_columns, pipeline_lock=pipeline_lock)
+        assert_train(trainer, result, energy_components)
+        train_items += [trainer.get_metadata()]
+    return pd.concat(train_items)
 
-        for name, result in extractor_results.items():
-            print("Extractor ", name)
-            node_level = True
-            feature_group = name.split('_')[-1]
-            trainer = trainer_class(profiles, energy_components, feature_group, energy_source, node_level)
-            trainer.process(result, expected_power_columns)
-            assert_train(trainer, result, energy_components)
-            print(trainer.get_metadata())
+def process_all(extractors=test_extractors, isolators=test_isolators, trainer_names=test_trainer_names, energy_source=test_energy_source, power_columns=get_expected_power_columns(), profiles=test_profiles, pipeline_name=DEFAULT_PIPELINE):
+    abs_train_list = []
+    dyn_train_list = []
+    for extractor in extractors:
+        extractor_name = extractor.__class__.__name__
+        extractor_results = get_extract_results(extractor_name, node_level=True)
+        for feature_group, result in extractor_results.items():
+            print("Extractor ", extractor_name)
+            metadata_df = process(True, feature_group, result, trainer_names=trainer_names, energy_source=energy_source, power_columns=power_columns, profiles=profiles, pipeline_name=pipeline_name)
+            metadata_df['extractor'] = extractor_name
+            metadata_df['feature_group'] = feature_group
+            abs_train_list += [metadata_df]
+            
+        for isolator in isolators:
+            isolator_name = isolator.__class__.__name__
+            isolator_results = get_isolate_results(isolator_name, extractor_name)
+            for feature_group, result in isolator_results.items():
+                print("Isolator ", isolator_name)
+                metadata_df = process(False, feature_group, result, trainer_names=trainer_names, energy_source=energy_source, power_columns=power_columns, profiles=profiles, pipeline_name=pipeline_name)
+                metadata_df['extractor'] = extractor_name
+                metadata_df['isolator'] = isolator_name
+                metadata_df['feature_group'] = feature_group
+                dyn_train_list += [metadata_df]
+    abs_train_df = pd.concat(abs_train_list)
+    dyn_train_df = pd.concat(dyn_train_list)
+    return abs_train_df, dyn_train_df
 
-        for name, result in isolated_results.items():
-            print("Isolator ", name)
-            node_level = False
-            feature_group = name.split('_')[-1]
-            trainer = trainer_class(profiles, energy_components, feature_group, energy_source, node_level)
-            trainer.process(result, expected_power_columns)
-            assert_train(trainer, result, energy_components)
-            print(trainer.get_metadata())
+
+        
+if __name__ == '__main__':
+    focus_columns = ['model_name', 'mae']
+    abs_train_df, dyn_train_df = process_all()
+    print("Node-level train results:")
+    print(abs_train_df.set_index(['extractor', 'feature_group'])[focus_columns].sort_values(by=['mae'], ascending=True))
+    print("Container-level train results:")
+    print(dyn_train_df.set_index(['extractor', 'isolator', 'feature_group'])[focus_columns].sort_values(by=['mae'], ascending=True))

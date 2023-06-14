@@ -22,13 +22,20 @@ KUBELET_FEATURES =['kubelet_memory_bytes', 'kubelet_cpu_usage']
 WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + KUBELET_FEATURES
 
 PowerSourceMap = {
-    "rapl": ["package", "core", "uncore", "dram"],
+# "rapl": ["package", "core", "uncore", "dram"],
+    "rapl": ["package"],
     "acpi": ["platform"]
 }
 
 PACKAGE_ENERGY_COMPONENT_LABEL = ["package"]
 DRAM_ENERGY_COMPONENT_LABEL = ["dram"]
 CORE_ENERGY_COMPONENT_LABEL = ["core"]
+
+CATEGORICAL_LABEL_TO_VOCAB = {
+                    "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"],
+                    "nodeInfo": ["1"],
+                    "cpu_scaling_frequency_hertz": ["1GHz", "2GHz", "3GHz"],
+                    }
 
 class FeatureGroup(enum.Enum):
    Full = 1
@@ -39,7 +46,8 @@ class FeatureGroup(enum.Enum):
    KubeletOnly = 6
    IRQOnly = 7
    CounterIRQCombined = 8
-   BPFIRQ = 9
+   Basic = 9
+   BPFIRQ = 10
    Unknown = 99
 
 class EnergyComponentLabelGroup(enum.Enum):
@@ -52,6 +60,9 @@ class ModelOutputType(enum.Enum):
     AbsPower = 1
     DynPower = 2
     XGBoostStandalonePower = 3
+
+def is_support_output_type(output_type_name):
+    return any(output_type_name == item.name for item in ModelOutputType)
 
 def deep_sort(elements):
     sorted_elements = elements.copy()
@@ -67,6 +78,7 @@ FeatureGroups = {
     FeatureGroup.KubeletOnly: deep_sort(KUBELET_FEATURES),
     FeatureGroup.IRQOnly: deep_sort(IRQ_FEATURES),
     FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + IRQ_FEATURES),
+    FeatureGroup.Basic: deep_sort(COUNTER_FEAUTRES+CGROUP_FEATURES+KUBELET_FEATURES+BPF_FEATURES),
     FeatureGroup.BPFIRQ: deep_sort(BPF_FEATURES + IRQ_FEATURES),
 }
 
@@ -137,7 +149,10 @@ EnergyComponentLabelGroups = {
     EnergyComponentLabelGroup.DRAMEnergyComponentOnly: deep_sort(DRAM_ENERGY_COMPONENT_LABEL),
     EnergyComponentLabelGroup.CoreEnergyComponentOnly: deep_sort(CORE_ENERGY_COMPONENT_LABEL),
     EnergyComponentLabelGroup.PackageDRAMEnergyComponents: deep_sort(PACKAGE_ENERGY_COMPONENT_LABEL + DRAM_ENERGY_COMPONENT_LABEL)
+
 }
+
+all_feature_groups = [fg.name for fg in FeatureGroups.keys()]
 
 def get_feature_group(features):
     sorted_features = deep_sort(features)
