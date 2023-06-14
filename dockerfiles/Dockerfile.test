@@ -1,0 +1,29 @@
+FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:latest
+
+WORKDIR /usr/local
+RUN python3.8 -m pip install py-cpuinfo==9.0.0
+
+RUN mkdir -p /usr/local/src
+RUN mkdir -p /usr/local/resource
+
+COPY resource/profiles resource/profiles
+COPY src/profile/tool src/profile/tool
+COPY src/estimate src/estimate
+COPY src/server src/server
+COPY src/train src/train
+COPY src/util src/util
+COPY src/models/default src/models/default
+
+RUN mkdir -p tests/data
+COPY tests/data/prom_output tests/data/prom_output 
+COPY tests/prom_test.py tests/prom_test.py
+COPY tests/extractor_test.py tests/extractor_test.py
+COPY tests/isolator_test.py tests/isolator_test.py
+COPY tests/trainer_test.py tests/trainer_test.py
+COPY tests/pipeline_test.py tests/pipeline_test.py
+COPY tests/estimator_model_test.py tests/estimator_model_test.py
+COPY tests/estimator_power_request_test.py tests/estimator_power_request_test.py
+COPY tests/estimator_model_request_test.py tests/estimator_model_request_test.py
+
+EXPOSE 8100
+CMD [ "python3.8", "src/server/model_server.py" ]

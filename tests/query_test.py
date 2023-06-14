@@ -9,7 +9,7 @@ sys.path.append(server_path)
 sys.path.append(util_path)
 sys.path.append(prom_path)
 
-from prom.query import PrometheusClient, PROM_QUERY_INTERVAL, POD_STAT_QUERY, NODE_STAT_QUERY
+from prom.prom_query import PrometheusClient, PROM_QUERY_INTERVAL, POD_STAT_QUERY, NODE_STAT_QUERY
 from util.config import getConfig
 
 from train.train_types import FeatureGroups

@@ -3,6 +3,7 @@ kind: Benchmark
 metadata:
   name: coremark
   namespace: default
+  namespace: default
 spec:
   benchmarkOperator:
     name: none
@@ -24,7 +25,7 @@ spec:
             - ./coremark-${THREADNUM}.exe
         restartPolicy: Never
   parserKey: coremark
-  repetition: 3
+  repetition: 1
   iterationSpec:
     iterations:
     - location: .template.spec.containers[0].env[name=THREADNUM].value

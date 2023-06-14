@@ -1,0 +1,1 @@
+{"package": {"model_file": "package.pkl", "features": ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"], "fe_files": ["scaler.pkl"]}}

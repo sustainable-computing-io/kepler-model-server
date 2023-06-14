@@ -22,7 +22,7 @@ sys.path.append(src_path)
 sys.path.append(prom_path)
 sys.path.append(train_path)
 
-from train.prom.query import generate_dataframe_from_response, TIMESTAMP_COL
+from train.prom.prom_query import generate_dataframe_from_response, TIMESTAMP_COL
 from train.extractor.extractor import node_info_query, cpu_frequency_info_query, energy_component_to_query
 from train import PowerSourceMap
 
