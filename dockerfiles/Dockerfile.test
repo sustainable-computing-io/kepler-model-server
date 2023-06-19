@@ -16,14 +16,13 @@ COPY src/models/default src/models/default
 
 RUN mkdir -p tests/data
 COPY tests/data/prom_output tests/data/prom_output 
-COPY tests/prom_test.py tests/prom_test.py
-COPY tests/extractor_test.py tests/extractor_test.py
-COPY tests/isolator_test.py tests/isolator_test.py
-COPY tests/trainer_test.py tests/trainer_test.py
-COPY tests/pipeline_test.py tests/pipeline_test.py
-COPY tests/estimator_model_test.py tests/estimator_model_test.py
-COPY tests/estimator_power_request_test.py tests/estimator_power_request_test.py
-COPY tests/estimator_model_request_test.py tests/estimator_model_request_test.py
+COPY tests/*.py tests/
 
+# port for Model Server
 EXPOSE 8100
-CMD [ "python3.8", "src/server/model_server.py" ]
+# port for Online Trainer (TODO: reserved for event-based online training)
+EXPOSE 8101
+# port for Offline Trainer
+EXPOSE 8102
+
+CMD [ "python3.8", "-u", "src/server/model_server.py" ]

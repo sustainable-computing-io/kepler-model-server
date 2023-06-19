@@ -3,8 +3,8 @@
 # client (test):
 #   python tests/offline_trainer_test.py dataset_name <src_json_file> <idle_filepath> <save_path>
 # output will be saved at
-# save_path |- dataset_name |- AbsPower |- power_source |- feature_group |- metadata.json, ...
-#                           |- DynPower |- power_source |- feature_group |- metadata.json, ...
+# save_path |- dataset_name |- AbsPower |- energy_source |- feature_group |- metadata.json, ...
+#                           |- DynPower |- energy_source |- feature_group |- metadata.json, ...
 # test offline trainer
 #
 
@@ -16,23 +16,20 @@ import shutil
 import json
 import codecs
 
-src_path = os.path.join(os.path.dirname(__file__), '../src')
-train_path = os.path.join(os.path.dirname(__file__), '../src/train')
-profile_path = os.path.join(os.path.dirname(__file__), '../src/profile')
-util_path = os.path.join(os.path.dirname(__file__), 'util')
-
+#################################################################
+# import internal src 
+src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
-sys.path.append(train_path)
-sys.path.append(profile_path)
-sys.path.append(util_path)
+#################################################################
 
 from train.offline_trainer import TrainAttribute, TrainRequest, serve_port
 
 
 from model_server_test import TMP_FILE
-from profile import profile_process
-from extractor_test import prom_response_file, prom_response_idle_file
-
+from prom_test import get_prom_response
+from extractor_test import test_energy_source
+from util.loader import list_all_abs_models, list_all_dyn_models, class_to_json
+from util.prom_types import get_valid_feature_group_from_queries
 from train.prom.prom_query import prom_responses_to_results
 
 offline_trainer_output_path = os.path.join(os.path.dirname(__file__), 'data', 'offline_trainer_output')
@@ -40,22 +37,17 @@ offline_trainer_output_path = os.path.join(os.path.dirname(__file__), 'data', 'o
 if not os.path.exists(offline_trainer_output_path):
     os.mkdir(offline_trainer_output_path)
 
-target_suffix = "_True.csv"
+# example trainers
+abs_trainer_names = ['SGDRegressorTrainer', 'PolynomialRegressionTrainer']
+dyn_trainer_names = ['SGDRegressorTrainer', 'PolynomialRegressionTrainer']
 
-abs_trainer_names = ['GradientBoostingRegressorTrainer', 'SGDRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer', 'PolynomialRegressionTrainer', 'SVRRegressorTrainer']
-dyn_trainer_names = ['GradientBoostingRegressorTrainer', 'SGDRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer', 'PolynomialRegressionTrainer', 'SVRRegressorTrainer']
-
-energy_sources = ['rapl']
-feature_groups = ['CounterOnly', 'CgroupOnly', 'BPFOnly', 'KubeletOnly']
-
-profiles = dict()
-
+# requested isolators
 isolators = {
-    'MinIdleIsolator': [],
-    'ProfileBackgroundIsolator': [profiles],
-    'TrainIsolator': [abs_trainer_names] # apply all and select the best
+    "MinIdleIsolator": {},
+    "NoneIsolator": {},
+    "ProfileBackgroundIsolator": {}
+    # "TrainIsolator": {"abs_pipeline_name": DEFAULT_PIPELINE} # TODO: too heavy to test on CI
 }
-
 
 def get_target_path(save_path, energy_source, feature_group):
     power_path = os.path.join(save_path, energy_source)
@@ -68,10 +60,12 @@ def get_target_path(save_path, energy_source, feature_group):
 
 import json
 
-def make_request(dataset_name, profiles, isolator, isolator_args, data, save_path):
-    trainer = TrainAttribute(abs_trainer_names, dyn_trainer_names, profiles, isolator, isolator_args)
-    request = TrainRequest(dataset_name, trainer=trainer, data=data)
-
+def make_request(pipeline_name, idle_prom_response, isolator, isolator_args, prom_response,  energy_source, save_path):
+    trainer = TrainAttribute(abs_trainer_names, dyn_trainer_names, idle_prom_response, isolator, isolator_args)
+    # set trainer to None to not initialize TrainAttribute object
+    train_request = TrainRequest(pipeline_name, trainer=None, prom_response=prom_response, energy_source=energy_source)
+    train_request.trainer = class_to_json(trainer)
+    request = class_to_json(train_request)
     # send request
     response = requests.post('http://localhost:{}/train'.format(serve_port), json=request)
     assert response.status_code == 200, response.text
@@ -84,30 +78,33 @@ def make_request(dataset_name, profiles, isolator, isolator_args, data, save_pat
 def get_pipeline_name(dataset_name, isolator):
     return "{}_{}".format(dataset_name, isolator)  
 
-def process(dataset_name, json_file_path, idle_file_path, target_path):
-    if not os.path.exists(target_path):
-        os.mkdir(target_path)
-    with open(idle_file_path) as f:
-        idle_response = json.load(f)
-        idle_data = prom_responses_to_results(idle_response)
-    with open(json_file_path) as f:
-        train_response = json.load(f)
-        train_data = prom_responses_to_results(train_response)
-    profiles = profile_process(idle_data)
+def _assert_offline_trainer(model_list_map):
+    for model_path, models in model_list_map.items():
+        assert len(models) > 0, "No trained model in {}".format(model_path)
+        print("Trained model in {}: {}".format(model_path, models))
+
+def assert_offline_trainer_output(target_path, energy_source, valid_fgs, pipeline_name):
+    abs_models = list_all_abs_models(target_path, energy_source, valid_fgs, pipeline_name=pipeline_name)
+    dyn_models = list_all_dyn_models(target_path, energy_source, valid_fgs, pipeline_name=pipeline_name)
+    _assert_offline_trainer(abs_models)
+    _assert_offline_trainer(dyn_models)
+
+def process(dataset_name, train_prom_response, idle_prom_response, energy_source=test_energy_source, isolators=isolators, target_path=offline_trainer_output_path):
+    idle_data = prom_responses_to_results(idle_prom_response)
+    valid_fgs = get_valid_feature_group_from_queries(idle_data)
+
     for isolator, isolator_args in isolators.items():
         print("Isolator: ", isolator)
         pipeline_name = get_pipeline_name(dataset_name, isolator)
         save_path = os.path.join(target_path, pipeline_name)
         if not os.path.exists(save_path):
             os.mkdir(save_path)
-        make_request(pipeline_name, profiles, isolator, isolator_args, train_data, save_path)
+        make_request(pipeline_name, idle_prom_response, isolator, isolator_args, train_prom_response, energy_source, save_path)
+        assert_offline_trainer_output(target_path=target_path, energy_source=energy_source, valid_fgs=valid_fgs, pipeline_name=pipeline_name)
     
-                
 if __name__ == '__main__':
     dataset_name = "sample_data"
-    json_file_path = prom_response_file
-    idle_file_path = prom_response_idle_file
-    target_path = offline_trainer_output_path
-
-    process(dataset_name, json_file_path, idle_file_path, target_path)
+    idle_prom_response = get_prom_response(save_name="idle")
+    train_prom_response = get_prom_response()
+    process(dataset_name, train_prom_response, idle_prom_response)
     

@@ -4,11 +4,15 @@ import threading
 
 util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
+extractor_path = os.path.join(os.path.dirname(__file__), 'extractor')
+sys.path.append(extractor_path)
+isolator_path = os.path.join(os.path.dirname(__file__), 'isolator')
+sys.path.append(isolator_path)
 
 from extractor import DefaultExtractor
 from isolator import MinIdleIsolator
 
-from util import PowerSourceMap, FeatureGroups
+from train_types import PowerSourceMap, FeatureGroups
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
@@ -31,20 +35,22 @@ class Pipeline():
         self.name = name
         self.lock = threading.Lock()
 
-    def process(self, input_query_results, energy_components, feature_group, energy_source, aggr=True):
+    def process(self, input_query_results, energy_components, energy_source, feature_group, aggr=True):
+        self.print_log("{} start processing.".format(feature_group))
         query_results = input_query_results.copy()
         extracted_data, power_labels, corr = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=True, aggr=aggr)
         if extracted_data is None:
             self.print_log("cannot extract data")
             return False, None, None
+        self.print_log("{} extraction done.".format(feature_group))
         abs_data = extracted_data.copy()
         extracted_data, power_labels, corr = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=False)
         isolated_data = self.isolator.isolate(extracted_data, label_cols=power_labels, energy_source=energy_source)
         if isolated_data is None:
             self.print_log("cannot isolate data")
             return False, None, None
+        self.print_log("{} isolation done.".format(feature_group))
         dyn_data = isolated_data.copy()
-
         # start the thread pool
         with ThreadPoolExecutor(2) as executor:
             futures = []

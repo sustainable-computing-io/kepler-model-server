@@ -18,7 +18,7 @@ CHECKPOINT_FOLDERNAME = 'checkpoint'
 DOWNLOAD_FOLDERNAME = 'download'
 
 default_init_model_url = "https://github.com/sunya-ch/kepler-model-db/raw/main/models/"
-default_init_pipeline_name = "trl-nx12_mixed_all_TrainIsoltor"
+default_init_pipeline_name = "trl-nx12_mixed_all_TrainIsolator"
 default_trainer_name = "GradientBoostingRegressorTrainer"
 default_node_type = "1"
 default_feature_group = FeatureGroup.CgroupOnly
@@ -156,6 +156,14 @@ def list_all_abs_models(model_toppath, energy_source, valid_fgs, pipeline_name=D
         abs_models_map[group_path] = model_names
     return abs_models_map
 
+def list_all_dyn_models(model_toppath, energy_source, valid_fgs, pipeline_name=DEFAULT_PIPELINE):
+    dyn_models_map = dict()
+    for fg in valid_fgs:
+        group_path = get_model_group_path(model_toppath, output_type=ModelOutputType.DynPower, feature_group=fg, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
+        model_names = list_model_names(group_path)
+        dyn_models_map[group_path] = model_names
+    return dyn_models_map
+
 def get_download_path():
     return os.path.join(os.path.dirname(__file__), DOWNLOAD_FOLDERNAME)
 
@@ -166,3 +174,6 @@ def get_url(output_type, feature_group=default_feature_group, trainer_name=defau
     group_path = get_model_group_path(model_topurl, output_type=output_type, feature_group=feature_group, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
     model_name = get_model_name(trainer_name, node_type)
     return os.path.join(group_path, model_name + ".zip")
+
+def class_to_json(class_obj):
+    return json.loads(json.dumps(class_obj.__dict__))

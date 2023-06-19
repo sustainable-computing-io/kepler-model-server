@@ -18,8 +18,6 @@ sys.path.append(server_path)
 from train_types import FeatureGroup, FeatureGroups, ModelOutputType
 from model_server import MODEL_SERVER_PORT
 
-from trainer_test import trainer_names
-
 def get_model_request_json(metrics, output_type, node_type, weight, trainer_name, energy_source):
     return {"metrics": metrics, "output_type": output_type.name, "node_type": node_type, "weight": weight, "trainer_name": trainer_name, "source": energy_source}
 

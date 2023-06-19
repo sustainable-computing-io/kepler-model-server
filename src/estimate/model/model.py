@@ -7,6 +7,8 @@ import json
 
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
+cur_path = os.path.join(os.path.dirname(__file__), '.')
+sys.path.append(cur_path)
 
 from loader import load_metadata, get_download_output_path
 from prom_types import TIMESTAMP_COL, valid_container_query
