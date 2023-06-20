@@ -6,21 +6,18 @@ import numpy as np
 # import internal src 
 src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
-
-profile_tool_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'profile', 'tool')
-sys.path.append(profile_tool_path)
 #################################################################
 
 from util import assure_path, save_csv, load_csv, FeatureGroups, FeatureGroup
 from util.train_types import all_feature_groups
 from util.extract_types import container_level_index, node_level_index
 
-from train import MinIdleIsolator, ProfileBackgroundIsolator, TrainIsoltor, NoneIsolator
+from train import MinIdleIsolator, ProfileBackgroundIsolator, TrainIsolator, NoneIsolator
 from train import generate_profiles
 from train.prom import prom_responses_to_results
 from train.extractor.preprocess import find_correlations
 
-from profile_background import process as profile_background_process
+from train import DefaultProfiler
 
 from extractor_test import test_energy_source, get_extract_results, get_expected_power_columns, test_extractors, extractor_output_path
 from prom_test import get_prom_response
@@ -29,7 +26,7 @@ assure_path(isolator_output_path)
 
 test_idle_response = get_prom_response(save_name="idle")
 test_idle_data = prom_responses_to_results(test_idle_response)
-profile_map = profile_background_process(test_idle_data)
+profile_map = DefaultProfiler.process(test_idle_data)
 test_profiles = generate_profiles(profile_map)
 test_isolators = [MinIdleIsolator(), NoneIsolator()]
 
@@ -96,6 +93,6 @@ def process(test_isolators=test_isolators, customize_isolators=[], extract_path=
 
 if __name__ == '__main__':
     # Add customize isolator here
-    customize_isolators = [TrainIsoltor(idle_data=test_idle_data)]
+    customize_isolators = [TrainIsolator(idle_data=test_idle_data, profiler=DefaultProfiler)]
     customize_isolators += [ProfileBackgroundIsolator(test_profiles, test_idle_data)]
     process(customize_isolators=customize_isolators)

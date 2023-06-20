@@ -10,9 +10,9 @@ estimate_path = os.path.join(os.path.dirname(__file__), '..', '..', 'estimate')
 sys.path.append(estimate_path)
 
 
-from util import PowerSourceMap
-from util.extract_types import container_id_colname, col_to_component, get_num_of_unit, all_container_key
-from util.prom_types import TIMESTAMP_COL, node_info_column, get_container_name_from_id
+from train_types import PowerSourceMap
+from extract_types import container_id_colname, col_to_component, get_num_of_unit, all_container_key
+from prom_types import TIMESTAMP_COL, node_info_column, get_container_name_from_id
 
 from estimate import get_background_containers, get_predicted_power_colname, get_predicted_background_power_colname, get_predicted_dynamic_background_power_colname, get_label_power_colname, get_reconstructed_power_colname
 
@@ -41,7 +41,7 @@ def exclude_target_container_usage(data, target_container_id):
 # target_containers are containers that are not in idle
 # idle_data in json format
 def get_target_containers(data, background_containers):
-    container_ids = pd.unique(data.reset_index()[container_id_colname])
+    container_ids = pd.unique(data[container_id_colname])
     target_containers = [container_id for container_id in container_ids if get_container_name_from_id(container_id) not in background_containers]
     return target_containers, background_containers
 
@@ -107,6 +107,10 @@ class ProfileBackgroundIsolator(Isolator):
         return col_to_component(label_col)
 
     def isolate(self, data, label_cols, energy_source):
+        index_list = data.index.names
+        if index_list[0] is not None:
+            data = data.reset_index()
+        data = data.set_index([TIMESTAMP_COL])
         target_data, _ = isolate_container(data, self.background_containers)
         isolated_data = target_data.copy()
         try:
@@ -115,8 +119,11 @@ class ProfileBackgroundIsolator(Isolator):
                 isolated_data['profile'] = isolated_data[node_info_column].transform(self.transform_profile, energy_source=energy_source, component=component)
                 if isolated_data['profile'].isnull().values.any():
                     return None
-                isolated_data[label_col] = data[label_col] - isolated_data['profile']
+                isolated_data[label_col] = isolated_data[label_col] - isolated_data['profile']
                 isolated_data.drop(columns='profile', inplace=True)
+            isolated_data = isolated_data.reset_index()
+            if index_list[0] is not None:
+                isolated_data.set_index(index_list)
             return isolated_data
         except Exception as e:
             print(e)
@@ -140,7 +147,6 @@ class ProfileBackgroundIsolator(Isolator):
                 print(e)
                 return None
         return reconstructed_data
-        
 
 # no isolation
 class NoneIsolator(Isolator):

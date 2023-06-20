@@ -7,15 +7,13 @@ import numpy as np
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
-estimate_path = os.path.join(os.path.dirname(__file__), '..', '..', 'estimate')
-sys.path.append(estimate_path)
+model_path = os.path.join(os.path.dirname(__file__), '..', '..', 'estimate', 'model')
+sys.path.append(model_path)
 
-from util import FeatureGroup, FeatureGroups, PowerSourceMap
-
-from util.prom_types import PROM_QUERY_STEP, TIMESTAMP_COL
-from util.extract_types import container_id_colname, col_to_component
-
-from estimate import get_label_power_colname
+from train_types import FeatureGroup, FeatureGroups, PowerSourceMap
+from prom_types import PROM_QUERY_STEP, TIMESTAMP_COL
+from extract_types import container_id_colname, col_to_component
+from model import get_label_power_colname
 
 def drop_zero_column(data, cols):
     sum_col = "sum_val"
