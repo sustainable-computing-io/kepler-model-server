@@ -1,0 +1,170 @@
+name: Bug Report
+description: Report a bug encountered while deploying and operating components on Kepler model server
+labels: kind/bug
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: |
+        Please provide as much info as possible. Not doing so may result in your bug not being addressed in a timely manner.
+        If this matter is security related, please disclose it privately via https://kubernetes.io/security
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How can we reproduce it (as minimally and precisely as possible)?
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Anything else we need to know?
+
+  - type: textarea
+    id: keplerImage
+    attributes:
+      label: Kepler image tag
+      value: |
+          <details>
+
+          </details>
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: deployment
+    attributes:
+      label: Deployment
+      description: Provide the deployment choice
+      options:
+        - label: Model server
+          required: false
+        - label: Estimator
+          required: false
+        - label: Online trainer
+          required: false
+        - label: Offline trainer
+          required: false
+        - label: Profiler
+          required: false
+
+  - type: textarea
+    id: keplerModelServerImage
+    attributes:
+      label: Kepler model server image tag if deployed
+      value: |
+          <details>
+
+          </details>
+    validations:
+      required: false
+
+  - type: textarea
+    id: keplerEstimatorImage
+    attributes:
+      label: Kepler estimator image tag if deployed
+      value: |
+          <details>
+
+          </details>
+    validations:
+      required: false
+
+  - type: textarea
+    id: keplerOnlineTrainerImage
+    attributes:
+      label: Kepler online trainer image tag if deployed
+      value: |
+          <details>
+
+          </details>
+    validations:
+      required: false
+
+  - type: textarea
+    id: keplerOfflineTrainerImage
+    attributes:
+      label: Kepler offline trainer image tag if deployed
+      value: |
+          <details>
+
+          </details>
+    validations:
+      required: false
+
+  - type: textarea
+    id: keplerProfilerImage
+    attributes:
+      label: Kepler profiler image tag if deployed
+      value: |
+          <details>
+
+          </details>
+    validations:
+      required: false
+      
+  - type: textarea
+    id: kubeVersion
+    attributes:
+      label: Kubernetes version
+      value: |
+        <details>
+
+        ```console
+        $ kubectl version
+        # paste output here
+        ```
+
+        </details>
+    validations:
+      required: false
+
+  - type: textarea
+    id: installer
+    attributes:
+      label: Install tools
+      value: |
+        <details>
+
+        </details>
+
+  - type: textarea
+    id: keplerDeploymentConfig
+    attributes:
+      label: Kepler deployment config
+      value: |
+        <details>
+
+        For on kubernetes:
+        ```console
+        $ KEPLER_NAMESPACE=kepler
+
+        # provide kepler configmap
+        $ kubectl get configmap kepler-cfm -n ${KEPLER_NAMESPACE} 
+        # paste output here
+
+        # provide kepler model server configmap if Kepler Model Server is deployed 
+        $ kubectl get configmap kepler-model-server-cfm -n ${KEPLER_NAMESPACE} 
+        # paste output here
+
+        # provide kepler deployment description
+        $ kubectl describe deployment kepler-exporter -n ${KEPLER_NAMESPACE} 
+        ```
+
+        For standalone:
+        # put your Kepler command argument here
+
+        </details>
+    validations:
+      required: false
