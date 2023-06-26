@@ -5,7 +5,7 @@ import sys
 from typing import List, Optional, Tuple, Dict, Any
 import pandas as pd
 import copy
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, mean_absolute_percentage_error
 from sklearn.model_selection import train_test_split, RepeatedKFold, cross_val_score
 import numpy as np
 import xgboost as xgb
@@ -238,10 +238,12 @@ class XGBoostRegressionModelGenerationPipeline():
         rmse_res = mean_squared_error(y_test, results, squared=False)
         mae_res = mean_absolute_error(y_test, results)
         r2_res = r2_score(y_test, results)
+        mape_res = mean_absolute_percentage_error(y_test, results)
         # Results
         print(f"rmse: {rmse_res}")
         print(f"r2: {r2_res}")
         print(f"mae: {mae_res}")
+        print(f"mape:{mape_res}")
         print(y)
         print(np.mean(y))
         # TODO: Determine acceptable rmse, and r2 values?
@@ -253,6 +255,7 @@ class XGBoostRegressionModelGenerationPipeline():
             "rmse": rmse_res,
             "r2": r2_res,
             "mae": mae_res,
+            "mape": mape_res,
             "average_y_val": np.mean(y),
         }
         # Save Model and model_desc.json
@@ -273,23 +276,38 @@ class XGBoostRegressionModelGenerationPipeline():
             params = {
                 "xgb_model": old_model_filepath,
             }
-            cv_scores = cross_val_score(estimator=new_model, X=X, y=y, scoring="neg_mean_absolute_error", cv=kFoldCV, fit_params=params)
-            cv_scores = np.absolute(cv_scores)
+            mae_cv_scores = cross_val_score(estimator=new_model, X=X, y=y, scoring="neg_mean_absolute_error", cv=kFoldCV, fit_params=params)
+            mae_cv_scores = np.absolute(mae_cv_scores)
+            mape_cv_scores = cross_val_score(estimator=new_model, X=X, y=y, scoring="neg_mean_absolute_percentage_error", cv=kFoldCV)
+            mape_cv_scores = np.absolute(mape_cv_scores)
+            r2_cv_scores = cross_val_score(estimator=new_model, X=X, y=y, scoring="r2", cv=kFoldCV)
+            r2_cv_scores = np.absolute(r2_cv_scores)
         else:
-            cv_scores = cross_val_score(estimator=new_model, X=X, y=y, scoring="neg_mean_absolute_error", cv=kFoldCV)
-            cv_scores = np.absolute(cv_scores)
-
-        print(f"average_mae: {cv_scores.mean()}")
-        print(f"std: {cv_scores.std()}")
+            mae_cv_scores = cross_val_score(estimator=new_model, X=X, y=y, scoring="neg_mean_absolute_error", cv=kFoldCV)
+            mae_cv_scores = np.absolute(mae_cv_scores)
+            mape_cv_scores = cross_val_score(estimator=new_model, X=X, y=y, scoring="neg_mean_absolute_percentage_error", cv=kFoldCV)
+            mape_cv_scores = np.absolute(mape_cv_scores)
+            r2_cv_scores = cross_val_score(estimator=new_model, X=X, y=y, scoring="r2", cv=kFoldCV)
+            r2_cv_scores = np.absolute(r2_cv_scores)
+        print(f"average_mae: {mae_cv_scores.mean()}")
+        print(f"mae_std: {mae_cv_scores.std()}")
+        print(mape_cv_scores)
+        print(f"average_mape: {mape_cv_scores.mean()}")
+        print(f"mape_std: {mape_cv_scores.std()}")
         print(y)
         print(np.mean(y))
         model_data = {
             "timestamp": datetime.datetime.now().timestamp(),
-            "train_type": "cross_val_score_Repeated3KFold",
-            "average_mae": cv_scores.mean(),
-            "std": cv_scores.std(),
+            "train_type": "cross_val_score_Repeated3KFold", # this should be variable instead of hard coded
+            "average_mae": mae_cv_scores.mean(), 
+            "mae_std": mae_cv_scores.std(),
+            "average_mape": mape_cv_scores.mean(),
+            "mape_std": mape_cv_scores.std(),
+            "average_r2": r2_cv_scores.mean(),
+            "r2_std": r2_cv_scores.std(),
             "average_y_val": np.mean(y)
         }
+
         # TODO: Determine acceptable average_mae?
         # Note that this feature could also be implemented in kepler-models
 
@@ -298,7 +316,7 @@ class XGBoostRegressionModelGenerationPipeline():
         else:
             # If Model is acceptable, fit it from scratch
             new_model.fit(X, y)
-
+        print(new_model.objective)
         # Save Model and model_desc.json
         self._save_model(new_model, model_data)
         
