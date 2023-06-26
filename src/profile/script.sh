@@ -53,7 +53,7 @@ save() {
     resultPath="../../resource/query_response/${resultId}"
     mkdir -p ${resultPath}
     mv tmp.yaml "${resultPath}/cr.yaml"
-    python3 ./tool/query.py "${resultPath}/cr.yaml"
+    python3 ./tool/query_deprecated.py "${resultPath}/cr.yaml"
     kill $(pidof kubectl)
     echo "Results are saved in ${resultPath}"
     git checkout -b ${resultId}

@@ -2,25 +2,16 @@ import os
 import sys
 import numpy as np
 
-cur_path = os.path.join(os.path.dirname(__file__), '.')
-sys.path.append(cur_path)
-
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'util')
 sys.path.append(util_path)
-
 estimate_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'estimate')
 sys.path.append(estimate_path)
 
-profile_path = os.path.join(os.path.dirname(__file__), '..', '..', 'profile', 'tool')
-sys.path.append(profile_path)
-
 from isolator import Isolator, isolate_container
-
 from estimate import load_model, get_predicted_power_colname, get_predicted_background_power_colname, get_dynamic_power_colname, get_reconstructed_power_colname, get_label_power_colname, get_background_containers
 from extractor import find_correlations
 from preprocess import get_extracted_power_labels
 
-from profile_background import process as profile_process
 from util import PowerSourceMap
 from util.train_types import get_valid_feature_groups
 from util.prom_types import TIMESTAMP_COL
@@ -68,7 +59,7 @@ def append_dyn_power(target_data, energy_components, extracted_power_labels, bac
         label_colname = get_label_power_colname(energy_component)
         power_join_df[dyn_colname] = power_join_df[label_colname] - power_join_df[bg_colname]
         appended_data = appended_data.join(power_join_df[[dyn_colname]])
-    num = appended_data._get_numeric_data()
+    num = appended_data._get_numeric_data().astype(float)
     num[num < min_val] = min_val
     return appended_data
 
@@ -119,15 +110,19 @@ def find_best_target_data_with_dyn_power(energy_source, energy_components, extra
     return best_target_data_with_dyn_power, best_background_data_with_prediction
 
 # TO-DO: suppport multiple node types
-class TrainIsoltor(Isolator):
-    def __init__(self, idle_data, abs_pipeline_name=DEFAULT_PIPELINE):
+class TrainIsolator(Isolator):
+    def __init__(self, idle_data, profiler, abs_pipeline_name=DEFAULT_PIPELINE):
         self.idle_data = idle_data
-        self.profiles = profile_process(self.idle_data)
+        self.profiles = profiler.process(self.idle_data)
         self.background_containers = get_background_containers(self.idle_data)
         self.abs_pipeline_name = abs_pipeline_name
 
     def isolate(self, data, label_cols, energy_source):
+        index_list = data.index.names
+        if index_list[0] is not None:
+            data = data.reset_index()
         energy_components = PowerSourceMap[energy_source]
+        label_cols = list(label_cols)
         best_target_data_with_dyn_power, _ = find_best_target_data_with_dyn_power(energy_source, energy_components, data, self.background_containers, label_cols, pipeline_name=self.abs_pipeline_name)
         isolated_data = best_target_data_with_dyn_power.copy()
         power_label_cols = [get_label_power_colname(energy_component) for energy_component in energy_components]
@@ -140,6 +135,8 @@ class TrainIsoltor(Isolator):
             isolated_data[label_col] = isolated_data[label_col]/isolated_data[component_label_colname]*isolated_data[dyn_power_colname]
         drop_cols = power_label_cols + [get_dynamic_power_colname(energy_component) for energy_component in energy_components]
         isolated_data = isolated_data.drop(columns=drop_cols).reset_index().fillna(0)
+        if index_list[0] is not None:
+            isolated_data = isolated_data.set_index(index_list)
         return isolated_data
     
     def reconstruct(self, extracted_data, data_with_prediction, energy_source, label_cols):

@@ -36,7 +36,7 @@ def generate_dataframe_from_response(query_metric, prom_response):
 def prom_responses_to_results(prom_responses):
     results = dict()
     for query_metric, prom_response in prom_responses.items():
-        results[query_metric] =generate_dataframe_from_response(query_metric, prom_response)
+        results[query_metric] = generate_dataframe_from_response(query_metric, prom_response)
     return results
 
 class PrometheusClient():

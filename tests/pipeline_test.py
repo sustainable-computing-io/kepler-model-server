@@ -17,7 +17,7 @@ from isolator_test import test_isolators, test_profiles
 from trainer_test import test_trainer_names, assert_train
 
 def assert_pipeline(pipeline, query_results, feature_group, energy_source, energy_components):
-    success, abs_data, dyn_data = pipeline.process(query_results, energy_components, feature_group.name, energy_source)
+    success, abs_data, dyn_data = pipeline.process(query_results, energy_components, energy_source, feature_group=feature_group.name)
     assert success, "failed to process pipeline {}".format(pipeline.name) 
     for trainer in pipeline.trainers:
         if trainer.feature_group == feature_group and trainer.energy_source == energy_source:

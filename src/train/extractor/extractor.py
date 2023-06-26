@@ -6,13 +6,12 @@ from abc import ABCMeta, abstractmethod
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
-from util import FeatureGroups, FeatureGroup, SYSTEM_FEATURES
-
-from util.prom_types import TIMESTAMP_COL, SOURCE_COL, get_energy_unit, \
+from train_types import FeatureGroups, FeatureGroup, SYSTEM_FEATURES
+from prom_types import TIMESTAMP_COL, SOURCE_COL, get_energy_unit, \
     usage_ratio_query,node_info_query, \
         energy_component_to_query, feature_to_query, \
             pkg_id_column, container_id_cols, node_info_column
-from util.extract_types import container_id_colname, ratio_to_col, component_to_col, UNKNOWN_NODE_INFO, get_unit_vals, container_level_index, node_level_index
+from extract_types import container_id_colname, ratio_to_col, component_to_col, UNKNOWN_NODE_INFO, get_unit_vals, container_level_index, node_level_index
 from preprocess import correct_missing_metric_to_watt, drop_zero_column, find_correlations
 
 # append ratio for each unit

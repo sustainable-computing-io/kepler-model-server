@@ -9,6 +9,7 @@
 - [Estimator Power Prediction](#estimator-power-prediction)
 - [Estimator Model Request (to Model Server)](#estimator-model-request-to-model-server)
 - [Estimator Power Request (from Collector)](#estimator-power-request-from-collector)
+- [Offline Trainer](#offline-trainer)
 
 <!-- /TOC -->
 
@@ -180,6 +181,7 @@ Optional arguments:
     group_path = get_model_group_path(model_toppath, ModelOutputType.DynPower, feature_group, energy_source, pipeline_name)
     test_model(group_path, model_name, result, power_columns)
  ```
+
 Optional arguments:
  - power_range: power range to compute scaled error in percentage
 
@@ -200,7 +202,7 @@ python estimator_model_request_test.py
 ```
 
 ## Estimator Power Request (from Collector)
-The test if for testing estimator as a server to serve a power request from Kepler collector. Response output will be printed
+The test is for testing estimator as a server to serve a power request from Kepler collector. Response output will be printed
 
 Requirements:
 - model initial url defined in [util/loader.py](../src/util/loader.py) is available.
@@ -214,3 +216,36 @@ Run:
 ```bash
 python estimator_power_request_test.py
 ```
+
+## Offline Trainer
+The test is for testing offline trainer as a server to serve a training pipeline. Response output will be in `data/offline_trainer_output`.
+
+Requirements:
+- offline trainer server running
+
+    ```bash
+    python ../src/train/offline_trainer.py
+    ```
+
+Run:
+```bash
+python offline_trainer_test.py
+```
+
+Reuse:
+```python
+from offline_trainer_test import process as offline_trainer_client_process
+dataset_name = # pipeline prefix such as dataset name
+# prom_response can be obtained by reusing prom_test to query data from metric server
+#   from prom_test import process as prom_process
+#   prom_process()
+# idle_prom_response is used for ProfileBackgroundIsolator, to remove background power, and TrainIsolator, to separate background container.
+train_prom_response = # prom_response when target container for training is running 
+idle_prom_response = # prom_response when no target container
+offline_trainer_client_process(dataset_name, train_prom_response, idle_prom_response)
+```
+
+Optional arguments:
+ - energy_source: target energy source (default: rapl)
+ - isolators: dict map of isolator class name to argument dict map (default: {"MinIdleIsolator": {}, "NoneIsolator": {}, "ProfileBackgroundIsolator": {}, "TrainIsolator": {"abs_pipeline_name": DEFAULT_PIPELINE}})
+ - target_path:  path to save trained ouput (default: data/offline_trainer_output)

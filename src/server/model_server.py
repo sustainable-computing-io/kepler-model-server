@@ -165,4 +165,4 @@ def get_available_models():
         return make_response("Failed to get best model list: {}".format(err), 400)
 
 if __name__ == '__main__':
-   app.run(host="0.0.0.0", debug=True, port=MODEL_SERVER_PORT)
+   app.run(host="0.0.0.0", port=MODEL_SERVER_PORT)

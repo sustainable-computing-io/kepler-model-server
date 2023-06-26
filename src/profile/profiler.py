@@ -1,4 +1,10 @@
 # python clustering.py ../../resource/query_response
+# ```mermaid
+# graph TD;
+# A[prom response json] -->|train.prom.prom_responses_to_results| B[kepler query result dict];
+# B -->|profile.tool.profile_background.process| C[power profile dict\n source-component-node type to power];
+# C -->|train.generate_profiles| D[Profile class dict\n node type to Profile]
+# ```
 
 import sys
 import os
@@ -26,8 +32,9 @@ from train.prom.prom_query import generate_dataframe_from_response, TIMESTAMP_CO
 from train.extractor.extractor import node_info_query, cpu_frequency_info_query, energy_component_to_query
 from train import PowerSourceMap
 
-from tool.generate_scaler import process as generate_scaler_process
-from tool.profile_background import process as profile_background_process
+from train import DefaultProfiler
+from train.profiler.generate_scaler import process as generate_scaler_process
+
 
 clustering_model_filename = os.path.join(os.path.dirname(__file__), '..', '..', 'resource', 'kmeans.pkl')
 number_of_cluster = 3
@@ -152,7 +159,7 @@ def process(query_response_path):
         # update node_type
         result[node_info_query][node_info_query] = int(predicted_group_index)
         generate_scaler_process(result)
-        profile_background_process(result)
+        DefaultProfiler.process(result)
 
 def find_mean(values):
     return np.array(values).mean()

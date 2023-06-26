@@ -8,7 +8,7 @@ This repository contains source code related to Kepler power model. The modules 
 ```
 /tmp/estimator.socket
 ```
-Parameters
+Parameters of [PowerRequest](./src/estimate/estimator.py)
 |key|value|description
 |---|---|---|
 |metrics|list of string|list of available input features (measured metrics)
@@ -23,7 +23,7 @@ Parameters
 POST
 ```
 
-Parameters
+Parameters of [ModelRequest](./src/server/model_server.py)
 |key|value|description
 |---|---|---|
 |metrics|list of string|list of available input features (measured metrics)
@@ -51,8 +51,28 @@ periodically query prometheus metric server on SAMPLING INTERVAL
 **module:** profiler (src/profile/profiler.py)
 
 
-### Offline Trainer [WIP]
+### Offline Trainer
 **module:** offline trainer (src/train/offline_trainer.py)
+```
+:8102/train
+POST
+```
+Parameters of [TrainRequest](./src/train/offline_trainer.py)
+|key|value|description
+|---|---|---|
+|name|string|pipeline/model name
+|energy_source|valid key in [PowerSourceMap](./src/util/train_types.py)|target enery source to train for 
+|trainer|TrainAttribute|attributes for training
+|prome_response|json|prom response with workload for power model training
+
+- TrainAttribute
+    |key|value|description
+    |---|---|---|
+    |abs_trainers|list of [available trainer class names](./src/train/trainer)|trainer classes in the pipeline to train for absolute power
+    |dyn_trainers|list of [available trainer class names](./src/train/trainer)|trainer classes in the pipeline to train for dynamic power
+    |isolator|[valid isolator class name](./src/train/isolator/)|isolator class of the pipeline to isolate the target data to train for dynamic power
+    |isolator_args|dict|mapping between isolator-specific argument name and value
+
 
 ## Test
 Build image for testing, run 
@@ -65,6 +85,7 @@ make build-test
 |[Training pipeline](./tests/README.md#pipeline)|make test-pipeline|
 |[Model server](./tests/README.md#estimator-model-request-to-model-server)|make test-model-server|
 |[Estimator](./tests/README.md#estimator-power-request-from-collector)|make test-estimator|
+|[Offline Trainer](./tests/README.md#offline-trainer)|make test-offline-trainer|
 
 For more test information, check [here](./tests/).
 
