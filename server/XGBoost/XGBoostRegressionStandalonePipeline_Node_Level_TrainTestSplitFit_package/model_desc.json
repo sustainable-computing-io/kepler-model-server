@@ -1,1 +1,0 @@
-{"timestamp": 1677490715.504703, "train_type": "fit_train_and_predict_with_test", "rmse": 2.1124281379157006, "r2": -37.383244671034475, "mae": 1.0775983032224759, "feature_names": ["block_irq", "net_rx_irq", "net_tx_irq"], "label_names": ["total_package_power"]}

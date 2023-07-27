@@ -39,7 +39,7 @@ class Client:
         while True:
             shunk = s.recv(1024).strip()
             data += shunk
-            if shunk is None or shunk.decode()[-1] == '}':
+            if shunk is None or len(shunk.decode()) == 0 or shunk.decode()[-1] == '}':
                 break
         decoded_data = data.decode()
         s.close()
