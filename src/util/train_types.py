@@ -19,7 +19,8 @@ CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgro
 BPF_FEATURES = ["bpf_cpu_time_us"]
 IRQ_FEATURES = ["bpf_block_irq", "bpf_net_rx_irq", "bpf_net_tx_irq"]
 KUBELET_FEATURES =['kubelet_memory_bytes', 'kubelet_cpu_usage']
-WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + KUBELET_FEATURES
+WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES 
+BASIC_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + KUBELET_FEATURES
 
 PowerSourceMap = {
 # "rapl": ["package", "core", "uncore", "dram"],
@@ -76,10 +77,9 @@ FeatureGroups = {
     FeatureGroup.CgroupOnly: deep_sort(CGROUP_FEATURES),
     FeatureGroup.BPFOnly: deep_sort(BPF_FEATURES),
     FeatureGroup.KubeletOnly: deep_sort(KUBELET_FEATURES),
-    FeatureGroup.IRQOnly: deep_sort(IRQ_FEATURES),
-    FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + IRQ_FEATURES),
-    FeatureGroup.Basic: deep_sort(COUNTER_FEAUTRES+CGROUP_FEATURES+KUBELET_FEATURES+BPF_FEATURES),
     FeatureGroup.BPFIRQ: deep_sort(BPF_FEATURES + IRQ_FEATURES),
+    FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + IRQ_FEATURES),
+    FeatureGroup.Basic: deep_sort(BASIC_FEATURES),
 }
 
 # XGBoostRegressionTrainType

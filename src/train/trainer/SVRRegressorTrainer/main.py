@@ -16,5 +16,5 @@ class SVRRegressorTrainer(ScikitTrainer):
         self.fe_files = []
     
     def init_model(self):
-        print("Noe scaler:", self.node_scalers.keys())
+        print("scaler:", self.node_scalers.keys())
         return make_pipeline(self.node_scalers[common_node_type], SVR(C=1.0, epsilon=0.2))

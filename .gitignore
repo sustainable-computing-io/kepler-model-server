@@ -1,6 +1,7 @@
 # models
 server/train/local/
 server/models
+*/*/download
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

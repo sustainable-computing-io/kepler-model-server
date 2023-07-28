@@ -267,6 +267,7 @@ class Trainer(metaclass=ABCMeta):
         self.save_metadata(node_type, max_mae, item)
 
     def predict(self, node_type, component, X_values):
+        print(self.node_scalers, self.node_models, node_type)
         features = self.node_scalers[node_type].transform(X_values)
         if hasattr(self, 'fe'):
             for fe in self.fe:
