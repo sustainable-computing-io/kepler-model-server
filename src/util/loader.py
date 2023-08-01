@@ -177,3 +177,4 @@ def get_url(output_type, feature_group=default_feature_group, trainer_name=defau
 
 def class_to_json(class_obj):
     return json.loads(json.dumps(class_obj.__dict__))
+

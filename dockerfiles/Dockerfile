@@ -13,6 +13,7 @@ COPY src/server src/server
 COPY src/train src/train
 COPY src/util src/util
 COPY src/models/default src/models/default
+COPY cmd cmd
 
 # port for Model Server
 EXPOSE 8100
@@ -21,7 +22,4 @@ EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
 
-CMD [ "python3.8", "-u", "src/server/model_server.py" ]
-# CMD [ "python3.8", "-u", "src/estimate/estimator.py" ]
-# CMD [ "python3.8", "-u", "src/train/online_trainer.py" ]
-# CMD [ "python3.8", "-u", "src/train/offline_trainer.py" ]
+ENTRYPOINT ["python3.8", "cmd/main.py"]

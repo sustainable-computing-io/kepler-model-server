@@ -30,13 +30,12 @@ sys.path.append(isolator_path)
 from config import model_toppath
 from loader import get_pipeline_path, DEFAULT_PIPELINE
 from train_types import PowerSourceMap
-from prom_types import get_valid_feature_group_from_queries
+from prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
 from profiler import Profiler, generate_profiles
 from extractor import DefaultExtractor
 from isolator import ProfileBackgroundIsolator
 from train_isolator import TrainIsolator
 from pipeline import NewPipeline
-from prom_query import prom_responses_to_results
 
 import shutil
 

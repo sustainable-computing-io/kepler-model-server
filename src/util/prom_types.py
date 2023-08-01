@@ -1,5 +1,6 @@
 
 from config import getConfig
+import pandas as pd
 from train_types import SYSTEM_FEATURES, FeatureGroups, FeatureGroup, get_valid_feature_groups
 PROM_SERVER = 'http://localhost:9090'
 PROM_SSL_DISABLE = 'True'
@@ -71,3 +72,24 @@ def get_container_name_from_id(container_id):
     if split_values is None:
         return None
     return split_values["container_name"]
+
+def generate_dataframe_from_response(query_metric, prom_response):
+    items = []
+    for res in prom_response:
+        metric_item = res['metric']
+        for val in res['values']:
+            # labels
+            item = metric_item.copy()
+            # timestamp
+            item[TIMESTAMP_COL] = val[0]
+            # value
+            item[query_metric] = float(val[1]) 
+            items += [item]
+    df = pd.DataFrame(items)
+    return df
+
+def prom_responses_to_results(prom_responses):
+    results = dict()
+    for query_metric, prom_response in prom_responses.items():
+        results[query_metric] = generate_dataframe_from_response(query_metric, prom_response)
+    return results

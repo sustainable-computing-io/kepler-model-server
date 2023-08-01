@@ -6,9 +6,12 @@ import datetime
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
-from prom_types import TIMESTAMP_COL, PROM_SERVER, PROM_HEADERS, PROM_SSL_DISABLE, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, metric_prefix
+from prom_types import PROM_SERVER, PROM_HEADERS, PROM_SSL_DISABLE, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, metric_prefix
+from prom_types import generate_dataframe_from_response
 
 from prometheus_api_client import PrometheusConnect
+
+UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
 
 import pandas as pd
 
@@ -17,27 +20,6 @@ def _range_queries(prom, metric_list, start, end, step, params=None):
     for metric in metric_list:
         response[metric] = prom.custom_query_range(metric, start, end, step, params)
     return response
-
-def generate_dataframe_from_response(query_metric, prom_response):
-    items = []
-    for res in prom_response:
-        metric_item = res['metric']
-        for val in res['values']:
-            # labels
-            item = metric_item.copy()
-            # timestamp
-            item[TIMESTAMP_COL] = val[0]
-            # value
-            item[query_metric] = float(val[1]) 
-            items += [item]
-    df = pd.DataFrame(items)
-    return df
-
-def prom_responses_to_results(prom_responses):
-    results = dict()
-    for query_metric, prom_response in prom_responses.items():
-        results[query_metric] = generate_dataframe_from_response(query_metric, prom_response)
-    return results
 
 class PrometheusClient():
     def __init__(self):

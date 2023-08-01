@@ -11,10 +11,10 @@ sys.path.append(src_path)
 from util import assure_path, save_csv, load_csv, FeatureGroups, FeatureGroup
 from util.train_types import all_feature_groups
 from util.extract_types import container_level_index, node_level_index
+from util.prom_types import prom_responses_to_results
 
 from train import MinIdleIsolator, ProfileBackgroundIsolator, TrainIsolator, NoneIsolator
 from train import generate_profiles
-from train.prom import prom_responses_to_results
 from train.extractor.preprocess import find_correlations
 
 from train import DefaultProfiler

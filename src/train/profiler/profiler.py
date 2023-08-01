@@ -21,7 +21,7 @@ sys.path.append(util_path)
 
 from train_types import PowerSourceMap, FeatureGroups
 from train_types import  PowerSourceMap
-from prom_types import node_info_column
+from prom_types import node_info_column, node_info_query
 from extract_types import component_to_col
 
 import pandas as pd
@@ -30,10 +30,17 @@ import json
 min_watt_key = "min_watt"
 max_watt_key = "max_watt"
 
-profile_top_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'resource', 'profiles')
+resource_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'resource')
+profile_top_path = os.path.join(resource_path, 'profiles')
 profile_path = os.path.join(profile_top_path, "profile")
 
 profiler_registry = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/profiles"
+
+if not os.path.exists(resource_path):
+    os.mkdir(resource_path)
+
+if not os.path.exists(profile_top_path):
+    os.mkdir(profile_top_path)
 
 if not os.path.exists(profile_path):
     os.mkdir(profile_path)
@@ -66,6 +73,17 @@ def save_profile(profile, source):
 def get_min_max_watt(profiles, component, node_type):
     profile = profiles[component][node_type]
     return profile[min_watt_key], profile[max_watt_key]
+
+def response_to_result(response):
+    results = dict()
+    for query in response.keys():
+        results[query] = generate_dataframe_from_response(query, response[query])
+        if len(results[query]) > 0:
+            if query == node_info_query:
+                results[query][query] = results[query][query].astype(int)
+            else:
+                results[query][query] = results[query][query].astype(float)
+    return results
 
 class Profiler():
     def __init__(self, extractor):
