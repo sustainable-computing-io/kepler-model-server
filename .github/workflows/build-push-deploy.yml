@@ -25,7 +25,6 @@ jobs:
       if: ${{ (github.repository_owner == 'sustainable-computing-io') && (github.ref == 'refs/heads/main') }}
       run: docker push quay.io/sustainable_computing_io/kepler_model_server:latest
 
-
   deploy_server_only_with_local:
     needs: build
     uses: ./.github/workflows/cluster_deploy.yml
@@ -40,13 +39,14 @@ jobs:
   deploy_server_only_with_local_dev:
     needs: build
     uses: ./.github/workflows/cluster_deploy.yml
-    if: ${{ (github.repository_owner != 'sustainable-computing-io') || (github.ref != 'refs/heads/main') }}
+    if: ${{ (github.repository_owner == 'sustainable-computing-io') && (github.ref == 'refs/heads/main') }}
     with:
       storage: dev
+
   deploy_with_online_trainer_dev:
     needs: build
     uses: ./.github/workflows/cluster_deploy.yml
-    if: ${{ (github.repository_owner != 'sustainable-computing-io') || (github.ref != 'refs/heads/main') }}
+    if: ${{ (github.repository_owner == 'sustainable-computing-io') && (github.ref == 'refs/heads/main') }}
     with:
       storage: dev
       online_trainer: true

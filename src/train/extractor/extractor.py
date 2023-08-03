@@ -110,6 +110,7 @@ class DefaultExtractor(Extractor):
         
         # 6. validate input with correlation
         corr = find_correlations(energy_source, feature_power_data, power_columns, workload_features)
+
         # 7. apply utilization ratio to each power unit because the power unit is summation of all container utilization
         feature_power_data = append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_columns)
         return  feature_power_data, power_columns, corr
@@ -121,6 +122,9 @@ class DefaultExtractor(Extractor):
             query = feature_to_query(feature)
             if query not in query_results:
                 print(query, "not in", list(query_results.keys()))
+                return None
+            if len(query_results[query]) == 0:
+                print("no data in ", query)
                 return None
             aggr_query_data = query_results[query].copy()
             aggr_query_data.rename(columns={query: feature}, inplace=True)
@@ -177,7 +181,7 @@ class DefaultExtractor(Extractor):
     def get_power_data(self, query_results, energy_components, source):
         power_data_list = []
         for component in energy_components:
-            unit_col = get_energy_unit(component)
+            unit_col = get_energy_unit(component) # such as package
             query = energy_component_to_query(component)
             if query not in query_results:
                 print(query, 'not in', query_results)
@@ -186,19 +190,31 @@ class DefaultExtractor(Extractor):
             # filter source
             aggr_query_data = aggr_query_data[aggr_query_data[SOURCE_COL] == source]
             if unit_col is not None:
-                # sum over mode (idle, dynamic)
-                aggr_query_data = aggr_query_data.groupby([unit_col, TIMESTAMP_COL]).sum().reset_index().set_index(TIMESTAMP_COL)
-                # add per unit_col
-                unit_vals = pd.unique(aggr_query_data[unit_col])
-                for unit_val in unit_vals:
-                    df = aggr_query_data[aggr_query_data[unit_col]==unit_val].copy()
+                if usage_ratio_query not in query_results:
+                    # sum over mode (idle, dynamic) and unit col
+                    df = aggr_query_data.groupby([TIMESTAMP_COL]).sum().reset_index().set_index(TIMESTAMP_COL)
+                    df = df.loc[:, df.columns != unit_col]
                     # rename
-                    colname = component_to_col(component, unit_col, unit_val)
+                    colname = component_to_col(component)
                     df.rename(columns={query: colname}, inplace=True)
                     # find current value from aggregated query
                     df = df.sort_index()[colname].diff().dropna()
                     df = df.mask(df.lt(0)).ffill().fillna(0).convert_dtypes()
                     power_data_list += [df]
+                else:
+                     # sum over mode (idle, dynamic)
+                    aggr_query_data = aggr_query_data.groupby([unit_col, TIMESTAMP_COL]).sum().reset_index().set_index(TIMESTAMP_COL)
+                    # add per unit_col
+                    unit_vals = pd.unique(aggr_query_data[unit_col])
+                    for unit_val in unit_vals:
+                        df = aggr_query_data[aggr_query_data[unit_col]==unit_val].copy()
+                        # rename
+                        colname = component_to_col(component, unit_col, unit_val)
+                        df.rename(columns={query: colname}, inplace=True)
+                        # find current value from aggregated query
+                        df = df.sort_index()[colname].diff().dropna()
+                        df = df.mask(df.lt(0)).ffill().fillna(0).convert_dtypes()
+                        power_data_list += [df]
             else:
                 # sum over mode
                 aggr_query_data = aggr_query_data.groupby([TIMESTAMP_COL]).sum()

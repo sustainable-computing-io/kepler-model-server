@@ -2,7 +2,7 @@ import os
 import json
 import joblib
 import pandas as pd
-from saver import assure_path, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME, _pipeline_metadata_filename
+from saver import assure_path, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME, _pipeline_model_metadata_filename
 from train_types import ModelOutputType, FeatureGroup, PowerSourceMap, all_feature_groups
 from urllib.request import urlopen
 
@@ -155,9 +155,14 @@ def download_and_save(url, filepath):
     print("Successfully load {} to {}".format(url, filepath))
     return filepath
 
-def list_model_names(model_path):
-    model_names = [f.split('.')[0] for f in os.listdir(model_path) if '.zip' in f]
+def list_model_names(group_path):
+    model_names = [f.split('.')[0] for f in os.listdir(group_path) if '.zip' in f]
     return model_names
+
+def list_pipelines(model_toppath, energy_source, model_type):
+    pipeline_metadata_filename = _pipeline_model_metadata_filename(energy_source, model_type)
+    pipeline_names = [f for f in os.listdir(model_toppath) if os.path.exists(os.path.join(model_toppath, f, pipeline_metadata_filename + ".csv"))]
+    return pipeline_names
 
 def list_all_abs_models(model_toppath, energy_source, valid_fgs, pipeline_name=DEFAULT_PIPELINE):
     abs_models_map = dict()
@@ -186,6 +191,11 @@ def _get_metadata_df(group_path):
                 metadata_items += [metadata]
     return pd.DataFrame(metadata_items)
 
+def get_metadata_df(model_toppath, model_type, fg, energy_source, pipeline_name):
+    group_path = get_model_group_path(model_toppath, output_type=ModelOutputType[model_type], feature_group=FeatureGroup[fg], energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
+    metadata_df = _get_metadata_df(group_path)
+    return metadata_df, group_path
+
 def get_all_metadata(model_toppath, pipeline_name, clean_empty=False):
     all_metadata = dict()
     for energy_source in PowerSourceMap.keys():
@@ -193,8 +203,7 @@ def get_all_metadata(model_toppath, pipeline_name, clean_empty=False):
         for model_type in list(ModelOutputType.__members__):
             all_fg_metadata = []
             for fg in all_feature_groups:
-                group_path = get_model_group_path(model_toppath, output_type=ModelOutputType[model_type], feature_group=FeatureGroup[fg], energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
-                metadata_df = _get_metadata_df(group_path)
+                metadata_df, group_path = get_metadata_df(model_toppath, model_type, fg, energy_source, pipeline_name)
                 if len(metadata_df) > 0:
                     metadata_df["feature_group"] = fg
                     all_fg_metadata += [metadata_df]
@@ -209,7 +218,7 @@ def get_all_metadata(model_toppath, pipeline_name, clean_empty=False):
     return all_metadata
        
 def load_pipeline_metadata(pipeline_path, energy_source, model_type):
-    pipeline_metadata_filename = _pipeline_metadata_filename(energy_source, model_type)
+    pipeline_metadata_filename = _pipeline_model_metadata_filename(energy_source, model_type)
     return load_csv(pipeline_path, pipeline_metadata_filename)
 
 def get_download_path():

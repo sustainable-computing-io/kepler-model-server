@@ -154,6 +154,7 @@ class Trainer(metaclass=ABCMeta):
                     self.node_scalers[node_type] = MinMaxScaler()
                 self.node_scalers[node_type].fit(x_values)
             
+
             for component in self.energy_components:
                 X_values, y_values = self.apply_ratio(component, node_type_filtered_data, power_labels)
                 X_train, X_test, y_train, y_test = normalize_and_split(X_values, y_values, scaler=self.node_scalers[node_type])
@@ -179,6 +180,9 @@ class Trainer(metaclass=ABCMeta):
         for unit_val in unit_vals:
             ratio_colname = ratio_to_col(unit_val)
             y_col = component_to_col(component, unit_col='package', unit_val=unit_val)
+            if y_col not in node_type_filtered_data:
+                # not define ratio
+                y_col = component_to_col(component)
             multiplied_data = node_type_filtered_data[self.features].astype(float).copy()
             for feature in self.features:
                 multiplied_data[feature] = node_type_filtered_data[feature] * node_type_filtered_data[ratio_colname]
@@ -266,8 +270,11 @@ class Trainer(metaclass=ABCMeta):
         return model.predict(features)
 
     def print_log(self, message):
-        print("{} trainer ({}/{}/{}): {}".format(self.trainer_name, "Abs" if self.node_level else "Dyn", self.feature_group, self.energy_source, message), flush=True)
+        print("{}: {}".format(self.to_string(), message), flush=True)
         
+    def to_string(self):
+        return "{} trainer ({}/{}/{})".format(self.trainer_name, "Abs" if self.node_level else "Dyn", self.feature_group, self.energy_source)
+
     def get_metadata(self):
         items = []
         for node_type in self.node_models.keys():

@@ -9,4 +9,5 @@ spec:
           - name: cfm
             mountPath: /etc/kepler/kepler.config
             readOnly: true
-        command: ["python3.8",  "online_trainer.py"]
+        command: [ "python3.8" ]
+        args: ["-u", "src/train/online_trainer.py" ]

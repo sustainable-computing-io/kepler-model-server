@@ -162,7 +162,6 @@ def get_feature_group(features):
     return FeatureGroup.Unknown
 
 def get_valid_feature_groups(features):
-    print(features)
     valid_fgs = []
     for fg_key, fg_features in FeatureGroups.items():
         valid = True

@@ -111,7 +111,6 @@ class Profiler():
                     max_watt = power_values.max()/seconds
                     min_watt = power_values.min()/seconds
                     node_type_key = str(int(node_type))
-                    print(component, node_type, min_watt, seconds)
                     if component not in profile:
                         profile[component] = dict()
                     if node_type_key not in profile[component]:
@@ -124,8 +123,7 @@ class Profiler():
                             profile[component][node_type_key][min_watt_key] = min_watt
                         if max_watt > profile[component][node_type_key][max_watt_key]:
                             profile[component][node_type_key][max_watt_key] = max_watt
-                    print("update:", component, node_type_key, min_watt_key, profile[component][node_type_key][min_watt_key])
-            print(profile)
+                    # print("update:", component, node_type_key, min_watt_key, profile[component][node_type_key][min_watt_key])
             if save:
                 save_profile(profile_path, source, profile)
             result[source] = profile 

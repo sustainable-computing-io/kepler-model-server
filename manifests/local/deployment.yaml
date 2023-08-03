@@ -10,11 +10,6 @@ data:
   PROM_QUERY_STEP: '3'
   PROM_HEADERS: ''
   PROM_SSL_DISABLE: 'true'
-  INITIAL_MODELS_LOC: https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-server/main/tests/test_models
-  INITIAL_MODEL_NAMES: |
-    AbsComponentModelWeight=KerasCompWeightFullPipeline
-    AbsComponentPower=KerasCompFullPipeline
-    DynComponentPower=ScikitMixed
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -50,7 +45,8 @@ spec:
           - name: cfm
             mountPath: /etc/kepler/kepler.config
             readOnly: true
-        command: ["python3.8",  "model_server.py"]
+        command: [ "python3.8" ]
+        args: ["-u", "src/server/model_server.py" ]
 ---
 kind: Service
 apiVersion: v1

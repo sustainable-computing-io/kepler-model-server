@@ -13,10 +13,12 @@ sys.path.append(isolator_path)
 from extractor import DefaultExtractor
 from isolator import MinIdleIsolator
 
-from train_types import PowerSourceMap, FeatureGroups
+from train_types import PowerSourceMap, FeatureGroups, ModelOutputType
 from config import model_toppath, ERROR_KEY
-from loader import get_all_metadata, get_pipeline_path
+from loader import get_all_metadata, get_pipeline_path, get_metadata_df
 from saver import save_pipeline_metadata
+
+from format import print_bounded_multiline_message
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
@@ -39,6 +41,12 @@ class Pipeline():
         self.name = name
         self.lock = threading.Lock()
         self.path = get_pipeline_path(model_toppath=model_toppath ,pipeline_name=self.name)
+        self.metadata = dict()
+        self.metadata["name"] = self.name
+        self.metadata["isolator"] = isolator.__class__.__name__
+        self.metadata["extractor"] = extractor.__class__.__name__
+        self.metadata["abs_trainers"] = [trainer.__class__.__name__ for trainer in trainers if trainer.node_level]
+        self.metadata["dyn_trainers"] = [trainer.__class__.__name__ for trainer in trainers if not trainer.node_level]
 
     def get_abs_data(self, query_results, energy_components, feature_group, energy_source, aggr):
         extracted_data, power_labels, _ = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=True, aggr=aggr)
@@ -48,6 +56,53 @@ class Pipeline():
         extracted_data, power_labels, _ = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=False)
         isolated_data = self.isolator.isolate(extracted_data, label_cols=power_labels, energy_source=energy_source)
         return isolated_data
+    
+    def prepare_data(self, input_query_results, energy_components, energy_source, feature_group, aggr=True):
+        query_results = input_query_results.copy()
+        # 1. get abs_data
+        extracted_data, power_labels = self.get_abs_data(query_results, energy_components, feature_group, energy_source, aggr=aggr)
+        if extracted_data is None:
+            self.print_log("cannot extract data")
+            return None, None, None
+        self.print_log("{} extraction done.".format(feature_group))
+        abs_data = extracted_data.copy()
+        # 2. get dyn_data
+        isolated_data  = self.get_dyn_data(query_results, energy_components, feature_group, energy_source)
+        if isolated_data is None:
+            self.print_log("cannot isolate data")
+            return abs_data, None, power_labels
+        self.print_log("{} isolation done.".format(feature_group))
+        dyn_data = isolated_data.copy()
+        return abs_data, dyn_data, power_labels
+    
+    def prepare_data_from_input_list(self, input_query_results_list, energy_components, energy_source, feature_group, aggr=True):
+        index = 0
+        abs_data_list = []
+        dyn_data_list = []
+        power_labels = None
+        for input_query_results in input_query_results_list:
+            extracted_data, isolated_data, extracted_labels = self.prepare_data(input_query_results, energy_components, energy_source, feature_group, aggr)
+            if extracted_data is None: 
+                self.print_log("cannot extract data index={}".format(index))
+                continue
+            abs_data_list += [extracted_data]
+            if power_labels is None:
+                # set power_labels once
+                power_labels = extracted_labels
+            if isolated_data is None:
+                self.print_log("cannot isolate data index={}".format(index))
+                continue
+            dyn_data_list += [isolated_data]
+            index += 1
+        if len(abs_data_list) == 0:
+            self.print_log("cannot get abs data")
+            return None, None, None
+        abs_data = pd.concat(abs_data_list)
+        if len(dyn_data_list) == 0:
+            self.print_log("cannot get dyn data")
+            return abs_data, None, power_labels
+        dyn_data = pd.concat(dyn_data_list)
+        return abs_data, dyn_data, power_labels
 
     def _train(self, abs_data, dyn_data, power_labels, energy_source, feature_group):
         # start the thread pool
@@ -67,64 +122,23 @@ class Pipeline():
             self.print_log('Waiting for {} trainers to complete...'.format(len(futures)))
             wait(futures)
             self.print_log('{}/{} trainers are trained from {} to {}'.format(len(futures), len(self.trainers), feature_group, energy_source))
+            
 
     def process(self, input_query_results, energy_components, energy_source, feature_group, aggr=True):
-        print("========================================================", flush=True)
         self.print_log("{} start processing.".format(feature_group))
-        query_results = input_query_results.copy()
-        # 1. get abs_data
-        extracted_data, power_labels = self.get_abs_data(query_results, energy_components, feature_group, energy_source, aggr=aggr)
-        if extracted_data is None:
-            self.print_log("cannot extract data")
+        abs_data, dyn_data, power_labels = self.prepare_data(input_query_results, energy_components, energy_source, feature_group, aggr)
+        if abs_data is None or dyn_data is None:
             return False, None, None
-        self.print_log("{} extraction done.".format(feature_group))
-        abs_data = extracted_data.copy()
-        # 2. get dyn_data
-        isolated_data  = self.get_dyn_data(query_results, energy_components, feature_group, energy_source)
-        if isolated_data is None:
-            self.print_log("cannot isolate data")
-            return False, None, None
-        self.print_log("{} isolation done.".format(feature_group))
-        dyn_data = isolated_data.copy()
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
-        print("========================================================", flush=True)
+        self.print_pipeline_process_end(energy_source, feature_group, abs_data, dyn_data)
         return True, abs_data, dyn_data
     
     def process_multiple_query(self, input_query_results_list, energy_components, energy_source, feature_group, aggr=True):
-        # 1. get abs_data
-        index = 0
-        abs_data_list = []
-        for input_query_results in input_query_results_list:
-            query_results = input_query_results.copy()
-            extracted_data, power_labels = self.get_abs_data(query_results, energy_components, feature_group, energy_source, aggr=aggr)
-            if extracted_data is None:
-                self.print_log("cannot extract data index={}".format(index))
-                continue
-            abs_data_list += [extracted_data]
-            index += 1
-        if len(abs_data_list) == 0:
-            self.print_log("cannot get abs data")
-            return False, None, None
-        abs_data = pd.concat(abs_data_list)
-        self.print_log("{} extraction done.".format(feature_group))
-        # 2. get dyn_data
-        index = 0
-        dyn_data_list = []
-        for input_query_results in input_query_results_list:
-            query_results = input_query_results.copy()
-            isolated_data  = self.get_dyn_data(query_results, energy_components, feature_group, energy_source)
-            if isolated_data is None:
-                self.print_log("cannot isolate data index={}".format(index))
-                continue
-            dyn_data_list += [isolated_data]
-            index += 1
-        if len(dyn_data_list) == 0:
-            self.print_log("cannot get dyn data")
-            return False, None, None
-        dyn_data = pd.concat(dyn_data_list)
-        self.print_log("{} isolation done.".format(feature_group))
+        abs_data, dyn_data, power_labels = self.prepare_data_from_input_list(input_query_results_list, energy_components, energy_source, feature_group, aggr)
+        if abs_data is None or dyn_data is None:
+            return False, None, None   
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
-        print("========================================================", flush=True)
+        self.print_pipeline_process_end(energy_source, feature_group, abs_data, dyn_data)
         return True, abs_data, dyn_data
 
     def print_log(self, message):
@@ -135,8 +149,36 @@ class Pipeline():
         for energy_source, model_type_metadata in all_metadata.items():
             for model_type, metadata_df in model_type_metadata.items():
                 metadata_df = metadata_df.sort_values(by=[ERROR_KEY])
-                save_pipeline_metadata(self.path, energy_source, model_type, metadata_df)
-            
+                save_pipeline_metadata(self.path, self.metadata, energy_source, model_type, metadata_df)
+    
+    def print_pipeline_process_end(self, energy_source, feature_group, abs_data, dyn_data):
+        abs_trainer_names = set([trainer.__class__.__name__ for trainer in self.trainers if trainer.node_level])
+        dyn_trainer_names = set([trainer.__class__.__name__ for trainer in self.trainers if not trainer.node_level])
+
+        abs_metadata_df, abs_group_path = get_metadata_df(model_toppath, ModelOutputType.AbsPower.name, feature_group, energy_source, self.name)
+        dyn_metadata_df, dyn_group_path = get_metadata_df(model_toppath, ModelOutputType.DynPower.name, feature_group, energy_source, self.name)
+        
+        abs_min_row = abs_metadata_df.loc[abs_metadata_df[ERROR_KEY].idxmin()]
+        dyn_min_row = dyn_metadata_df.loc[dyn_metadata_df[ERROR_KEY].idxmin()]
+
+        messages = [
+            "Pipeline {} has finished for modeling {} power by {} feature".format(self.name, energy_source, feature_group),
+            "    Extractor: {}".format(self.metadata["extractor"]),
+            "    Isolator: {}".format(self.metadata["isolator"]),
+            "Absolute Power Modeling:",
+            "    Input data size: {}".format(len(abs_data)),
+            "    Model Trainers: {}".format(abs_trainer_names),
+            "    Output: {}".format(abs_group_path),
+            "    Min {}: {}".format(ERROR_KEY, abs_min_row[ERROR_KEY]),
+            " ",
+            "Dynamic Power Modeling:",
+            "    Input data size: {}".format(len(dyn_data)),
+            "    Model Trainers: {}".format(dyn_trainer_names),
+            "    Output: {}".format(dyn_group_path),
+            "    Min {}: {}".format(ERROR_KEY, dyn_min_row[ERROR_KEY]),
+        ]
+        print_bounded_multiline_message(messages)
+
 def initial_trainers(trainer_names, node_level, pipeline_name, target_energy_sources, valid_feature_groups):
     trainers = []
     for energy_source in target_energy_sources:

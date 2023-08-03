@@ -1,0 +1,72 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: stressng
+  namespace: cpe-operator-system
+spec:
+  benchmarkOperator:
+    name: none
+    namespace: cpe-operator-system
+  benchmarkSpec: |
+    template:
+      spec:
+        containers:
+        - name: stress
+          image: alexeiled/stress-ng
+          imagePullPolicy: IfNotPresent
+          env:
+          - name: TIMEOUT
+            value: 120s
+          command:
+          - /stress-ng
+          {{ if ne (index .stress 0) "0" -}}
+          - --cpu
+          - "{{ index .stress 0 }}"
+          {{ end -}}
+          {{ if ne (index .stress 1) "0" -}}
+          - --io
+          - "{{ index .stress 1 }}"
+          {{ end -}}
+          {{ if ne (index .stress 2) "0" -}}
+          - --vm
+          - "{{ index .stress 2 }}"
+          - --vm-bytes
+          - "{{ index .stress 3 }}"
+          {{ end -}}
+          - --timeout
+          - $(TIMEOUT)
+          - --metrics-brief
+        restartPolicy: Never
+  parserKey: stress
+  repetition: 1
+  interval: 10
+  iterationSpec:
+    iterations:
+    - name: stress
+      values:
+      - "0;0;1;500M"
+      - "0;0;4;500M"
+      - "0;0;8;500M"
+      - "0;0;16;500M"
+      - "0;0;32;500M"
+      - "0;0;1;1G"
+      - "0;0;4;1G"
+      - "0;0;8;1G"
+      - "0;0;16;1G"
+      - "0;0;32;1G"
+      - "0;0;1;2G"
+      - "0;0;4;2G"
+      - "0;0;8;2G"
+      - "0;0;16;2G"
+      - "0;0;32;2G"
+      - "1;0;0;0"
+      - "4;0;0;0"
+      - "8;0;0;0"
+      - "16;0;0;0"
+      - "32;0;0;0"
+      - "0;1;0;0"
+      - "0;4;0;0"
+      - "0;8;0;0"
+      - "0;16;0;0"
+      - "0;32;0;0"
+    sequential: true
