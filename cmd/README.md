@@ -59,4 +59,9 @@ optional arguments:
     docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler-model-server:v0.6 train -i output.json
     ```
 
-    output of trained model will be under folder `default`
+    output of trained model will be under pipeline folder `default` or can be specified by `-p`
+
+    The folder contains:
+    - preprocessed data
+    - profiles if --profile is specified
+    - models

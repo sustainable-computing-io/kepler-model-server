@@ -15,14 +15,18 @@
 
 import sys
 import os
+from urllib.request import urlopen
+import joblib
 
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
 from train_types import PowerSourceMap, FeatureGroups
 from train_types import  PowerSourceMap
-from prom_types import node_info_column, node_info_query
+from prom_types import node_info_column, node_info_query, generate_dataframe_from_response
 from extract_types import component_to_col
+from saver import save_profile
+from loader import load_profile, default_node_type
 
 import pandas as pd
 import json
@@ -31,19 +35,22 @@ min_watt_key = "min_watt"
 max_watt_key = "max_watt"
 
 resource_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'resource')
-profile_top_path = os.path.join(resource_path, 'profiles')
-profile_path = os.path.join(profile_top_path, "profile")
-
-profiler_registry = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/profiles"
+default_profile_top_path = os.path.join(resource_path, 'profiles')
 
 if not os.path.exists(resource_path):
     os.mkdir(resource_path)
 
-if not os.path.exists(profile_top_path):
-    os.mkdir(profile_top_path)
+profiler_registry = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/profiles"
 
-if not os.path.exists(profile_path):
-    os.mkdir(profile_path)
+def prepare_profile_path(profile_top_path):
+    if not os.path.exists(profile_top_path):
+        os.mkdir(profile_top_path)
+
+    profile_path = os.path.join(profile_top_path, "profile")
+    if not os.path.exists(profile_path):
+        os.mkdir(profile_path)
+
+    return profile_path
 
 def read_query_results(query_path):
     results = dict()
@@ -53,22 +60,6 @@ def read_query_results(query_path):
         filepath = os.path.join(query_path, metric_filename)
         results[metric] = pd.read_csv(filepath)
     return results
-
-def load_profile(source):
-    profile_filename = os.path.join(profile_path, source + ".json")
-    if not os.path.exists(profile_filename):
-        profile = dict()
-        for component in PowerSourceMap[source]:
-            profile[component] = dict()
-    else:
-        with open(profile_filename) as f:
-            profile = json.load(f)
-    return profile
-
-def save_profile(profile, source):
-    profile_filename = os.path.join(profile_path, source + ".json")
-    with open(profile_filename, "w") as f:
-        json.dump(profile, f)
 
 def get_min_max_watt(profiles, component, node_type):
     profile = profiles[component][node_type]
@@ -89,23 +80,32 @@ class Profiler():
     def __init__(self, extractor):
         self.extractor = extractor
 
-    def process(self, query_results, save=True):
+    def process(self, query_results, profile_top_path=default_profile_top_path, save=True):
+        profile_path =prepare_profile_path(profile_top_path)
+
         node_types, node_info_data = self.extractor.get_node_types(query_results)
-        if node_info_data is None:
-            return None
         result = dict()
         for source, energy_components in PowerSourceMap.items():
-            # profile = load_profile(source)
+             #######################
+            # uncomment to append from previous profile
+            #
+            # profile = load_profile(source) 
+             #######################
             profile = dict()
+            if node_types is None:
+                node_types = [default_node_type]
             for node_type in node_types:
                 power_data= self.extractor.get_power_data(query_results, energy_components, source)
-                power_data = power_data.join(node_info_data)
+                if node_info_data is not None:
+                    power_data = power_data.join(node_info_data)
+                else:
+                    power_data[node_info_column] = default_node_type
                 power_labels = power_data.columns
                 for component in energy_components:
                     power_label = component_to_col(component) 
                     related_labels = [label for label in power_labels if power_label in label]
                     # filter and extract features
-                    power_values = power_data[power_data[node_info_column]==node_type][related_labels].min(axis=1) # minimum single unit powerc
+                    power_values = power_data[power_data[node_info_column]==node_type][related_labels].mean(axis=1)
                     time_values = power_data.index.values
                     seconds = time_values[1] - time_values[0]
                     max_watt = power_values.max()/seconds
@@ -127,10 +127,9 @@ class Profiler():
                     print("update:", component, node_type_key, min_watt_key, profile[component][node_type_key][min_watt_key])
             print(profile)
             if save:
-                save_profile(profile, source)
+                save_profile(profile_path, source, profile)
             result[source] = profile 
         return result
-
 
 class Profile:
     def __init__(self, node_type):
@@ -141,9 +140,13 @@ class Profile:
         self.standard_scaler = dict()
         self.minmax_scaler = dict()
         for feature_group in FeatureGroups.keys():
-            feature_key = feature_group.name
+            #######################
+            # uncomment to append from remote profile
+            #
+            # feature_key = feature_group.name
             # standard_scaler = Profile.load_scaler(self.node_type, feature_key, scaler_type="standard")
             # minmax_scaler = Profile.load_scaler(self.node_type, feature_key, scaler_type="minmax")
+            #######################
             standard_scaler = None
             minmax_scaler = None
             if standard_scaler is not None:

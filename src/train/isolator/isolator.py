@@ -46,10 +46,12 @@ def get_target_containers(data, background_containers):
     return target_containers, background_containers
 
 # isolate_container
-def isolate_container(extracted_data, background_containers):
+def isolate_container(extracted_data, background_containers, label_cols):
     target_containers, background_containers = get_target_containers(extracted_data, background_containers)
     target_data = extracted_data[extracted_data[container_id_colname].isin(target_containers)]
     background_data = extracted_data[~extracted_data[container_id_colname].isin(target_containers)]
+    target_data = squeeze_data(target_data, label_cols)
+    background_data = squeeze_data(background_data, label_cols)
     return target_data, background_data
 
 
@@ -68,7 +70,6 @@ def squeeze_data(container_level_data, label_cols):
     return squeeze_data.reset_index()
 
 class MinIdleIsolator(Isolator):
-
     def isolate(self, data, label_cols, energy_source=None):
         isolated_data = squeeze_data(data, label_cols)
         for label_col in label_cols:
@@ -111,7 +112,7 @@ class ProfileBackgroundIsolator(Isolator):
         if index_list[0] is not None:
             data = data.reset_index()
         data = data.set_index([TIMESTAMP_COL])
-        target_data, _ = isolate_container(data, self.background_containers)
+        target_data, _ = isolate_container(data, self.background_containers, label_cols)
         isolated_data = target_data.copy()
         try:
             for label_col in label_cols:

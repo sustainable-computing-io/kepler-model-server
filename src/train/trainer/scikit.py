@@ -16,9 +16,9 @@ def get_save_path(model_filepath):
     return "/".join(model_filepath.split("/")[0:-1])
 
 class ScikitTrainer(Trainer):
-    def __init__(self, profiles, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="minmax"):
+    def __init__(self, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="minmax"):
         self.is_standard_scaler = scaler_type == "standard"
-        super(ScikitTrainer, self).__init__(profiles, model_class, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type=scaler_type)
+        super(ScikitTrainer, self).__init__(model_class, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type=scaler_type)
         self.fe_files = []
  
     def train(self, node_type, component, X_values, y_values):

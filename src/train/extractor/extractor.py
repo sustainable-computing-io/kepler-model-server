@@ -11,7 +11,8 @@ from prom_types import TIMESTAMP_COL, SOURCE_COL, get_energy_unit, \
     usage_ratio_query,node_info_query, \
         energy_component_to_query, feature_to_query, \
             pkg_id_column, container_id_cols, node_info_column
-from extract_types import container_id_colname, ratio_to_col, component_to_col, UNKNOWN_NODE_INFO, get_unit_vals
+from loader import default_node_type
+from extract_types import container_id_colname, ratio_to_col, component_to_col, get_unit_vals
 from preprocess import drop_zero_column, find_correlations
 
 # append ratio for each unit
@@ -101,10 +102,11 @@ class DefaultExtractor(Extractor):
 
         # 5. add node info data
         node_info_data = self.get_system_category(query_results)
-        if node_info_data is None:
-            feature_power_data[node_info_column] = UNKNOWN_NODE_INFO
-        else:
+        if node_info_data is not None:
             feature_power_data = feature_power_data.join(node_info_data)
+        if node_info_column not in feature_power_data.columns:
+            feature_power_data[node_info_column] = int(default_node_type)
+        
         
         # 6. validate input with correlation
         corr = find_correlations(energy_source, feature_power_data, power_columns, workload_features)

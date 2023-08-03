@@ -2,6 +2,7 @@ from flask import Flask, request, json, make_response, send_file
 
 import os
 import sys
+import logging
 src_path = os.path.join(os.path.dirname(__file__), '..')
 util_path = os.path.join(os.path.dirname(__file__), 'util')
 
@@ -9,7 +10,7 @@ sys.path.append(src_path)
 sys.path.append(util_path)
 
 from util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup
-from util.config import getConfig, model_toppath
+from util.config import getConfig, model_toppath, ERROR_KEY, MODEL_SERVER_MODEL_REQ_PATH, MODEL_SERVER_MODEL_LIST_PATH
 from util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME
 
 ###############################################
@@ -34,8 +35,6 @@ class ModelRequest():
 
 ###########################################
 
-ERROR_KEY = 'mae'
-ERROR_KEY = getConfig('ERROR_KEY', ERROR_KEY)
 MODEL_SERVER_PORT = 8100
 MODEL_SERVER_PORT = getConfig('MODEL_SERVER_PORT', MODEL_SERVER_PORT)
 MODEL_SERVER_PORT = int(MODEL_SERVER_PORT)
@@ -75,8 +74,9 @@ def select_best_model(valid_groupath, filters, trainer_name="", node_type=-1, we
 app = Flask(__name__)
 
 # return archive file or LR weight based on request (req)
-@app.route('/model', methods=['POST'])
+@app.route(MODEL_SERVER_MODEL_REQ_PATH, methods=['POST'])
 def get_model():
+    logging.info("get request /model")
     model_request = request.get_json()
     req = ModelRequest(**model_request)
     # find valid feature groups from available metrics in request
@@ -123,7 +123,7 @@ def get_model():
             return make_response("Send archived model error: {}".format(err), 400)
 
 # return name list of best-candidate pipelines
-@app.route('/best-models', methods=['GET'])
+@app.route(MODEL_SERVER_MODEL_LIST_PATH, methods=['GET'])
 def get_available_models():
     fg = request.args.get('fg')
     ot = request.args.get('ot')

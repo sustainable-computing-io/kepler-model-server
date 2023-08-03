@@ -12,7 +12,7 @@ from util import assure_path, getConfig, PowerSourceMap, ModelOutputType, Featur
 
 from util.prom_types import  node_info_column
 from util.extract_types import component_to_col, get_unit_vals, ratio_to_col
-from util.loader import get_model_group_path, get_save_path, get_model_name, get_archived_file, CHECKPOINT_FOLDERNAME
+from util.loader import get_model_group_path, get_save_path, get_model_name, get_archived_file, CHECKPOINT_FOLDERNAME, load_scaler
 from util.config import model_toppath, initial_models_location
 
 def get_assured_checkpoint_path(group_path, assure=True):
@@ -20,15 +20,6 @@ def get_assured_checkpoint_path(group_path, assure=True):
     if assure:
         assure_path(checkpoint_path)
     return checkpoint_path
-
-# initlize path 
-for energy_source in PowerSourceMap.keys():
-    for ot in ModelOutputType:
-        for fg in FeatureGroup:
-            if fg == FeatureGroup.Unknown:
-                continue
-            group_path = get_model_group_path(model_toppath, ot, fg, energy_source, assure=True)
-            checkpoint_path = get_assured_checkpoint_path(group_path)
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -41,8 +32,7 @@ def normalize_and_split(X_values, y_values, scaler, test_size=0.1):
 
 
 class Trainer(metaclass=ABCMeta):
-    def __init__(self, profiles, model_class, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="minmax"):
-        self.profiles = profiles
+    def __init__(self, model_class, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="minmax"):
         self.energy_components = energy_components
         self.feature_group_name = feature_group
         self.feature_group = FeatureGroup[feature_group]
@@ -146,23 +136,16 @@ class Trainer(metaclass=ABCMeta):
                 self.node_models[node_type][component] = self.init_model()
                 self.print_log("Newly initialize model ({})".format(component))
 
-    def load_scaler(self, node_type):
-        if node_type not in self.profiles:
-            return None
-        if self.scaler_type == "standard":
-            return self.profiles[node_type].get_standard_scaler(self.feature_group_name)
-        else:
-            return self.profiles[node_type].get_minmax_scaler(self.feature_group_name)
-
     def process(self, data, power_labels, pipeline_lock):
         node_types = pd.unique(data[node_info_column])
         for node_type in node_types:
             node_type = int(node_types)
-            # self.node_scalers[node_type] = self.load_scaler(node_type)
-            self.node_scalers[node_type] = None
+            save_path = self._get_save_path(node_type)
+            self.node_scalers[node_type] = load_scaler(save_path)
             self.load_model(node_type)
             node_type_filtered_data = data[data[node_info_column] == node_type]
             if self.node_scalers[node_type] is None:
+                self.print_log("fit scaler to latest data".format(node_type, self.feature_group_name))
                 # no profiled scaler
                 x_values = node_type_filtered_data[self.features].values
                 if self.scaler_type == "standard":
@@ -170,7 +153,6 @@ class Trainer(metaclass=ABCMeta):
                 else:
                     self.node_scalers[node_type] = MinMaxScaler()
                 self.node_scalers[node_type].fit(x_values)
-                self.print_log("Cannot load scaler for {}/{}, fit scaler to latest data".format(node_type, self.feature_group_name))
             
             for component in self.energy_components:
                 X_values, y_values = self.apply_ratio(component, node_type_filtered_data, power_labels)
@@ -212,7 +194,7 @@ class Trainer(metaclass=ABCMeta):
                 y_values += unit_y_values
         return X_values, y_values
 
-    def save_metadata(self, node_type, mae, item):
+    def save_metadata(self, node_type, mae, mae_map, item):
         save_path = self._get_save_path(node_type)
         model_name, model_file = self._model_filename(node_type)
         item['model_name'] = model_name
@@ -222,6 +204,7 @@ class Trainer(metaclass=ABCMeta):
         item['fe_files'] = [] if not hasattr(self, 'fe_files') else self.fe_files
         item['output_type'] = self.output_type.name
         item['mae'] = mae
+        item.update(mae_map)
         self.metadata = item
         save_metadata(save_path, item)
 
@@ -259,16 +242,23 @@ class Trainer(metaclass=ABCMeta):
         self.archive_model(node_type)
         # save metadata
         max_mae = None
+        mae_map = dict()
         item = self.get_basic_metadata(node_type)
         for component in self.energy_components:
             mae = self.get_mae(node_type, component, X_test, y_test)
             if max_mae is None or mae > max_mae:
                 max_mae = mae
-        self.save_metadata(node_type, max_mae, item)
+            mae_map["{}_mae".format(component)] = mae
+        self.save_metadata(node_type, max_mae, mae_map, item)
+        print("save model to {}".format(save_path))
 
     def predict(self, node_type, component, X_values):
-        print(self.node_scalers, self.node_models, node_type)
-        features = self.node_scalers[node_type].transform(X_values)
+        save_path = self._get_save_path(node_type)
+        node_scaler = load_scaler(save_path)
+        if node_scaler is None:
+            self.print_log("cannot predict because of no scaler/model")
+            return None
+        features = node_scaler.transform(X_values)
         if hasattr(self, 'fe'):
             for fe in self.fe:
                 features = fe.transform(features)
@@ -276,7 +266,7 @@ class Trainer(metaclass=ABCMeta):
         return model.predict(features)
 
     def print_log(self, message):
-        print("{} trainer ({}/{}/{}): {}".format(self.trainer_name, "Abs" if self.node_level else "Dyn", self.feature_group, self.energy_source, message))
+        print("{} trainer ({}/{}/{}): {}".format(self.trainer_name, "Abs" if self.node_level else "Dyn", self.feature_group, self.energy_source, message), flush=True)
         
     def get_metadata(self):
         items = []

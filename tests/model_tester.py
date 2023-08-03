@@ -26,12 +26,11 @@ from profile import profile_process, get_min_max_watt
 
 from train_types import ModelOutputType
 from train.isolator.train_isolator import get_background_containers, isolate_container
-from train.prom.prom_query import TIMESTAMP_COL
 from offline_trainer_test import get_pipeline_name, isolators, offline_trainer_output_path
 from estimator.load import load_model
 
 from extractor_test import prom_response_file, prom_response_idle_file
-from prom_types import prom_responses_to_results
+from prom_types import prom_responses_to_results, TIMESTAMP_COL
 
 extractor = DefaultExtractor()
  

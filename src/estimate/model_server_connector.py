@@ -70,7 +70,7 @@ def make_request(power_request):
     try:
         response = requests.post(get_model_server_req_endpoint(), json=model_request)
     except Exception as err:
-        print("cannot make request: {}".format(err))
+        print("cannot make request to {}: {}".format(get_model_server_req_endpoint(), err))
         return None
     if response.status_code != 200:
         return None

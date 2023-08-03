@@ -32,7 +32,7 @@ def process(save_pipeline_name=DEFAULT_PIPELINE, prom_save_path=prom_output_path
     for extractor in extractors:
         for isolator in isolators:
             energy_components = PowerSourceMap[test_energy_source]
-            pipeline = NewPipeline(save_pipeline_name, test_profiles, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=target_energy_sources ,valid_feature_groups=valid_feature_groups)
+            pipeline = NewPipeline(save_pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=target_energy_sources ,valid_feature_groups=valid_feature_groups)
             for feature_group in valid_feature_groups:
                 assert_pipeline(pipeline, query_results, feature_group, test_energy_source, energy_components)
 

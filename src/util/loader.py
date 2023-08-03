@@ -2,8 +2,8 @@ import os
 import json
 import joblib
 import pandas as pd
-from saver import assure_path, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME
-from train_types import ModelOutputType, FeatureGroup
+from saver import assure_path, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME, _pipeline_metadata_filename
+from train_types import ModelOutputType, FeatureGroup, PowerSourceMap, all_feature_groups
 from urllib.request import urlopen
 
 import requests
@@ -62,6 +62,17 @@ def load_scaler(model_path):
 
 def load_weight(model_path):
     return load_json(model_path, WEIGHT_FILENAME)
+
+def load_profile(profile_path, source):
+    profile_filename = os.path.join(profile_path, source + ".json")
+    if not os.path.exists(profile_filename):
+        profile = dict()
+        for component in PowerSourceMap[source]:
+            profile[component] = dict()
+    else:
+        with open(profile_filename) as f:
+            profile = json.load(f)
+    return profile
 
 def load_csv(path, name):
     csv_file = name + ".csv"
@@ -164,6 +175,43 @@ def list_all_dyn_models(model_toppath, energy_source, valid_fgs, pipeline_name=D
         dyn_models_map[group_path] = model_names
     return dyn_models_map
 
+def _get_metadata_df(group_path):
+    metadata_items = []
+    if os.path.exists(group_path):
+        model_names = list_model_names(group_path)
+        for model_name in model_names:
+            model_path = os.path.join(group_path, model_name)
+            metadata = load_metadata(model_path)
+            if metadata is not None:
+                metadata_items += [metadata]
+    return pd.DataFrame(metadata_items)
+
+def get_all_metadata(model_toppath, pipeline_name, clean_empty=False):
+    all_metadata = dict()
+    for energy_source in PowerSourceMap.keys():
+        all_metadata[energy_source] = dict()
+        for model_type in list(ModelOutputType.__members__):
+            all_fg_metadata = []
+            for fg in all_feature_groups:
+                group_path = get_model_group_path(model_toppath, output_type=ModelOutputType[model_type], feature_group=FeatureGroup[fg], energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
+                metadata_df = _get_metadata_df(group_path)
+                if len(metadata_df) > 0:
+                    metadata_df["feature_group"] = fg
+                    all_fg_metadata += [metadata_df]
+                elif clean_empty:
+                    os.rmdir(group_path)
+            if len(all_fg_metadata) > 0:
+                all_metadata[energy_source][model_type] = pd.concat(all_fg_metadata)
+            elif clean_empty:
+                energy_source_path = os.path.join(model_toppath, energy_source)
+                os.rmdir(energy_source_path)
+
+    return all_metadata
+       
+def load_pipeline_metadata(pipeline_path, energy_source, model_type):
+    pipeline_metadata_filename = _pipeline_metadata_filename(energy_source, model_type)
+    return load_csv(pipeline_path, pipeline_metadata_filename)
+
 def get_download_path():
     return os.path.join(os.path.dirname(__file__), DOWNLOAD_FOLDERNAME)
 
@@ -177,4 +225,3 @@ def get_url(output_type, feature_group=default_feature_group, trainer_name=defau
 
 def class_to_json(class_obj):
     return json.loads(json.dumps(class_obj.__dict__))
-

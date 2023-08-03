@@ -30,7 +30,7 @@ node_query_suffix = "joules_total"
 usage_ratio_query = "kepler_container_cpu_usage_per_package_ratio"
 # mostly available
 valid_container_query = "kepler_container_kubelet_cpu_usage_total"
-node_info_query = "kepler_node_nodeInfo"
+node_info_query = "kepler_node_node_info"
 cpu_frequency_info_query = "kepler_node_cpu_scaling_frequency_hertz"
 
 container_id_cols = ["pod_name", "container_name", "container_namespace"]

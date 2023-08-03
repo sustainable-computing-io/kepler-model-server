@@ -13,8 +13,8 @@ poly_scaler_filename = "poly_scaler.pkl"
 
 class PolynomialRegressionTrainer(ScikitTrainer):
 
-    def __init__(self, profiles, energy_components, feature_group, energy_source, node_level, pipeline_name):
-        super(PolynomialRegressionTrainer, self).__init__(profiles, energy_components, feature_group, energy_source, node_level, pipeline_name=pipeline_name)
+    def __init__(self, energy_components, feature_group, energy_source, node_level, pipeline_name):
+        super(PolynomialRegressionTrainer, self).__init__(energy_components, feature_group, energy_source, node_level, pipeline_name=pipeline_name)
         self.poly_scaler = PolynomialFeatures(degree=2)
         self.fe_files = [poly_scaler_filename]
         self.fe = [PolynomialFeatures(degree=2)]

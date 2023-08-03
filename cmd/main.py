@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import datetime
+import json
 import pandas as pd
 
 data_path = "/data"
@@ -10,6 +11,7 @@ default_trainer_names = [ 'PolynomialRegressionTrainer', 'GradientBoostingRegres
 default_trainers = ",".join(default_trainer_names)
 
 UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
+data_path = os.getenv("CPE_DATAPATH", data_path)
 
 # set model top path to data path
 os.environ['MODEL_PATH'] = data_path
@@ -18,13 +20,13 @@ cur_path = os.path.join(os.path.dirname(__file__), '.')
 sys.path.append(cur_path)
 src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
-profile_path = os.path.join(os.path.dirname(__file__), '../src/profile')
-sys.path.append(profile_path)
 
 from util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_HEADERS, PROM_SSL_DISABLE
 from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, node_info_column, prom_responses_to_results
-from util.loader import load_json, DEFAULT_PIPELINE
-from util.saver import save_json
+from util.train_types import ModelOutputType
+from util.loader import load_json, DEFAULT_PIPELINE, load_pipeline_metadata, get_pipeline_path
+from util.saver import save_json, save_csv
+from util.config import ERROR_KEY
 from util import get_valid_feature_group_from_queries, PowerSourceMap
 from train.prom.prom_query import _range_queries
 
@@ -188,15 +190,15 @@ def validate(args):
 
 def assert_train(trainer, data, energy_components):
     import pandas as pd
-    trainer.print_log("assert train")
     node_types = pd.unique(data[node_info_column])
     for node_type in node_types:
         node_type_str = int(node_type)
         node_type_filtered_data = data[data[node_info_column] == node_type]
         X_values = node_type_filtered_data[trainer.features].values
-        # for component in energy_components:
-        #     output = trainer.predict(node_type_str, component, X_values)
-        #     assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
+        for component in energy_components:
+            output = trainer.predict(node_type_str, component, X_values)
+            if output is not None:
+                assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
 
 def train(args):
     if not args.input:
@@ -213,14 +215,28 @@ def train(args):
     if args.profile:
         idle_response = load_json(data_path, args.profile)
         idle_data = prom_responses_to_results(idle_response)
-        profile_map = DefaultProfiler.process(idle_data)
+        if idle_data is None:
+            print("failed to read idle data")
+            exit()
+        pipeline_path = get_pipeline_path(data_path, pipeline_name=args.pipeline_name)
+        profile_map = DefaultProfiler.process(idle_data, profile_top_path=pipeline_path)
         profiles = generate_profiles(profile_map)
         supported_isolator["profile"] = ProfileBackgroundIsolator(profiles, idle_data)
         supported_isolator["trainer"] = TrainIsolator(idle_data=idle_data, profiler=DefaultProfiler)
     
-    response = load_json(data_path, args.input)
-    query_results = prom_responses_to_results(response)
-    valid_feature_groups = get_valid_feature_group_from_queries(query_results.keys())
+    inputs = args.input.split(",")
+    input_query_results_list = []
+    valid_feature_groups = None
+    for input in inputs:
+        response = load_json(data_path, input)
+        query_results = prom_responses_to_results(response)
+        valid_fg = get_valid_feature_group_from_queries(query_results.keys())
+        if valid_feature_groups is None:
+            valid_feature_groups = valid_fg
+        else:
+            valid_feature_groups = list(set(valid_feature_groups).intersection(set(valid_fg)))
+        input_query_results_list += [query_results]
+
     if args.isolator not in supported_isolator:
         print("isolator {} is not supported. supported isolator: {}".format(args.isolator, supported_isolator.keys()))
         exit()
@@ -228,9 +244,9 @@ def train(args):
     abs_trainer_names = args.abs_trainers.split(",")
     dyn_trainer_names = args.dyn_trainers.split(",")
     isolator = supported_isolator[args.isolator]
-    pipeline = NewPipeline(args.pipeline_name, profiles, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=[args.energy_source] ,valid_feature_groups=valid_feature_groups)
+    pipeline = NewPipeline(args.pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=[args.energy_source] ,valid_feature_groups=valid_feature_groups)
     for feature_group in valid_feature_groups:
-        success, abs_data, dyn_data = pipeline.process(query_results, energy_components, args.energy_source, feature_group=feature_group.name)
+        success, abs_data, dyn_data = pipeline.process_multiple_query(input_query_results_list, energy_components, args.energy_source, feature_group=feature_group.name)
         assert success, "failed to process pipeline {}".format(pipeline.name) 
         for trainer in pipeline.trainers:
             if trainer.feature_group == feature_group and trainer.energy_source == args.energy_source:
@@ -238,8 +254,26 @@ def train(args):
                     assert_train(trainer, abs_data, energy_components)
                 else:
                     assert_train(trainer, dyn_data, energy_components)
+        # save data
+        data_saved_path = os.path.join(pipeline_path, "preprocessed_data")
+        save_csv(data_saved_path, "{}_abs_data".format(feature_group), abs_data)
+        save_csv(data_saved_path, "{}_dyn_data".format(feature_group), dyn_data)
 
 
+    print("=========== Train Summary ============")
+    # save args 
+    argparse_dict = vars(args)
+    save_json(pipeline.path, "train_arguments", argparse_dict)
+    print("Train args:", argparse_dict)
+    # save metadata
+    pipeline.save_metadata()
+    print("AbsPower pipeline results:")
+    metadata_df = load_pipeline_metadata(pipeline.path, args.energy_source, ModelOutputType.AbsPower.name)
+    print(metadata_df.sort_values(by=ERROR_KEY))
+    print("DynPower pipeline results:")
+    metadata_df = load_pipeline_metadata(pipeline.path, args.energy_source, ModelOutputType.DynPower.name)
+    print(metadata_df.sort_values(by=ERROR_KEY))
+    
 if __name__ == "__main__":
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description="Kepler model server entrypoint")
@@ -269,8 +303,8 @@ if __name__ == "__main__":
     # Parse the command-line arguments
     args = parser.parse_args()
 
-    if not os.path.exists("/data"):
-        print("/data must be mount, add -v \"$(pwd)\":/data .")
+    if not os.path.exists(data_path):
+        print("{} must be mount, add -v \"$(pwd)\":{} .".format(data_path, data_path))
         exit()
 
     # Check if the required argument is provided

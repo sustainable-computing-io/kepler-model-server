@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import logging
 
 import sys
 import pandas as pd
@@ -64,18 +65,18 @@ def handle_request(data):
                 if output_path is None:
                     return {"powers": [], "msg": "failed to get model"}
                 else:
-                    print("load model from config: ", output_path)
+                    logging.info("load model from config: ", output_path)
             else:
-                print("load model from model server: ", output_path)
+                logging.info("load model from model server: ", output_path)
         loaded_model[output_type.name] = load_downloaded_model(output_type)
         # remove loaded model
         shutil.rmtree(output_path)
 
     model = loaded_model[output_type.name]
-    print('Estimator model: ', model.model_name)
+    logging.info('Estimator model: ', model.model_name)
     powers, msg = model.get_power(power_request.datapoint)
     if msg != "":
-        print("{} fail to predict, removed".format(model.model_name))
+        logging.info("{} fail to predict, removed".format(model.model_name))
         if os.path.exists(output_path):
             shutil.rmtree(output_path)
     return {"powers": powers, "msg": msg}

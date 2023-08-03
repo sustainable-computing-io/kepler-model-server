@@ -44,7 +44,7 @@ if __name__ == '__main__':
     # test getting model from server
     os.environ['MODEL_SERVER_ENABLE'] = "true"
     available_models = list_all_models()
-    print(available_models)
+    print("Available Models:", available_models)
     for output_type_name, valid_fgs in available_models.items():
         if 'Weight' in output_type_name:
             continue
@@ -59,8 +59,9 @@ if __name__ == '__main__':
             request_json = generate_request(None, n=10, metrics=metrics, output_type=output_type_name)
             data = json.dumps(request_json)
             output = handle_request(data)
-            assert len(output['powers']) > 0, "cannot get power {}\n {}".format(output['msg'], request_json)
             print("result {}/{} from model server: {}".format(output_type_name, fg_name, output))
+            assert len(output['powers']) > 0, "cannot get power {}\n {}".format(output['msg'], request_json)
+            
 
     # test with initial models
     os.environ['MODEL_SERVER_ENABLE'] = "false"
@@ -70,6 +71,7 @@ if __name__ == '__main__':
             continue
         url = getConfig(initUrlKeyMap[output_type_name], None)
         if url is not None:
+            print("Download: ", url)
             output_path = get_download_output_path(output_type)
             if output_type_name in loaded_model:
                 del loaded_model[output_type_name]
@@ -95,6 +97,7 @@ if __name__ == '__main__':
             shutil.rmtree(output_path)
         # valid model
         os.environ[initUrlKeyMap[output_type_name]] = get_url(output_type=output_type, feature_group=FeatureGroup.CgroupOnly)
+        print("Requesting from ", os.environ[initUrlKeyMap[output_type_name]])
         request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.CgroupOnly], output_type=output_type_name)
         data = json.dumps(request_json)
         output = handle_request(data)
@@ -103,6 +106,7 @@ if __name__ == '__main__':
         del loaded_model[output_type_name]
         # invalid model
         os.environ[initUrlKeyMap[output_type_name]] = get_url(output_type=output_type, feature_group=FeatureGroup.BPFOnly)
+        print("Requesting from ", os.environ[initUrlKeyMap[output_type_name]])
         request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.CgroupOnly], output_type=output_type_name)
         data = json.dumps(request_json)
         power_request = json.loads(data, object_hook = lambda d : PowerRequest(**d))
@@ -110,6 +114,7 @@ if __name__ == '__main__':
         assert output_path is None, "model should be invalid\n {}".format(output_path)
         os.environ['MODEL_CONFIG'] = "CONTAINER_COMPONENTS_ESTIMATOR=true\nCONTAINER_COMPONENTS_INIT_URL={}\n".format(get_url(output_type=output_type, feature_group=FeatureGroup.CgroupOnly))
         set_env_from_model_config()
+        print("Requesting from ", os.environ[initUrlKeyMap[output_type_name]])
         reset_failed_list()
         if output_type_name in loaded_model:
             del loaded_model[output_type_name]

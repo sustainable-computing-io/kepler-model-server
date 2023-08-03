@@ -21,6 +21,7 @@ MNT_PATH = "/mnt"
 # can be read only (for configmap mount)
 CONFIG_PATH = "/etc/kepler/kepler.config"
 
+
 modelItemNameMap = {
     "Abs": "NODE_TOTAL",
     "AbsComponent": "NODE_COMPOENTS",
@@ -74,6 +75,9 @@ initial_models_location = getConfig('INITIAL_MODELS_LOC', default_initial_models
 
 default_model_path = os.path.join(os.path.dirname(__file__), '..', 'models')
 model_toppath =  getPath(getConfig('MODEL_PATH', default_model_path))
+
+ERROR_KEY = 'mae'
+ERROR_KEY = getConfig('ERROR_KEY', ERROR_KEY)
 
 def is_model_server_enabled():
     return getConfig('MODEL_SERVER_ENABLE', "false").lower() == "true"

@@ -38,8 +38,8 @@ def initial_pipelines():
     target_energy_sources = target_energy_sources.keys()
     valid_feature_groups = FeatureGroups.keys()
     profiles = load_all_profiles()
-    profile_pipeline = NewPipeline(DEFAULT_PIPELINE, profiles, abs_trainer_names, dyn_trainer_names, extractor=DefaultExtractor(), isolator=ProfileBackgroundIsolator(profiles), target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
-    non_profile_pipeline = NewPipeline(DEFAULT_PIPELINE, profiles, abs_trainer_names, dyn_trainer_names, extractor=DefaultExtractor(), isolator=MinIdleIsolator(), target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
+    profile_pipeline = NewPipeline(DEFAULT_PIPELINE, abs_trainer_names, dyn_trainer_names, extractor=DefaultExtractor(), isolator=ProfileBackgroundIsolator(profiles), target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
+    non_profile_pipeline = NewPipeline(DEFAULT_PIPELINE, abs_trainer_names, dyn_trainer_names, extractor=DefaultExtractor(), isolator=MinIdleIsolator(), target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
     return profile_pipeline, non_profile_pipeline
 
 if __name__ == '__main__':
@@ -54,6 +54,9 @@ if __name__ == '__main__':
                 success, _, _ = profile_pipeline.process(query_results, energy_components, energy_source, feature_group=feature_group)
                 if not success:
                     # failed to process with profile, try non_profile pipeline
-                    non_profile_pipeline.process(query_results, energy_components, energy_source, feature_group=feature_group)
-
+                    success, _, _ = non_profile_pipeline.process(query_results, energy_components, energy_source, feature_group=feature_group)
+                    if success:
+                        non_profile_pipeline.save_metadata()
+                else:
+                    profile_pipeline.save_metadata()
         time.sleep(SAMPLING_INTERVAL)

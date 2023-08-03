@@ -7,7 +7,6 @@ RUN mkdir -p /usr/local/src
 RUN mkdir -p /usr/local/resource
 
 RUN mkdir -p resource/profiles
-COPY src/profile/tool src/profile/tool
 COPY src/estimate src/estimate
 COPY src/server src/server
 COPY src/train src/train

@@ -10,8 +10,6 @@ node_level_index = [TIMESTAMP_COL]
 pkg_level_index = [TIMESTAMP_COL, pkg_id_column]
 container_level_index = [TIMESTAMP_COL, container_id_colname]
 
-UNKNOWN_NODE_INFO = -1
-
 def component_to_col(component, unit_col=None, unit_val=None):
     power_colname = "{}_power".format(component)
     if unit_col is None:

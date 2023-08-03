@@ -85,7 +85,7 @@ def find_best_target_data_with_dyn_power(energy_source, energy_components, extra
     abs_models = get_abs_models(workload_feature_cols, energy_source, toppath=toppath, pipeline_name=pipeline_name)
     # get background power
         # isolate target container usage
-    target_data, background_data = isolate_container(extracted_data, background_containers)
+    target_data, background_data = isolate_container(extracted_data, background_containers, label_cols)
     # get_extracted_power_labels
     extracted_power_labels = get_extracted_power_labels(extracted_data, energy_components, label_cols)
     for model in abs_models:
