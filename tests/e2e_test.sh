@@ -18,6 +18,8 @@
 #
 
 # Get the directory of the currently executing script_
+set -ex
+
 top_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"/..
 
 echo "Top location: $top_dir"
@@ -45,6 +47,12 @@ wait_for_kepler() {
     kubectl rollout status ds kepler-exporter -n kepler --timeout 5m
 }
 
+wait_for_server() {
+    kubectl rollout status deploy kepler-model-server -n kepler --timeout 5m
+    wait_for_keyword server "initial pipeline is loaded" "server cannot load initial pipeline"
+    wait_for_keyword server "Press CTRL+C to quit" "server has not started yet"
+}
+
 wait_for_keyword() {
     num_iterations=10
     component=$1
@@ -54,13 +62,15 @@ wait_for_keyword() {
         if grep -q "$keyword" <<< $(get_${component}_log); then
             return
         fi
-        sleep 1
+        sleep 2
     done
     echo "timeout ${num_iterations}s waiting for '${keyword}' from ${component} log"
     echo "Error: $message"
 
     echo "${component} log:"
     get_${component}_log
+    # show all status
+    kubectl get po -A
     exit 1
 }
 
@@ -68,6 +78,10 @@ check_estimator_set_and_init() {
     wait_for_keyword kepler "Model Config NODE_TOTAL: {ModelType:EstimatorSidecar" "Kepler should set desired config"
 }
 
+restart_model_server() {
+    kubectl delete po  -l app.kubernetes.io/component=model-server -n kepler
+    wait_for_server
+}
 
 test() {
     # set options
@@ -81,6 +95,9 @@ test() {
         # with estimator
         if [ ! -z ${TEST} ]; then
             kubectl patch ds kepler-exporter -n kepler --patch-file ${top_dir}/manifests/test/power-request-client.yaml
+            if [ ! -z ${SERVER} ]; then
+                restart_model_server
+            fi
             sleep 1
             wait_for_kepler
             wait_for_keyword kepler Done "cannot get power"
@@ -89,6 +106,7 @@ test() {
         fi
 
         if [ ! -z ${SERVER} ]; then
+            wait_for_server
             wait_for_keyword estimator "load model from model server" "estimator should be able to load model from server"
         fi
     else
@@ -96,15 +114,12 @@ test() {
         if [ ! -z ${SERVER} ]; then
             if [ ! -z ${TEST} ]; then 
                 kubectl patch ds kepler-exporter -n kepler --patch-file ${top_dir}/manifests/test/model-request-client.yaml
+                restart_model_server
                 sleep 1
                 wait_for_kepler
                 wait_for_keyword kepler Done "cannot get model weight"
             fi
         fi
-    fi
-
-    if [ ! -z ${SERVER} ]; then
-        wait_for_keyword server "initial pipeline is loaded" "server cannot load initial pipeline"
     fi
 
 }

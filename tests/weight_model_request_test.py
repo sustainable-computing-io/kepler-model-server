@@ -60,7 +60,11 @@ if __name__ == '__main__':
                 del request_json["system_features"]
                 del request_json["values"]
                 del request_json["system_values"]
-                response = requests.post(get_model_server_req_endpoint(), json=request_json)
+                try:
+                    response = requests.post(get_model_server_req_endpoint(), json=request_json)
+                except Exception as err:
+                    print("cannot get response from model server: {}".format(err))
+                    sys.exit(1) 
                 assert response.status_code == 200, "response {} not OK".format(request_json)
                 loaded_weight = json.loads(response.content)
                 print(loaded_weight)
