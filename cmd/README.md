@@ -69,6 +69,7 @@ optional arguments:
     output of trained model will be under pipeline folder `default` or can be specified by `-p`
 
     ```bash
+    <pipeline_name>.zip # archived pipeline for model server to load
     <pipeline_name> # provided by -p, --pipeline-name (default: default)
     ├── metadata.json # pipeline metadata such as pipeline name, extractor, isolator, trainer list
     ├── preprocessed_data 
@@ -84,9 +85,10 @@ optional arguments:
     │   │   │   │   ├── metadata.json # model metadata
     │   │   │   │   └── <model_files> 
     │   │   │   │   └── ...
-    │   │   │   ├── <model_name>.zip # archived model
-    ├── rapl_AbsPower_model_metadata.csv # AbsPower models summary
-    ├── rapl_DynPower_model_metadata.csv # DynPower models summary
+    │   │   │   │   └── weight.json # model weight in json format if support for kepler to load
+    │   │   │   ├── <model_name>.zip # archived model for estimator to load
+    ├── <energy_source>_AbsPower_model_metadata.csv # AbsPower models summary
+    ├── <energy_source>_DynPower_model_metadata.csv # DynPower models summary
     └── train_arguments.json
     ```
 
