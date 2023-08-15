@@ -10,7 +10,7 @@ sys.path.append(util_path)
 from train_types import WORKLOAD_FEATURES, SYSTEM_FEATURES, ModelOutputType, CATEGORICAL_LABEL_TO_VOCAB
 from config import SERVE_SOCKET
 
-trainer_names = ['GradientBoostingRegressorTrainer']
+trainer_names = ['SGDRegressorTrainer']
 
 def generate_request(train_name, n=1, metrics=WORKLOAD_FEATURES, system_features=SYSTEM_FEATURES, output_type=ModelOutputType.DynPower.name):
     request_json = dict() 
@@ -39,7 +39,7 @@ class Client:
         while True:
             shunk = s.recv(1024).strip()
             data += shunk
-            if shunk is None or shunk.decode()[-1] == '}':
+            if shunk is None or len(shunk.decode()) == 0 or shunk.decode()[-1] == '}':
                 break
         decoded_data = data.decode()
         s.close()
@@ -47,8 +47,9 @@ class Client:
 
 if __name__ == '__main__':
     client = Client(SERVE_SOCKET)
-    request_json = generate_request(trainer_names[0], 2, output_type="DynPower")
+    request_json = generate_request(trainer_names[0], 2, output_type="AbsPower")
     res = client.make_request(request_json)
     res_json = json.loads(res)
+    print(res_json)
     assert res_json["msg"]=="", "response error: {}".format(res_json["msg"])
     assert len(res_json["powers"]) > 0, "zero powers"

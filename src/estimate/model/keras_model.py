@@ -7,15 +7,15 @@ sys.path.append(src_path)
 cur_path = os.path.join(os.path.dirname(__file__), '.')
 sys.path.append(cur_path)
 
-from model_server_connector import is_comp_output, ModelOutputType
-from estimate_common import load_model_by_pickle, load_model_by_keras, load_model_by_json, transform_and_predict
+from model_server_connector import ModelOutputType
+from estimate_common import load_model_by_pickle, load_model_by_keras, load_model_by_json, transform_and_predict, is_component_model
 
 class KerasModel():
     def __init__(self, model_path, model_name, output_type, model_file, features, fe_files, component_init=False):
         self.name = model_name
         self.features = features
         self.output_type = ModelOutputType[output_type]
-        self.comp_type = not component_init and is_comp_output(self.output_type)
+        self.comp_type = not component_init and is_component_model(self.output_type)
         if self.comp_type:
             self.models = dict()
             model_info = load_model_by_json(model_path, model_file)

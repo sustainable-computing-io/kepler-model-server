@@ -1,0 +1,36 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: coremark
+  namespace: cpe-operator-system
+spec:
+  benchmarkOperator:
+    name: none
+    namespace: cpe-operator-system
+  benchmarkSpec: |
+    backoffLimit: 0
+    template:
+      spec:
+        containers:
+          - name: coremark
+            image: {{ .image }}
+            command:
+            - sh
+            - -c
+            - ./coremark-{{ .thread }}thread{{if ne .thread "1"}}s{{end}}.exe
+        restartPolicy: Never
+  parserKey: coremark
+  repetition: 5
+  iterationSpec:
+    iterations:
+    - name: thread
+      values:
+      - "4"
+      - "8"
+      - "16"
+      - "32"
+    configurations:
+    - name: image
+      values:
+      - "ghcr.io/sunya-ch/coremark:ubi"
+    sequential: true

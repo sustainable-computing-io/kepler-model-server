@@ -16,9 +16,9 @@ def get_save_path(model_filepath):
     return "/".join(model_filepath.split("/")[0:-1])
 
 class ScikitTrainer(Trainer):
-    def __init__(self, profiles, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="minmax"):
+    def __init__(self, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="minmax"):
         self.is_standard_scaler = scaler_type == "standard"
-        super(ScikitTrainer, self).__init__(profiles, model_class, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type=scaler_type)
+        super(ScikitTrainer, self).__init__(model_class, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type=scaler_type)
         self.fe_files = []
  
     def train(self, node_type, component, X_values, y_values):
@@ -43,17 +43,6 @@ class ScikitTrainer(Trainer):
                 if loaded_fe is not None:
                     self.fe[index] = loaded_fe
         loaded_model = load_pkl("", filepath)
-        return loaded_model, loaded_model is not None
-    
-    def load_remote_checkpoint(self, url_path):
-        if hasattr(self, 'fe_files'):
-            save_path = get_save_path(url_path)
-            for index in range(len(self.fe_files)):
-                fe_url_path = os.path.join(save_path, self.fe_files[index])
-                loaded_fe = load_remote_pkl(fe_url_path)
-                if loaded_fe is not None:
-                    self.fe[index] = loaded_fe
-        loaded_model = load_remote_pkl(url_path)
         return loaded_model, loaded_model is not None
 
     def should_archive(self, node_type):

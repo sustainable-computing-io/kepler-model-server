@@ -1,0 +1,30 @@
+resources:
+- server.yaml
+
+patchesStrategicMerge:
+- ./openshift/patch-openshift.yaml
+- ./online-train/patch-trainer.yaml
+- ./openshift/online-train/patch-trainer.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+vars:
+- name: MODEL_SERVER_NAMESPACE
+  objref:
+    kind: Deployment
+    group: apps
+    version: v1
+    name: kepler-model-server
+  fieldref:
+    fieldpath: metadata.namespace
+- name: MODEL_SERVER_PORT
+  objref:
+    kind: Deployment
+    group: apps
+    version: v1
+    name: kepler-model-server
+  fieldref:
+    fieldpath: spec.template.spec.containers[0].ports[0].containerPort
+
+configurations:
+- kustomizeconfig.yaml

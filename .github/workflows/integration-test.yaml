@@ -1,0 +1,62 @@
+on:
+  push:
+  pull_request:
+
+env:
+  IMAGE: localhost:5001/kepler_model_server:devel
+
+jobs:
+  run-integration:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: use Kepler action to deploy cluster
+        uses: sustainable-computing-io/kepler-action@v0.0.1
+        with:
+          runningBranch: kind
+          cluster_provider: kind
+          local_dev_cluster_version: v0.0.3
+      - name: load latest kepler image
+        run: |
+          docker pull quay.io/sustainable_computing_io/kepler:latest
+          kind load docker-image quay.io/sustainable_computing_io/kepler:latest
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: build Kepler model server and test image and push to local registry
+        run: make build build-test push push-test
+      - name: set up Kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          chmod +x kustomize
+          mv kustomize /usr/local/bin/
+      - name: test deploying kepler with only estimator
+        run: |
+          make deploy
+          make e2e-test
+          make cleanup
+        env:
+          OPTS: "ESTIMATOR"
+      - name: test deploying dummy kepler with only estimator
+        run: |
+          make deploy
+          make e2e-test
+          make cleanup
+        env:
+          OPTS: "ESTIMATOR TEST"
+      - name: test deploying dummy kepler with only server
+        run: |
+          make deploy
+          make e2e-test
+          make cleanup
+        env:
+          OPTS: "SERVER TEST"
+      - name: test deploying dummy kepler with estimator and model server
+        run: |
+          make deploy
+          make e2e-test
+          make cleanup
+        env:
+          OPTS: "ESTIMATOR SERVER TEST"

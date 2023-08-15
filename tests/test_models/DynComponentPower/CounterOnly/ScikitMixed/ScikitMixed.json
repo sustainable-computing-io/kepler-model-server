@@ -1,1 +1,0 @@
-{"pkg": {"model_file": "pkg.sav", "features": ["cpu_cycles", "cache_miss", "cpu_instr"], "fe_files": ["scaler.pkl"]}, "dram": {"model_file": "dram.sav", "features": ["cpu_cycles", "cache_miss", "cpu_instr"], "fe_files": ["scaler.pkl"]}}

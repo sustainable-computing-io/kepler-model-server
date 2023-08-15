@@ -1,4 +1,0 @@
-pandas==1.4.4
-prometheus-client==0.14.1
-prometheus-api-client==0.5.1
-PyYAML==6.0

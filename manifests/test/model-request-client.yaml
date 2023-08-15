@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kepler-exporter
+  namespace: kepler
+spec:
+  template:
+    spec:
+      containers:
+      - name: kepler-exporter
+        image: localhost:5001/kepler_model_server:devel-test
+        imagePullPolicy: IfNotPresent
+        command: [ "/bin/sh" ]
+        args: ["-c", "python3.8 -u tests/weight_model_request_test.py && echo Done && sleep infinity"]
+        volumeMounts:
+        - name: cfm
+          mountPath: /etc/kepler/kepler.config
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+      volumes:
+      - emptyDir: {}
+        name: tmp
+

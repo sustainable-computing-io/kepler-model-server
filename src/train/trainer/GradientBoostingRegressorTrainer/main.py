@@ -10,8 +10,8 @@ from trainer.scikit import ScikitTrainer
 model_class = "scikit"
 
 class GradientBoostingRegressorTrainer(ScikitTrainer):
-    def __init__(self, profiles, energy_components, feature_group, energy_source, node_level, pipeline_name):
-        super(GradientBoostingRegressorTrainer, self).__init__(profiles, energy_components, feature_group, energy_source, node_level, pipeline_name=pipeline_name)
+    def __init__(self, energy_components, feature_group, energy_source, node_level, pipeline_name):
+        super(GradientBoostingRegressorTrainer, self).__init__(energy_components, feature_group, energy_source, node_level, pipeline_name=pipeline_name)
         self.fe_files = []
     
     def init_model(self):

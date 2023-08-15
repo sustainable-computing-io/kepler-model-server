@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kepler-cfm
+  namespace: system
+data:
+  KEPLER_LOG_LEVEL: '3'
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kepler-exporter
+  namespace: system
+spec:
+  template:
+    spec:
+      containers:
+      - name: kepler-exporter
+        imagePullPolicy: IfNotPresent

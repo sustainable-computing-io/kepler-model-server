@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 fpath = os.path.join(os.path.dirname(__file__), 'model')
 sys.path.append(fpath)
@@ -64,6 +65,7 @@ def reset_failed_list():
      failed_list = []
 
 def get_achived_model(power_request):  
+    print("get archived model")
     global failed_list
     output_type_name = power_request.output_type
     if output_type_name in failed_list:

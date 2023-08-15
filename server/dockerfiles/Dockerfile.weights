@@ -1,6 +1,0 @@
-FROM python:latest
-COPY dockerfiles/requirements.txt requirements.txt
-RUN pip3 install --user -r requirements.txt
-COPY . .
-
-#ENTRYPOINT [ "python3", "server.py"]

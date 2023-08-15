@@ -11,36 +11,7 @@ sys.path.append(util_path)
 
 from config import is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint
 from loader import get_download_output_path
-
-# TO-DO: change to use from util.train_types import ModelOutputType
-
-class ModelOutputType(enum.Enum):
-    AbsPower = 1
-    AbsModelWeight = 2
-    AbsComponentPower = 3
-    AbsComponentModelWeight = 4
-    DynPower = 5
-    DynModelWeight = 6
-    DynComponentPower = 7
-    DynComponentModelWeight = 8
-
-def is_weight_output(output_type):
-    if output_type == ModelOutputType.AbsModelWeight:
-        return True
-    if output_type == ModelOutputType.AbsComponentModelWeight:
-        return True
-    if output_type == ModelOutputType.DynModelWeight:
-        return True
-    if output_type == ModelOutputType.DynComponentModelWeight:
-        return True
-    return False
-
-def is_comp_output(output_type):
-    if output_type == ModelOutputType.AbsComponentPower:
-        return True
-    if output_type == ModelOutputType.DynComponentPower:
-        return True
-    return False
+from train_types import ModelOutputType
 
 def make_model_request(power_request):
     return {"metrics": power_request.metrics + power_request.system_features, "output_type": power_request.output_type, "filter": power_request.filter, "trainer_name": power_request.trainer_name}
@@ -70,7 +41,7 @@ def make_request(power_request):
     try:
         response = requests.post(get_model_server_req_endpoint(), json=model_request)
     except Exception as err:
-        print("cannot make request: {}".format(err))
+        print("cannot make request to {}: {}".format(get_model_server_req_endpoint(), err))
         return None
     if response.status_code != 200:
         return None

@@ -99,7 +99,7 @@ class TrainRequest():
         profiles = generate_profiles(idle_profile_map)
         isolator = self.init_isolator(profiler, profiles, idle_data)
         valid_feature_groups = get_valid_feature_group_from_queries(idle_data.keys())
-        self.pipeline = NewPipeline(self.name, profiles, self.trainer.abs_trainers, self.trainer.dyn_trainers, extractor=DefaultExtractor(), isolator=isolator, target_energy_sources=[self.energy_source], valid_feature_groups=valid_feature_groups)
+        self.pipeline = NewPipeline(self.name, self.trainer.abs_trainers, self.trainer.dyn_trainers, extractor=DefaultExtractor(), isolator=isolator, target_energy_sources=[self.energy_source], valid_feature_groups=valid_feature_groups)
     
     def get_model(self):
         self.init_pipeline()
@@ -111,6 +111,7 @@ class TrainRequest():
             self.pipeline.process(data, energy_components , self.energy_source, feature_group.name)
         # return model
         pipeline_path = get_pipeline_path(model_toppath=model_toppath ,pipeline_name=self.name)
+        self.pipeline.save_metadata()
         try:
             shutil.make_archive(pipeline_path, 'zip', pipeline_path)
             return pipeline_path + '.zip'

@@ -54,7 +54,7 @@ class Model():
     def __init__(self, model_path, model_class, model_name, output_type, model_file, features, fe_files=[],\
             mae=None, mse=None, mae_val=None, mse_val=None, \
             abs_model=None, abs_mae=None, abs_mae_val=None, abs_mse=None, abs_mse_val=None, abs_max_corr=None, \
-            reconstructed_mae=None, reconstructed_mse=None, avg_mae=None):
+            reconstructed_mae=None, reconstructed_mse=None, avg_mae=None, **kwargs):
         self.model_name = model_name
         self.estimator = MODELCLASS[model_class](model_path, model_name, output_type, model_file, features, fe_files)
         self.mae = mae
@@ -121,7 +121,6 @@ def load_model(model_path):
     if metadata is not None:
         metadata['model_path'] = model_path
         metadata_str = json.dumps(metadata)
-        print(metadata_str)
         try: 
             model = json.loads(metadata_str, object_hook = lambda d : Model(**d))
             return model

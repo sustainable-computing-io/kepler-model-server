@@ -6,13 +6,11 @@ RUN python3.8 -m pip install py-cpuinfo==9.0.0
 RUN mkdir -p /usr/local/src
 RUN mkdir -p /usr/local/resource
 
-COPY resource/profiles resource/profiles
-COPY src/profile/tool src/profile/tool
+RUN mkdir -p resource/profiles
 COPY src/estimate src/estimate
 COPY src/server src/server
 COPY src/train src/train
 COPY src/util src/util
-COPY src/models/default src/models/default
 
 RUN mkdir -p tests/data
 COPY tests/data/prom_output tests/data/prom_output 

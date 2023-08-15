@@ -12,19 +12,18 @@ import enum
 import random
 from typing import List
 
-SYSTEM_FEATURES = ["nodeInfo", "cpu_scaling_frequency_hertz"]
+SYSTEM_FEATURES = ["node_info", "cpu_scaling_frequency_hertz"]
 
 COUNTER_FEAUTRES = ["cache_miss", "cpu_cycles", "cpu_instructions"]
 CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"]
 BPF_FEATURES = ["bpf_cpu_time_us"]
 IRQ_FEATURES = ["bpf_block_irq", "bpf_net_rx_irq", "bpf_net_tx_irq"]
 KUBELET_FEATURES =['kubelet_memory_bytes', 'kubelet_cpu_usage']
-WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES 
+WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + KUBELET_FEATURES
 BASIC_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + KUBELET_FEATURES
 
 PowerSourceMap = {
-# "rapl": ["package", "core", "uncore", "dram"],
-    "rapl": ["package"],
+    "rapl": ["package", "core", "uncore", "dram"],
     "acpi": ["platform"]
 }
 
@@ -34,7 +33,7 @@ CORE_ENERGY_COMPONENT_LABEL = ["core"]
 
 CATEGORICAL_LABEL_TO_VOCAB = {
                     "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"],
-                    "nodeInfo": ["1"],
+                    "node_info": ["1"],
                     "cpu_scaling_frequency_hertz": ["1GHz", "2GHz", "3GHz"],
                     }
 

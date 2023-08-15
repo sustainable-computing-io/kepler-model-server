@@ -1,1 +1,0 @@
-{"model_name": "SGDRegressorTrainer_1", "model_class": "scikit", "model_file": "SGDRegressorTrainer_1.json", "features": ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"], "fe_files": [], "output_type": "DynPower", "mae": 30.219664927460695}
