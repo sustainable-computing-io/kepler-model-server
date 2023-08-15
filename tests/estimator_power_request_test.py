@@ -47,7 +47,7 @@ class Client:
 
 if __name__ == '__main__':
     client = Client(SERVE_SOCKET)
-    request_json = generate_request(trainer_names[0], 2, output_type="DynPower")
+    request_json = generate_request(trainer_names[0], 2, output_type="AbsPower")
     res = client.make_request(request_json)
     res_json = json.loads(res)
     print(res_json)

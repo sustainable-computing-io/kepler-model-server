@@ -13,7 +13,7 @@
 #################################################
 
 import os
-from loader import get_url
+from loader import get_url, get_pipeline_url
 from train_types import ModelOutputType, is_support_output_type
 
 # must be writable (for shared volume mount)
@@ -23,18 +23,12 @@ CONFIG_PATH = "/etc/kepler/kepler.config"
 
 
 modelItemNameMap = {
+    # "Abs": "NODE_POWER_MODEL",
+    # "Dyn": "CONTAINER_POWER_MODEL"
     "Abs": "NODE_TOTAL",
-    "AbsComponent": "NODE_COMPOENTS",
-    "Dyn": "CONTAINER_TOTAL",
-    "DynComponent": "CONTAINER_COMPONENTS"
+    "Dyn": "CONTAINER_TOTAL"
 }
 
-modelTypeNameMap = {
-    "Power": "POWER",
-    "ModelWeight": "MODEL_WEIGHT"
-}
-
-modelEnvMap = {"{}{}".format(modelItemKey, modelTypeKey): "{}_{}".format(modelItemValue, modelTypeValue) for modelItemKey, modelItemValue in modelItemNameMap.items() for modelTypeKey, modelTypeValue in modelTypeNameMap.items() }
 estimatorKeyMap = {"{}Power".format(modelItemKey): "{}_ESTIMATOR".format(modelItemNameMap[modelItemKey]) for modelItemKey in modelItemNameMap.keys()}
 initUrlKeyMap = {"{}Power".format(modelItemKey): "{}_INIT_URL".format(modelItemNameMap[modelItemKey]) for modelItemKey in modelItemNameMap.keys()}
 
@@ -70,11 +64,13 @@ if not os.path.exists(MNT_PATH) or not os.access(MNT_PATH, os.W_OK):
 
 CONFIG_PATH = getConfig('CONFIG_PATH', CONFIG_PATH)
 
-default_initial_models_location = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models"
-initial_models_location = getConfig('INITIAL_MODELS_LOC', default_initial_models_location)
+initial_pipeline_url = getConfig('INITIAL_PIPELINE_URL', get_pipeline_url())
 
 default_model_path = os.path.join(os.path.dirname(__file__), '..', 'models')
 model_toppath =  getPath(getConfig('MODEL_PATH', default_model_path))
+
+if not os.path.exists(model_toppath):
+    os.mkdir(model_toppath)
 
 ERROR_KEY = 'mae'
 ERROR_KEY = getConfig('ERROR_KEY', ERROR_KEY)
@@ -90,7 +86,6 @@ def _model_server_endpoint():
         modelServerEndpoint = 'http://{}:{}'.format(MODEL_SERVER_URL, MODEL_SERVER_PORT)
     else:
         modelServerEndpoint = MODEL_SERVER_URL
-    print(modelServerEndpoint)
     return modelServerEndpoint
 
 def get_model_server_req_endpoint():
@@ -110,15 +105,16 @@ def set_env_from_model_config():
                 os.environ[splits[0]] = splits[1]
                 print("set {} to {}.".format(splits[0], splits[1]))
 
-    
 
 # get_init_model: get initial model from URL if estimator is enabled
 def get_init_model(output_type):
+    print("get_init_model: {}", initUrlKeyMap, estimatorKeyMap, output_type)
     if output_type in estimatorKeyMap:
         enabled = getConfig(estimatorKeyMap[output_type], "true").lower() == "true"
         if enabled:
             modelURL = getConfig(initUrlKeyMap[output_type], "")
             if modelURL == "" and is_support_output_type(output_type):
+                print("get default init URL, {} is not set", initUrlKeyMap[output_type])
                 return get_url(output_type=ModelOutputType[output_type])
             else:
                 return modelURL

@@ -8,12 +8,12 @@ import sys
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
-from util import assure_path, getConfig, PowerSourceMap, ModelOutputType, FeatureGroups, FeatureGroup,save_json, save_metadata, load_metadata, save_scaler, save_weight
+from util import assure_path, ModelOutputType, FeatureGroups, FeatureGroup,save_json, save_metadata, load_metadata, save_scaler, save_weight
 
 from util.prom_types import  node_info_column
 from util.extract_types import component_to_col, get_unit_vals, ratio_to_col
 from util.loader import get_model_group_path, get_save_path, get_model_name, get_archived_file, CHECKPOINT_FOLDERNAME, load_scaler
-from util.config import model_toppath, initial_models_location
+from util.config import model_toppath
 
 def get_assured_checkpoint_path(group_path, assure=True):
     checkpoint_path = os.path.join(group_path, CHECKPOINT_FOLDERNAME)
@@ -65,12 +65,6 @@ class Trainer(metaclass=ABCMeta):
         checkpoint_filename = self._checkpoint_filename(component, node_type)
         return os.path.join(self.checkpoint_toppath, checkpoint_filename)
 
-    def _remote_checkpoint(self, component, node_type):
-        output_type_name = self.output_type.name
-        feature_group_name = self.feature_group.name
-        checkpoint_filename = self._checkpoint_filename(component, node_type)
-        return os.path.join(initial_models_location, output_type_name, feature_group_name, checkpoint_filename)
-        
     @abstractmethod
     def init_model(self):
         return NotImplemented
@@ -86,11 +80,7 @@ class Trainer(metaclass=ABCMeta):
     @abstractmethod
     def load_local_checkpoint(self, filepath):
         return NotImplemented
-
-    @abstractmethod
-    def load_remote_checkpoint(self, url):
-        return NotImplemented
-
+    
     @abstractmethod
     def should_archive(self, node_type):
         return NotImplemented
@@ -123,11 +113,6 @@ class Trainer(metaclass=ABCMeta):
             # try loading checkpoint
             local_checkpoint = self._checkpoint_filepath(component, node_type)
             model, ok = self.load_local_checkpoint(local_checkpoint)
-            if not ok:
-                url_path = self._remote_checkpoint(component, node_type)
-                model, ok = self.load_remote_checkpoint(url_path)
-                if ok:
-                    self.print_log("Load initial checkpoint from {}".format(url_path))
             if ok:
                 self.node_models[node_type][component] = model
                 self.print_log("Continue from last checkpoint ({})".format(component))
@@ -243,7 +228,6 @@ class Trainer(metaclass=ABCMeta):
             self.save_model(save_path, node_type, component)
         # save model dict
         save_json(save_path, model_dict_filename, model_dict)
-        self.archive_model(node_type)
         # save metadata
         max_mae = None
         mae_map = dict()
@@ -254,6 +238,8 @@ class Trainer(metaclass=ABCMeta):
                 max_mae = mae
             mae_map["{}_mae".format(component)] = mae
         self.save_metadata(node_type, max_mae, mae_map, item)
+        # archive model
+        self.archive_model(node_type)
         print("save model to {}".format(save_path))
 
     def predict(self, node_type, component, X_values):

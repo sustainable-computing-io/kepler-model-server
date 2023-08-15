@@ -1,4 +1,4 @@
-# Keple Model Server entrypoint
+# Kepler Model Server entrypoint
 
 Use kepler model server function as a standalone docker container.
 

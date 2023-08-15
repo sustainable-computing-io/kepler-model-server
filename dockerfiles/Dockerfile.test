@@ -11,7 +11,6 @@ COPY src/estimate src/estimate
 COPY src/server src/server
 COPY src/train src/train
 COPY src/util src/util
-COPY src/models/default src/models/default
 
 RUN mkdir -p tests/data
 COPY tests/data/prom_output tests/data/prom_output 

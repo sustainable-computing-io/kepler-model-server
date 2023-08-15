@@ -314,6 +314,8 @@ def train(args):
     print("Train args:", argparse_dict)
     # save metadata
     pipeline.save_metadata()
+    # save pipeline
+    pipeline.archive_pipeline()
     print("AbsPower pipeline results:")
     metadata_df = load_pipeline_metadata(pipeline.path, args.energy_source, ModelOutputType.AbsPower.name)
     print(metadata_df.sort_values(by=ERROR_KEY))

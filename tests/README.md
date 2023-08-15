@@ -13,7 +13,7 @@
 
 <!-- /TOC -->
 
-# Available Tests
+# Unit Tests
 
 ## Promethes Query
 The test is for testing making query to prometheus server. The output will be saved in json format.
@@ -249,3 +249,25 @@ Optional arguments:
  - energy_source: target energy source (default: rapl)
  - isolators: dict map of isolator class name to argument dict map (default: {"MinIdleIsolator": {}, "NoneIsolator": {}, "ProfileBackgroundIsolator": {}, "TrainIsolator": {"abs_pipeline_name": DEFAULT_PIPELINE}})
  - target_path:  path to save trained ouput (default: data/offline_trainer_output)
+
+# Integration Test
+
+```bash
+./e2e_test.sh test "<deploy options>"  
+# e.g., ./e2e_test.sh test "ESTIMATOR TEST"
+```
+
+scenario|test cases|deploy options|status
+|---|---|---|---|
+Kepler with estimator only|Latest Kepler image is connected to estimator|ESTIMATOR|&#x2714;
+||Latest Kepler image can power from estimator||WIP
+||Dummy power request can be made to estimator|ESTIMATOR TEST|&#x2714;
+Kepler with model server only|Latest Kepler image can request weight model from model server|SERVER|WIP
+||Dummy weight model request can be made to model server|SERVER TEST|&#x2714;
+Kepler with estimator and model server|Dummy power request can be made to estimator|ESTIMATOR SERVER TEST|&#x2714;
+||Estimator can load model from model server||&#x2714;
+||Model server can load initial model||&#x2714;
+Kepler with model server and online trainer|Kepler can provide metric to online trainer to train|ONLINE|WIP
+||Dummy prometheus server can provide metric to online trainer to train|ONLINE TEST|WIP
+||Trained model is updated to pipeline and availble on model server||WIP
+---

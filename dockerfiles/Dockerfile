@@ -10,7 +10,6 @@ COPY src/estimate src/estimate
 COPY src/server src/server
 COPY src/train src/train
 COPY src/util src/util
-COPY src/models/default src/models/default
 COPY cmd cmd
 
 # port for Model Server

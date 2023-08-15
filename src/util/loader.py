@@ -17,11 +17,11 @@ DEFAULT_PIPELINE = 'default'
 CHECKPOINT_FOLDERNAME = 'checkpoint'
 DOWNLOAD_FOLDERNAME = 'download'
 
-default_init_model_url = "https://github.com/sunya-ch/kepler-model-db/raw/main/models/"
-default_init_pipeline_name = "trl-nx12_mixed_all_TrainIsolator"
+default_init_model_url = "https://raw.githubusercontent.com/sunya-ch/kepler-model-db/main/models/"
+default_init_pipeline_name = "Linux-4.15.0-213-generic-x86_64_v0.6"
 default_trainer_name = "GradientBoostingRegressorTrainer"
 default_node_type = "1"
-default_feature_group = FeatureGroup.CgroupOnly
+default_feature_group = FeatureGroup.KubeletOnly
 
 def load_json(path, name):
     if ".json" not in name:
@@ -231,6 +231,9 @@ def get_url(output_type, feature_group=default_feature_group, trainer_name=defau
     group_path = get_model_group_path(model_topurl, output_type=output_type, feature_group=feature_group, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
     model_name = get_model_name(trainer_name, node_type)
     return os.path.join(group_path, model_name + ".zip")
+
+def get_pipeline_url(model_topurl=default_init_model_url, pipeline_name=default_init_pipeline_name):
+    return os.path.join(model_topurl, pipeline_name + ".zip")
 
 def class_to_json(class_obj):
     return json.loads(json.dumps(class_obj.__dict__))

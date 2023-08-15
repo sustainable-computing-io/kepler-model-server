@@ -1,11 +1,10 @@
 export IMAGE_REGISTRY ?= quay.io/sustainable_computing_io
-IMAGE_NAME := kepler-model-server
+IMAGE_NAME := kepler_model_server
 IMAGE_VERSION := 0.6
 
-IMAGE := $(IMAGE_REGISTRY)/$(IMAGE_NAME):v$(IMAGE_VERSION)
+IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):v$(IMAGE_VERSION)
 TEST_IMAGE := $(IMAGE)-test
 
-CTR_CMD :=$(or $(shell which podman 2>/dev/null), $(shell which docker 2>/dev/null))
 CTR_CMD = docker
 
 DOCKERFILES_PATH := "./dockerfiles"
@@ -15,6 +14,12 @@ build:
 
 build-test:
 	$(CTR_CMD) build --platform linux/amd64 -t $(TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test .
+
+push:
+	$(CTR_CMD) push $(IMAGE)
+
+push-test:
+	$(CTR_CMD) push $(TEST_IMAGE)
 
 exec-test:
 	$(CTR_CMD) run --platform linux/amd64 -it $(TEST_IMAGE) /bin/bash
@@ -63,3 +68,30 @@ clean-offline-trainer:
 test-offline-trainer: run-offline-trainer run-offline-trainer-client clean-offline-trainer
 
 test: build-test test-pipeline test-estimator test-model-server test-offline-trainer
+
+# set image
+set-image:
+	cd ./manifests/base && kustomize edit set image kepler_model_server=$(IMAGE)
+
+# deploy
+_deploy:
+	$(MAKE) set-image
+	kustomize build ./manifests/base|kubectl apply -f -
+
+cleanup:
+	kustomize build manifests/base|kubectl delete -f -
+
+deploy:
+	chmod +x ./manifests/set.sh
+	./manifests/set.sh "${OPTS}"
+	$(MAKE) _deploy
+
+e2e-test:
+	chmod +x ./tests/e2e_test.sh
+	./tests/e2e_test.sh test "${OPTS}"
+
+patch-power-request-client:
+	kubectl patch ds kepler-exporter -n kepler --patch-file ./manifests/test/power-request-client.yaml
+
+patch-model-request-client:
+	kubectl patch ds kepler-exporter -n kepler --patch-file ./manifests/test/model-request-client.yaml

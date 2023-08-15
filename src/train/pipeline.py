@@ -15,13 +15,15 @@ from isolator import MinIdleIsolator
 
 from train_types import PowerSourceMap, FeatureGroups, ModelOutputType
 from config import model_toppath, ERROR_KEY
-from loader import get_all_metadata, get_pipeline_path, get_metadata_df
+from loader import get_all_metadata, get_pipeline_path, get_metadata_df, get_archived_file
 from saver import save_pipeline_metadata
 
 from format import print_bounded_multiline_message
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
+
+import shutil
 
 def load_class(module_name, class_name):
     path = os.path.join(os.path.dirname(__file__), '{}/{}'.format(module_name, class_name))
@@ -178,6 +180,13 @@ class Pipeline():
             "    Min {}: {}".format(ERROR_KEY, dyn_min_row[ERROR_KEY]),
         ]
         print_bounded_multiline_message(messages)
+
+    def archive_pipeline(self):
+        save_path = os.path.join(model_toppath, self.name)
+        archived_file = get_archived_file(model_toppath, self.name) 
+        self.print_log("archive pipeline :" + archived_file)
+        self.print_log("save_path :" + save_path)
+        shutil.make_archive(save_path, 'zip', save_path)
 
 def initial_trainers(trainer_names, node_level, pipeline_name, target_energy_sources, valid_feature_groups):
     trainers = []

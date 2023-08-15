@@ -44,17 +44,6 @@ class ScikitTrainer(Trainer):
                     self.fe[index] = loaded_fe
         loaded_model = load_pkl("", filepath)
         return loaded_model, loaded_model is not None
-    
-    def load_remote_checkpoint(self, url_path):
-        if hasattr(self, 'fe_files'):
-            save_path = get_save_path(url_path)
-            for index in range(len(self.fe_files)):
-                fe_url_path = os.path.join(save_path, self.fe_files[index])
-                loaded_fe = load_remote_pkl(fe_url_path)
-                if loaded_fe is not None:
-                    self.fe[index] = loaded_fe
-        loaded_model = load_remote_pkl(url_path)
-        return loaded_model, loaded_model is not None
 
     def should_archive(self, node_type):
         return True
