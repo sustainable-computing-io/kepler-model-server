@@ -12,7 +12,7 @@ export PROM_SERVER=${PROM_SERVER:-http://localhost:9090}
 export ENERGY_SOURCE=${ENERGY_SOURCE:-rapl}
 export VERSION=${VERSION-0.6}
 export PIPELINE_PREFIX=${PIPELINE_PREFIX-"$(uname)-$(uname -r)-$(uname -m)_"}
-
+export CPE_DATAPATH=${CPE_DATAPATH-"$(pwd)/data"}
 
 mkdir -p $HOME/bin
 export PATH=$HOME/bin:$PATH
@@ -96,13 +96,14 @@ function expect_num() {
 function wait_for_benchmark() {
     BENCHMARK=$1
     BENCHMARK_NS=$2
+    SLEEP_TIME=$3
     EXPECT_NUM=$(expect_num ${BENCHMARK} ${BENCHMARK_NS})
     jobCompleted=$(kubectl get benchmark ${BENCHMARK} -n ${BENCHMARK_NS} -ojson|jq -r .status.jobCompleted)
-    echo "Wait for ${EXPECT_NUM} ${BENCHMARK} jobs to be completed, sleep 1m"
+    echo "Wait for ${EXPECT_NUM} ${BENCHMARK} jobs to be completed, sleep ${SLEEP_TIME}s"
     while [ "$jobCompleted" != "${EXPECT_NUM}/${EXPECT_NUM}" ] ; 
     do  
-        sleep 60
-        echo "Wait for ${BENCHMARK} to be completed... $jobCompleted, sleep 1m"
+        sleep ${SLEEP_TIME}
+        echo "Wait for ${BENCHMARK} to be completed... $jobCompleted, sleep ${SLEEP_TIME}s"
         jobCompleted=$(kubectl get benchmark ${BENCHMARK} -n ${BENCHMARK_NS} -ojson|jq -r .status.jobCompleted)
     done
     echo "Benchmark job completed"
@@ -115,23 +116,20 @@ function save_benchmark() {
 }
 
 function collect_idle() {
-    docker run --rm -v "$(pwd)"/data:/data --network=host quay.io/sustainable_computing_io/kepler-model-server:v0.6 -o idle --interval 1000
+    docker run --rm -v "$(pwd)"/data:/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.6 query -o idle --interval 1000
 }
 
 function collect_data() {
     BENCHMARK=$1
     BENCHMARK_NS=$2
+    SLEEP_TIME=$3
     kubectl apply -f benchmark/${BENCHMARK}.yaml
-    wait_for_benchmark ${BENCHMARK} ${BENCHMARK_NS}
+    wait_for_benchmark ${BENCHMARK} ${BENCHMARK_NS} ${SLEEP_TIME}
     save_benchmark ${BENCHMARK} ${BENCHMARK_NS}
     
-    docker run --rm -v "$(pwd)"/data:/data --network=host quay.io/sustainable_computing_io/kepler-model-server:v0.6 -i ${BENCHMARK} -o ${BENCHMARK}_kepler_query -s ${PROM_SERVER}|| true
-    docker run --rm -v "$(pwd)"/data:/data --network=host quay.io/sustainable_computing_io/kepler-model-server:v0.6 -i ${BENCHMARK} -o ${BENCHMARK}_cpe_query --metric-prefix cpe -s ${PROM_SERVER}|| true
+    docker run --rm -v "$(pwd)"/data:/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.6 query -i ${BENCHMARK} -o ${BENCHMARK}_kepler_query -s ${PROM_SERVER}|| true
+    docker run --rm -v "$(pwd)"/data:/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.6 query -i ${BENCHMARK} -o ${BENCHMARK}_cpe_query --metric-prefix cpe -s ${PROM_SERVER}|| true
     kubectl delete -f benchmark/${BENCHMARK}.yaml
-}
-
-function load_cpe_log() {
-    docker cp "${KIND_CLUSTER_NAME}"-control-plane:/cpe-local-log data/cpe-local-log
 }
 
 function deploy_prom_dependency(){
@@ -145,7 +143,7 @@ function train_model(){
     echo "input=$QUERY_RESPONSE"
     echo "pipeline=$PIPELINE_NAME"
     echo $CPE_DATAPATH
-    docker run --rm -v $CPE_DATAPATH:/data --network=host quay.io/sustainable_computing_io/kepler-model-server:v0.6 train -i ${QUERY_RESPONSE} -p ${PIPELINE_NAME} --profile idle --isolator profile --energy-source ${ENERGY_SOURCE}|| true
+    docker run --rm -v $CPE_DATAPATH:/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.6 train -i ${QUERY_RESPONSE} -p ${PIPELINE_NAME} --isolator min --energy-source ${ENERGY_SOURCE}|| true
 }
 
 function prepare_cluster() {
@@ -158,10 +156,13 @@ function prepare_cluster() {
 
 function collect() {
     collect_idle
-    collect_data coremark cpe-operator-system
-    collect_data stressng cpe-operator-system
-    collect_data parsec cpe-operator-system
-    load_cpe_log
+    collect_data coremark cpe-operator-system 60
+    collect_data stressng cpe-operator-system 60
+    collect_data parsec cpe-operator-system 60
+}
+
+function quick_collect() {
+    collect_data sample cpe-operator-system 10
 }
 
 function train() {
@@ -169,6 +170,15 @@ function train() {
     train_model stressng_kepler_query stressng_train
     train_model parsec_kepler_query parsec_train
     train_model coremark_kepler_query,stressng_kepler_query,parsec_kepler_query v${VERSION}_train
+}
+
+function quick_train() {
+    train_model sample_kepler_query v${VERSION}_sample
+}   
+
+function validate() {
+    BENCHMARK=$1
+    docker run --rm -v "$(pwd)"/data:/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 validate -i ${BENCHMARK}_kepler_query --benchmark ${BENCHMARK}
 }
 
 function cleanup() {

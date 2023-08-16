@@ -2,7 +2,6 @@ import os
 import sys
 import argparse
 import datetime
-import json
 import pandas as pd
 
 data_path = "/data"
@@ -51,7 +50,7 @@ def extract_time(benchmark_filename):
     return start-UTC_OFFSET_TIMEDELTA, end-UTC_OFFSET_TIMEDELTA
 
 def summary_validation(validate_df):
-    if len(validate_df):
+    if len(validate_df) == 0:
         print("No data for validation.")
         return
     items = []
@@ -94,7 +93,7 @@ def summary_validation(validate_df):
 
         print("{} pods: \tValid\n".format(len(valid_df)))
         print("Valid data points:")
-        print(valid_df.groupby(["scenarioID"]).sum()[[">0"]])
+        print( "Empty" if len(valid_df[">0"]) == 0 else valid_df.groupby(["scenarioID"]).sum()[[">0"]])
     for metric, query in metric_to_validate_power.items():
         target_df = validate_df[validate_df["query"]==query]
         print("{} data: \t{}".format(metric, target_df[">0"].values))
@@ -179,7 +178,7 @@ def get_validate_df(benchmark_filename, query_response):
         item["total"] = filtered_df[query].max()
         items += [item]
     validate_df = pd.DataFrame(items)
-    print(validate_df)
+    print(validate_df.groupby(["scenarioID", "query"]).sum()[["count", ">0"]])
     return validate_df
 
 def query(args):
@@ -262,6 +261,10 @@ def get_pipeline(pipeline_name, profile, isolator, abs_trainer_names, dyn_traine
     return pipeline
 
 def train(args):
+    import warnings
+    from sklearn.exceptions import ConvergenceWarning
+    warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
     if not args.input:
         print("must give input filename (query response) via --input for training.")
         exit()
@@ -316,12 +319,17 @@ def train(args):
     pipeline.save_metadata()
     # save pipeline
     pipeline.archive_pipeline()
+
+    print_cols = ["feature_group", "model_name", "mae"]
+    
     print("AbsPower pipeline results:")
     metadata_df = load_pipeline_metadata(pipeline.path, args.energy_source, ModelOutputType.AbsPower.name)
-    print(metadata_df.sort_values(by=ERROR_KEY))
+    print(metadata_df.sort_values(by=ERROR_KEY)[print_cols])
     print("DynPower pipeline results:")
     metadata_df = load_pipeline_metadata(pipeline.path, args.energy_source, ModelOutputType.DynPower.name)
-    print(metadata_df.sort_values(by=ERROR_KEY))
+    print(metadata_df.sort_values(by=ERROR_KEY)[print_cols])
+    
+    warnings.resetwarnings()
 
 def estimate(args):
     if not args.input:
@@ -465,4 +473,6 @@ if __name__ == "__main__":
         parser.print_help()
     else:
         getattr(sys.modules[__name__], args.command)(args)
+
+
     

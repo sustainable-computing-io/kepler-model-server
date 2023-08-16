@@ -39,24 +39,36 @@ Please confirm the following requirements:
 5. Prometheus server is available at `http://localhost:9090`. Otherwise, set environment `PROM_SERVER`.
    
 ## 2. Run benchmark and collect metric
+### 2.1. For managed cluster, make sure that cluster is in an idle state with only control plane workload
 
-1. For managed cluster, make sure that cluster is in an idle state with only control plane workload
+### 2.2. Run
+### Quick sample
 
-2. Run 
+    ./script.sh quick_collect
 
-    ```
+This is only for testing purpose.
+
+### Full run
+
     ./script.sh collect
-    ```
 
-    It might take an hour to run and collect all benchmarks. Output including CPE CR and Prometheus query response will be in `data` folder by default.
+
+It might take an hour to run and collect all benchmarks. Output including CPE CR and Prometheus query response will be in `data` folder by default.
 
 ## 3. Profile and train 
 
 You can train the model by using docker image which require no environment setup but can be limited by docker limitation or train the model natively by setting up your python environment as follows.
 
-### via docker image
+### < via docker image >
 
-Run 
+#### Quick sample
+
+```
+./script.sh quick_train
+```
+
+
+#### Full run 
 
 ```
 ./script.sh train
@@ -67,7 +79,7 @@ Training output will be in `/data` folder by default. The folder contains:
 - profiles
 - models in a pipeline heirachy 
 
-### native with python environment
+### < native with python environment >
 
 - Prepare environment:
 
