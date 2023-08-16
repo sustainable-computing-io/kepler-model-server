@@ -5,8 +5,8 @@ metadata:
   namespace: system
 data:
   MODEL_CONFIG: |
-    NODE_TOTAL_ESTIMATOR=true
-    NODE_TOTAL_INIT_URL=https://raw.githubusercontent.com/sunya-ch/kepler-model-db/main/models/Linux-4.15.0-213-generic-x86_64_v0.6/rapl/AbsPower/KubeletOnly/GradientBoostingRegressorTrainer_1.zip
+    NODE_COMPONENTS_ESTIMATOR=true
+    NODE_COMPONENTS_INIT_URL=https://raw.githubusercontent.com/sunya-ch/kepler-model-db/main/models/Linux-4.15.0-213-generic-x86_64_v0.6/rapl/AbsPower/KubeletOnly/GradientBoostingRegressorTrainer_1.zip
 ---
 apiVersion: apps/v1
 kind: DaemonSet

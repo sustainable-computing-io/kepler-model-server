@@ -14,7 +14,7 @@ from loader import get_download_output_path
 from train_types import ModelOutputType
 
 def make_model_request(power_request):
-    return {"metrics": power_request.metrics + power_request.system_features, "output_type": power_request.output_type, "filter": power_request.filter, "trainer_name": power_request.trainer_name}
+    return {"metrics": power_request.metrics + power_request.system_features, "output_type": power_request.output_type, "source": power_request.source, "filter": power_request.filter, "trainer_name": power_request.trainer_name}
 
 TMP_FILE = 'tmp.zip'
 

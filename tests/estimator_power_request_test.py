@@ -9,6 +9,7 @@ sys.path.append(util_path)
 
 from train_types import WORKLOAD_FEATURES, SYSTEM_FEATURES, ModelOutputType, CATEGORICAL_LABEL_TO_VOCAB
 from config import SERVE_SOCKET
+from extractor_test import test_energy_source
 
 trainer_names = ['SGDRegressorTrainer']
 
@@ -23,6 +24,7 @@ def generate_request(train_name, n=1, metrics=WORKLOAD_FEATURES, system_features
         request_json['system_values'] += [CATEGORICAL_LABEL_TO_VOCAB[m][0]]
     request_json['values'] = [[1.0] *len(metrics)]*n
     request_json['output_type'] = output_type
+    request_json['source'] = test_energy_source
     return request_json
 
 class Client:
