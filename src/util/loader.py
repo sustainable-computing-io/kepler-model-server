@@ -17,7 +17,7 @@ DEFAULT_PIPELINE = 'default'
 CHECKPOINT_FOLDERNAME = 'checkpoint'
 DOWNLOAD_FOLDERNAME = 'download'
 
-default_init_model_url = "https://raw.githubusercontent.com/sunya-ch/kepler-model-db/main/models/"
+default_init_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/"
 default_init_pipeline_name = "Linux-4.15.0-213-generic-x86_64_v0.6"
 default_trainer_name = "GradientBoostingRegressorTrainer"
 default_node_type = "1"
