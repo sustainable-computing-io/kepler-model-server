@@ -137,7 +137,7 @@ class Pipeline():
     
     def process_multiple_query(self, input_query_results_list, energy_components, energy_source, feature_group, aggr=True):
         abs_data, dyn_data, power_labels = self.prepare_data_from_input_list(input_query_results_list, energy_components, energy_source, feature_group, aggr)
-        if abs_data is None or dyn_data is None:
+        if abs_data is None or dyn_data is None or len(abs_data) == 0 or len(dyn_data) == 0:
             return False, None, None   
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
         self.print_pipeline_process_end(energy_source, feature_group, abs_data, dyn_data)
@@ -159,9 +159,9 @@ class Pipeline():
 
         abs_metadata_df, abs_group_path = get_metadata_df(model_toppath, ModelOutputType.AbsPower.name, feature_group, energy_source, self.name)
         dyn_metadata_df, dyn_group_path = get_metadata_df(model_toppath, ModelOutputType.DynPower.name, feature_group, energy_source, self.name)
-        
-        abs_min_row = abs_metadata_df.loc[abs_metadata_df[ERROR_KEY].idxmin()]
-        dyn_min_row = dyn_metadata_df.loc[dyn_metadata_df[ERROR_KEY].idxmin()]
+
+        abs_min_mae = -1 if len(abs_metadata_df) == 0 else abs_metadata_df.loc[abs_metadata_df[ERROR_KEY].idxmin()][ERROR_KEY]
+        dyn_min_mae = -1 if len(dyn_metadata_df) == 0 else dyn_metadata_df.loc[dyn_metadata_df[ERROR_KEY].idxmin()][ERROR_KEY]
 
         messages = [
             "Pipeline {} has finished for modeling {} power by {} feature".format(self.name, energy_source, feature_group),
@@ -171,13 +171,13 @@ class Pipeline():
             "    Input data size: {}".format(len(abs_data)),
             "    Model Trainers: {}".format(abs_trainer_names),
             "    Output: {}".format(abs_group_path),
-            "    Min {}: {}".format(ERROR_KEY, abs_min_row[ERROR_KEY]),
+            "    Min {}: {}".format(ERROR_KEY, abs_min_mae),
             " ",
             "Dynamic Power Modeling:",
             "    Input data size: {}".format(len(dyn_data)),
             "    Model Trainers: {}".format(dyn_trainer_names),
             "    Output: {}".format(dyn_group_path),
-            "    Min {}: {}".format(ERROR_KEY, dyn_min_row[ERROR_KEY]),
+            "    Min {}: {}".format(ERROR_KEY, dyn_min_mae),
         ]
         print_bounded_multiline_message(messages)
 

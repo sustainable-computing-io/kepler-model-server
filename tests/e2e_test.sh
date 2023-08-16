@@ -75,7 +75,7 @@ wait_for_keyword() {
 }
 
 check_estimator_set_and_init() {
-    wait_for_keyword kepler "Model Config NODE_TOTAL: {ModelType:EstimatorSidecar" "Kepler should set desired config"
+    wait_for_keyword kepler "Model Config NODE_COMPONENTS: {ModelType:EstimatorSidecar" "Kepler should set desired config"
 }
 
 restart_model_server() {

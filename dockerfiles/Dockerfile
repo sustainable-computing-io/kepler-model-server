@@ -1,7 +1,6 @@
 FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:latest
 
 WORKDIR /usr/local
-RUN python3.8 -m pip install py-cpuinfo==9.0.0
 
 RUN mkdir -p /usr/local/src
 RUN mkdir -p /usr/local/resource

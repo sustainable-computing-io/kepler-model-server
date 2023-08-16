@@ -1,7 +1,7 @@
 apiVersion: cpe.cogadvisor.io/v1
 kind: Benchmark
 metadata:
-  name: coremark
+  name: sample
   namespace: cpe-operator-system
 spec:
   benchmarkOperator:
@@ -20,15 +20,12 @@ spec:
             - ./coremark-{{ .thread }}thread{{if ne .thread "1"}}s{{end}}.exe
         restartPolicy: Never
   parserKey: coremark
-  repetition: 5
+  repetition: 1
   iterationSpec:
     iterations:
     - name: thread
       values:
       - "4"
-      - "8"
-      - "16"
-      - "32"
     configurations:
     - name: image
       values:

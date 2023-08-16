@@ -15,11 +15,12 @@ sys.path.append(util_path)
 # power request 
 
 class PowerRequest():
-    def __init__(self, metrics, values, output_type, system_features, system_values, trainer_name="", filter=""):
+    def __init__(self, metrics, values, output_type, source, system_features, system_values, trainer_name="", filter=""):
         self.trainer_name = trainer_name
         self.metrics = metrics
         self.filter = filter
         self.output_type = output_type
+        self.source = source
         self.system_features = system_features
         self.datapoint = pd.DataFrame(values, columns=metrics)
         data_point_size = len(self.datapoint)

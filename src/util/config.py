@@ -25,7 +25,7 @@ CONFIG_PATH = "/etc/kepler/kepler.config"
 modelItemNameMap = {
     # "Abs": "NODE_POWER_MODEL",
     # "Dyn": "CONTAINER_POWER_MODEL"
-    "Abs": "NODE_TOTAL",
+    "Abs": "NODE_COMPONENTS",
     "Dyn": "CONTAINER_TOTAL"
 }
 

@@ -141,3 +141,4 @@ tests/download/*
 
 src/models
 tests/data/*_output
+model_training/*data*
