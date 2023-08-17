@@ -13,7 +13,7 @@ from extractor_test import test_energy_source
 
 trainer_names = ['SGDRegressorTrainer']
 
-def generate_request(train_name, n=1, metrics=WORKLOAD_FEATURES, system_features=SYSTEM_FEATURES, output_type=ModelOutputType.DynPower.name):
+def generate_request(train_name, n=1, metrics=WORKLOAD_FEATURES, system_features=SYSTEM_FEATURES, output_type=ModelOutputType.DynPower.name, energy_source=test_energy_source):
     request_json = dict() 
     if train_name is not None:
         request_json['trainer_name'] = train_name
@@ -24,7 +24,7 @@ def generate_request(train_name, n=1, metrics=WORKLOAD_FEATURES, system_features
         request_json['system_values'] += [CATEGORICAL_LABEL_TO_VOCAB[m][0]]
     request_json['values'] = [[1.0] *len(metrics)]*n
     request_json['output_type'] = output_type
-    request_json['source'] = test_energy_source
+    request_json['source'] = energy_source
     return request_json
 
 class Client:

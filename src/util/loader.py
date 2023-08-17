@@ -122,7 +122,7 @@ def get_model_name(trainer_name, node_type):
 def get_pipeline_path(model_toppath, pipeline_name=DEFAULT_PIPELINE):
     return os.path.join(model_toppath, pipeline_name)
 
-def get_model_group_path(model_toppath, output_type, feature_group, energy_source='rapl', pipeline_name=DEFAULT_PIPELINE, assure=True):
+def get_model_group_path(model_toppath, output_type, feature_group, energy_source, pipeline_name=DEFAULT_PIPELINE, assure=True):
     pipeline_path = get_pipeline_path(model_toppath, pipeline_name)
     energy_source_path = os.path.join(pipeline_path, energy_source)
     output_path = os.path.join(energy_source_path, output_type.name)
@@ -222,10 +222,12 @@ def load_pipeline_metadata(pipeline_path, energy_source, model_type):
     return load_csv(pipeline_path, pipeline_metadata_filename)
 
 def get_download_path():
-    return os.path.join(os.path.dirname(__file__), DOWNLOAD_FOLDERNAME)
+    path = os.path.join(os.path.dirname(__file__), DOWNLOAD_FOLDERNAME)
+    return assure_path(path)
 
-def get_download_output_path(output_type):
-    return os.path.join(get_download_path(), output_type.name)
+def get_download_output_path(energy_source, output_type):
+    energy_source_path = assure_path(os.path.join(get_download_path(), energy_source))
+    return os.path.join(energy_source_path, output_type.name)
 
 def get_url(output_type, feature_group=default_feature_group, trainer_name=default_trainer_name, node_type=default_node_type, model_topurl=default_init_model_url, energy_source="rapl", pipeline_name=default_init_pipeline_name):
     group_path = get_model_group_path(model_topurl, output_type=output_type, feature_group=feature_group, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)

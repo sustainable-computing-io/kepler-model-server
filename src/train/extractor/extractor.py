@@ -20,7 +20,7 @@ def append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_colum
     unit_vals = get_unit_vals(power_columns)
     if len(unit_vals) == 0:
         # not relate/not append
-        return
+        return feature_power_data
     use_default_ratio = False
     default_ratio = 1/len(unit_vals)
     if usage_ratio_query not in query_results:
@@ -82,7 +82,7 @@ class DefaultExtractor(Extractor):
             return None, None, None
         # join power
         feature_power_data = feature_data.set_index(TIMESTAMP_COL).join(power_data).sort_index().dropna()
-
+        
         # aggregate data if needed
         is_aggr = node_level and aggr
         if is_aggr:
@@ -113,6 +113,7 @@ class DefaultExtractor(Extractor):
 
         # 7. apply utilization ratio to each power unit because the power unit is summation of all container utilization
         feature_power_data = append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_columns)
+        
         return  feature_power_data, power_columns, corr
     
     def get_workload_feature_data(self, query_results, features):
