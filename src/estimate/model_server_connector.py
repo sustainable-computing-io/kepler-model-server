@@ -14,12 +14,12 @@ from loader import get_download_output_path
 from train_types import ModelOutputType
 
 def make_model_request(power_request):
-    return {"metrics": power_request.metrics + power_request.system_features, "output_type": power_request.output_type, "source": power_request.source, "filter": power_request.filter, "trainer_name": power_request.trainer_name}
+    return {"metrics": power_request.metrics + power_request.system_features, "output_type": power_request.output_type, "source": power_request.energy_source, "filter": power_request.filter, "trainer_name": power_request.trainer_name}
 
 TMP_FILE = 'tmp.zip'
 
-def unpack(output_type, response, replace=True):
-    output_path = get_download_output_path(output_type)
+def unpack(energy_source, output_type, response, replace=True):
+    output_path = get_download_output_path(energy_source, output_type)
     if os.path.exists(output_path):
         if not replace:
             # delete downloaded file
@@ -45,7 +45,7 @@ def make_request(power_request):
         return None
     if response.status_code != 200:
         return None
-    return unpack(output_type, response)
+    return unpack(power_request.energy_source, output_type, response)
 
 def list_all_models():
     if not is_model_server_enabled():

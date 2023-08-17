@@ -77,21 +77,13 @@ app = Flask(__name__)
 # return archive file or LR weight based on request (req)
 @app.route(MODEL_SERVER_MODEL_REQ_PATH, methods=['POST'])
 def get_model():
-    logging.info("get request /model")
     model_request = request.get_json()
+    print("get request /model: {}".format(model_request))
     req = ModelRequest(**model_request)
     # find valid feature groups from available metrics in request
     valid_fgs = get_valid_feature_groups(req.metrics)
     # parse filtering conditions of metadata attribute from request if exists  (e.g., minimum mae)
     filters = parse_filters(req.filter)
-    ####### support old definition, TO-REMOVE #########
-    if "Weight" in req.output_type:
-        req.weight = True
-    if "Dyn" in req.output_type:
-        req.output_type = "DynPower"
-    else:
-        req.output_type = "AbsPower"
-    ###################################################
     output_type = ModelOutputType[req.output_type]
     best_model = None
     best_response = None
@@ -106,7 +98,7 @@ def get_model():
                 best_model = best_candidate
                 best_response = response
     if best_model is None:
-        return make_response("Cannot find model for {} at the moment".format(model_request), 400)
+        return make_response("cannot find model for {} at the moment".format(model_request), 400)
     if req.weight:
         try:
             response = app.response_class(
@@ -116,18 +108,19 @@ def get_model():
             )
             return response
         except ValueError as err:
-            return make_response("Get weight response error: {}".format(err), 400)
+            return make_response("get weight response error: {}".format(err), 400)
     else:
         try:
             return send_file(best_response, as_attachment=True)
         except ValueError as err:
-            return make_response("Send archived model error: {}".format(err), 400)
+            return make_response("send archived model error: {}".format(err), 400)
 
 # return name list of best-candidate pipelines
 @app.route(MODEL_SERVER_MODEL_LIST_PATH, methods=['GET'])
 def get_available_models():
     fg = request.args.get('fg')
     ot = request.args.get('ot')
+    energy_source = request.args.get('source')
     filter = request.args.get('filter')
 
     try:
@@ -141,6 +134,9 @@ def get_available_models():
         else:
             output_types = [ModelOutputType[ot]]
 
+        if energy_source is None:
+            energy_source = 'rapl'
+
         if filter is None:
             filters = dict()
         else: 
@@ -150,7 +146,7 @@ def get_available_models():
         for output_type in output_types:
             model_names[output_type.name] = dict()
             for fg in valid_fgs:
-                valid_groupath = get_model_group_path(model_toppath, output_type, fg)
+                valid_groupath = get_model_group_path(model_toppath, output_type, fg, energy_source)
                 if os.path.exists(valid_groupath):
                     best_candidate, _ = select_best_model(valid_groupath, filters)
                     if best_candidate is None:
@@ -163,7 +159,7 @@ def get_available_models():
             )
         return response
     except (ValueError, Exception) as err:
-        return make_response("Failed to get best model list: {}".format(err), 400)
+        return make_response("failed to get best model list: {}".format(err), 400)
 
 def load_init_pipeline():
     print("try downloading archieved pipeline from URL: {}".format(initial_pipeline_url))

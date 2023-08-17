@@ -8,7 +8,9 @@ images:
   newTag: v0.6
 
 patchesStrategicMerge:
+- ./patch/patch-estimator-sidecar.yaml
 - ./patch/patch-model-server.yaml
+
 resources:
 - ../kepler
 - ../server

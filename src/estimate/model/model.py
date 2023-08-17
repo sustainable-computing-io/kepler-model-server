@@ -131,6 +131,6 @@ def load_model(model_path):
     return None
 
 # download model folder has no subfolder of energy source and feature group because it has been already determined by model request
-def load_downloaded_model(output_type):
-    model_path = get_download_output_path(output_type)
+def load_downloaded_model(energy_source, output_type):
+    model_path = get_download_output_path(energy_source, output_type)
     return load_model(model_path)

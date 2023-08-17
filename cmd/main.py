@@ -227,7 +227,7 @@ def assert_train(trainer, data, energy_components):
             if output is not None:
                 assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
 
-def get_pipeline(pipeline_name, profile, isolator, abs_trainer_names, dyn_trainer_names, energy_source, valid_feature_groups):
+def get_pipeline(pipeline_name, profile, isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups):
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
     from train import DefaultExtractor, MinIdleIsolator, NoneIsolator, DefaultProfiler, ProfileBackgroundIsolator, TrainIsolator, generate_profiles, NewPipeline
     extractor = DefaultExtractor()
@@ -257,7 +257,7 @@ def get_pipeline(pipeline_name, profile, isolator, abs_trainer_names, dyn_traine
         return None
 
     isolator = supported_isolator[isolator]
-    pipeline = NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=[energy_source] ,valid_feature_groups=valid_feature_groups)
+    pipeline = NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=energy_sources ,valid_feature_groups=valid_feature_groups)
     return pipeline
 
 def train(args):
@@ -274,6 +274,7 @@ def train(args):
        pipeline_name = args.pipeline_name 
 
     inputs = args.input.split(",")
+    energy_sources = args.energy_source.split(",")
     input_query_results_list = []
     valid_feature_groups = None
     for input in inputs:
@@ -288,48 +289,48 @@ def train(args):
             valid_feature_groups = list(set(valid_feature_groups).intersection(set(valid_fg)))
         input_query_results_list += [query_results]
 
-    energy_components = PowerSourceMap[args.energy_source]
+    
     abs_trainer_names = args.abs_trainers.split(",")
     dyn_trainer_names = args.dyn_trainers.split(",")
-    pipeline = get_pipeline(pipeline_name, args.profile, args.isolator, abs_trainer_names, dyn_trainer_names, args.energy_source, valid_feature_groups)
+    pipeline = get_pipeline(pipeline_name, args.profile, args.isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups)
     if pipeline is None:
         print("cannot get pipeline")
         exit()
-    for feature_group in valid_feature_groups:
-        success, abs_data, dyn_data = pipeline.process_multiple_query(input_query_results_list, energy_components, args.energy_source, feature_group=feature_group.name)
-        assert success, "failed to process pipeline {}".format(pipeline.name) 
-        for trainer in pipeline.trainers:
-            if trainer.feature_group == feature_group and trainer.energy_source == args.energy_source:
-                if trainer.node_level:
-                    assert_train(trainer, abs_data, energy_components)
-                else:
-                    assert_train(trainer, dyn_data, energy_components)
-        # save data
-        data_saved_path = os.path.join(pipeline.path, "preprocessed_data")
-        save_csv(data_saved_path, "{}_abs_data".format(feature_group.name), abs_data)
-        save_csv(data_saved_path, "{}_dyn_data".format(feature_group.name), dyn_data)
+    for energy_source in energy_sources:
+        energy_components = PowerSourceMap[energy_source]
+        for feature_group in valid_feature_groups:
+            success, abs_data, dyn_data = pipeline.process_multiple_query(input_query_results_list, energy_components, energy_source, feature_group=feature_group.name)
+            assert success, "failed to process pipeline {}".format(pipeline.name) 
+            for trainer in pipeline.trainers:
+                if trainer.feature_group == feature_group and trainer.energy_source == energy_source:
+                    if trainer.node_level:
+                        assert_train(trainer, abs_data, energy_components)
+                    else:
+                        assert_train(trainer, dyn_data, energy_components)
+            # save data
+            data_saved_path = os.path.join(pipeline.path, "preprocessed_data")
+            save_csv(data_saved_path, "{}_{}_abs_data".format(energy_source, feature_group.name), abs_data)
+            save_csv(data_saved_path, "{}_{}_dyn_data".format(energy_source, feature_group.name), dyn_data)
 
 
-    print("=========== Train Summary ============")
-    # save args 
-    argparse_dict = vars(args)
-    save_json(pipeline.path, "train_arguments", argparse_dict)
-    print("Train args:", argparse_dict)
-    # save metadata
-    pipeline.save_metadata()
-    # save pipeline
-    pipeline.archive_pipeline()
+        print("=========== Train {} Summary ============".format(energy_source))
+        # save args 
+        argparse_dict = vars(args)
+        save_json(pipeline.path, "train_arguments", argparse_dict)
+        print("Train args:", argparse_dict)
+        # save metadata
+        pipeline.save_metadata()
+        # save pipeline
+        pipeline.archive_pipeline()
+        print_cols = ["feature_group", "model_name", "mae"]
+        print("AbsPower pipeline results:")
+        metadata_df = load_pipeline_metadata(pipeline.path, energy_source, ModelOutputType.AbsPower.name)
+        print(metadata_df.sort_values(by=ERROR_KEY)[print_cols])
+        print("DynPower pipeline results:")
+        metadata_df = load_pipeline_metadata(pipeline.path, energy_source, ModelOutputType.DynPower.name)
+        print(metadata_df.sort_values(by=ERROR_KEY)[print_cols])
 
-    print_cols = ["feature_group", "model_name", "mae"]
-    
-    print("AbsPower pipeline results:")
-    metadata_df = load_pipeline_metadata(pipeline.path, args.energy_source, ModelOutputType.AbsPower.name)
-    print(metadata_df.sort_values(by=ERROR_KEY)[print_cols])
-    print("DynPower pipeline results:")
-    metadata_df = load_pipeline_metadata(pipeline.path, args.energy_source, ModelOutputType.DynPower.name)
-    print(metadata_df.sort_values(by=ERROR_KEY)[print_cols])
-    
-    warnings.resetwarnings()
+        warnings.resetwarnings()
 
 def estimate(args):
     if not args.input:
@@ -473,6 +474,5 @@ if __name__ == "__main__":
         parser.print_help()
     else:
         getattr(sys.modules[__name__], args.command)(args)
-
 
     

@@ -9,7 +9,7 @@ util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
 
 from model_server_connector import unpack, ModelOutputType
-from config import get_init_model
+from config import get_init_model_url
 from loader import load_metadata
 
 failed_list = []
@@ -71,20 +71,24 @@ def get_achived_model(power_request):
     if output_type_name in failed_list:
         return None
     output_type = ModelOutputType[power_request.output_type]
-    url = get_init_model(output_type_name)
+    url = get_init_model_url(power_request.energy_source, output_type_name)
     if url == "":
-        print("No URL set for ", output_type_name)
+        print("no URL set for ", output_type_name, power_request.energy_source)
         return None
-    print("Try getting archieved model from URL: {} for {}".format(url, output_type_name))
+    print("try getting archieved model from URL: {} for {}".format(url, output_type_name))
     response = requests.get(url)
     print(response)
     if response.status_code != 200:
         return None
-    output_path = unpack(output_type, response, replace=False)
+    output_path = unpack(power_request.energy_source, output_type, response, replace=False)
     if output_path is not None:
         metadata = load_metadata(output_path)
         filters = parse_filters(power_request.filter)
-        if not is_valid_model(power_request.metrics, metadata, filters):
-            failed_list += [output_type_name]
+        try:
+            if not is_valid_model(power_request.metrics, metadata, filters):
+                failed_list += [output_type_name]
+                return None
+        except:
+            print("cannot validate the archived model")
             return None
     return output_path

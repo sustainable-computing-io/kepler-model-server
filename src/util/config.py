@@ -21,16 +21,10 @@ MNT_PATH = "/mnt"
 # can be read only (for configmap mount)
 CONFIG_PATH = "/etc/kepler/kepler.config"
 
+modelConfigPrefix = [ "_".join([level, coverage]) for level in ["NODE", "CONTAINER", "PROCESS"] for coverage in ["TOTAL", "COMPONENTS"]]
 
-modelItemNameMap = {
-    # "Abs": "NODE_POWER_MODEL",
-    # "Dyn": "CONTAINER_POWER_MODEL"
-    "Abs": "NODE_COMPONENTS",
-    "Dyn": "CONTAINER_TOTAL"
-}
-
-estimatorKeyMap = {"{}Power".format(modelItemKey): "{}_ESTIMATOR".format(modelItemNameMap[modelItemKey]) for modelItemKey in modelItemNameMap.keys()}
-initUrlKeyMap = {"{}Power".format(modelItemKey): "{}_INIT_URL".format(modelItemNameMap[modelItemKey]) for modelItemKey in modelItemNameMap.keys()}
+DEFAULT_TOTAL_SOURCE = "acpi"
+DEFAULT_COMPONENTS_SOURCE = "rapl"
 
 MODEL_SERVER_SVC = "kepler-model-server.kepler.svc.cluster.local"
 DEFAULT_MODEL_SERVER_PORT = 8100
@@ -106,19 +100,32 @@ def set_env_from_model_config():
                 print("set {} to {}.".format(splits[0], splits[1]))
 
 
-# get_init_model: get initial model from URL if estimator is enabled
-def get_init_model(output_type):
-    print("get_init_model: {}", initUrlKeyMap, estimatorKeyMap, output_type)
-    if output_type in estimatorKeyMap:
-        enabled = getConfig(estimatorKeyMap[output_type], "true").lower() == "true"
-        if enabled:
-            modelURL = getConfig(initUrlKeyMap[output_type], "")
+def is_estimator_enable(prefix):
+    envKey = "_".join([prefix, "ESTIMATOR"])
+    value = getConfig(envKey, "")
+    return value.lower() == "true"
+
+def get_init_url(prefix):
+    envKey = "_".join([prefix, "INIT_URL"])
+    return getConfig(envKey, "")
+
+def get_energy_source(prefix):
+    if "TOAL" in prefix:
+        return DEFAULT_TOTAL_SOURCE
+    if "COMPONENTS" in prefix:
+        return DEFAULT_COMPONENTS_SOURCE
+
+
+# get_init_model_url: get initial model from URL if estimator is enabled
+def get_init_model_url(energy_source, output_type):
+    for prefix in modelConfigPrefix:
+        if get_energy_source(prefix) == energy_source:
+            modelURL = get_init_url(prefix)
+            print("get init url", modelURL)
             if modelURL == "" and is_support_output_type(output_type):
-                print("get default init URL, {} is not set", initUrlKeyMap[output_type])
-                return get_url(output_type=ModelOutputType[output_type])
+                print("init URL is not set, try using default URL".format(output_type))
+                return get_url(output_type=ModelOutputType[output_type], energy_source=energy_source)
             else:
                 return modelURL
-        else:
-            print("{} is not enaled".format(output_type))
+    print("no match config for {}, {}".format(output_type, energy_source))
     return ""
-

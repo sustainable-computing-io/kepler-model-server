@@ -25,7 +25,7 @@ from train_types import FeatureGroups, FeatureGroup, ModelOutputType
 from loader import get_download_output_path
 from estimate.model_server_connector import list_all_models
 from config import get_model_server_req_endpoint
-
+from extractor_test import test_energy_source
 from estimator_power_request_test import generate_request
 
 os.environ['MODEL_SERVER_URL'] = 'http://localhost:8100'
@@ -40,6 +40,7 @@ weight_available_trainers = ["SGDRegressorTrainer"]
 if __name__ == '__main__':
     # test getting model from server
     os.environ['MODEL_SERVER_ENABLE'] = "true"
+    energy_source = test_energy_source
     
     available_models = list_all_models()
     while len(available_models) == 0:
@@ -49,7 +50,7 @@ if __name__ == '__main__':
 
     for output_type_name, valid_fgs in available_models.items():
         output_type = ModelOutputType[output_type_name]
-        output_path = get_download_output_path(output_type)
+        output_path = get_download_output_path(energy_source, output_type)
         for fg_name, best_model in valid_fgs.items():
             for trainer in weight_available_trainers:
                 print("feature group: ", fg_name)

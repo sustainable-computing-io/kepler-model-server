@@ -20,7 +20,7 @@ class PowerRequest():
         self.metrics = metrics
         self.filter = filter
         self.output_type = output_type
-        self.source = source
+        self.energy_source = source
         self.system_features = system_features
         self.datapoint = pd.DataFrame(values, columns=metrics)
         data_point_size = len(self.datapoint)
@@ -47,16 +47,16 @@ def handle_request(data):
         power_request = json.loads(data, object_hook = lambda d : PowerRequest(**d))
     except Exception as e:
         msg = 'fail to handle request: {}'.format(e)
-        return {"powers": [], "msg": msg}
+        return {"powers": dict(), "msg": msg}
 
     if not is_support_output_type(power_request.output_type):
         msg = "output type {} is not supported".format(power_request.output_type)
-        return {"powers": [], "msg": msg}
+        return {"powers": dict(), "msg": msg}
     
     output_type = ModelOutputType[power_request.output_type]
 
     if output_type.name not in loaded_model:
-        output_path = get_download_output_path(output_type)
+        output_path = get_download_output_path(power_request.energy_source, output_type)
         if not os.path.exists(output_path):
             # try connecting to model server
             output_path = make_request(power_request)
@@ -64,12 +64,12 @@ def handle_request(data):
                 # find from config
                 output_path = get_achived_model(power_request)
                 if output_path is None:
-                    return {"powers": [], "msg": "failed to get model"}
+                    return {"powers": dict(), "msg": "failed to get model"}
                 else:
                     print("load model from config: ", output_path)
             else:
                 print("load model from model server: ", output_path)
-        loaded_model[output_type.name] = load_downloaded_model(output_type)
+        loaded_model[output_type.name] = load_downloaded_model(power_request.energy_source, output_type)
         # remove loaded model
         shutil.rmtree(output_path)
 
