@@ -16,7 +16,7 @@ sys.path.append(src_path)
 #################################################################
 
 from train import load_class
-from train import DefaultExtractor
+from train import DefaultExtractor, SmoothExtractor
 from util.extract_types import component_to_col
 from util.prom_types import node_info_column
 from util.train_types import all_feature_groups
@@ -34,7 +34,7 @@ assure_path(extractor_output_path)
 if not os.path.exists(extractor_output_path):
     os.mkdir(extractor_output_path)
 
-test_extractors = [DefaultExtractor()]
+test_extractors = [DefaultExtractor(), SmoothExtractor()]
 
 test_energy_source = "rapl"
 test_energy_components = PowerSourceMap[test_energy_source]

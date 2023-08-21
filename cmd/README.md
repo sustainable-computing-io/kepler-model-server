@@ -22,6 +22,8 @@ optional arguments:
                         Specify metrix prefix to filter.
   -p PIPELINE_NAME, --pipeline-name PIPELINE_NAME
                         Specify pipeline name.
+  --extractor EXTRACTOR
+                        Specify extractor name (default, smooth).
   --isolator ISOLATOR   Specify isolator name (none, min, profile, trainer).
   --profile PROFILE     Specify profile input (required for trainer and profile isolator).
   -e ENERGY_SOURCE, --energy-source ENERGY_SOURCE

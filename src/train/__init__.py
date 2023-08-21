@@ -14,6 +14,7 @@ profiler_path = os.path.join(os.path.dirname(__file__), 'profiler')
 sys.path.append(profiler_path)
 
 from extractor import DefaultExtractor
+from smooth_extractor import SmoothExtractor
 from profiler import Profiler, generate_profiles
 from isolator import MinIdleIsolator, ProfileBackgroundIsolator, NoneIsolator
 from train_isolator import TrainIsolator

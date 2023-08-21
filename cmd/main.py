@@ -227,10 +227,13 @@ def assert_train(trainer, data, energy_components):
             if output is not None:
                 assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
 
-def get_pipeline(pipeline_name, profile, isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups):
+def get_pipeline(pipeline_name, extractor, profile, isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups):
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
-    from train import DefaultExtractor, MinIdleIsolator, NoneIsolator, DefaultProfiler, ProfileBackgroundIsolator, TrainIsolator, generate_profiles, NewPipeline
-    extractor = DefaultExtractor()
+    from train import DefaultExtractor, SmoothExtractor, MinIdleIsolator, NoneIsolator, DefaultProfiler, ProfileBackgroundIsolator, TrainIsolator, generate_profiles, NewPipeline
+    supported_extractor = {
+        "default": DefaultExtractor(),
+        "smooth": SmoothExtractor()
+    }
     supported_isolator = {
         "min": MinIdleIsolator(),
         "none": NoneIsolator(),
@@ -255,8 +258,13 @@ def get_pipeline(pipeline_name, profile, isolator, abs_trainer_names, dyn_traine
     if isolator not in supported_isolator:
         print("isolator {} is not supported. supported isolator: {}".format(isolator, supported_isolator.keys()))
         return None
+    
+    if extractor not in supported_extractor:
+        print("extractor {} is not supported. supported extractor: {}".format(isolator, supported_extractor.keys()))
+        return None
 
     isolator = supported_isolator[isolator]
+    extractor = supported_extractor[extractor]
     pipeline = NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=energy_sources ,valid_feature_groups=valid_feature_groups)
     return pipeline
 
@@ -292,7 +300,7 @@ def train(args):
     
     abs_trainer_names = args.abs_trainers.split(",")
     dyn_trainer_names = args.dyn_trainers.split(",")
-    pipeline = get_pipeline(pipeline_name, args.profile, args.isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups)
+    pipeline = get_pipeline(pipeline_name, args.extractor, args.profile, args.isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups)
     if pipeline is None:
         print("cannot get pipeline")
         exit()
@@ -447,6 +455,7 @@ if __name__ == "__main__":
 
     # Train arguments
     parser.add_argument("-p", "--pipeline-name", type=str, help="Specify pipeline name.")
+    parser.add_argument("--extractor", type=str, help="Specify extractor name (default, smooth).", default="default")
     parser.add_argument("--isolator", type=str, help="Specify isolator name (none, min, profile, trainer).", default="none")
     parser.add_argument("--profile", type=str, help="Specify profile input (required for trainer and profile isolator).")
     parser.add_argument("-e", "--energy-source", type=str, help="Specify energy source.", default="rapl")
