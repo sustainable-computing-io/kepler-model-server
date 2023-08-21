@@ -139,16 +139,19 @@ class Trainer(metaclass=ABCMeta):
                     self.node_scalers[node_type] = MinMaxScaler()
                 self.node_scalers[node_type].fit(x_values)
             
-
+            X_test_map = dict()
+            y_test_map = dict()
             for component in self.energy_components:
                 X_values, y_values = self.apply_ratio(component, node_type_filtered_data, power_labels)
                 X_train, X_test, y_train, y_test = normalize_and_split(X_values, y_values, scaler=self.node_scalers[node_type])
+                X_test_map[component] = X_test
+                y_test_map[component] = y_test
                 self.train(node_type, component, X_train, y_train)
                 self.save_checkpoint(self.node_models[node_type][component], self._checkpoint_filepath(component, node_type))
             if self.should_archive(node_type):
                 pipeline_lock.acquire()
                 try:
-                    self.save_model_and_metadata(node_type, X_test, y_test)
+                    self.save_model_and_metadata(node_type, X_test_map, y_test_map)
                 finally:
                     pipeline_lock.release()
 
@@ -211,7 +214,7 @@ class Trainer(metaclass=ABCMeta):
     def save_scaler(self, save_path, node_type):
         return save_scaler(save_path, self.node_scalers[node_type])
 
-    def save_model_and_metadata(self, node_type, X_test, y_test):
+    def save_model_and_metadata(self, node_type, X_test_map, y_test_map):
         save_path = self._get_save_path(node_type)
         scaler_filename = self.save_scaler(save_path, node_type)
 
@@ -233,7 +236,7 @@ class Trainer(metaclass=ABCMeta):
         mae_map = dict()
         item = self.get_basic_metadata(node_type)
         for component in self.energy_components:
-            mae = self.get_mae(node_type, component, X_test, y_test)
+            mae = self.get_mae(node_type, component, X_test_map[component], y_test_map[component])
             if max_mae is None or mae > max_mae:
                 max_mae = mae
             mae_map["{}_mae".format(component)] = mae
@@ -242,16 +245,21 @@ class Trainer(metaclass=ABCMeta):
         self.archive_model(node_type)
         print("save model to {}".format(save_path))
 
-    def predict(self, node_type, component, X_values):
+    def predict(self, node_type, component, X_values, skip_preprocess=False):
         save_path = self._get_save_path(node_type)
-        node_scaler = load_scaler(save_path)
-        if node_scaler is None:
-            self.print_log("cannot predict because of no scaler/model")
-            return None
-        features = node_scaler.transform(X_values)
+        if not skip_preprocess:
+            node_scaler = load_scaler(save_path)
+            if node_scaler is None:
+                self.print_log("cannot predict because of no scaler/model")
+                return None
+            features = node_scaler.transform(X_values)
+        else:
+            features = X_values
+            
         if hasattr(self, 'fe'):
             for fe in self.fe:
                 features = fe.transform(features)
+
         model = self.node_models[node_type][component]
         return model.predict(features)
 

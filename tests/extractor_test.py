@@ -17,7 +17,6 @@ sys.path.append(src_path)
 
 from train import load_class
 from train import DefaultExtractor
-from train.extractor.preprocess import time_filter
 from util.extract_types import component_to_col
 from util.prom_types import node_info_column
 from util.train_types import all_feature_groups
@@ -63,7 +62,7 @@ def save_extract_results(instance, feature_group, extracted_data, node_level, sa
     save_csv(save_path, filename, extracted_data)
 
 def get_expected_power_columns(energy_components=test_energy_components, num_of_unit=test_num_of_unit):
-    return[component_to_col(component, "package", unit_val) for component in energy_components for unit_val in range(0,num_of_unit)]
+    return [component_to_col(component, "package", unit_val) for component in energy_components for unit_val in range(0,num_of_unit)]
 
 def assert_extract(extracted_data, power_columns, energy_components, num_of_unit, feature_group):
     extracted_data_column_names = extracted_data.columns
