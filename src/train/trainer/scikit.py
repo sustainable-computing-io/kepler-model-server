@@ -52,7 +52,7 @@ class ScikitTrainer(Trainer):
         return dict()
 
     def get_mae(self, node_type, component, X_test, y_test):
-        predicted_values = self.predict(node_type, component, X_test)
+        predicted_values = self.predict(node_type, component, X_test, skip_preprocess=True)
         mae = mean_absolute_error(y_test,predicted_values)
         return mae
 
