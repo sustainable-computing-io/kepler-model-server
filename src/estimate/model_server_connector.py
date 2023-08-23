@@ -10,7 +10,7 @@ util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
 
 from config import is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint
-from loader import get_download_output_path
+from loader import get_download_path, get_download_output_path
 from train_types import ModelOutputType
 
 def make_model_request(power_request):
@@ -20,17 +20,18 @@ TMP_FILE = 'tmp.zip'
 
 def unpack(energy_source, output_type, response, replace=True):
     output_path = get_download_output_path(energy_source, output_type)
+    tmp_filepath = os.path.join(get_download_path(), TMP_FILE)
     if os.path.exists(output_path):
         if not replace:
             # delete downloaded file
-            os.remove(TMP_FILE)
+            os.remove(tmp_filepath)
             return output_path
         # delete existing model
         shutil.rmtree(output_path)
-    with codecs.open(TMP_FILE, 'wb') as f:
+    with codecs.open(tmp_filepath, 'wb') as f:
         f.write(response.content)
-    shutil.unpack_archive(TMP_FILE, output_path)
-    os.remove(TMP_FILE)
+    shutil.unpack_archive(tmp_filepath, output_path)
+    os.remove(tmp_filepath)
     return output_path
 
 def make_request(power_request):

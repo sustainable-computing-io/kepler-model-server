@@ -64,7 +64,9 @@ def handle_request(data):
                 # find from config
                 output_path = get_achived_model(power_request)
                 if output_path is None:
-                    return {"powers": dict(), "msg": "failed to get model"}
+                    msg = "failed to get model from request {}".format(data)
+                    print(msg)
+                    return {"powers": dict(), "msg": msg}
                 else:
                     print("load model from config: ", output_path)
             else:
@@ -74,7 +76,6 @@ def handle_request(data):
         shutil.rmtree(output_path)
 
     model = loaded_model[output_type.name]
-    print('Estimator model: ', model.model_name)
     powers, msg = model.get_power(power_request.datapoint)
     if msg != "":
         print("{} fail to predict, removed".format(model.model_name))

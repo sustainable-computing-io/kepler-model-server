@@ -21,10 +21,12 @@ MNT_PATH = "/mnt"
 # can be read only (for configmap mount)
 CONFIG_PATH = "/etc/kepler/kepler.config"
 
-modelConfigPrefix = [ "_".join([level, coverage]) for level in ["NODE", "CONTAINER", "PROCESS"] for coverage in ["TOTAL", "COMPONENTS"]]
-
 DEFAULT_TOTAL_SOURCE = "acpi"
 DEFAULT_COMPONENTS_SOURCE = "rapl"
+TOTAL_KEY = "TOTAL"
+COMPONENTS_KEY = "COMPONENTS"
+
+modelConfigPrefix = [ "_".join([level, coverage]) for level in ["NODE", "CONTAINER", "PROCESS"] for coverage in [TOTAL_KEY, COMPONENTS_KEY]]
 
 MODEL_SERVER_SVC = "kepler-model-server.kepler.svc.cluster.local"
 DEFAULT_MODEL_SERVER_PORT = 8100
@@ -110,11 +112,10 @@ def get_init_url(prefix):
     return getConfig(envKey, "")
 
 def get_energy_source(prefix):
-    if "TOAL" in prefix:
+    if TOTAL_KEY in prefix:
         return DEFAULT_TOTAL_SOURCE
-    if "COMPONENTS" in prefix:
+    if COMPONENTS_KEY in prefix:
         return DEFAULT_COMPONENTS_SOURCE
-
 
 # get_init_model_url: get initial model from URL if estimator is enabled
 def get_init_model_url(energy_source, output_type):
