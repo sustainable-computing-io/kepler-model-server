@@ -348,6 +348,7 @@ def estimate(args):
     from estimate import load_model, default_predicted_col_func, compute_error
 
     inputs = args.input.split(",")
+    energy_sources = args.energy_source.split(",")
     input_query_results_list = []
     for input in inputs:
         response = load_json(data_path, input)
@@ -372,71 +373,74 @@ def estimate(args):
         print("invalid output type. please use AbsPower or DynPower", args.output_type)
         exit()
 
-    if args.pipeline_name:
-        pipeline_names = [args.pipeline_name]
-    else:
-        pipeline_names = list_pipelines(data_path, args.energy_source, args.output_type)
-    energy_components = PowerSourceMap[args.energy_source]
-    best_result = None
-    best_model_path = None
-    best_mae = None
-    print("Pipelines: ", pipeline_names)
-    for pipeline_name in pipeline_names:
-        pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
-        pipeline_metadata = load_metadata(pipeline_path)
-        if pipeline_metadata is None:
-            print("no metadata for pipeline {}.".format(pipeline_name))
-            continue
-        pipeline = get_pipeline(pipeline_name, args.profile, pipeline_metadata["isolator"], pipeline_metadata["abs_trainers"], pipeline_metadata["dyn_trainers"], args.energy_source, valid_fg)
-        if pipeline is None:
-            print("cannot get pipeline {}.".format(pipeline_name))
-            continue
-        for fg in  valid_fg:
-            print(" Feature Group: ", fg)
-            abs_data, dyn_data, power_labels = pipeline.prepare_data_from_input_list(input_query_results_list, energy_components, args.energy_source, fg.name)
-            group_path = get_model_group_path(data_path, ot, fg, args.energy_source, assure=False, pipeline_name=pipeline_name)
-            model_names = list_model_names(group_path)
-            if args.model_name:
-                if args.model_name not in model_names:
-                    print("model: {} is not availble in pipeline {}, continue. available models are {}".format(args.model_name, pipeline_name, model_names))
-                    continue
-                model_names = [args.model_name]
-            for model_name in model_names:
-                model_path = os.path.join(group_path, model_name)
-                model = load_model(model_path)
-                if args.output_type == ModelOutputType.AbsPower:
-                    data = abs_data
-                else:
-                    data = dyn_data
-                predicted_power_map, data_with_prediction = model.append_prediction(data)
-                max_mae = None
-                for energy_component, _ in predicted_power_map.items():
-                    label_power_columns = [col for col in power_labels if energy_component in col]
-                    predicted_power_colname = default_predicted_col_func(energy_component)
-                    sum_power_label = data.groupby([TIMESTAMP_COL]).mean()[label_power_columns].sum(axis=1).sort_index()
-                    sum_predicted_power = data_with_prediction.groupby([TIMESTAMP_COL]).sum().sort_index()[predicted_power_colname]
-                    mae, mse = compute_error(sum_power_label, sum_predicted_power)
-                    if max_mae is None or mae > max_mae:
-                        max_mae = mae
-                if best_mae is None or max_mae < best_mae:
-                    # update best
-                    best_result = data_with_prediction.copy()
-                    best_model_path = model_path
-                    best_mae = max_mae
-                print("     Model {}: ".format(model_name), max_mae)
+    for energy_source in energy_sources:
+        if args.pipeline_name:
+            pipeline_names = [args.pipeline_name]
+        else:
+            pipeline_names = list_pipelines(data_path, energy_source, args.output_type)
+        energy_components = PowerSourceMap[energy_source]
+        best_result = None
+        best_model_path = None
+        best_mae = None
+        print("Pipelines: ", pipeline_names)
+        for pipeline_name in pipeline_names:
+            pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
+            pipeline_metadata = load_metadata(pipeline_path)
+            if pipeline_metadata is None:
+                print("no metadata for pipeline {}.".format(pipeline_name))
+                continue
+            pipeline = get_pipeline(pipeline_name, args.extractor, args.profile, pipeline_metadata["isolator"], pipeline_metadata["abs_trainers"], pipeline_metadata["dyn_trainers"], energy_sources, valid_fg)
+            if pipeline is None:
+                print("cannot get pipeline {}.".format(pipeline_name))
+                continue
+            for fg in  valid_fg:
+                print(" Feature Group: ", fg)
+                abs_data, dyn_data, power_labels = pipeline.prepare_data_from_input_list(input_query_results_list, energy_components, energy_source, fg.name)
+                group_path = get_model_group_path(data_path, ot, fg, energy_source, assure=False, pipeline_name=pipeline_name)
+                model_names = list_model_names(group_path)
+                if args.model_name:
+                    if args.model_name not in model_names:
+                        print("model: {} is not availble in pipeline {}, continue. available models are {}".format(args.model_name, pipeline_name, model_names))
+                        continue
+                    model_names = [args.model_name]
+                for model_name in model_names:
+                    model_path = os.path.join(group_path, model_name)
+                    model = load_model(model_path)
+                    if args.output_type == ModelOutputType.AbsPower:
+                        data = abs_data
+                    else:
+                        data = dyn_data
+                    predicted_power_map, data_with_prediction = model.append_prediction(data)
+                    max_mae = None
+                    for energy_component, _ in predicted_power_map.items():
+                        label_power_columns = [col for col in power_labels if energy_component in col]
+                        predicted_power_colname = default_predicted_col_func(energy_component)
+                        sum_power_label = data.groupby([TIMESTAMP_COL]).mean()[label_power_columns].sum(axis=1).sort_index()
+                        sum_predicted_power = data_with_prediction.groupby([TIMESTAMP_COL]).sum().sort_index()[predicted_power_colname]
+                        mae, mse = compute_error(sum_power_label, sum_predicted_power)
+                        if max_mae is None or mae > max_mae:
+                            max_mae = mae
+                    if best_mae is None or max_mae < best_mae:
+                        # update best
+                        best_result = data_with_prediction.copy()
+                        best_model_path = model_path
+                        best_mae = max_mae
+                    print("     Model {}: ".format(model_name), max_mae)
 
-    # save best result
-    if best_model_path is not None:
-        print("Energy consumption is predicted by {}".format(best_model_path.replace(data_path, "")))
-        print("MAE = ", best_mae)
-        output_folder = os.path.join(data_path, args.output)
-        if not os.path.exists(output_folder):
-            os.mkdir(output_folder)
-        # save model
-        import shutil
-        shutil.make_archive(os.path.join(output_folder, "model"), 'zip', best_model_path)
-        # save result
-        save_csv(output_folder, "estimation_result", best_result)
+        # save best result
+        if best_model_path is not None:
+            print("Energy consumption of energy source {} is predicted by {}".format(energy_source, best_model_path.replace(data_path, "")))
+            print("MAE = ", best_mae)
+            output_folder = os.path.join(data_path, args.output)
+            if not os.path.exists(output_folder):
+                os.mkdir(output_folder)
+            # save model
+            import shutil
+            best_model = "{}_model".format(energy_source)
+            shutil.make_archive(os.path.join(output_folder, best_model), 'zip', best_model_path)
+            # save result
+            estimation_result = "{}_estimation_result".format(energy_source)
+            save_csv(output_folder, estimation_result, best_result)
     
 if __name__ == "__main__":
     # Create an ArgumentParser object
