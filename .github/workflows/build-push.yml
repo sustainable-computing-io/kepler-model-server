@@ -6,6 +6,7 @@ on:
 env:
   IMAGE_VERSION: '0.6'
   IMAGE_REGISTRY: quay.io/sustainable_computing_io
+  IMAGE_NAME: kepler_model_server
 
 jobs:
   build:
@@ -32,3 +33,10 @@ jobs:
     - name: Push to quay
       if: ${{ (github.repository_owner == 'sustainable-computing-io') && (github.ref == 'refs/heads/main') }}
       run: make push
+
+
+    - name: Tag latest and push to quay
+      if: ${{ (github.repository_owner == 'sustainable-computing-io') && (github.ref == 'refs/heads/main') }}
+      run: |
+        docker tag ${{env.IMAGE_REGISTRY}}/${{env.IMAGE_NAME}}:v${{env.IMAGE_VERSION}} ${{env.IMAGE_REGISTRY}}/${{env.IMAGE_NAME}}:latest
+        docker push ${{env.IMAGE_REGISTRY}}/${{env.IMAGE_NAME}}:latest

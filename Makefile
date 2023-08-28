@@ -3,6 +3,7 @@ IMAGE_NAME := kepler_model_server
 IMAGE_VERSION := 0.6
 
 IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):v$(IMAGE_VERSION)
+LATEST_TAG_IMAGE := $(IMAGE_REGISTRY)/$(IMAGE_NAME):latest
 TEST_IMAGE := $(IMAGE)-test
 
 CTR_CMD = docker
@@ -72,6 +73,7 @@ test: build-test test-pipeline test-estimator test-model-server test-offline-tra
 # set image
 set-image:
 	cd ./manifests/base && kustomize edit set image kepler_model_server=$(IMAGE)
+	cd ./manifests/server && kustomize edit set image kepler_model_server=$(IMAGE)
 
 # deploy
 _deploy:
