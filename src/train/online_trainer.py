@@ -35,7 +35,7 @@ abs_trainer_names = default_trainers + []
 dyn_trainer_names = default_trainers + []
 
 def initial_pipelines():
-    target_energy_sources = target_energy_sources.keys()
+    target_energy_sources = PowerSourceMap.keys()
     valid_feature_groups = FeatureGroups.keys()
     profiles = load_all_profiles()
     profile_pipeline = NewPipeline(DEFAULT_PIPELINE, abs_trainer_names, dyn_trainer_names, extractor=DefaultExtractor(), isolator=ProfileBackgroundIsolator(profiles), target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
