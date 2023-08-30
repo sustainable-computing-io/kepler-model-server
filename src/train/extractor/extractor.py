@@ -1,6 +1,7 @@
 import os
 import sys
 import pandas as pd
+import numpy as np
 from abc import ABCMeta, abstractmethod
 
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
@@ -110,10 +111,8 @@ class DefaultExtractor(Extractor):
         
         # 6. validate input with correlation
         corr = find_correlations(energy_source, feature_power_data, power_columns, workload_features)
-
         # 7. apply utilization ratio to each power unit because the power unit is summation of all container utilization
         feature_power_data = append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_columns)
-        
         return  feature_power_data, power_columns, corr
     
     def get_workload_feature_data(self, query_results, features):
@@ -135,16 +134,14 @@ class DefaultExtractor(Extractor):
            
             for container_id in container_id_list:
                 container_df = aggr_query_data[aggr_query_data[container_id_colname]==container_id]
-                container_df.set_index([TIMESTAMP_COL], inplace=True)
+                container_df = container_df.set_index([TIMESTAMP_COL])[[feature]]
                 container_df = container_df.sort_index()
-                # drop first value (zero)
-                container_df = container_df.drop(container_df.index[0])
-                time_diff_values = container_df.reset_index()[[TIMESTAMP_COL]].diff().dropna().values
+                time_diff_values = container_df.reset_index()[[TIMESTAMP_COL]].diff().values
                 feature_df = pd.DataFrame()
                 if len(container_df) > 1:
                     # find current value from aggregated query, dropna remove the first value
                     # divided by time difference
-                    feature_df = container_df[[feature]].diff().dropna() 
+                    feature_df = container_df[[feature]].astype(np.float64).diff()
                     # if delta < 0, set to 0 (unexpected)
                     feature_df = feature_df/time_diff_values
                     feature_df = feature_df.mask(feature_df.lt(0)).ffill().fillna(0).convert_dtypes()

@@ -33,7 +33,7 @@ valid_container_query = "kepler_container_kubelet_cpu_usage_total"
 node_info_query = "kepler_node_node_info"
 cpu_frequency_info_query = "kepler_node_cpu_scaling_frequency_hertz"
 
-container_id_cols = ["pod_name", "container_name", "container_namespace"]
+container_id_cols = ["container_id", "pod_name", "container_name", "container_namespace"]
 node_info_column = "node_type"
 pkg_id_column = "pkg_id"
 

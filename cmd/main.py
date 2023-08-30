@@ -9,6 +9,8 @@ default_output_filename = "output"
 default_trainer_names = [ 'PolynomialRegressionTrainer', 'GradientBoostingRegressorTrainer', 'SGDRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer','SVRRegressorTrainer']
 default_trainers = ",".join(default_trainer_names)
 
+preprocessed_data_folder = "preprocessed_data"
+
 UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
 data_path = os.getenv("CPE_DATAPATH", data_path)
 
@@ -21,13 +23,14 @@ src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 
 from util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_HEADERS, PROM_SSL_DISABLE
-from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, node_info_column, prom_responses_to_results, TIMESTAMP_COL
-from util.train_types import ModelOutputType, FeatureGroup
-from util.loader import load_json, DEFAULT_PIPELINE, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata
+from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, node_info_column, prom_responses_to_results, TIMESTAMP_COL, feature_to_query
+from util.train_types import ModelOutputType, FeatureGroup, FeatureGroups
+from util.loader import load_json, DEFAULT_PIPELINE, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv
 from util.saver import save_json, save_csv
 from util.config import ERROR_KEY
 from util import get_valid_feature_group_from_queries, PowerSourceMap
 from train.prom.prom_query import _range_queries
+
 
 def print_file_to_stdout(args):
     file_path = os.path.join(data_path, args.output)
@@ -181,6 +184,27 @@ def get_validate_df(benchmark_filename, query_response):
     print(validate_df.groupby(["scenarioID", "query"]).sum()[["count", ">0"]])
     return validate_df
 
+def check_ot_fg(args, valid_fg):
+    ot = None
+    fg = None
+    if args.output_type:
+        try:
+            ot = ModelOutputType[args.output_type]
+        except KeyError:
+            print("invalid output type. please use AbsPower or DynPower", args.output_type)
+            exit()
+    if args.feature_group:
+        valid_fg_name_list = [fg.name for fg in valid_fg]
+        try:
+            fg = FeatureGroup[args.feature_group]
+            if args.feature_group not in valid_fg_name_list:
+                print("feature group: {} is not available in your data. please choose from the following list: {}".format(args.feature_group, valid_fg_name_list))
+                exit()
+        except KeyError:
+            print("invalid feature group: {}. valid feature group are {}.", (args.feature_group, [fg.name for fg in valid_fg]))
+            exit()
+    return ot, fg
+
 def query(args):
     from prometheus_api_client import PrometheusConnect
     prom = PrometheusConnect(url=args.server, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
@@ -260,13 +284,54 @@ def get_pipeline(pipeline_name, extractor, profile, isolator, abs_trainer_names,
         return None
     
     if extractor not in supported_extractor:
-        print("extractor {} is not supported. supported extractor: {}".format(isolator, supported_extractor.keys()))
+        print("extractor {} is not supported. supported extractor: {}".format(extractor, supported_extractor.keys()))
         return None
 
     isolator = supported_isolator[isolator]
     extractor = supported_extractor[extractor]
     pipeline = NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=energy_sources ,valid_feature_groups=valid_feature_groups)
     return pipeline
+
+def get_preprocessed_data_filename(energy_source, fg, ot):
+    if ot == ModelOutputType.DynPower:
+        return "{}_{}_dyn_data".format(energy_source, fg.name)
+    if ot == ModelOutputType.AbsPower:
+        return "{}_{}_abs_data".format(energy_source, fg.name)
+    return None
+
+def extract(args):
+    from train import DefaultExtractor, SmoothExtractor
+    supported_extractor = {
+        "default": DefaultExtractor(),
+        "smooth": SmoothExtractor()
+    }
+    
+    if args.extractor not in supported_extractor:
+        print("extractor {} is not supported. supported extractor: {}".format(args.extractor, supported_extractor.keys()))
+        return None
+    extractor = supported_extractor[args.extractor]
+
+    # single input
+    input = args.input
+    response = load_json(data_path, input)
+    query_results = prom_responses_to_results(response)
+
+    valid_fg = get_valid_feature_group_from_queries([query for query in query_results.keys() if len(query_results[query]) > 1 ])
+    ot, fg = check_ot_fg(args, valid_fg)
+    if fg is None or ot is None:
+        print("feature group {} or model output type {} is wrong. (valid feature group: {})".format(args.feature_group, args.output_type, valid_fg))
+        exit()
+
+    energy_components = PowerSourceMap[args.energy_source]
+    node_level=False
+    if ot == ModelOutputType.AbsPower:
+        node_level=True
+    feature_power_data, _, _ = extractor.extract(query_results, energy_components, args.feature_group, args.energy_source, node_level=node_level)
+    print(feature_power_data)
+    if args.output:
+        feature_power_data.to_csv(args.output)
+        query = feature_to_query(FeatureGroups[fg][0])
+        query_results[query][[TIMESTAMP_COL, query]].groupby([TIMESTAMP_COL]).sum().to_csv(args.output[0:-4]+"_raw.csv")
 
 def train(args):
     import warnings
@@ -316,9 +381,9 @@ def train(args):
                     else:
                         assert_train(trainer, dyn_data, energy_components)
             # save data
-            data_saved_path = os.path.join(pipeline.path, "preprocessed_data")
-            save_csv(data_saved_path, "{}_{}_abs_data".format(energy_source, feature_group.name), abs_data)
-            save_csv(data_saved_path, "{}_{}_dyn_data".format(energy_source, feature_group.name), dyn_data)
+            data_saved_path = os.path.join(pipeline.path, preprocessed_data_folder)
+            save_csv(data_saved_path, get_preprocessed_data_filename(energy_source, feature_group, ModelOutputType.AbsPower), abs_data)
+            save_csv(data_saved_path, get_preprocessed_data_filename(energy_source, feature_group, ModelOutputType.DynPower), dyn_data)
 
 
         print("=========== Train {} Summary ============".format(energy_source))
@@ -356,23 +421,14 @@ def estimate(args):
         input_query_results_list += [query_results]
     
     valid_fg = get_valid_feature_group_from_queries([query for query in query_results.keys() if len(query_results[query]) > 1 ])
-    valid_fg_name_list = [fg.name for fg in valid_fg]
-    if args.feature_group:
-        try:
-            fg = FeatureGroup[args.feature_group]
-            if args.feature_group not in valid_fg_name_list:
-                print("feature group: {} is not available in your data. please choose from the following list: {}".format(args.feature_group, valid_fg_name_list))
-                exit()
-            valid_fg = [fg]
-        except KeyError:
-            print("invalid feature group: {}. valid feature group are {}.", (args.feature_group, [fg.name for fg in valid_fg]))
-            exit()
-    try:
-        ot = ModelOutputType[args.output_type]
-    except KeyError:
-        print("invalid output type. please use AbsPower or DynPower", args.output_type)
-        exit()
+    ot, fg = check_ot_fg(args, valid_fg)
+    if fg is not None: 
+        valid_fg = [fg]
 
+    best_result_map = dict()
+    power_labels_map = dict()
+    best_model_id_map = dict()
+    summary_items = []
     for energy_source in energy_sources:
         if args.pipeline_name:
             pipeline_names = [args.pipeline_name]
@@ -396,6 +452,8 @@ def estimate(args):
             for fg in  valid_fg:
                 print(" Feature Group: ", fg)
                 abs_data, dyn_data, power_labels = pipeline.prepare_data_from_input_list(input_query_results_list, energy_components, energy_source, fg.name)
+                if energy_source not in power_labels_map:
+                    power_labels_map[energy_source] = power_labels
                 group_path = get_model_group_path(data_path, ot, fg, energy_source, assure=False, pipeline_name=pipeline_name)
                 model_names = list_model_names(group_path)
                 if args.model_name:
@@ -413,11 +471,20 @@ def estimate(args):
                     predicted_power_map, data_with_prediction = model.append_prediction(data)
                     max_mae = None
                     for energy_component, _ in predicted_power_map.items():
-                        label_power_columns = [col for col in power_labels if energy_component in col]
                         predicted_power_colname = default_predicted_col_func(energy_component)
+                        label_power_columns = [col for col in power_labels if energy_component in col and col != predicted_power_colname]
                         sum_power_label = data.groupby([TIMESTAMP_COL]).mean()[label_power_columns].sum(axis=1).sort_index()
                         sum_predicted_power = data_with_prediction.groupby([TIMESTAMP_COL]).sum().sort_index()[predicted_power_colname]
                         mae, mse = compute_error(sum_power_label, sum_predicted_power)
+                        summary_item = dict()
+                        summary_item["MAE"] = mae
+                        summary_item["MSE"] = mse
+                        summary_item["n"] = len(sum_predicted_power)
+                        summary_item["energy_component"] = energy_component
+                        summary_item["energy_source"] = energy_source
+                        summary_item["Model"] = model_name
+                        summary_item["Feature Group"] = fg.name
+                        summary_items += [summary_item]
                         if max_mae is None or mae > max_mae:
                             max_mae = mae
                     if best_mae is None or max_mae < best_mae:
@@ -441,7 +508,184 @@ def estimate(args):
             # save result
             estimation_result = "{}_estimation_result".format(energy_source)
             save_csv(output_folder, estimation_result, best_result)
+            best_result_map[energy_source] = best_result
+            path_splits = best_model_path.split("/")
+            best_model_id_map[energy_source] = "{} using {}".format(path_splits[-1], path_splits[-2])
+    return best_result_map, power_labels_map, best_model_id_map, pd.DataFrame(summary_items)
     
+def _ts_plot(data, cols, title, output_folder, name, labels=None, subtitles=None, ylabel=None):
+    plot_height = 3
+    plot_width = 10
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    sns.set(font_scale=1.2)
+    fig, axes = plt.subplots(len(cols), 1, figsize=(plot_width, len(cols)*plot_height))
+    for i in range(0, len(cols)):
+        if len(cols) == 1:
+            ax = axes
+        else:
+            ax = axes[i]
+        if isinstance(cols[i], list):
+            # multiple lines
+            for j in range(0, len(cols[i])):
+                sns.lineplot(data=data, x=TIMESTAMP_COL, y=cols[i][j], ax=ax, label=labels[j])
+            ax.set_title(subtitles[i])
+        else:
+            sns.lineplot(data=data, x=TIMESTAMP_COL, y=cols[i], ax=ax)
+            ax.set_title(cols[i])
+        if ylabel is not None:
+            ax.set_ylabel(ylabel)
+    plt.suptitle(title, x=0.5, y=0.99)
+    plt.tight_layout()
+    filename = os.path.join(output_folder, name + ".png")
+    fig.savefig(filename)
+
+def _feature_power_plot(data, model_id, output_type, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, name):
+    plot_height = 5
+    plot_width = 5
+    
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    sns.set(font_scale=1.2)
+    row_num = len(feature_cols)
+    col_num = len(actual_power_cols)
+    width = max(10, col_num*plot_width)
+    fig, axes = plt.subplots(row_num, col_num, figsize=(width, row_num*plot_height))
+    for xi in range(0, row_num):
+        feature_col = feature_cols[xi]
+        for yi in range(0, col_num):
+            if row_num == 1:
+                if col_num == 1:
+                    ax = axes
+                else:
+                    ax = axes[yi]
+            else:
+                if col_num == 1:
+                    ax = axes[xi]
+                else:
+                    ax = axes[xi][yi]
+            sorted_data = data.sort_values(by=[feature_col])
+            sns.scatterplot(data=sorted_data, x=feature_col, y=actual_power_cols[yi], ax=ax, label="actual")
+            sns.lineplot(data=sorted_data, x=feature_col, y=predicted_power_cols[yi], ax=ax, label="predicted", color='C1')
+            if xi == 0:
+                ax.set_title(actual_power_cols[yi])
+            if yi == 0:
+                ax.set_ylabel("Power (W)")
+    title = "{} {} prediction correlation \n by {}".format(energy_source, output_type, model_id)
+    plt.suptitle(title, x=0.5, y=0.99)
+    plt.tight_layout()
+    filename = os.path.join(output_folder, name + ".png")
+    fig.savefig(filename)
+
+def _summary_plot(energy_source, summary_df, output_folder, name):
+    plot_height = 3
+    plot_width = 20
+    
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    sns.set(font_scale=1.2)
+
+    energy_components = PowerSourceMap[energy_source]
+    col_num = len(energy_components)
+    fig, axes = plt.subplots(col_num, 1, figsize=(plot_width, plot_height*col_num))
+    for i in range(0, col_num):
+        component = energy_components[i]
+        data = summary_df[(summary_df["energy_source"]==energy_source) & (summary_df["energy_component"]==component)]
+        data = data.sort_values(by=["MAE"])
+        if col_num == 1:
+            ax = axes
+        else:
+            ax = axes[i]
+        sns.barplot(data=data, x="Feature Group", y="MAE", hue="Model", ax=ax)
+        ax.set_title(component)
+        ax.set_ylabel("MAE (Watt)")
+        ax.set_ylim((0, 50))
+        if i < col_num-1:
+            ax.set_xlabel("")
+        ax.legend(bbox_to_anchor=(1.05, 1.05))
+    plt.suptitle("{} {} error".format(energy_source, args.output_type))
+    plt.tight_layout()
+    filename = os.path.join(output_folder, name + ".png")
+    fig.savefig(filename)
+
+def plot(args):
+    pipeline_name = DEFAULT_PIPELINE if not args.pipeline_name else args.pipeline_name
+    pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
+    if not args.target_data:
+        print("must give target data via --target-data to plot.")
+        exit()
+    valid_fg = [fg_key for fg_key in FeatureGroups.keys()]
+    ot, fg = check_ot_fg(args, valid_fg)
+    if fg is not None: 
+        valid_fg = [fg]
+    energy_sources = args.energy_source.split(",")
+    output_folder = os.path.join(data_path, args.output)
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+    if args.target_data == "preprocess":
+        data_saved_path = os.path.join(pipeline_path, preprocessed_data_folder)
+        feature_plot = []
+        for energy_source in energy_sources:
+            energy_plot = False
+            for fg in valid_fg:
+                if energy_plot and fg.name in feature_plot:
+                    # no need to plot
+                    continue
+                data_filename = get_preprocessed_data_filename(energy_source, fg, ot)
+                data = load_csv(data_saved_path, data_filename)
+                if data is None:
+                    print("cannot load data from {}/{}".format(data_saved_path, data_filename))
+                    continue
+                feature_plot += [fg.name]
+                feature_cols = FeatureGroups[fg] 
+                power_cols = [col for col in data.columns if "power" in col]
+                feature_data = data.groupby([TIMESTAMP_COL]).sum()
+                _ts_plot(feature_data, feature_cols, "Feature group: {}".format(fg.name), output_folder, "{}_{}_{}".format(args.target_data, ot.name, fg.name))
+                if not energy_plot:
+                    power_data = data.groupby([TIMESTAMP_COL]).max()
+                    _ts_plot(power_data, power_cols, "Power source: {}".format(energy_source), output_folder, "{}_{}_{}".format(args.target_data, ot.name, energy_source), ylabel="Power (W)")
+    elif args.target_data == "estimate":
+        from estimate import default_predicted_col_func
+        from sklearn.preprocessing import MinMaxScaler
+
+        best_result_map, power_labels_map, best_model_id_map, _ = estimate(args)
+        for energy_source, best_restult in best_result_map.items():
+            power_labels = power_labels_map[energy_source]
+            model_id = best_model_id_map[energy_source]
+            subtitles = []
+            cols = []
+            plot_labels = ["actual", "predicted"]
+            data = pd.DataFrame()
+            actual_power_cols = []
+            predicted_power_cols = []
+            for energy_component in PowerSourceMap[energy_source]:
+                subtitles += [energy_component]
+                predicted_power_colname = default_predicted_col_func(energy_component)
+                label_power_columns = [col for col in power_labels if energy_component in col and col != predicted_power_colname]
+                data[energy_component] = best_restult.groupby([TIMESTAMP_COL]).mean()[label_power_columns].sum(axis=1).sort_index()
+                data[predicted_power_colname] = best_restult.groupby([TIMESTAMP_COL]).sum().sort_index()[predicted_power_colname]
+                cols += [[energy_component, predicted_power_colname]]
+                actual_power_cols += [energy_component]
+                predicted_power_cols += [predicted_power_colname]
+            data.to_csv("tmp.csv")
+            # plot prediction
+            _ts_plot(data, cols, "{} {} Prediction Result \n by {}".format(energy_source, ot.name, model_id), output_folder, "{}_{}_{}_{}".format(args.target_data, ot.name, energy_source, model_id), subtitles=subtitles, labels=plot_labels, ylabel="Power (W)")
+            # plot correlation to utilization if feature group is set
+            if fg is not None:
+                feature_cols = FeatureGroups[fg]
+                scaler = MinMaxScaler()
+                data[feature_cols] = best_restult[[TIMESTAMP_COL] + feature_cols].groupby([TIMESTAMP_COL]).sum().sort_index()
+                data[feature_cols] = scaler.fit_transform(data[feature_cols])
+                _feature_power_plot(data, model_id, ot.name, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, "{}_{}_{}_{}_corr".format(args.target_data, ot.name, energy_source, model_id))
+    elif args.target_data == "error":
+        from estimate import default_predicted_col_func
+        from sklearn.preprocessing import MinMaxScaler
+        _, _, _, summary_df = estimate(args)
+        for energy_source in energy_sources:
+            name = "{}_{}_{}_error".format(args.target_data, ot.name, energy_source)
+            _summary_plot(energy_source, summary_df, output_folder, name)
+
+
 if __name__ == "__main__":
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description="Kepler model server entrypoint")
@@ -473,6 +717,9 @@ if __name__ == "__main__":
     parser.add_argument("-ot", "--output-type", type=str, help="Specify output type (AbsPower or DynPower) for energy estimation.", default="AbsPower")
     parser.add_argument("-fg", "--feature-group", type=str, help="Specify target feature group for energy estimation.", default="")
     parser.add_argument("--model-name", type=str, help="Specify target model name for energy estimation.")
+
+    # Plot arguments
+    parser.add_argument("--target-data", type=str, help="Speficy target plot data (preprocess, estimate)")
     
 
     # Parse the command-line arguments
