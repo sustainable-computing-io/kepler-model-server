@@ -14,7 +14,7 @@ class SmoothExtractor(DefaultExtractor):
 
     # implement extract function
     def extract(self, query_results, energy_components, feature_group, energy_source, node_level, aggr=True):
-        feature_power_data, power_columns, _ = super().extract(query_results, energy_components, feature_group, energy_source, node_level, aggr)
+        feature_power_data, power_columns, _, features = super().extract(query_results, energy_components, feature_group, energy_source, node_level, aggr)
 
         features = FeatureGroups[FeatureGroup[feature_group]]
         smoothed_data = feature_power_data.copy()
@@ -26,5 +26,5 @@ class SmoothExtractor(DefaultExtractor):
 
         corr = find_correlations(energy_source, feature_power_data, power_columns, workload_features)
 
-        return smoothed_data, power_columns, corr
+        return smoothed_data, power_columns, corr, features
 

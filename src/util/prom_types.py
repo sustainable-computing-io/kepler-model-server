@@ -45,6 +45,8 @@ def get_energy_unit(component):
 def feature_to_query(feature):
     if feature in SYSTEM_FEATURES:
         return "{}_{}".format(node_query_prefix, feature)
+    if feature in FeatureGroups[FeatureGroup.AcceleratorOnly]:
+        return  "{}_{}".format(node_query_prefix, feature)
     return "{}_{}_{}".format(container_query_prefix, feature, container_query_suffix)
 
 def energy_component_to_query(component):

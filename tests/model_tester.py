@@ -79,7 +79,7 @@ def process(train_dataset_name, test_dataset_name, test_json_file_path, test_idl
                     for model_path in model_paths:
                         model = load_model(model_path)
                         energy_components = PowerSourceMap[energy_source]
-                        extracted_data, power_columns = extractor.extract(test_data, energy_components, feature_group, energy_source, node_level=False)
+                        extracted_data, power_columns, _, _ = extractor.extract(test_data, energy_components, feature_group, energy_source, node_level=False)
                         feature_columns = [col for col in extracted_data.columns if col not in power_columns]
                         if not model.feature_check(feature_columns):
                             print("model {} ({}/{}/{})is not valid to test".format(model.name, energy_source, output_type.name, feature_group))
