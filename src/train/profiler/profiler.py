@@ -33,6 +33,7 @@ import json
 
 min_watt_key = "min_watt"
 max_watt_key = "max_watt"
+unit_num_key = "#unit"
 
 resource_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'resource')
 default_profile_top_path = os.path.join(resource_path, 'profiles')
@@ -116,7 +117,8 @@ class Profiler():
                     if node_type_key not in profile[component]:
                         profile[component][node_type_key] = {
                             min_watt_key: min_watt,
-                            max_watt_key: max_watt
+                            max_watt_key: max_watt,
+                            unit_num_key: len(related_labels)
                         }
                     else:
                         if min_watt < profile[component][node_type_key][min_watt_key]:
@@ -181,11 +183,12 @@ class Profile:
             return None
         if component not in self.profile[source]:
             return None
-        background_power = (self.profile[source][component]["min_watt"] + self.profile[source][component]["max_watt"])/2
+        background_power_per_unit = (self.profile[source][component][min_watt_key] + self.profile[source][component][max_watt_key])/2
+        background_power = background_power_per_unit * int(self.profile[source][component][unit_num_key])
         return background_power
     
     def get_min_power(self, source, component):
-        return self.profile[source][component]["min_watt"]
+        return self.profile[source][component][min_watt_key]
 
     def print_profile(self):
         print("Profile (node type={}): \n Available energy components: {}\n Available minmax scalers: {}\n Available standard scalers: {}".format(self.node_type, ["{}/{}".format(key, list(self.profile[key].keys())) for key in self.profile.keys()], self.minmax_scaler.keys(), self.standard_scaler.keys()))
