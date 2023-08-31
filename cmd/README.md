@@ -113,24 +113,24 @@ optional arguments:
    5.1. Plot extracted and isolated data (`preprocess`)
 
       ```bash
-      docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler-model-server:v0.6 plot --target-data preprocess
+      docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data preprocess
       ```
 
    5.2. Plot best prediction result (`estimate`)
 
       ```bash
-      docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler-model-server:v0.6 plot --target-data estimate -i output.json
+      docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data estimate -i output.json
       ```
 
    5.3. Plot prediction result on specific trainer model and feature group (`estimate`)
 
       ```bash
-      docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler-model-server:v0.6 plot --target-data estimate -i output.json --model-name GradientBoostingRegressorTrainer_1 --feature-group BPFOnly
+      docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data estimate -i output.json --model-name GradientBoostingRegressorTrainer_1 --feature-group BPFOnly
       ```
 
    5.4. Plot prediction error comparison among feature group and trainer model (`error`)
 
     ```bash
-    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler-model-server:v0.6 plot --target-data error -i output.json
+    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data error -i output.json
     ```
         
