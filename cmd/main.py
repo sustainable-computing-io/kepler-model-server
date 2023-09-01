@@ -326,7 +326,7 @@ def extract(args):
     node_level=False
     if ot == ModelOutputType.AbsPower:
         node_level=True
-    feature_power_data, _, _ = extractor.extract(query_results, energy_components, args.feature_group, args.energy_source, node_level=node_level)
+    feature_power_data, _, _, _ = extractor.extract(query_results, energy_components, args.feature_group, args.energy_source, node_level=node_level)
     print(feature_power_data)
     if args.output:
         feature_power_data.to_csv(args.output)
@@ -376,14 +376,16 @@ def train(args):
             assert success, "failed to process pipeline {}".format(pipeline.name) 
             for trainer in pipeline.trainers:
                 if trainer.feature_group == feature_group and trainer.energy_source == energy_source:
-                    if trainer.node_level:
+                    if trainer.node_level and abs_data is not None:
                         assert_train(trainer, abs_data, energy_components)
-                    else:
+                    elif dyn_data is not None:
                         assert_train(trainer, dyn_data, energy_components)
             # save data
             data_saved_path = os.path.join(pipeline.path, preprocessed_data_folder)
-            save_csv(data_saved_path, get_preprocessed_data_filename(energy_source, feature_group, ModelOutputType.AbsPower), abs_data)
-            save_csv(data_saved_path, get_preprocessed_data_filename(energy_source, feature_group, ModelOutputType.DynPower), dyn_data)
+            if abs_data is not None:
+                save_csv(data_saved_path, get_preprocessed_data_filename(energy_source, feature_group, ModelOutputType.AbsPower), abs_data)
+            if dyn_data is not None:
+                save_csv(data_saved_path, get_preprocessed_data_filename(energy_source, feature_group, ModelOutputType.DynPower), dyn_data)
 
 
         print("=========== Train {} Summary ============".format(energy_source))

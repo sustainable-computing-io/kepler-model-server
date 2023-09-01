@@ -82,10 +82,10 @@ def process(query_results, feature_group, save_path=extractor_output_path, custo
     for extractor_name in customize_extractors:
         test_extractors += [load_class("extractor", extractor_name)]
     for test_instance in test_extractors:
-        extracted_data, power_columns, corr = test_instance.extract(query_results, energy_components, feature_group, energy_source, node_level=True)
+        extracted_data, power_columns, corr, _ = test_instance.extract(query_results, energy_components, feature_group, energy_source, node_level=True)
         assert_extract(extracted_data, power_columns, energy_components, num_of_unit, feature_group)
         save_extract_results(test_instance, feature_group, extracted_data, True, save_path=save_path)
-        extracted_data, power_columns, corr = test_instance.extract(query_results, energy_components, feature_group, energy_source, node_level=False)
+        extracted_data, power_columns, corr, _ = test_instance.extract(query_results, energy_components, feature_group, energy_source, node_level=False)
         assert_extract(extracted_data, power_columns, energy_components, num_of_unit, feature_group)
         save_extract_results(test_instance, feature_group, extracted_data, False, save_path=save_path)
         print("Correlations:\n")

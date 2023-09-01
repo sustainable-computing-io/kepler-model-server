@@ -51,13 +51,13 @@ optional arguments:
     Linux:
 
     ```bash
-    docker run --rm -v "$(pwd)":/data --network=host quay.io/sustainable_computing_io/kepler-model-server:v0.6 query
+    docker run --rm -v "$(pwd)":/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.6 query
     ```
 
     mac OS:
 
     ```bash
-    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler-model-server:v0.6 query -s http://host.docker.internal:9090
+    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 query -s http://host.docker.internal:9090
     ```
 
     output of query will be saved as `output.json` by default
@@ -65,7 +65,7 @@ optional arguments:
 3. Run training pipeline
 
     ```bash
-    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler-model-server:v0.6 train -i output.json
+    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 train -i output.json
     ```
 
     output of trained model will be under pipeline folder `default` or can be specified by `-p`
@@ -97,7 +97,7 @@ optional arguments:
 4. Test estimation
 
     ```bash
-    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler-model-server:v0.6 estimate -i output.json
+    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 estimate -i output.json
     ```
 
     output will be under the folder `output`.
