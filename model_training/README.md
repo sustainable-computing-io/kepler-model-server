@@ -52,7 +52,6 @@ This is only for testing purpose.
 
     ./script.sh collect
 
-
 It might take an hour to run and collect all benchmarks. Output including CPE CR and Prometheus query response will be in `data` folder by default.
 
 ## 3. Profile and train 
@@ -90,17 +89,7 @@ Training output will be in `/data` folder by default. The folder contains:
 - Run
 
     ```bash
-    # set training parameter
-    export CPE_DATAPATH=$(pwd)/data
-    export QUERY_RESPONSE=coremark_kepler_query,stressng_kepler_query,parsec_kepler_query
-    export VERSION=0.6
-    export PIPELINE_NAME=$(uname)-$(uname -r)-$(uname -m)_v${VERSION}_train
-    export ENERGY_SOURCE=rapl
-    echo "input=$QUERY_RESPONSE"
-    echo "pipeline=$PIPELINE_NAME"
-
-    # train
-    python ../cmd/main.py train -i ${QUERY_RESPONSE} -p ${PIPELINE_NAME} --profile idle --isolator profile --energy-source ${ENERGY_SOURCE}
+    NATIVE="true" ./script.sh train
     ```
 
 ## Clean up
@@ -113,4 +102,23 @@ Run
 ```
 
 ## Upload model to repository
-TBD
+
+1. Fork `kepler-model-db`.
+
+1. Validate and make a copy by export command. Need to define `machine id`, `local path to forked kepler-model-db/models`, and `author github account`. 
+
+    Run
+    ```
+    ./script.sh export <machine id> <path to kepler-model-db/models> <author github account>
+    ```
+
+    If you are agree to also share the raw data (preprocessed data and archived file of full pipeline), run
+
+    ```
+    ./script.sh export_with_raw <machine id> <path to kepler-model-db/models> <author github account>
+    ```
+
+    - set `NATIVE="true"` to export natively.
+
+2. Add information of your machine in `./models/README.md` in `kepler-model-db`. You may omit any column as needed.
+3. Push PR to `kepler-model-db.
