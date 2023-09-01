@@ -58,12 +58,20 @@ class Extractor(metaclass=ABCMeta):
     @abstractmethod
     def extract(self, query_results, feature_group):
         return NotImplemented
+    
+    # return short name
+    @abstractmethod
+    def get_name(self):
+        return NotImplemented
 
 # extract data from query 
 # for node-level
 # return DataFrame (index=timestamp, column=[features][power columns][node_type]), power_columns
 
 class DefaultExtractor(Extractor):
+
+    def get_name(self):
+        return "default"
 
     # implement extract function
     def extract(self, query_results, energy_components, feature_group, energy_source, node_level, aggr=True):

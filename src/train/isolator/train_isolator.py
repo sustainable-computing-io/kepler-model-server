@@ -58,6 +58,8 @@ def append_dyn_power(target_data, energy_components, extracted_power_labels, bac
         bg_colname = get_predicted_background_power_colname(energy_component)
         label_colname = get_label_power_colname(energy_component)
         power_join_df[dyn_colname] = power_join_df[label_colname] - power_join_df[bg_colname]
+        # replace negative value with zero
+        power_join_df[dyn_colname] = power_join_df[dyn_colname].apply(lambda x: max(0, x))
         appended_data = appended_data.join(power_join_df[[dyn_colname]])
     num = appended_data._get_numeric_data().astype(float)
     num[num < min_val] = min_val
@@ -130,11 +132,13 @@ class TrainIsolator(Isolator):
         isolated_data = isolated_data.join(extracted_power_labels)
         for label_col in label_cols:
             energy_component = col_to_component(label_col)
-            component_label_colname = get_label_power_colname(energy_component)
             dyn_power_colname = get_dynamic_power_colname(energy_component)
+            component_label_colname = get_label_power_colname(energy_component)
             isolated_data[label_col] = isolated_data[label_col]/isolated_data[component_label_colname]*isolated_data[dyn_power_colname]
+            # fillna from the case that isolated_data[component_label_colname] = 0
+            isolated_data[label_col] = isolated_data[label_col].astype(np.float64).fillna(0)
         drop_cols = power_label_cols + [get_dynamic_power_colname(energy_component) for energy_component in energy_components]
-        isolated_data = isolated_data.drop(columns=drop_cols).reset_index().fillna(0)
+        isolated_data = isolated_data.drop(columns=drop_cols).reset_index()
         if index_list[0] is not None:
             isolated_data = isolated_data.set_index(index_list)
         return isolated_data
@@ -151,3 +155,6 @@ class TrainIsolator(Isolator):
             background_power_colname = get_predicted_background_power_colname(energy_component)
             reconstructed_data[get_reconstructed_power_colname(energy_component)] = data_with_prediction[predicted_colname]  + background_data_with_prediction[background_power_colname]
         return reconstructed_data
+    
+    def get_name(self):
+        return "trainer"

@@ -30,6 +30,10 @@ class Isolator(metaclass=ABCMeta):
     def reconstruct(self, data, **args):
         return NotImplemented
 
+    # return short name
+    @abstractmethod
+    def get_name(self):
+        return NotImplemented
 
 def exclude_target_container_usage(data, target_container_id):
     target_container_data = data[data[container_id_colname]==target_container_id]
@@ -56,14 +60,21 @@ def isolate_container(extracted_data, background_containers, label_cols):
 
 
 def squeeze_data(container_level_data, label_cols):
+    # node_level_columns includes node info and power values
     node_level_columns = list(label_cols) + [node_info_column]
+    # ratio of each energy component for each container 
     ratio_columns = [col for col in container_level_data.columns if "ratio" in col]
+    # get feature columns
     feature_columns = [col for col in container_level_data.columns if col not in node_level_columns and col not in ratio_columns and col not in container_indexes] 
+    # sum ratio and feature columns over time
     groupped_sum_data = container_level_data.groupby([TIMESTAMP_COL]).sum()[ratio_columns + feature_columns]
+    # re-normalize ratio column
+    # each ratio / total ratio for all energy component
     groupped_sum_data['sum_ratio'] = groupped_sum_data[ratio_columns].sum(axis=1)
     for ratio_col in ratio_columns:
         groupped_sum_data[ratio_col] /= groupped_sum_data['sum_ratio']
     groupped_sum_data = groupped_sum_data.drop(columns=['sum_ratio'])
+    # use mean value for node-level information
     groupped_mean_data = container_level_data.groupby([TIMESTAMP_COL]).mean()[node_level_columns]  
     squeeze_data = groupped_sum_data.join(groupped_mean_data)
     squeeze_data[container_id_colname] = all_container_key
@@ -88,6 +99,9 @@ class MinIdleIsolator(Isolator):
             reconstructed_data[background_power_colname] = min * num_of_unit 
             reconstructed_data[get_reconstructed_power_colname(energy_component)] = data_with_prediction[predicted_colname] + reconstructed_data[background_power_colname] 
         return reconstructed_data
+    
+    def get_name(self):
+        return "min"
     
 import numpy as np
 
@@ -124,7 +138,7 @@ class ProfileBackgroundIsolator(Isolator):
                 isolated_data.drop(columns='profile', inplace=True)
             isolated_data = isolated_data.reset_index()
             if index_list[0] is not None:
-                isolated_data.set_index(index_list)
+                isolated_data = isolated_data.set_index(index_list)
             return isolated_data
         except Exception as e:
             print(e)
@@ -149,6 +163,9 @@ class ProfileBackgroundIsolator(Isolator):
                 return None
         return reconstructed_data
 
+    def get_name(self):
+        return "profile"
+
 # no isolation
 class NoneIsolator(Isolator):
 
@@ -159,3 +176,6 @@ class NoneIsolator(Isolator):
     def reconstruct(self, extracted_data, data_with_prediction, energy_source, label_cols):
         return data_with_prediction
     
+
+    def get_name(self):
+        return "none"

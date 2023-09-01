@@ -12,6 +12,9 @@ class SmoothExtractor(DefaultExtractor):
     def __init__(self, smooth_window=30):
         self.smooth_window = smooth_window
 
+    def get_name(self):
+        return "smooth"
+    
     # implement extract function
     def extract(self, query_results, energy_components, feature_group, energy_source, node_level, aggr=True):
         feature_power_data, power_columns, _ = super().extract(query_results, energy_components, feature_group, energy_source, node_level, aggr)
