@@ -2,7 +2,7 @@ import os
 import json
 import joblib
 import pandas as pd
-from saver import assure_path, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME, _pipeline_model_metadata_filename
+from saver import assure_path, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME, TRAIN_ARGS_FILENAME, _pipeline_model_metadata_filename
 from train_types import ModelOutputType, FeatureGroup, PowerSourceMap, all_feature_groups
 from urllib.request import urlopen
 
@@ -16,6 +16,7 @@ ARRAY_DELIMIT = ','
 DEFAULT_PIPELINE = 'default'
 CHECKPOINT_FOLDERNAME = 'checkpoint'
 DOWNLOAD_FOLDERNAME = 'download'
+PREPROCESS_FOLDERNAME = "preprocessed_data"
 
 default_init_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/"
 default_init_pipeline_name = "Linux-4.15.0-213-generic-x86_64_v0.6"
@@ -56,6 +57,9 @@ def load_remote_pkl(url_path):
 
 def load_metadata(model_path):
     return load_json(model_path, METADATA_FILENAME)
+
+def load_train_args(pipeline_path):
+    return load_json(pipeline_path, TRAIN_ARGS_FILENAME)
 
 def load_scaler(model_path):
     return load_pkl(model_path, SCALER_FILENAME)
@@ -156,6 +160,8 @@ def download_and_save(url, filepath):
     return filepath
 
 def list_model_names(group_path):
+    if not os.path.exists(group_path):
+        return []
     model_names = [f.split('.')[0] for f in os.listdir(group_path) if '.zip' in f]
     return model_names
 
@@ -239,3 +245,21 @@ def get_pipeline_url(model_topurl=default_init_model_url, pipeline_name=default_
 
 def class_to_json(class_obj):
     return json.loads(json.dumps(class_obj.__dict__))
+
+def get_machine_path(output_path, version, machine_id):
+    export_path = os.path.join(output_path, version, machine_id)
+    return assure_path(export_path)
+
+def get_preprocess_folder(pipeline_path, assure=True):
+    preprocess_folder = os.path.join(pipeline_path, PREPROCESS_FOLDERNAME)
+    if assure:
+        return assure_path(preprocess_folder)
+    return preprocess_folder
+
+def get_general_filename(prefix, energy_source, fg, ot, extractor, isolator=None):
+    fg_suffix = "" if fg is None else "_" + fg.name
+    if ot.name == ModelOutputType.DynPower.name:
+        return "{}_dyn_{}_{}_{}{}".format(prefix, extractor, isolator, energy_source, fg_suffix)
+    if ot.name == ModelOutputType.AbsPower.name:
+        return "{}_abs_{}_{}{}".format(prefix, extractor, energy_source, fg_suffix)
+    return None

@@ -5,6 +5,7 @@ import os
 METADATA_FILENAME = 'metadata'
 SCALER_FILENAME = 'scaler'
 WEIGHT_FILENAME = 'weight'
+TRAIN_ARGS_FILENAME = 'train_arguments'
 
 def _pipeline_model_metadata_filename(energy_source, model_type):
     return "{}_{}_model_metadata".format(energy_source, model_type)
@@ -43,6 +44,9 @@ def save_csv(path, name, data):
 
 def save_metadata(model_path, metadata):
     return save_json(model_path, METADATA_FILENAME, metadata)
+
+def save_train_args(pipeline_path, args):
+    return save_json(pipeline_path, TRAIN_ARGS_FILENAME, args)
 
 def save_scaler(model_path, scaler):
     return save_pkl(model_path, SCALER_FILENAME, scaler)
