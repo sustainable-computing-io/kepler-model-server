@@ -18,12 +18,13 @@ from config import model_toppath, ERROR_KEY
 from loader import get_all_metadata, get_pipeline_path, get_metadata_df, get_archived_file
 from saver import save_pipeline_metadata
 
-from format import print_bounded_multiline_message
+from format import print_bounded_multiline_message, time_to_str
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
 
 import shutil
+import datetime
 
 def load_class(module_name, class_name):
     path = os.path.join(os.path.dirname(__file__), '{}/{}'.format(module_name, class_name))
@@ -45,10 +46,11 @@ class Pipeline():
         self.path = get_pipeline_path(model_toppath=model_toppath ,pipeline_name=self.name)
         self.metadata = dict()
         self.metadata["name"] = self.name
-        self.metadata["isolator"] = isolator.__class__.__name__
-        self.metadata["extractor"] = extractor.__class__.__name__
+        self.metadata["isolator"] = isolator.get_name()
+        self.metadata["extractor"] = extractor.get_name()
         self.metadata["abs_trainers"] = [trainer.__class__.__name__ for trainer in trainers if trainer.node_level]
         self.metadata["dyn_trainers"] = [trainer.__class__.__name__ for trainer in trainers if not trainer.node_level]
+        self.metadata["init_time"] = time_to_str(datetime.datetime.utcnow())
 
     def get_abs_data(self, query_results, energy_components, feature_group, energy_source, aggr):
         extracted_data, power_labels, _, features = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=True, aggr=aggr)
@@ -142,6 +144,7 @@ class Pipeline():
             return False, None, None
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
         self.print_pipeline_process_end(energy_source, feature_group, abs_data, dyn_data)
+        self.metadata["last_update_time"] = time_to_str(datetime.datetime.utcnow())
         return True, abs_data, dyn_data
     
     def process_multiple_query(self, input_query_results_list, energy_components, energy_source, feature_group, aggr=True):
@@ -150,6 +153,7 @@ class Pipeline():
             return False, None, None
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
         self.print_pipeline_process_end(energy_source, feature_group, abs_data, dyn_data)
+        self.metadata["last_update_time"] = time_to_str(datetime.datetime.utcnow())
         return True, abs_data, dyn_data
 
     def print_log(self, message):

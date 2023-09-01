@@ -9,10 +9,11 @@ export KIND_REGISTRY_NAME=${KIND_REGISTRY_NAME:-kind-registry-for-training}
 export REGISTRY_PORT=${REGISTRY_PORT:-5101}
 export IMAGE_REPO=${IMAGE_REPO:-localhost:5101}
 export PROM_SERVER=${PROM_SERVER:-http://localhost:9090}
-export ENERGY_SOURCE=${ENERGY_SOURCE:-rapl}
-export VERSION=${VERSION-0.6}
-export PIPELINE_PREFIX=${PIPELINE_PREFIX-"$(uname)-$(uname -r)-$(uname -m)_"}
+export ENERGY_SOURCE=${ENERGY_SOURCE:-rapl,acpi}
+export VERSION=${VERSION-v0.6}
+export PIPELINE_PREFIX=${PIPELINE_PREFIX-"std_"}
 export CPE_DATAPATH=${CPE_DATAPATH-"$(pwd)/data"}
+export ENTRYPOINT_IMG=${ENTRYPOINT_IMG-"quay.io/sustainable_computing_io/kepler_model_server:v0.6"}
 
 mkdir -p $HOME/bin
 export PATH=$HOME/bin:$PATH
@@ -116,7 +117,12 @@ function save_benchmark() {
 }
 
 function collect_idle() {
-    docker run --rm -v "$(pwd)"/data:/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.6 query -o idle --interval 1000
+    ARGS="-o idle --interval 1000"
+    if [ -z "$NATIVE" ]; then
+        docker run --rm -v $CPE_DATAPATH:/data --network=host ${ENTRYPOINT_IMG} query ${ARGS}
+    else
+        python ../cmd/main.py query ${ARGS}|| true
+    fi
 }
 
 function collect_data() {
@@ -126,9 +132,12 @@ function collect_data() {
     kubectl apply -f benchmark/${BENCHMARK}.yaml
     wait_for_benchmark ${BENCHMARK} ${BENCHMARK_NS} ${SLEEP_TIME}
     save_benchmark ${BENCHMARK} ${BENCHMARK_NS}
-    
-    docker run --rm -v "$(pwd)"/data:/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.6 query -i ${BENCHMARK} -o ${BENCHMARK}_kepler_query -s ${PROM_SERVER}|| true
-    docker run --rm -v "$(pwd)"/data:/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.6 query -i ${BENCHMARK} -o ${BENCHMARK}_cpe_query --metric-prefix cpe -s ${PROM_SERVER}|| true
+    ARGS="-i ${BENCHMARK} -o ${BENCHMARK}_kepler_query -s ${PROM_SERVER}"
+    if [ -z "$NATIVE" ]; then
+        docker run --rm -v $CPE_DATAPATH:/data --network=host ${ENTRYPOINT_IMG} query ${ARGS}|| true
+    else
+        python ../cmd/main.py query ${ARGS}|| true
+    fi
     kubectl delete -f benchmark/${BENCHMARK}.yaml
 }
 
@@ -143,7 +152,14 @@ function train_model(){
     echo "input=$QUERY_RESPONSE"
     echo "pipeline=$PIPELINE_NAME"
     echo $CPE_DATAPATH
-    docker run --rm -v $CPE_DATAPATH:/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.6 train -i ${QUERY_RESPONSE} -p ${PIPELINE_NAME} --isolator min --energy-source ${ENERGY_SOURCE}|| true
+    ARGS="-i ${QUERY_RESPONSE} -p ${PIPELINE_NAME} --energy-source ${ENERGY_SOURCE}"
+    if [ -z "$NATIVE" ]; then
+        echo "Train with docker"
+        docker run --rm -v $CPE_DATAPATH:/data ${ENTRYPOINT_IMG} train ${ARGS}|| true
+    else
+        echo "Train natively"
+        python ../cmd/main.py train ${ARGS}|| true
+    fi
 }
 
 function prepare_cluster() {
@@ -156,9 +172,7 @@ function prepare_cluster() {
 
 function collect() {
     collect_idle
-    collect_data coremark cpe-operator-system 60
     collect_data stressng cpe-operator-system 60
-    collect_data parsec cpe-operator-system 60
 }
 
 function quick_collect() {
@@ -166,19 +180,52 @@ function quick_collect() {
 }
 
 function train() {
-    train_model coremark_kepler_query coremark_train
-    train_model stressng_kepler_query stressng_train
-    train_model parsec_kepler_query parsec_train
-    train_model coremark_kepler_query,stressng_kepler_query,parsec_kepler_query v${VERSION}_train
+    train_model stressng_kepler_query ${VERSION}
 }
 
 function quick_train() {
-    train_model sample_kepler_query v${VERSION}_sample
-}   
+    train_model sample_kepler_query ${VERSION}_sample
+}
 
 function validate() {
     BENCHMARK=$1
-    docker run --rm -v "$(pwd)"/data:/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 validate -i ${BENCHMARK}_kepler_query --benchmark ${BENCHMARK}
+    ARGS="-i ${BENCHMARK}_kepler_query --benchmark ${BENCHMARK}"
+    if [ -z "$NATIVE" ]; then
+        docker run --rm -v $CPE_DATAPATH:/data ${ENTRYPOINT_IMG} validate ${ARGS}
+    else
+        python ../cmd/main.py validate ${ARGS}|| true
+    fi
+}
+
+function _export() {
+    ID=$1
+    OUTPUT=$2
+    PUBLISHER=$3
+    INCLUDE_RAW=$4
+
+    if [ $# -lt 3 ]; then
+        echo "need arguements: [machine_id] [path_to_models] [publisher]"
+        exit 2
+    fi
+
+    PIPELINE_NAME=${PIPELINE_PREFIX}${VERSION}
+    VALIDATE_INPUT="stressng_kepler_query"
+    MAIN_COLLECT_INPUT="stressng"
+    ARGS="--id ${ID} -p ${PIPELINE_NAME}  -i ${VALIDATE_INPUT} --benchmark ${MAIN_COLLECT_INPUT} --version ${VERSION} --publisher ${PUBLISHER} ${INCLUDE_RAW}"
+    echo "${ARGS}"
+    if [ -z "$NATIVE" ]; then
+        docker run --rm -v $CPE_DATAPATHa:/data -v ${OUTPUT}:/models ${ENTRYPOINT_IMG} export ${ARGS} -o /models 
+    else
+        python ../cmd/main.py export ${ARGS} -o ${OUTPUT}
+    fi
+}
+
+function export() {
+    _export $1 $2 $3
+}
+
+function export_with_raw() {
+    _export $1 $2 $3 "--include-raw true"
 }
 
 function cleanup() {

@@ -84,6 +84,11 @@ FeatureGroups = {
     FeatureGroup.AcceleratorOnly: deep_sort(ACCELERATE_FEATURES),
 }
 
+SingleSourceFeatures = [FeatureGroup.CounterOnly.name, FeatureGroup.CgroupOnly.name, FeatureGroup.BPFOnly.name, FeatureGroup.KubeletOnly.name]
+
+def is_single_source_feature_group(fg):
+    return fg.name in SingleSourceFeatures
+
 # XGBoostRegressionTrainType
 class XGBoostRegressionTrainType(enum.Enum):
     TrainTestSplitFit = 1

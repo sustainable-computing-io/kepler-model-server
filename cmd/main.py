@@ -8,8 +8,7 @@ data_path = "/data"
 default_output_filename = "output"
 default_trainer_names = [ 'PolynomialRegressionTrainer', 'GradientBoostingRegressorTrainer', 'SGDRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer','SVRRegressorTrainer']
 default_trainers = ",".join(default_trainer_names)
-
-preprocessed_data_folder = "preprocessed_data"
+default_version = "v0.6"
 
 UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
 data_path = os.getenv("CPE_DATAPATH", data_path)
@@ -24,12 +23,13 @@ sys.path.append(src_path)
 
 from util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_HEADERS, PROM_SSL_DISABLE
 from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, node_info_column, prom_responses_to_results, TIMESTAMP_COL, feature_to_query
-from util.train_types import ModelOutputType, FeatureGroup, FeatureGroups
-from util.loader import load_json, DEFAULT_PIPELINE, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv
-from util.saver import save_json, save_csv
+from util.train_types import ModelOutputType, FeatureGroup, FeatureGroups, is_single_source_feature_group, SingleSourceFeatures
+from util.loader import load_json, DEFAULT_PIPELINE, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_machine_path, get_preprocess_folder, get_general_filename
+from util.saver import save_json, save_csv, save_train_args
 from util.config import ERROR_KEY
 from util import get_valid_feature_group_from_queries, PowerSourceMap
 from train.prom.prom_query import _range_queries
+from train.exporter import exporter
 
 
 def print_file_to_stdout(args):
@@ -201,7 +201,7 @@ def check_ot_fg(args, valid_fg):
                 print("feature group: {} is not available in your data. please choose from the following list: {}".format(args.feature_group, valid_fg_name_list))
                 exit()
         except KeyError:
-            print("invalid feature group: {}. valid feature group are {}.", (args.feature_group, [fg.name for fg in valid_fg]))
+            print("invalid feature group: {}. valid feature group are {}.".format((args.feature_group, [fg.name for fg in valid_fg])))
             exit()
     return ot, fg
 
@@ -255,14 +255,12 @@ def get_pipeline(pipeline_name, extractor, profile, isolator, abs_trainer_names,
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
     from train import DefaultExtractor, SmoothExtractor, MinIdleIsolator, NoneIsolator, DefaultProfiler, ProfileBackgroundIsolator, TrainIsolator, generate_profiles, NewPipeline
     supported_extractor = {
-        "default": DefaultExtractor(),
-        "smooth": SmoothExtractor()
+        DefaultExtractor().get_name(): DefaultExtractor(),
+        SmoothExtractor().get_name(): SmoothExtractor()
     }
     supported_isolator = {
-        "min": MinIdleIsolator(),
-        "none": NoneIsolator(),
-        MinIdleIsolator.__name__: MinIdleIsolator(),
-        NoneIsolator.__name__: NoneIsolator()
+        MinIdleIsolator().get_name(): MinIdleIsolator(),
+        NoneIsolator().get_name(): NoneIsolator(),
     }
 
     profiles = dict()
@@ -274,10 +272,10 @@ def get_pipeline(pipeline_name, extractor, profile, isolator, abs_trainer_names,
             return None
         profile_map = DefaultProfiler.process(idle_data, profile_top_path=pipeline_path)
         profiles = generate_profiles(profile_map)
-        supported_isolator["profile"] = ProfileBackgroundIsolator(profiles, idle_data)
-        supported_isolator[ProfileBackgroundIsolator.__name__] = supported_isolator["profile"]
-        supported_isolator["trainer"] = TrainIsolator(idle_data=idle_data, profiler=DefaultProfiler)
-        supported_isolator[TrainIsolator.__name__] = supported_isolator["trainer"]
+        profile_isolator =  ProfileBackgroundIsolator(profiles, idle_data)
+        trainer_isolator = TrainIsolator(idle_data=idle_data, profiler=DefaultProfiler)
+        supported_isolator[profile_isolator.get_name()] = profile_isolator
+        supported_isolator[trainer_isolator] = trainer_isolator.get_name()
 
     if isolator not in supported_isolator:
         print("isolator {} is not supported. supported isolator: {}".format(isolator, supported_isolator.keys()))
@@ -291,13 +289,6 @@ def get_pipeline(pipeline_name, extractor, profile, isolator, abs_trainer_names,
     extractor = supported_extractor[extractor]
     pipeline = NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=energy_sources ,valid_feature_groups=valid_feature_groups)
     return pipeline
-
-def get_preprocessed_data_filename(energy_source, fg, ot):
-    if ot == ModelOutputType.DynPower:
-        return "{}_{}_dyn_data".format(energy_source, fg.name)
-    if ot == ModelOutputType.AbsPower:
-        return "{}_{}_abs_data".format(energy_source, fg.name)
-    return None
 
 def extract(args):
     from train import DefaultExtractor, SmoothExtractor
@@ -381,17 +372,17 @@ def train(args):
                     elif dyn_data is not None:
                         assert_train(trainer, dyn_data, energy_components)
             # save data
-            data_saved_path = os.path.join(pipeline.path, preprocessed_data_folder)
+            data_saved_path = get_preprocess_folder(pipeline.path)
             if abs_data is not None:
-                save_csv(data_saved_path, get_preprocessed_data_filename(energy_source, feature_group, ModelOutputType.AbsPower), abs_data)
+                save_csv(data_saved_path, get_general_filename("preprocess", energy_source, feature_group, ModelOutputType.AbsPower, args.extractor), abs_data)
             if dyn_data is not None:
-                save_csv(data_saved_path, get_preprocessed_data_filename(energy_source, feature_group, ModelOutputType.DynPower), dyn_data)
+                save_csv(data_saved_path, get_general_filename("preprocess", energy_source, feature_group, ModelOutputType.DynPower, args.extractor, args.isolator), dyn_data)
 
 
         print("=========== Train {} Summary ============".format(energy_source))
         # save args 
         argparse_dict = vars(args)
-        save_json(pipeline.path, "train_arguments", argparse_dict)
+        save_train_args(pipeline.path, argparse_dict)
         print("Train args:", argparse_dict)
         # save metadata
         pipeline.save_metadata()
@@ -400,10 +391,10 @@ def train(args):
         print_cols = ["feature_group", "model_name", "mae"]
         print("AbsPower pipeline results:")
         metadata_df = load_pipeline_metadata(pipeline.path, energy_source, ModelOutputType.AbsPower.name)
-        print(metadata_df.sort_values(by=ERROR_KEY)[print_cols])
+        print(metadata_df.sort_values(by=[ERROR_KEY])[print_cols])
         print("DynPower pipeline results:")
         metadata_df = load_pipeline_metadata(pipeline.path, energy_source, ModelOutputType.DynPower.name)
-        print(metadata_df.sort_values(by=ERROR_KEY)[print_cols])
+        print(metadata_df.sort_values(by=[ERROR_KEY])[print_cols])
 
         warnings.resetwarnings()
 
@@ -466,7 +457,7 @@ def estimate(args):
                 for model_name in model_names:
                     model_path = os.path.join(group_path, model_name)
                     model = load_model(model_path)
-                    if args.output_type == ModelOutputType.AbsPower:
+                    if args.output_type == ModelOutputType.AbsPower.name:
                         data = abs_data
                     else:
                         data = dyn_data
@@ -506,10 +497,12 @@ def estimate(args):
             # save model
             import shutil
             best_model = "{}_model".format(energy_source)
-            shutil.make_archive(os.path.join(output_folder, best_model), 'zip', best_model_path)
-            # save result
-            estimation_result = "{}_estimation_result".format(energy_source)
-            save_csv(output_folder, estimation_result, best_result)
+            if not args.id:
+                # not only for export
+                shutil.make_archive(os.path.join(output_folder, best_model), 'zip', best_model_path)
+                # save result
+                estimation_result = "{}_estimation_result".format(energy_source)
+                save_csv(output_folder, estimation_result, best_result)
             best_result_map[energy_source] = best_result
             path_splits = best_model_path.split("/")
             best_model_id_map[energy_source] = "{} using {}".format(path_splits[-1], path_splits[-2])
@@ -541,6 +534,7 @@ def _ts_plot(data, cols, title, output_folder, name, labels=None, subtitles=None
     plt.tight_layout()
     filename = os.path.join(output_folder, name + ".png")
     fig.savefig(filename)
+    plt.close()
 
 def _feature_power_plot(data, model_id, output_type, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, name):
     plot_height = 5
@@ -578,8 +572,13 @@ def _feature_power_plot(data, model_id, output_type, energy_source, feature_cols
     plt.tight_layout()
     filename = os.path.join(output_folder, name + ".png")
     fig.savefig(filename)
+    plt.close()
 
 def _summary_plot(energy_source, summary_df, output_folder, name):
+    if len(summary_df) == 0:
+        print("no summary data to plot")
+        return
+    
     plot_height = 3
     plot_width = 20
     
@@ -593,7 +592,7 @@ def _summary_plot(energy_source, summary_df, output_folder, name):
     for i in range(0, col_num):
         component = energy_components[i]
         data = summary_df[(summary_df["energy_source"]==energy_source) & (summary_df["energy_component"]==component)]
-        data = data.sort_values(by=["MAE"])
+        data = data.sort_values(by=["Feature Group", "MAE"])
         if col_num == 1:
             ax = axes
         else:
@@ -609,6 +608,7 @@ def _summary_plot(energy_source, summary_df, output_folder, name):
     plt.tight_layout()
     filename = os.path.join(output_folder, name + ".png")
     fig.savefig(filename)
+    plt.close()
 
 def plot(args):
     pipeline_name = DEFAULT_PIPELINE if not args.pipeline_name else args.pipeline_name
@@ -620,20 +620,24 @@ def plot(args):
     ot, fg = check_ot_fg(args, valid_fg)
     if fg is not None: 
         valid_fg = [fg]
+    print("Plot:", args)
     energy_sources = args.energy_source.split(",")
     output_folder = os.path.join(data_path, args.output)
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
     if args.target_data == "preprocess":
-        data_saved_path = os.path.join(pipeline_path, preprocessed_data_folder)
+        data_saved_path = get_preprocess_folder(pipeline_path)
         feature_plot = []
         for energy_source in energy_sources:
             energy_plot = False
             for fg in valid_fg:
-                if energy_plot and fg.name in feature_plot:
-                    # no need to plot
+                if (len(valid_fg) > 1 and not is_single_source_feature_group(fg)) or (energy_plot and fg.name in feature_plot):
+                    # no need to plot if it is a mixed source or already plotted
                     continue
-                data_filename = get_preprocessed_data_filename(energy_source, fg, ot)
+                data_filename = get_general_filename(args.target_data, energy_source, fg, ot, args.extractor, args.isolator)
+                if data_filename is None:
+                    print("cannot get preprocessed data for ", ot.name)
+                    return
                 data = load_csv(data_saved_path, data_filename)
                 if data is None:
                     print("cannot load data from {}/{}".format(data_saved_path, data_filename))
@@ -642,16 +646,17 @@ def plot(args):
                 feature_cols = FeatureGroups[fg] 
                 power_cols = [col for col in data.columns if "power" in col]
                 feature_data = data.groupby([TIMESTAMP_COL]).sum()
-                _ts_plot(feature_data, feature_cols, "Feature group: {}".format(fg.name), output_folder, "{}_{}_{}".format(args.target_data, ot.name, fg.name))
+                _ts_plot(feature_data, feature_cols, "Feature group: {}".format(fg.name), output_folder, data_filename)
                 if not energy_plot:
                     power_data = data.groupby([TIMESTAMP_COL]).max()
-                    _ts_plot(power_data, power_cols, "Power source: {}".format(energy_source), output_folder, "{}_{}_{}".format(args.target_data, ot.name, energy_source), ylabel="Power (W)")
+                    _ts_plot(power_data, power_cols, "Power source: {}".format(energy_source), output_folder, data_filename, ylabel="Power (W)")
     elif args.target_data == "estimate":
         from estimate import default_predicted_col_func
         from sklearn.preprocessing import MinMaxScaler
 
         best_result_map, power_labels_map, best_model_id_map, _ = estimate(args)
         for energy_source, best_restult in best_result_map.items():
+            best_restult = best_restult.reset_index()
             power_labels = power_labels_map[energy_source]
             model_id = best_model_id_map[energy_source]
             subtitles = []
@@ -669,24 +674,79 @@ def plot(args):
                 cols += [[energy_component, predicted_power_colname]]
                 actual_power_cols += [energy_component]
                 predicted_power_cols += [predicted_power_colname]
-            data.to_csv("tmp.csv")
+            data_filename = get_general_filename(args.target_data, energy_source, fg, ot, args.extractor, args.isolator)
             # plot prediction
-            _ts_plot(data, cols, "{} {} Prediction Result \n by {}".format(energy_source, ot.name, model_id), output_folder, "{}_{}_{}_{}".format(args.target_data, ot.name, energy_source, model_id), subtitles=subtitles, labels=plot_labels, ylabel="Power (W)")
+            _ts_plot(data, cols, "{} {} Prediction Result \n by {}".format(energy_source, ot.name, model_id), output_folder, "{}_{}".format(data_filename, model_id), subtitles=subtitles, labels=plot_labels, ylabel="Power (W)")
             # plot correlation to utilization if feature group is set
             if fg is not None:
                 feature_cols = FeatureGroups[fg]
                 scaler = MinMaxScaler()
                 data[feature_cols] = best_restult[[TIMESTAMP_COL] + feature_cols].groupby([TIMESTAMP_COL]).sum().sort_index()
                 data[feature_cols] = scaler.fit_transform(data[feature_cols])
-                _feature_power_plot(data, model_id, ot.name, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, "{}_{}_{}_{}_corr".format(args.target_data, ot.name, energy_source, model_id))
+                _feature_power_plot(data, model_id, ot.name, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, "{}_{}_corr".format(data_filename, model_id))
     elif args.target_data == "error":
         from estimate import default_predicted_col_func
         from sklearn.preprocessing import MinMaxScaler
         _, _, _, summary_df = estimate(args)
         for energy_source in energy_sources:
-            name = "{}_{}_{}_error".format(args.target_data, ot.name, energy_source)
-            _summary_plot(energy_source, summary_df, output_folder, name)
+            data_filename = get_general_filename(args.target_data, energy_source, fg, ot, args.extractor, args.isolator)
+            _summary_plot(energy_source, summary_df, output_folder, data_filename)
 
+def export(args):
+    if not args.id:
+        print("need to specify --id")
+        exit()
+
+    if not args.pipeline_name:
+        print("need to specify pipeline name via -p or --pipeline-name")
+        exit()
+
+    if args.output == default_output_filename:
+        print("need to specify --output for /models path")
+        exit()
+    output_path = args.output  
+
+    if not args.publisher:
+        print("need to specify --publisher")
+        exit()
+
+    if not args.benchmark:
+        print("need to specify --benchmark to extract collection time")
+        exit()
+
+    pipeline_name = args.pipeline_name 
+    machine_id = args.id
+    pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
+    machine_path = get_machine_path(output_path, args.version, machine_id)
+
+    collect_date, _ = extract_time(args.benchmark)
+    exporter.export(pipeline_path, machine_path, version=args.version, publisher=args.publisher, collect_date=collect_date, include_raw=args.include_raw)
+
+    args.energy_source = ",".join(PowerSourceMap.keys())
+
+    for ot in ModelOutputType:
+        args.output_type = ot.name
+
+        # plot preprocess data
+        args.target_data = "preprocess"
+        args.output = get_preprocess_folder(machine_path)
+        plot(args)
+        
+        # plot error
+        args.target_data = "error"
+        args.output = os.path.join(machine_path, "error_summary")
+        plot(args)
+
+
+    args.target_data = "estimate"
+    args.output = os.path.join(machine_path, "best_estimation")
+    for ot in ModelOutputType:
+        args.output_type = ot.name
+        # plot estimate
+        for feature_group in SingleSourceFeatures:
+            args.feature_group = feature_group
+            plot(args)
+            
 
 if __name__ == "__main__":
     # Create an ArgumentParser object
@@ -706,7 +766,7 @@ if __name__ == "__main__":
     # Train arguments
     parser.add_argument("-p", "--pipeline-name", type=str, help="Specify pipeline name.")
     parser.add_argument("--extractor", type=str, help="Specify extractor name (default, smooth).", default="default")
-    parser.add_argument("--isolator", type=str, help="Specify isolator name (none, min, profile, trainer).", default="none")
+    parser.add_argument("--isolator", type=str, help="Specify isolator name (none, min, profile, trainer).", default="min")
     parser.add_argument("--profile", type=str, help="Specify profile input (required for trainer and profile isolator).")
     parser.add_argument("-e", "--energy-source", type=str, help="Specify energy source.", default="rapl")
     parser.add_argument("--abs-trainers", type=str, help="Specify trainer names (use comma(,) as delimiter).", default=default_trainers)
@@ -723,6 +783,11 @@ if __name__ == "__main__":
     # Plot arguments
     parser.add_argument("--target-data", type=str, help="Speficy target plot data (preprocess, estimate)")
     
+    # Export arguments
+    parser.add_argument("--id", type=str, help="specify machine id")
+    parser.add_argument("--version", type=str, help="Specify model server version.", default=default_version)
+    parser.add_argument("--publisher", type=str, help="Specify github account of model publisher")
+    parser.add_argument("--include-raw", type=bool, help="Include raw query data")
 
     # Parse the command-line arguments
     args = parser.parse_args()

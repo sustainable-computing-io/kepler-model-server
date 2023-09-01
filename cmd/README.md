@@ -134,3 +134,10 @@ optional arguments:
     docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data error -i output.json
     ```
         
+5. Export
+
+    ```bash
+    export KEPLER_MODEL_DB_MODELS_PATH= < path to kepler-model-db/models >
+    docker run --rm -v "${KEPLER_MODEL_DB_MODELS_PATH}":output -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler-model-server:v0.6 export
+    ```
+
