@@ -1,6 +1,8 @@
 # Kepler Power Model
+[Get started with Kepler Model Server.](https://sustainable-computing.io/kepler_model_server/get_started/)
+
 This repository contains source code related to Kepler power model. The modules in this reposioty connects to [core Kepler project](https://github.com/sustainable-computing-io/kepler) and [kepler-model-db](https://github.com/sustainable-computing-io/kepler-model-db) as below.
-![](./doc/fig/model-server-components-simplified.png)
+![](./fig/model-server-components-simplified.png)
 
 ## Usage
 ### Getting Powers from Estimator

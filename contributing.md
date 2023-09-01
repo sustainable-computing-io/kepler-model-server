@@ -1,35 +1,38 @@
 # Contributing
+[Get started with Kepler Model Server.](https://sustainable-computing.io/kepler_model_server/get_started/)
 
-Roadmap:
-- [ ] Build default pipelines for all kinds and forms of models and input types
-- [ ] Increase accessibility to the model
-  - [ ] Enable post-based approach to provide model weights via prometheus
-        Checking the model weights using OpenTelemetry
-        Call 'docker-compose up' at project root. Prometheus metrics will be scraped and converted to OpenTelemetry Metrics. These metrics will be shown in the log and will be exported to a otlp endpoint. A Honeycomb.io dataset is currently in the works.
-  - [ ] Plugin Cloud object storage
+- The main source codes are in [src directory](./src/).
 
-The main source codes are in [server directory](./server/).
-```bash
-server
-├── model_server.py # program endpoint for serving API routes
-├── online_trainer.py # program endpoint for periodic online training
-├── prom # prometheus-related functions
-├── train # model definition and online training pipelines
-└── util # general utility functions 
-``` 
+## Improve components in training pipelines
+Learn more details about [Training Pipeline](https://sustainable-computing.io/kepler_model_server/pipeline/)
 
-#### Implementing Pipelines
-Check details in [here](./doc/train_pipeline.md)
+### Introduce new feature group
+- Define new feature group name `FeatureGroup` and update metric list map `FeatureGroups` in [train types](./src/util/train_types.py)
 
-#### Implementing test case
-Check the [tests directory](./tests/)
-```bash
-├── tests
-│   ├── test_models # initial model for testing
-│   ├── download # output path when calling API endpoints
-│   └── query_data # sample query data for testing the pipelines
-``` 
+### Introduce new energy sources
+- Define new energy source map `PowerSourceMap` in [train types](./src/util/train_types.py)
 
-#### Providing offline trained model
-- Check model format in [here](./doc/model_format.md)
-- To use pipeline framework, check offline train example in [train_test.py](./tests/train_test.py)
+### Improve preprocessing method
+- [extractor](./src/train/extractor/): convert from numerically aggregated metrics to per-second value
+- [isolator](./src/train/isolator/): isolate background (idle) power from the collected power
+
+### Introduce new learning method
+- [trainer](./src/train/trainer/): apply learning method to build a model using extracted data and isolated data
+
+## Model training
+Learn more details about [model training](./model_training/)
+
+### Introduce new benchmarks
+The new benchmark must be supported by [CPE operator](https://github.com/IBM/cpe-operator) for automation.
+Find [examples](https://github.com/IBM/cpe-operator/tree/main/examples).
+
+`Benchmark` CR has a dependency on `BenchmarkOperator`. Default `BechmarkOperator` is to support [batch/v1/Job API](https://github.com/IBM/cpe-operator/blob/main/examples/none/cpe_v1_none_operator.yaml).
+
+### Add new trained models
+TBD
+
+## Source improvement
+Any improvement in `src` and `cmd`.
+
+## Test and CI improvement
+Any improvement in `tests`, `dockerfiles`, `manifests` and `.github/workflows`
