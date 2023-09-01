@@ -5,6 +5,7 @@ from train_types import PowerSourceMap
 
 container_id_colname = "id"
 all_container_key = "all containers"
+accelerator_type_colname = "type" 
 
 node_level_index = [TIMESTAMP_COL]
 pkg_level_index = [TIMESTAMP_COL, pkg_id_column]

@@ -19,7 +19,8 @@ CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgro
 BPF_FEATURES = ["bpf_cpu_time_us"]
 IRQ_FEATURES = ["bpf_block_irq", "bpf_net_rx_irq", "bpf_net_tx_irq"]
 KUBELET_FEATURES =['kubelet_memory_bytes', 'kubelet_cpu_usage']
-WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + KUBELET_FEATURES
+ACCELERATE_FEATURES = ['accelerator_intel_qat']
+WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + KUBELET_FEATURES + ACCELERATE_FEATURES
 BASIC_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + KUBELET_FEATURES
 
 PowerSourceMap = {
@@ -38,17 +39,18 @@ CATEGORICAL_LABEL_TO_VOCAB = {
                     }
 
 class FeatureGroup(enum.Enum):
-   Full = 1
-   WorkloadOnly = 2
-   CounterOnly = 3
-   CgroupOnly = 4
-   BPFOnly = 5
-   KubeletOnly = 6
-   IRQOnly = 7
-   CounterIRQCombined = 8
-   Basic = 9
-   BPFIRQ = 10
-   Unknown = 99
+    Full = 1
+    WorkloadOnly = 2
+    CounterOnly = 3
+    CgroupOnly = 4
+    BPFOnly = 5
+    KubeletOnly = 6
+    IRQOnly = 7
+    CounterIRQCombined = 8
+    Basic = 9
+    BPFIRQ = 10
+    AcceleratorOnly = 11
+    Unknown = 99
 
 class EnergyComponentLabelGroup(enum.Enum):
     PackageEnergyComponentOnly = 1
@@ -79,6 +81,7 @@ FeatureGroups = {
     FeatureGroup.BPFIRQ: deep_sort(BPF_FEATURES + IRQ_FEATURES),
     FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + IRQ_FEATURES),
     FeatureGroup.Basic: deep_sort(BASIC_FEATURES),
+    FeatureGroup.AcceleratorOnly: deep_sort(ACCELERATE_FEATURES),
 }
 
 SingleSourceFeatures = [FeatureGroup.CounterOnly.name, FeatureGroup.CgroupOnly.name, FeatureGroup.BPFOnly.name, FeatureGroup.KubeletOnly.name]

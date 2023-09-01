@@ -22,7 +22,7 @@ from util.prom_types import TIMESTAMP_COL
 from isolator_test import test_isolators, get_isolate_results, isolator_output_path
 from extractor_test import test_extractors, get_extract_results, test_energy_source, get_expected_power_columns, extractor_output_path
 
-# extract_result, power_columns, corr = extractor.extract(query_results, energy_components, feature_group, energy_source, node_level) 
+# extract_result, power_columns, corr, features = extractor.extract(query_results, energy_components, feature_group, energy_source, node_level) 
 # test_data_with_label = extract_result // abs
 # test_data_with_label = isolator.isolate(extract_result, _energy_source, label_cols=power_columns) // dyn
 def test_model(group_path, model_name, test_data_with_label, power_columns, power_range = None):

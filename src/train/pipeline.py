@@ -53,13 +53,22 @@ class Pipeline():
         self.metadata["init_time"] = time_to_str(datetime.datetime.utcnow())
 
     def get_abs_data(self, query_results, energy_components, feature_group, energy_source, aggr):
-        extracted_data, power_labels, _ = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=True, aggr=aggr)
+        extracted_data, power_labels, _, features = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=True, aggr=aggr)
+        self.process_accelerator_feature(features)
         return extracted_data, power_labels
     
     def get_dyn_data(self, query_results, energy_components, feature_group, energy_source):
-        extracted_data, power_labels, _ = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=False)
+        extracted_data, power_labels, _, features = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=False)
+        if extracted_data is None or power_labels is None:
+            return None
+        self.process_accelerator_feature(features)
         isolated_data = self.isolator.isolate(extracted_data, label_cols=power_labels, energy_source=energy_source)
-        return isolated_data
+        return isolated_data 
+    
+    def process_accelerator_feature(self, features):
+        if features is not None and len(features) != 0:
+            for trainer in self.trainers:
+                trainer.features = features
     
     def prepare_data(self, input_query_results, energy_components, energy_source, feature_group, aggr=True):
         query_results = input_query_results.copy()
@@ -117,10 +126,10 @@ class Pipeline():
                     continue
                 if trainer.energy_source != energy_source:
                     continue
-                if trainer.node_level:
+                if trainer.node_level and abs_data is not None:
                     future = executor.submit(run_train, trainer, abs_data, power_labels, pipeline_lock=self.lock)
                     futures += [future]
-                else:
+                elif dyn_data is not None:
                     future = executor.submit(run_train, trainer, dyn_data, power_labels, pipeline_lock=self.lock)
                     futures += [future]
             self.print_log('Waiting for {} trainers to complete...'.format(len(futures)))
@@ -131,7 +140,7 @@ class Pipeline():
     def process(self, input_query_results, energy_components, energy_source, feature_group, aggr=True):
         self.print_log("{} start processing.".format(feature_group))
         abs_data, dyn_data, power_labels = self.prepare_data(input_query_results, energy_components, energy_source, feature_group, aggr)
-        if abs_data is None or dyn_data is None:
+        if abs_data is None and dyn_data is None:
             return False, None, None
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
         self.print_pipeline_process_end(energy_source, feature_group, abs_data, dyn_data)
@@ -140,8 +149,8 @@ class Pipeline():
     
     def process_multiple_query(self, input_query_results_list, energy_components, energy_source, feature_group, aggr=True):
         abs_data, dyn_data, power_labels = self.prepare_data_from_input_list(input_query_results_list, energy_components, energy_source, feature_group, aggr)
-        if abs_data is None or dyn_data is None or len(abs_data) == 0 or len(dyn_data) == 0:
-            return False, None, None   
+        if (abs_data is None or len(abs_data) == 0) and (dyn_data is None or len(dyn_data) == 0):
+            return False, None, None
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
         self.print_pipeline_process_end(energy_source, feature_group, abs_data, dyn_data)
         self.metadata["last_update_time"] = time_to_str(datetime.datetime.utcnow())
@@ -158,31 +167,38 @@ class Pipeline():
                 save_pipeline_metadata(self.path, self.metadata, energy_source, model_type, metadata_df)
     
     def print_pipeline_process_end(self, energy_source, feature_group, abs_data, dyn_data):
-        abs_trainer_names = set([trainer.__class__.__name__ for trainer in self.trainers if trainer.node_level])
-        dyn_trainer_names = set([trainer.__class__.__name__ for trainer in self.trainers if not trainer.node_level])
+        abs_messages = []
+        dyn_messages = []
+        if abs_data is not None:
+            abs_trainer_names = set([trainer.__class__.__name__ for trainer in self.trainers if trainer.node_level])
+            abs_metadata_df, abs_group_path = get_metadata_df(model_toppath, ModelOutputType.AbsPower.name, feature_group, energy_source, self.name)
+            abs_min_mae = -1 if len(abs_metadata_df) == 0 else abs_metadata_df.loc[abs_metadata_df[ERROR_KEY].idxmin()][ERROR_KEY]
+            abs_messages = [
+                "Pipeline {} has finished for modeling {} power by {} feature".format(self.name, energy_source, feature_group),
+                "    Extractor: {}".format(self.metadata["extractor"]),
+                "    Isolator: {}".format(self.metadata["isolator"]),
+                "Absolute Power Modeling:",
+                "    Input data size: {}".format(len(abs_data)),
+                "    Model Trainers: {}".format(abs_trainer_names),
+                "    Output: {}".format(abs_group_path),
+                "    Min {}: {}".format(ERROR_KEY, abs_min_mae),
+                " "
+            ]
 
-        abs_metadata_df, abs_group_path = get_metadata_df(model_toppath, ModelOutputType.AbsPower.name, feature_group, energy_source, self.name)
-        dyn_metadata_df, dyn_group_path = get_metadata_df(model_toppath, ModelOutputType.DynPower.name, feature_group, energy_source, self.name)
+        if dyn_data is not None:
+            dyn_trainer_names = set([trainer.__class__.__name__ for trainer in self.trainers if not trainer.node_level])
+            dyn_metadata_df, dyn_group_path = get_metadata_df(model_toppath, ModelOutputType.DynPower.name, feature_group, energy_source, self.name)
+            dyn_min_mae = -1 if len(dyn_metadata_df) == 0 else dyn_metadata_df.loc[dyn_metadata_df[ERROR_KEY].idxmin()][ERROR_KEY]
 
-        abs_min_mae = -1 if len(abs_metadata_df) == 0 else abs_metadata_df.loc[abs_metadata_df[ERROR_KEY].idxmin()][ERROR_KEY]
-        dyn_min_mae = -1 if len(dyn_metadata_df) == 0 else dyn_metadata_df.loc[dyn_metadata_df[ERROR_KEY].idxmin()][ERROR_KEY]
+            dyn_messages = [
+                "Dynamic Power Modeling:",
+                "    Input data size: {}".format(len(dyn_data)),
+                "    Model Trainers: {}".format(dyn_trainer_names),
+                "    Output: {}".format(dyn_group_path),
+                "    Min {}: {}".format(ERROR_KEY, dyn_min_mae),
+            ]
 
-        messages = [
-            "Pipeline {} has finished for modeling {} power by {} feature".format(self.name, energy_source, feature_group),
-            "    Extractor: {}".format(self.metadata["extractor"]),
-            "    Isolator: {}".format(self.metadata["isolator"]),
-            "Absolute Power Modeling:",
-            "    Input data size: {}".format(len(abs_data)),
-            "    Model Trainers: {}".format(abs_trainer_names),
-            "    Output: {}".format(abs_group_path),
-            "    Min {}: {}".format(ERROR_KEY, abs_min_mae),
-            " ",
-            "Dynamic Power Modeling:",
-            "    Input data size: {}".format(len(dyn_data)),
-            "    Model Trainers: {}".format(dyn_trainer_names),
-            "    Output: {}".format(dyn_group_path),
-            "    Min {}: {}".format(ERROR_KEY, dyn_min_mae),
-        ]
+        messages = abs_messages + dyn_messages
         print_bounded_multiline_message(messages)
 
     def archive_pipeline(self):
