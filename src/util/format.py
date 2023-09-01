@@ -19,3 +19,5 @@ def print_bounded_multiline_message(input_lines, maxlength=200):
     
     print(border)
 
+def time_to_str(time):
+    return time.strftime("%Y-%m-%d %H:%M:%S")
