@@ -1,4 +1,4 @@
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MaxAbsScaler
 from sklearn.svm import SVR
 from sklearn.pipeline import make_pipeline
 
@@ -12,7 +12,7 @@ from trainer.scikit import ScikitTrainer
 
 class SVRRegressorTrainer(ScikitTrainer):
     def __init__(self, energy_components, feature_group, energy_source, node_level, pipeline_name):
-        super(SVRRegressorTrainer, self).__init__(energy_components, feature_group, energy_source, node_level, scaler_type="standard", pipeline_name=pipeline_name)
+        super(SVRRegressorTrainer, self).__init__(energy_components, feature_group, energy_source, node_level, pipeline_name=pipeline_name)
         self.fe_files = []
     
     def init_model(self):

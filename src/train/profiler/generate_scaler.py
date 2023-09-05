@@ -25,7 +25,7 @@ sys.path.append(train_path)
 sys.path.append(util_path)
 sys.path.append(tool_path)
 
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import MaxAbsScaler
 
 from train import DefaultExtractor, node_info_column, FeatureGroups, FeatureGroup, TIMESTAMP_COL
 from util.train_types import SYSTEM_FEATURES
@@ -36,13 +36,10 @@ import pickle
 
 extractor = DefaultExtractor()
 
-minmax_scaler_top_path = os.path.join(profile_path, '..', 'minmax_scaler')
-standard_scaler_top_path = os.path.join(profile_path, '..', 'standard_scaler')
+max_scaler_top_path = os.path.join(profile_path, '..', 'max_scaler')
 
-if not os.path.exists(minmax_scaler_top_path):
-    os.mkdir(minmax_scaler_top_path)
-if not os.path.exists(standard_scaler_top_path):
-    os.mkdir(standard_scaler_top_path)
+if not os.path.exists(max_scaler_top_path):
+    os.mkdir(max_scaler_top_path)
 
 def read_query_results(query_path):
     results = dict()
@@ -88,9 +85,6 @@ def process(query_results):
             node_types = pd.unique(feature_data[node_info_column])
             # filter and extract features
             x_values = feature_data[feature_data[node_info_column]==node_type][features].values
-            standard_scaler = StandardScaler()
-            minmax_scaler = MinMaxScaler()
-            standard_scaler.fit(x_values)
-            minmax_scaler.fit(x_values)
-            save_scaler(standard_scaler, node_type, feature_group_name, standard_scaler_top_path)
-            save_scaler(minmax_scaler, node_type, feature_group_name, minmax_scaler_top_path)
+            max_scaler = MaxAbsScaler()
+            max_scaler.fit(x_values)
+            save_scaler(max_scaler, node_type, feature_group_name, max_scaler_top_path)

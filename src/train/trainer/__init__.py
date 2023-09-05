@@ -23,7 +23,7 @@ def get_assured_checkpoint_path(group_path, assure=True):
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import MaxAbsScaler
 
 def normalize_and_split(X_values, y_values, scaler, test_size=0.1):
     features = scaler.transform(X_values)
@@ -32,7 +32,7 @@ def normalize_and_split(X_values, y_values, scaler, test_size=0.1):
 
 
 class Trainer(metaclass=ABCMeta):
-    def __init__(self, model_class, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="minmax"):
+    def __init__(self, model_class, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="maxabs"):
         self.energy_components = energy_components
         self.feature_group_name = feature_group
         self.feature_group = FeatureGroup[feature_group]
@@ -133,10 +133,7 @@ class Trainer(metaclass=ABCMeta):
                 self.print_log("fit scaler to latest data".format(node_type, self.feature_group_name))
                 # no profiled scaler
                 x_values = node_type_filtered_data[self.features].values
-                if self.scaler_type == "standard":
-                    self.node_scalers[node_type] = StandardScaler()
-                else:
-                    self.node_scalers[node_type] = MinMaxScaler()
+                self.node_scalers[node_type] = MaxAbsScaler()
                 self.node_scalers[node_type].fit(x_values)
             
             X_test_map = dict()

@@ -652,7 +652,7 @@ def plot(args):
                     _ts_plot(power_data, power_cols, "Power source: {}".format(energy_source), output_folder, data_filename, ylabel="Power (W)")
     elif args.target_data == "estimate":
         from estimate import default_predicted_col_func
-        from sklearn.preprocessing import MinMaxScaler
+        from sklearn.preprocessing import MaxAbsScaler
 
         best_result_map, power_labels_map, best_model_id_map, _ = estimate(args)
         for energy_source, best_restult in best_result_map.items():
@@ -680,13 +680,13 @@ def plot(args):
             # plot correlation to utilization if feature group is set
             if fg is not None:
                 feature_cols = FeatureGroups[fg]
-                scaler = MinMaxScaler()
+                scaler = MaxAbsScaler()
                 data[feature_cols] = best_restult[[TIMESTAMP_COL] + feature_cols].groupby([TIMESTAMP_COL]).sum().sort_index()
                 data[feature_cols] = scaler.fit_transform(data[feature_cols])
                 _feature_power_plot(data, model_id, ot.name, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, "{}_{}_corr".format(data_filename, model_id))
     elif args.target_data == "error":
         from estimate import default_predicted_col_func
-        from sklearn.preprocessing import MinMaxScaler
+        from sklearn.preprocessing import MaxAbsScaler
         _, _, _, summary_df = estimate(args)
         for energy_source in energy_sources:
             data_filename = get_general_filename(args.target_data, energy_source, fg, ot, args.extractor, args.isolator)

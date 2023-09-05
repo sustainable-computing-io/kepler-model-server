@@ -19,7 +19,7 @@ from util import assure_path, FeatureGroups, FeatureGroup, PowerSourceMap
 from util.prom_types import TIMESTAMP_COL
 from util.extract_types import col_to_component
 
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MaxAbsScaler
 
 from train.extractor.preprocess import get_extracted_power_labels
 from estimate import get_label_power_colname
@@ -31,7 +31,7 @@ def _fig_filename(figname, save_path=plot_output_path):
     return os.path.join(save_path, figname + ".png")
 
 def preprocess_data(df):
-    scaler = MinMaxScaler()
+    scaler = MaxAbsScaler()
     df = df.reset_index()
     normalized_data = scaler.fit_transform(df.values)
     normalized_df = pd.DataFrame(normalized_data, columns=df.columns, index=df.index)
