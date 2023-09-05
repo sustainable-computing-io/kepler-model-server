@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - server/dockerfiles/requirements.txt
-      - server/dockerfiles/Dockerfile.base
+      - dockerfiles/requirements.txt
+      - dockerfiles/Dockerfile.base
 
 jobs:
   build:

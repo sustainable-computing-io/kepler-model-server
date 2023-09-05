@@ -3,6 +3,10 @@
 Use kepler model server function as a standalone docker container.
 
 ```
+usage: main.py [-h] [-i INPUT] [-o OUTPUT] [-s SERVER] [--interval INTERVAL] [--step STEP] [--metric-prefix METRIC_PREFIX] [-p PIPELINE_NAME] [--extractor EXTRACTOR] [--isolator ISOLATOR] [--profile PROFILE] [-e ENERGY_SOURCE] [--abs-trainers ABS_TRAINERS]
+               [--dyn-trainers DYN_TRAINERS] [--benchmark BENCHMARK] [-ot OUTPUT_TYPE] [-fg FEATURE_GROUP] [--model-name MODEL_NAME] [--target-data TARGET_DATA] [--id ID] [--version VERSION] [--publisher PUBLISHER] [--include-raw INCLUDE_RAW]
+               command
+
 Kepler model server entrypoint
 
 positional arguments:
@@ -40,6 +44,14 @@ optional arguments:
                         Specify target feature group for energy estimation.
   --model-name MODEL_NAME
                         Specify target model name for energy estimation.
+  --target-data TARGET_DATA
+                        Speficy target plot data (preprocess, estimate)
+  --id ID               specify machine id
+  --version VERSION     Specify model server version.
+  --publisher PUBLISHER
+                        Specify github account of model publisher
+  --include-raw INCLUDE_RAW
+                        Include raw query data
 ```
 
 ## Get started
@@ -51,13 +63,13 @@ optional arguments:
     Linux:
 
     ```bash
-    docker run --rm -v "$(pwd)":/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.6 query
+    docker run --rm -v "$(pwd)/data":/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.6 query
     ```
 
     mac OS:
 
     ```bash
-    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 query -s http://host.docker.internal:9090
+    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 query -s http://host.docker.internal:9090
     ```
 
     output of query will be saved as `output.json` by default
@@ -65,7 +77,7 @@ optional arguments:
 3. Run training pipeline
 
     ```bash
-    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 train -i output.json
+    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 train -i output_kepler_query
     ```
 
     output of trained model will be under pipeline folder `default` or can be specified by `-p`
@@ -97,47 +109,51 @@ optional arguments:
 4. Test estimation
 
     ```bash
-    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 estimate -i output.json
+    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 estimate -i output_kepler_query
     ```
 
     output will be under the folder `output`.
 
     ```
     output
-    ├── estimation_result.csv
-    └── model.zip
+    ├── rapl_estimation_result.csv.csv
+    └── rapl_model.zip
     ```
 
-5. Plot and save image
+5. Plot and save image 
   
    5.1. Plot extracted and isolated data (`preprocess`)
 
       ```bash
-      docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data preprocess
+      docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data preprocess
       ```
 
    5.2. Plot best prediction result (`estimate`)
 
       ```bash
-      docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data estimate -i output.json
+      docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data estimate -i output_kepler_query
       ```
 
    5.3. Plot prediction result on specific trainer model and feature group (`estimate`)
 
       ```bash
-      docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data estimate -i output.json --model-name GradientBoostingRegressorTrainer_1 --feature-group BPFOnly
+      docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data estimate -i output_kepler_query --model-name GradientBoostingRegressorTrainer_1 --feature-group BPFOnly
       ```
 
    5.4. Plot prediction error comparison among feature group and trainer model (`error`)
 
     ```bash
-    docker run --rm -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data error -i output.json
+    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.6 plot --target-data error -i output_kepler_query
     ```
-        
+
+    output will be under the folder `output`.
+
 5. Export
 
     ```bash
-    export KEPLER_MODEL_DB_MODELS_PATH= < path to kepler-model-db/models >
-    docker run --rm -v "${KEPLER_MODEL_DB_MODELS_PATH}":output -v "$(pwd)":/data quay.io/sustainable_computing_io/kepler-model-server:v0.6 export
+    KEPLER_MODEL_DB_MODELS_PATH= < path to kepler-model-db/models >
+    MACHINE_ID= < machine id >
+    GH_ACCOUNT= < github account >
+    docker run --rm -v "${KEPLER_MODEL_DB_MODELS_PATH}":/output -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler-model-server:v0.6 export $MACHINE_ID /output $GH_ACCOUNT
     ```
 

@@ -180,7 +180,7 @@ function quick_collect() {
 }
 
 function train() {
-    train_model stressng_kepler_query ${VERSION}
+    train_model stressng_kepler_query,coremark_kepler_query,parsec_kepler_query ${VERSION}
 }
 
 function quick_train() {
@@ -214,7 +214,7 @@ function _export() {
     ARGS="--id ${ID} -p ${PIPELINE_NAME}  -i ${VALIDATE_INPUT} --benchmark ${MAIN_COLLECT_INPUT} --version ${VERSION} --publisher ${PUBLISHER} ${INCLUDE_RAW}"
     echo "${ARGS}"
     if [ -z "$NATIVE" ]; then
-        docker run --rm -v $CPE_DATAPATHa:/data -v ${OUTPUT}:/models ${ENTRYPOINT_IMG} export ${ARGS} -o /models 
+        docker run --rm -v $CPE_DATAPATH:/data -v ${OUTPUT}:/models ${ENTRYPOINT_IMG} export ${ARGS} -o /models 
     else
         python ../cmd/main.py export ${ARGS} -o ${OUTPUT}
     fi
