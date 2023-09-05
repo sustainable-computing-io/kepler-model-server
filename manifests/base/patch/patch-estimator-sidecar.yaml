@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: kepler-cfm
-  namespace: system
+  namespace: kepler
 data:
   MODEL_CONFIG: |
     NODE_COMPONENTS_ESTIMATOR=true
@@ -12,7 +12,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: kepler-exporter
-  namespace: system
+  namespace: kepler
 spec:
   template:
     spec:
