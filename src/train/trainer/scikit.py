@@ -16,8 +16,7 @@ def get_save_path(model_filepath):
     return "/".join(model_filepath.split("/")[0:-1])
 
 class ScikitTrainer(Trainer):
-    def __init__(self, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="minmax"):
-        self.is_standard_scaler = scaler_type == "standard"
+    def __init__(self, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="maxabs"):
         super(ScikitTrainer, self).__init__(model_class, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type=scaler_type)
         self.fe_files = []
  
@@ -64,10 +63,7 @@ class ScikitTrainer(Trainer):
     def component_model_filename(self, component):
         return component + ".pkl"
 
-    def get_weight_dict(self, node_type):
-        if not self.is_standard_scaler:
-            # cannot get weight dict
-            return None
+    def get_weight_dict(self, node_type):    
         weight_dict = dict()
 
         for component, model in self.node_models[node_type].items():
@@ -75,13 +71,15 @@ class ScikitTrainer(Trainer):
             if not hasattr(model, "intercept_") or not hasattr(model, "coef_") or len(model.coef_) != len(self.features) or len(model.intercept_) != 1:
                 return None
             else:
+                # TODO: remove the mean and variance variables after updating the Kepler code
                 weight_dict[component] = {
                     "All_Weights": {
                         "Bias_Weight": model.intercept_[0],
                         "Categorical_Variables": dict(),
                         "Numerical_Variables": {self.features[i]: 
-                                                {"mean": scaler.mean_[i], 
-                                                "variance": scaler.var_[i], 
+                                                {"scale": scaler.scale_[i],
+                                                "mean": 0, 
+                                                "variance": 0, 
                                                 "weight": model.coef_[i], 
                                                 }
                                                 for i in range(len(self.features))},

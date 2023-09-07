@@ -137,28 +137,23 @@ class Profile:
         self.profile = dict()
         for source in PowerSourceMap.keys():
             self.profile[source] = dict()
-        self.standard_scaler = dict()
-        self.minmax_scaler = dict()
+        self.max_scaler = dict()
         for feature_group in FeatureGroups.keys():
             #######################
             # uncomment to append from remote profile
             #
             # feature_key = feature_group.name
-            # standard_scaler = Profile.load_scaler(self.node_type, feature_key, scaler_type="standard")
-            # minmax_scaler = Profile.load_scaler(self.node_type, feature_key, scaler_type="minmax")
+            # max_scaler = Profile.load_scaler(self.node_type, feature_key, scaler_type="maxabs")
             #######################
-            standard_scaler = None
-            minmax_scaler = None
-            if standard_scaler is not None:
-                self.standard_scaler[feature_group.name] = standard_scaler
-            if minmax_scaler is not None:
-                self.minmax_scaler[feature_group.name] = minmax_scaler
+            max_scaler = None
+            if max_scaler is not None:
+                self.max_scaler[feature_group.name] = max_scaler
 
     def add_profile(self, source, component, profile_value):
         self.profile[source][component] = profile_value
         
     @staticmethod
-    def load_scaler(node_type, feature_key, scaler_type): # scaler_type = minmax or standard
+    def load_scaler(node_type, feature_key, scaler_type): # scaler_type = maxabs
         try:
             url_path = os.path.join(profiler_registry, scaler_type + "_scaler", str(node_type), feature_key + ".pkl")
             response = urlopen(url_path)
@@ -168,15 +163,10 @@ class Profile:
             print(url_path, e)
             return None
 
-    def get_minmax_scaler(self, feature_key):
-        if feature_key not in self.minmax_scaler:
+    def get_max_scaler(self, feature_key):
+        if feature_key not in self.max_scaler:
             return None
-        return self.minmax_scaler[feature_key]
-
-    def get_standard_scaler(self, feature_key):
-        if feature_key not in self.standard_scaler:
-            return None
-        return self.standard_scaler[feature_key]
+        return self.max_scaler[feature_key]
 
     def get_background_power(self, source, component):
         if source not in self.profile:
@@ -191,7 +181,7 @@ class Profile:
         return self.profile[source][component][min_watt_key]
 
     def print_profile(self):
-        print("Profile (node type={}): \n Available energy components: {}\n Available minmax scalers: {}\n Available standard scalers: {}".format(self.node_type, ["{}/{}".format(key, list(self.profile[key].keys())) for key in self.profile.keys()], self.minmax_scaler.keys(), self.standard_scaler.keys()))
+        print("Profile (node type={}): \n Available energy components: {}\n Available maxabs scalers: {}".format(self.node_type, ["{}/{}".format(key, list(self.profile[key].keys())) for key in self.profile.keys()], self.max_scaler.keys()))
 
 def generate_profiles(profile_map):
     profiles = dict()
