@@ -45,6 +45,8 @@ get_server_log() {
 
 wait_for_kepler() {
     kubectl rollout status ds kepler-exporter -n kepler --timeout 5m
+    kubectl describe ds -n kepler kepler-exporter
+    kubectl get po -n kepler
 }
 
 wait_for_server() {

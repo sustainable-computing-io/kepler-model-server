@@ -4,92 +4,53 @@
 This repository contains source code related to Kepler power model. The modules in this reposioty connects to [core Kepler project](https://github.com/sustainable-computing-io/kepler) and [kepler-model-db](https://github.com/sustainable-computing-io/kepler-model-db) as below.
 ![](./fig/model-server-components-simplified.png)
 
-## Usage
-### Getting Powers from Estimator
-**module:** estimator (src/estimate/estimator.py)
-```
-/tmp/estimator.socket
-```
-Parameters of [PowerRequest](./src/estimate/estimator.py)
-|key|value|description
-|---|---|---|
-|metrics|list of string|list of available input features (measured metrics)
-|output_type|either of the following values: *AbsPower* (for node-level power model), *DynPower* (for container-level power model)|the requested model type 
-|trainer_name (optional)|string|filter model with trainer name.
-|filter (optional)|string|expression in the form *attribute1*:*threshold1*; *attribute2*:*threshold2*.
+## Deployment
 
-### Getting Power Models from Model Server 
-**module:** server (src/server/model_server.py)
+Deploy with estimator sidecar
 ```
-:8100/model
-POST
+OPTS="ESTIMATOR" make deploy
 ```
 
-Parameters of [ModelRequest](./src/server/model_server.py)
-|key|value|description
-|---|---|---|
-|metrics|list of string|list of available input features (measured metrics)
-|output_type|either of the following values: *AbsPower* (for node-level power model), *DynPower* (for container-level power model)|the requested model type 
-|weight|boolean|return model weights in json format if true. Otherwise, return model in zip file format.
-|trainer_name (optional)|string|filter model with trainer name.
-|node_type (optional)|string|filter model with node type.
-|filter (optional)|string|expression in the form *attribute1*:*threshold1*; *attribute2*:*threshold2*.
-
-### Posting Model Weights [WIP]
-**module:** server (src/server/model_server.py)
+Deploy with estimator sidecar and model server 
 ```
-/metrics
-GET
+OPTS="ESTIMATOR SERVER" make deploy
 ```
 
-### Online Trainer [WIP]
-**module:** online trainer (src/train/online_trainer.py)
-running as a sidecar to server
-```
-periodically query prometheus metric server on SAMPLING INTERVAL
-```
+## Local test
+### via docker
+1. Build image for testing, run 
+    ```
+    make build-test
+    ```
 
-### Profiler [WIP]
-**module:** profiler (src/profile/profiler.py)
+2. Run the test
 
+    |Test case|Command|
+    |---|---|
+    |[Training pipeline](./tests/README.md#pipeline)|make test-pipeline|
+    |[Model server](./tests/README.md#estimator-model-request-to-model-server)|make test-model-server|
+    |[Estimator](./tests/README.md#estimator-power-request-from-collector)|make test-estimator|
+    |[Offline Trainer](./tests/README.md#offline-trainer)|make test-offline-trainer|
 
-### Offline Trainer
-**module:** offline trainer (src/train/offline_trainer.py)
-```
-:8102/train
-POST
-```
-Parameters of [TrainRequest](./src/train/offline_trainer.py)
-|key|value|description
-|---|---|---|
-|name|string|pipeline/model name
-|energy_source|valid key in [PowerSourceMap](./src/util/train_types.py)|target enery source to train for 
-|trainer|TrainAttribute|attributes for training
-|prome_response|json|prom response with workload for power model training
+    For more test information, check [here](./tests/).
 
-- TrainAttribute
-    |key|value|description
-    |---|---|---|
-    |abs_trainers|list of [available trainer class names](./src/train/trainer)|trainer classes in the pipeline to train for absolute power
-    |dyn_trainers|list of [available trainer class names](./src/train/trainer)|trainer classes in the pipeline to train for dynamic power
-    |isolator|[valid isolator class name](./src/train/isolator/)|isolator class of the pipeline to isolate the target data to train for dynamic power
-    |isolator_args|dict|mapping between isolator-specific argument name and value
+### with native python environment
+1. Prepare environment
 
+    ```bash
+    pip install -r ../dockerfiles/requirements.txt
+    ```
 
-## Test
-Build image for testing, run 
-```
-make build-test
-```
+2. Run the test
 
-|Test case|Command|
-|---|---|
-|[Training pipeline](./tests/README.md#pipeline)|make test-pipeline|
-|[Model server](./tests/README.md#estimator-model-request-to-model-server)|make test-model-server|
-|[Estimator](./tests/README.md#estimator-power-request-from-collector)|make test-estimator|
-|[Offline Trainer](./tests/README.md#offline-trainer)|make test-offline-trainer|
+    |Test case|Command|
+    |---|---|
+    |[Training pipeline](./tests/README.md#pipeline)|python -u ./tests/pipeline_test.py|
+    |[Model server](./tests/README.md#estimator-model-request-to-model-server)|Terminal 1: python src/server/model_server.py <br>Terminal 2: python -u tests/estimator_model_request_test.py|
+    |[Estimator](./tests/README.md#estimator-power-request-from-collector)|Terminal 1: python src/estimate/estimator.py<br>Terminal 2: python -u tests/estimator_power_request_test.py|
+    |[Offline Trainer](./tests/README.md#offline-trainer)|Terminal 1: python src/train/offline_trainer.py<br>Terminal 2: python -u tests/offline_trainer_test.py|
 
-For more test information, check [here](./tests/).
+    For more test information, check [here](./tests/).
 
 ### Contributing
 Please check the roadmap and guidelines to join us [here](./contributing.md).
