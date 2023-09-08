@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+import pandas as pd
 
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'util')
 sys.path.append(util_path)
@@ -14,11 +15,10 @@ from preprocess import get_extracted_power_labels
 
 from util import PowerSourceMap
 from util.train_types import get_valid_feature_groups
-from util.prom_types import TIMESTAMP_COL
+from util.prom_types import TIMESTAMP_COL, get_container_name_from_id
 from util.extract_types import container_level_index, container_id_colname, col_to_component
 from util.config import model_toppath
 from util.loader import list_all_abs_models, DEFAULT_PIPELINE
-
 
 def is_better(curr_min_err, err, curr_max_corr, corr, corr_threshold=0.7):
     if curr_min_err is None:
@@ -111,21 +111,43 @@ def find_best_target_data_with_dyn_power(energy_source, energy_components, extra
            best_background_data_with_prediction = background_data_with_prediction
     return best_target_data_with_dyn_power, best_background_data_with_prediction
 
+def get_background_container_from_target_hints(data, target_hints):
+    container_names = pd.unique(data[container_id_colname].transform(get_container_name_from_id))
+    background_containers = [container_name for container_name in container_names if not any(hint in container_name for hint in target_hints)]
+    return background_containers
+
+def get_background_container_from_bg_hints(data, bg_hints):
+    container_names = pd.unique(data[container_id_colname].transform(get_container_name_from_id))
+    background_containers = [container_name for container_name in container_names if any(hint in container_name for hint in bg_hints)]
+    return background_containers
+
 # TO-DO: suppport multiple node types
 class TrainIsolator(Isolator):
-    def __init__(self, idle_data, profiler, abs_pipeline_name=DEFAULT_PIPELINE):
-        self.idle_data = idle_data
-        self.profiles = profiler.process(self.idle_data)
-        self.background_containers = get_background_containers(self.idle_data)
+    def __init__(self, idle_data=None, profiler=None, target_hints=[], bg_hints=[], abs_pipeline_name=DEFAULT_PIPELINE):
+        if profiler is not None and idle_data is not None:
+            self.idle_data = idle_data
+            self.profiles = profiler.process(self.idle_data)
+            self.background_containers = get_background_containers(self.idle_data)
+        self.background_containers = None
         self.abs_pipeline_name = abs_pipeline_name
+        self.target_hints = target_hints
+        self.bg_hints = bg_hints
 
     def isolate(self, data, label_cols, energy_source):
         index_list = data.index.names
         if index_list[0] is not None:
             data = data.reset_index()
+        if self.background_containers is None:
+            if len(self.target_hints) > 0:
+                self.background_containers = get_background_container_from_target_hints(data, self.target_hints)
+            else:
+                # if nothing set for hint, all are considered as target
+                self.background_containers = get_background_container_from_target_hints(data, self.bg_hints)
         energy_components = PowerSourceMap[energy_source]
         label_cols = list(label_cols)
         best_target_data_with_dyn_power, _ = find_best_target_data_with_dyn_power(energy_source, energy_components, data, self.background_containers, label_cols, pipeline_name=self.abs_pipeline_name)
+        if best_target_data_with_dyn_power is None:
+            return None
         isolated_data = best_target_data_with_dyn_power.copy()
         power_label_cols = [get_label_power_colname(energy_component) for energy_component in energy_components]
         extracted_power_labels = get_extracted_power_labels(data, energy_components, label_cols)[power_label_cols]
