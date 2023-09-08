@@ -1,5 +1,5 @@
 from sklearn.metrics import mean_absolute_error
-
+import numpy as np
 import os
 import sys
 
@@ -68,13 +68,21 @@ class ScikitTrainer(Trainer):
 
         for component, model in self.node_models[node_type].items():
             scaler = self.node_scalers[node_type]
-            if not hasattr(model, "intercept_") or not hasattr(model, "coef_") or len(model.coef_) != len(self.features) or len(model.intercept_) != 1:
+            if not hasattr(model, "intercept_") or not hasattr(model, "coef_") or len(model.coef_) != len(self.features) or (hasattr(model.intercept_, "__len__") and len(model.intercept_) != 1):
                 return None
             else:
+                if isinstance(model.intercept_, np.float64):
+                    intercept = model.intercept_
+                elif hasattr(model.intercept_, "__len__"):
+                    intercept = model.intercept_[0]
+                else:
+                    # no valid intercept
+                    return None
+
                 # TODO: remove the mean and variance variables after updating the Kepler code
                 weight_dict[component] = {
                     "All_Weights": {
-                        "Bias_Weight": model.intercept_[0],
+                        "Bias_Weight": intercept,
                         "Categorical_Variables": dict(),
                         "Numerical_Variables": {self.features[i]: 
                                                 {"scale": scaler.scale_[i],
