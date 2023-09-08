@@ -14,12 +14,12 @@ from loader import load_metadata, get_download_output_path
 from prom_types import TIMESTAMP_COL, valid_container_query
 
 from scikit_model import ScikitModel
-from keras_model import KerasModel
+# from keras_model import KerasModel
 
 # model wrapper
 MODELCLASS = {
-    'scikit': ScikitModel,
-    'keras': KerasModel,
+    'scikit': ScikitModel
+    # 'keras': KerasModel,
 }
 
 def default_predicted_col_func(energy_component):
