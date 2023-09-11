@@ -72,21 +72,31 @@ test: build-test test-pipeline test-estimator test-model-server test-offline-tra
 
 # set image
 set-image:
-	cd ./manifests/base && kustomize edit set image kepler_model_server=$(IMAGE)
-	cd ./manifests/server && kustomize edit set image kepler_model_server=$(IMAGE)
+	@cd ./manifests/base && kustomize edit set image kepler_model_server=$(IMAGE)
+	@cd ./manifests/server && kustomize edit set image kepler_model_server=$(IMAGE)
 
 # deploy
 _deploy:
-	$(MAKE) set-image
-	kustomize build ./manifests/base|kubectl apply -f -
+	@$(MAKE) set-image
+	@kustomize build ./manifests/base|kubectl apply -f -
+
+# print
+_print:
+	@$(MAKE) set-image
+	@kustomize build ./manifests/base|cat
 
 cleanup:
 	kustomize build manifests/base|kubectl delete -f -
 
 deploy:
-	chmod +x ./manifests/set.sh
-	./manifests/set.sh "${OPTS}"
-	$(MAKE) _deploy
+	@chmod +x ./manifests/set.sh
+	@./manifests/set.sh "${OPTS}"
+	@$(MAKE) _deploy
+
+manifest: 
+	@chmod +x ./manifests/set.sh
+	@./manifests/set.sh "${OPTS}"
+	@$(MAKE) _print
 
 e2e-test:
 	chmod +x ./tests/e2e_test.sh

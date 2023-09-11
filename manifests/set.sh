@@ -33,35 +33,53 @@ fi
 
 echo "Preparing manifests..."
 
-if [ ! -z ${ESTIMATOR} ]; then
-    echo "add estimator-sidecar"
-    cp ./manifests/base/estimate-only/kustomization.yaml ./manifests/base/kustomization.yaml
-fi
-
 if [ ! -z ${SERVER} ]; then
     echo "deploy model server"
     if [ ! -z ${ESTIMATOR} ]; then
-        # with estimator, replace estimate-only with estimate-with-server
+        echo "add estimator-sidecar"
+        # OPTS="ESTIMATOR SERVER" --> base
         cp ./manifests/base/estimate-with-server/kustomization.yaml ./manifests/base/kustomization.yaml
-    else
-        cp ./manifests/base/serve-only/kustomization.yaml ./manifests/base/kustomization.yaml
-    fi
-    # default
-    cp ./manifests/server/base/kustomization.yaml ./manifests/server/kustomization.yaml
-    if [ ! -z ${OPENSHIFT_DEPLOY} ]; then
-        # replace with openshift serve-only
-        echo "openshift deployment"
-        cp ./manifests/server/openshift/serve-only/kustomization.yaml ./manifests/server/kustomization.yaml
-    fi
-
-    if [ ! -z ${ONLINE_TRAINER} ]; then
-        # replace with online-train
-        echo "add online trainer"
-        if [ ! -z ${OPENSHIFT_DEPLOY} ]; then 
-            cp ./manifests/server/openshift/online-train/kustomization.yaml ./manifests/server/kustomization.yaml
-        else
-            cp ./manifests/server/online-train/kustomization.yaml ./manifests/server/kustomization.yaml
+        if [ ! -z ${OPENSHIFT_DEPLOY} ]; then
+            echo "patch openshift deployment for exporter (estimator-with-server)"
+            # OPTS="ESTIMATOR SERVER OPENSHIFT_DEPLOY" --> base
+            cp ./manifests/base/openshift/estimate-with-server/kustomization.yaml ./manifests/base/kustomization.yaml
         fi
+    else
+        # OPTS="SERVER" --> base
+        cp ./manifests/base/serve-only/kustomization.yaml ./manifests/base/kustomization.yaml
+        if [ ! -z ${OPENSHIFT_DEPLOY} ]; then
+            echo "patch openshift deployment for exporter (serve-only)"
+            # OPTS="SERVER OPENSHIFT_DEPLOY" --> base
+            cp ./manifests/base/openshift/serve-only/kustomization.yaml ./manifests/base/kustomization.yaml
+        fi
+    fi
+    
+    if [ ! -z ${ONLINE_TRAINER} ]; then
+        echo "add online trainer"
+        # OPTS="... SERVER ONLINE_TRAINER" --> server
+        cp ./manifests/server/online-train/kustomization.yaml ./manifests/server/kustomization.yaml
+        if [ ! -z ${OPENSHIFT_DEPLOY} ]; then
+            echo "patch openshift deployment for server (with online trainer)"
+            # OPTS="... SERVER ONLINE_TRAINER OPENSHIFT_DEPLOY" --> server
+            cp ./manifests/server/openshift/online-train/kustomization.yaml ./manifests/server/kustomization.yaml   
+        fi
+    else 
+        # OPTS="... SERVER" --> server
+        cp ./manifests/server/base/kustomization.yaml ./manifests/server/kustomization.yaml
+        if [ ! -z ${OPENSHIFT_DEPLOY} ]; then
+            echo "patch openshift deployment for server"
+            # OPTS="... SERVER OPENSHIFT_DEPLOY" --> server
+            cp ./manifests/server/openshift/serve-only/kustomization.yaml ./manifests/server/kustomization.yaml
+        fi
+    fi
+elif [ ! -z ${ESTIMATOR} ]; then
+    echo "add estimator-sidecar"
+    # OPTS="ESTIMATOR" --> base
+    cp ./manifests/base/estimate-only/kustomization.yaml ./manifests/base/kustomization.yaml
+    if [ ! -z ${OPENSHIFT_DEPLOY} ]; then
+        echo "patch openshift deployment for exporter (estimator-only)"
+        # OPTS="ESTIMATOR OPENSHIFT_DEPLOY" --> base
+        cp ./manifests/base/openshift/estimate-only/kustomization.yaml ./manifests/base/kustomization.yaml
     fi
 fi
 
