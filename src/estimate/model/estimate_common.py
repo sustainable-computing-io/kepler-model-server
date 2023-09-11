@@ -3,12 +3,12 @@ import cpuinfo
 
 cpu_info = cpuinfo.get_cpu_info()
 
-if 'flags' in cpu_info and 'avx' in cpu_info['flags']:
-    import keras
-    from keras import backend as K
-else:
-    print("AVX instructions are not available.")
-    keras_enabled = False
+# if 'flags' in cpu_info and 'avx' in cpu_info['flags']:
+#     import keras
+#     from keras import backend as K
+# else:
+#     print("AVX instructions are not available.")
+#     keras_enabled = False
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 

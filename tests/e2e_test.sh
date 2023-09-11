@@ -64,6 +64,7 @@ wait_for_keyword() {
         if grep -q "$keyword" <<< $(get_${component}_log); then
             return
         fi
+        kubectl get po -n kepler -oyaml
         sleep 2
     done
     echo "timeout ${num_iterations}s waiting for '${keyword}' from ${component} log"

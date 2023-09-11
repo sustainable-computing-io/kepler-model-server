@@ -8,6 +8,9 @@ on:
       - dockerfiles/requirements.txt
       - dockerfiles/Dockerfile.base
 
+env:
+  IMAGE_VERSION: '0.6'
+
 jobs:
   build:
 
@@ -18,7 +21,7 @@ jobs:
       
     - name: Build image
       run: |
-        docker build -t quay.io/sustainable_computing_io/kepler_model_server_base:latest dockerfiles -f dockerfiles/Dockerfile.base
+        docker build -t quay.io/sustainable_computing_io/kepler_model_server_base:v${{env.IMAGE_VERSION}} dockerfiles -f dockerfiles/Dockerfile.base
       
     - name: Login to Quay
       if: ${{ (github.repository_owner == 'sustainable-computing-io') && (github.ref == 'refs/heads/main') }}
@@ -30,4 +33,5 @@ jobs:
 
     - name: Push to quay
       if: ${{ (github.repository_owner == 'sustainable-computing-io') && (github.ref == 'refs/heads/main') }}
-      run: docker push quay.io/sustainable_computing_io/kepler_model_server_base:latest
+      run: |
+        docker push quay.io/sustainable_computing_io/kepler_model_server_base:v${{env.IMAGE_VERSION}}
