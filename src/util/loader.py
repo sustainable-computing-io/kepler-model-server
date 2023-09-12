@@ -22,6 +22,7 @@ default_init_model_url = "https://raw.githubusercontent.com/sustainable-computin
 default_init_pipeline_name = "Linux-4.15.0-213-generic-x86_64_v0.6"
 default_trainer_name = "GradientBoostingRegressorTrainer"
 default_node_type = "1"
+any_node_type = -1
 default_feature_group = FeatureGroup.KubeletOnly
 
 def load_json(path, name):
@@ -122,6 +123,11 @@ def is_valid_model(metadata, filters):
 
 def get_model_name(trainer_name, node_type):
     return "{}_{}".format(trainer_name, node_type)
+
+def is_matched_type(model_name, node_type):
+    if node_type == any_node_type:
+        return True
+    return model_name.split("_")[-1] == str(node_type)
 
 def get_pipeline_path(model_toppath, pipeline_name=DEFAULT_PIPELINE):
     return os.path.join(model_toppath, pipeline_name)
