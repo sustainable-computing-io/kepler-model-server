@@ -78,7 +78,7 @@ Training output will be in `/data` folder by default. The folder contains:
 - profiles
 - models in a pipeline heirachy 
 
-### < native with python environment >
+### < native with python (3.8+) environment >
 
 - Prepare environment:
 

@@ -34,7 +34,7 @@ OPTS="ESTIMATOR SERVER" make deploy
 
     For more test information, check [here](./tests/).
 
-### with native python environment
+### with native python (3.8+) environment
 1. Prepare environment
 
     ```bash
