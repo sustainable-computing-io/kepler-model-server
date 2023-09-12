@@ -11,31 +11,73 @@ spec:
     template:
       spec:
         containers:
-        - name: stress
-          image: alexeiled/stress-ng
+        - name: stress-{{ index .stress 1 }}
+          image: quay.io/sustainability/stress-ng:0.16.02
           imagePullPolicy: IfNotPresent
           env:
           - name: TIMEOUT
-            value: 120s
+            value: "30"
+          securityContext:
+            privileged: true
           command:
-          - /stress-ng
-          {{ if ne (index .stress 0) "0" -}}
-          - --cpu
-          - "{{ index .stress 0 }}"
-          {{ end -}}
-          {{ if ne (index .stress 1) "0" -}}
-          - --io
-          - "{{ index .stress 1 }}"
-          {{ end -}}
-          {{ if ne (index .stress 2) "0" -}}
-          - --vm
-          - "{{ index .stress 2 }}"
-          - --vm-bytes
-          - "{{ index .stress 3 }}"
-          {{ end -}}
-          - --timeout
-          - $(TIMEOUT)
-          - --metrics-brief
+          - /bin/sh
+          - -c
+          - |
+            {{ if eq (index .stress 1) "sleep" -}}
+            sleep $(TIMEOUT)
+            exit 0
+            {{ end -}}
+
+            # Different processes can be executed, so that to do CPU pinning properly we store the cpu index to be use in a file
+            # If the files does not exist, we populate the file with the CPU index
+            lscpu | grep "NUMA node"| tail -n +2  | while read -r line; do
+              cpus=$(echo $line | awk '{print $4}' | sed 's/,.*//g' | sed 's/-/ /g')
+              for i in $(seq $cpus); do
+                echo $i >> cpu-idx
+              done
+            done
+            lscpu | grep "NUMA node"| tail -n +2  | while read -r line; do
+              cpus=$(echo $line | awk '{print $4}' | sed 's/.*,//g' | sed 's/-/ /g') # the difference here is regex of the ","
+              for i in $(seq $cpus); do
+                echo $i >> cpu-idx
+              done
+            done
+
+            # Store the CPU max freq to revert it back if changed
+            {{ if ne (index .stress 0) "none" -}}
+            mount -o remount,rw  /sys/devices/system/cpu/cpufreq
+            cat "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" > max_freq
+            {{ end -}}
+
+            for i in $(seq 1 {{ index .stress 2 }}); do
+              CPU=$(cat cpu-idx | tail -n 1)
+              cat cpu-idx | head -n -1  > tmp-cpu && rm -f cpu-idx && mv tmp-cpu cpu-idx
+              {{ if ne (index .stress 0) "none" -}}
+              echo {{ index .stress 0 }} | tee /sys/devices/system/cpu/cpufreq/policy${CPU}/scaling_max_freq
+              {{ end -}}
+              echo /usr/bin/stress-ng --{{ index .stress 1 }} 1 --taskset ${CPU} {{ if ne (index .stress 3) "none" -}} --{{ index .stress 3 }} "{{ index .stress 4 }}" {{ end -}} --timeout $(TIMEOUT) --aggressive --metrics-brief
+              /usr/bin/stress-ng --{{ index .stress 1}} 1 --taskset ${CPU} {{ if ne (index .stress 3) "none" -}} --{{ index .stress 3 }} "{{ index .stress 4 }}" {{ end -}} --timeout $(TIMEOUT) --aggressive --metrics-brief &
+            done
+            
+            wait
+
+            # Revert the CPU freq back to max
+            {{ if ne (index .stress 0) "none" -}}
+            FREQ=$(cat max_freq)
+            echo $FREQ | tee /sys/devices/system/cpu/cpufreq/policy${CPU}/scaling_max_freq
+            {{ end -}}
+            echo "finished"
+          volumeMounts:
+          - mountPath: /sys/devices/system/cpu/cpufreq
+            name: system-cpu
+            propagation: bidirectional
+            readOnly: false
+        volumes:
+        - name: system-cpu
+          hostPath:
+            path: /sys/devices/system/cpu/cpufreq
+            # type: File
+            type: Directory
         restartPolicy: Never
   parserKey: stress
   repetition: 1
@@ -44,29 +86,212 @@ spec:
     iterations:
     - name: stress
       values:
-      - "0;0;1;500M"
-      - "0;0;4;500M"
-      - "0;0;8;500M"
-      - "0;0;16;500M"
-      - "0;0;32;500M"
-      - "0;0;1;1G"
-      - "0;0;4;1G"
-      - "0;0;8;1G"
-      - "0;0;16;1G"
-      - "0;0;32;1G"
-      - "0;0;1;2G"
-      - "0;0;4;2G"
-      - "0;0;8;2G"
-      - "0;0;16;2G"
-      - "0;0;32;2G"
-      - "1;0;0;0"
-      - "4;0;0;0"
-      - "8;0;0;0"
-      - "16;0;0;0"
-      - "32;0;0;0"
-      - "0;1;0;0"
-      - "0;4;0;0"
-      - "0;8;0;0"
-      - "0;16;0;0"
-      - "0;32;0;0"
+      # The baseline scenarios are used to calculate the OS/Backgroud/Idle and activation power.
+      # These two powers allows us to separate the dynamic power consumption from the user workloads by calculating the delta of scenarios.
+      # For each scenarios, each workload power = (scenarioPower - OS/Backgroud/IdlePower - activationPower) / numWorkloads
+      # This will be the best ground truth of the dynamic power to validate the estimated dynamic power consumption later.
+      #
+      # The max CPU frequency in baselineMachine is 3600000 and the min is 1200000. We define 3 slopes between the min and max freq as (max-min)/3 = 800000.
+      # Then we will test with frequencies of 2000000, 2800000 and 3600000.
+      #
+      # We first execute the baseline scenarios.
+      # cpuFrequency;useOrNotHT;mainWorkload;numInstances;extraParam;extraParamValue
+      - "none;sleep;none;none;none" # capture the OS/backgroud power consumption
+      - "3600000;cpu;1;none;none" # the incremental power from the previous scenarios is activation + workload power
+      - "3600000;cpu;2;none;none" # the incremental power from the previous scenarios is only the workload power
+      #
+      # Then we execute the all other workloads.
+      # cpu: is used to stress the CPU
+      # The baselineMachine has 32 CPUs with 2 hyperthreads
+      - "2000000;cpu;4;none;none"
+      - "2000000;cpu;8;none;none"
+      - "2000000;cpu;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2000000;cpu;24;none;none"
+      - "2000000;cpu;32;none;none" # max HT cores in baselineMachine (32)
+      - "2800000;cpu;4;none;none"
+      - "2800000;cpu;8;none;none"
+      - "2800000;cpu;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2800000;cpu;24;none;none"
+      - "2800000;cpu;32;none;none" # max HT cores in baselineMachine (32)
+      - "3600000;cpu;4;none;none"
+      - "3600000;cpu;8;none;none"
+      - "3600000;cpu;15;none;none" # max CPU cores in baselineMachine (15)
+      - "3600000;cpu;24;none;none"
+      - "3600000;cpu;32;none;none" # max HT cores in baselineMachine (32)
+      #
+      # branch: is used to stress branch by branch to 1024 randomly selected locations and hence exercise 
+      # the CPU branch prediction logic
+      - "2000000;branch;4;none;none"
+      - "2000000;branch;8;none;none"
+      - "2000000;branch;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2000000;branch;24;none;none"
+      - "2000000;branch;32;none;none" # max HT cores in baselineMachine (32)
+      - "2800000;branch;4;none;none"
+      - "2800000;branch;8;none;none"
+      - "2800000;branch;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2800000;branch;24;none;none"
+      - "2800000;branch;32;none;none" # max HT cores in baselineMachine (32)
+      - "3600000;branch;4;none;none"
+      - "3600000;branch;8;none;none"
+      - "3600000;branch;15;none;none" # max CPU cores in baselineMachine (15)
+      - "3600000;branch;24;none;none"
+      - "3600000;branch;32;none;none" # max HT cores in baselineMachine (32)
+      #
+      # cyclic: is used to stress linux schedulers with cyclic nanosecond sleeps
+      - "2000000;cyclic;4;none;none"
+      - "2000000;cyclic;8;none;none"
+      - "2000000;cyclic;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2000000;cyclic;24;none;none"
+      - "2000000;cyclic;32;none;none" # max HT cores in baselineMachine (32)
+      - "2800000;cyclic;4;none;none"
+      - "2800000;cyclic;8;none;none"
+      - "2800000;cyclic;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2800000;cyclic;24;none;none"
+      - "2800000;cyclic;32;none;none" # max HT cores in baselineMachine (32)
+      - "3600000;cyclic;4;none;none"
+      - "3600000;cyclic;8;none;none"
+      - "3600000;cyclic;15;none;none" # max CPU cores in baselineMachine (15)
+      - "3600000;cyclic;24;none;none"
+      - "3600000;cyclic;32;none;none" # max HT cores in baselineMachine (32)
+      #
+      # regs: start N workers exercising CPU generic registers
+      - "2000000;regs;4;none;none"
+      - "2000000;regs;8;none;none"
+      - "2000000;regs;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2000000;regs;24;none;none"
+      - "2000000;regs;32;none;none" # max HT cores in baselineMachine (32)
+      - "2800000;regs;4;none;none"
+      - "2800000;regs;8;none;none"
+      - "2800000;regs;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2800000;regs;24;none;none"
+      - "2800000;regs;32;none;none" # max HT cores in baselineMachine (32)
+      - "3600000;regs;4;none;none"
+      - "3600000;regs;8;none;none"
+      - "3600000;regs;15;none;none" # max CPU cores in baselineMachine (15)
+      - "3600000;regs;24;none;none"
+      - "3600000;regs;32;none;none" # max HT cores in baselineMachine (32)
+      #
+      # l1cache: is used to stress CPU level 1 cache with reads and writes
+      - "2000000;l1cache;4;none;none"
+      - "2000000;l1cache;8;none;none"
+      - "2000000;l1cache;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2000000;l1cache;24;none;none"
+      - "2000000;l1cache;32;none;none" # max HT cores in baselineMachine (32)
+      - "2800000;l1cache;4;none;none"
+      - "2800000;l1cache;8;none;none"
+      - "2800000;l1cache;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2800000;l1cache;24;none;none"
+      - "2800000;l1cache;32;none;none" # max HT cores in baselineMachine (32)
+      - "3600000;l1cache;4;none;none"
+      - "3600000;l1cache;8;none;none"
+      - "3600000;l1cache;15;none;none" # max CPU cores in baselineMachine (15)
+      - "3600000;l1cache;24;none;none"
+      - "3600000;l1cache;32;none;none" # max HT cores in baselineMachine (32)
+      #
+      # cache: is used to stress the CPU cache with random wide spread memory read and writes to thrash the CPU cache
+      - "2000000;cache;4;none;none"
+      - "2000000;cache;8;none;none"
+      - "2000000;cache;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2000000;cache;24;none;none"
+      - "2000000;cache;32;none;none" # max HT cores in baselineMachine (32)
+      - "2800000;cache;4;none;none"
+      - "2800000;cache;8;none;none"
+      - "2800000;cache;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2800000;cache;24;none;none"
+      - "2800000;cache;32;none;none" # max HT cores in baselineMachine (32)
+      - "3600000;cache;4;none;none"
+      - "3600000;cache;8;none;none"
+      - "3600000;cache;15;none;none" # max CPU cores in baselineMachine (15)
+      - "3600000;cache;24;none;none"
+      - "3600000;cache;32;none;none" # max HT cores in baselineMachine (32)
+      #
+      # stream: "Sustainable Memory Bandwidth in High Performance Computers" benchmarking tool by John D. McCalpin
+      - "2000000;stream;4;none;none"
+      - "2000000;stream;8;none;none"
+      - "2000000;stream;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2000000;stream;24;none;none"
+      - "2000000;stream;32;none;none" # max HT cores in baselineMachine (32)
+      - "2800000;stream;4;none;none"
+      - "2800000;stream;8;none;none"
+      - "2800000;stream;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2800000;stream;24;none;none"
+      - "2800000;stream;32;none;none" # max HT cores in baselineMachine (32)
+      - "3600000;stream;4;none;none"
+      - "3600000;stream;8;none;none"
+      - "3600000;stream;15;none;none" # max CPU cores in baselineMachine (15)
+      - "3600000;stream;24;none;none"
+      - "3600000;stream;32;none;none" # max HT cores in baselineMachine (32)
+      #
+      # A common recommendation is to use around 80-90% of the available memory for stress testing.
+      # The baselineMachine has 20Gi free, we make two tests 80%
+      # --vm-rw: is used to stress the virtual memory subsystem by allocating memory pages and continuously
+      # writing and reading data to and from them. This simulates a scenario where memory is frequently used
+      # and modified. This test stress both memory allocation and data access.
+      - "2000000;vm-rw;4;vm-rw-bytes;16G"
+      - "2000000;vm-rw;8;vm-rw-bytes;16G"
+      - "2000000;vm-rw;15;vm-rw-bytes;16G" # max CPU cores in baselineMachine (15)
+      - "2000000;vm-rw;24;vm-rw-bytes;16G"
+      - "2000000;vm-rw;32;vm-rw-bytes;16G" # max HT cores in baselineMachine (32)
+      - "2800000;vm-rw;4;vm-rw-bytes;16G"
+      - "2800000;vm-rw;8;vm-rw-bytes;16G"
+      - "2800000;vm-rw;15;vm-rw-bytes;16G" # max CPU cores in baselineMachine (15)
+      - "2800000;vm-rw;24;vm-rw-bytes;16G"
+      - "2800000;vm-rw;32;vm-rw-bytes;16G" # max HT cores in baselineMachine (32)
+      - "3600000;vm-rw;4;vm-rw-bytes;16G"
+      - "3600000;vm-rw;8;vm-rw-bytes;16G"
+      - "3600000;vm-rw;15;vm-rw-bytes;16G" # max CPU cores in baselineMachine (15)
+      - "3600000;vm-rw;24;vm-rw-bytes;16G"
+      - "3600000;vm-rw;32;vm-rw-bytes;16G" # max HT cores in baselineMachine (32)
+      #
+      # --iomix: is used to stress a mix of sequential, random and memory mapped read/write operations as 
+      # well as random copy file read/writes, forced sync'ing and (if run as root) cache dropping.
+      - "2000000;iomix;4;none;none"
+      - "2000000;iomix;8;none;none"
+      - "2000000;iomix;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2000000;iomix;24;none;none"
+      - "2000000;iomix;32;none;none" # max HT cores in baselineMachine (32)
+      - "2800000;iomix;4;none;none"
+      - "2800000;iomix;8;none;none"
+      - "2800000;iomix;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2800000;iomix;24;none;none"
+      - "2800000;iomix;32;none;none" # max HT cores in baselineMachine (32)
+      - "3600000;iomix;4;none;none"
+      - "3600000;iomix;8;none;none"
+      - "3600000;iomix;15;none;none" # max CPU cores in baselineMachine (15)
+      - "3600000;iomix;24;none;none"
+      - "3600000;iomix;32;none;none" # max HT cores in baselineMachine (32)
+      #
+      # pipe: is used to stress pipe write operations
+      - "2000000;pipe;4;none;none"
+      - "2000000;pipe;8;none;none"
+      - "2000000;pipe;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2000000;pipe;24;none;none"
+      - "2000000;pipe;32;none;none" # max HT cores in baselineMachine (32)
+      - "2800000;pipe;4;none;none"
+      - "2800000;pipe;8;none;none"
+      - "2800000;pipe;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2800000;pipe;24;none;none"
+      - "2800000;pipe;32;none;none" # max HT cores in baselineMachine (32)
+      - "3600000;pipe;4;none;none"
+      - "3600000;pipe;8;none;none"
+      - "3600000;pipe;15;none;none" # max CPU cores in baselineMachine (15)
+      - "3600000;pipe;24;none;none"
+      - "3600000;pipe;32;none;none" # max HT cores in baselineMachine (32)
+      #
+      # sctp: is used to stress the network performing SCTP send/receives
+      - "2000000;sctp;4;none;none"
+      - "2000000;sctp;8;none;none"
+      - "2000000;sctp;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2000000;sctp;24;none;none"
+      - "2000000;sctp;32;none;none" # max HT cores in baselineMachine (32)
+      - "2800000;sctp;4;none;none"
+      - "2800000;sctp;8;none;none"
+      - "2800000;sctp;15;none;none" # max CPU cores in baselineMachine (15)
+      - "2800000;sctp;24;none;none"
+      - "2800000;sctp;32;none;none" # max HT cores in baselineMachine (32)
+      - "3600000;sctp;4;none;none"
+      - "3600000;sctp;8;none;none"
+      - "3600000;sctp;15;none;none" # max CPU cores in baselineMachine (15)
+      - "3600000;sctp;24;none;none"
+      - "3600000;sctp;32;none;none" # max HT cores in baselineMachine (32)
     sequential: true
