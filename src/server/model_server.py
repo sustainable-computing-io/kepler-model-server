@@ -14,7 +14,7 @@ sys.path.append(util_path)
 
 from util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup
 from util.config import getConfig, model_toppath, ERROR_KEY, MODEL_SERVER_MODEL_REQ_PATH, MODEL_SERVER_MODEL_LIST_PATH, initial_pipeline_url
-from util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME, get_pipeline_path
+from util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME, get_pipeline_path, any_node_type, is_matched_type
 
 ###############################################
 # model request 
@@ -42,16 +42,17 @@ MODEL_SERVER_PORT = 8100
 MODEL_SERVER_PORT = getConfig('MODEL_SERVER_PORT', MODEL_SERVER_PORT)
 MODEL_SERVER_PORT = int(MODEL_SERVER_PORT)
 
-def select_best_model(valid_groupath, filters, trainer_name="", node_type=-1, weight=False):
+def select_best_model(valid_groupath, filters, trainer_name="", node_type=any_node_type, weight=False):
     model_names = [f for f in os.listdir(valid_groupath) if \
                     f != CHECKPOINT_FOLDERNAME \
                     and not os.path.isfile(os.path.join(valid_groupath,f)) \
-                    and (trainer_name == "" or trainer_name in f) \
-                    and (node_type == -1 or str(node_type) in f) ]
+                    and (trainer_name == "" or trainer_name in f)]
     # Load metadata of trainers
     best_cadidate = None
     best_response = None
     for model_name in model_names:
+        if not is_matched_type(model_name, node_type):
+            continue
         model_savepath = os.path.join(valid_groupath, model_name)
         metadata = load_json(model_savepath, METADATA_FILENAME)
         if metadata is None or not is_valid_model(metadata, filters) or ERROR_KEY not in metadata:
