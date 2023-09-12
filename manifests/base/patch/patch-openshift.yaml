@@ -19,15 +19,9 @@ spec:
         volumeMounts:
         - name: kernel-src
           mountPath: /usr/src/kernels
-        - name: kernel-debug
-          mountPath: /sys/kernel/debug
         securityContext:
           privileged: true
       volumes:      
-      - name: kernel-debug
-        hostPath:
-          path: /sys/kernel/debug
-          type: Directory
       - name: kernel-src
         hostPath:
           path: /usr/src/kernels
