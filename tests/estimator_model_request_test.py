@@ -33,7 +33,7 @@ from loader import get_download_output_path
 from estimate.estimator import handle_request, loaded_model, PowerRequest
 from estimate.model_server_connector import list_all_models
 from estimate.archived_model import get_achived_model, reset_failed_list
-from config import get_init_model_url, set_env_from_model_config, get_url
+from config import get_init_model_url, set_env_from_model_config, get_url, download_path
 from extractor_test import test_energy_source
 
 from estimator_power_request_test import generate_request
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     print("Available Models:", available_models)
     for output_type_name, valid_fgs in available_models.items():
         output_type = ModelOutputType[output_type_name]
-        output_path = get_download_output_path(energy_source, output_type)
+        output_path = get_download_output_path(download_path, energy_source, output_type)
         for fg_name, best_model in valid_fgs.items():
             if os.path.exists(output_path):
                 shutil.rmtree(output_path)
@@ -73,7 +73,7 @@ if __name__ == '__main__':
             print("Download: ", url)
             response = requests.get(url)
             if response.status_code == 200:
-                output_path = get_download_output_path(energy_source, output_type)
+                output_path = get_download_output_path(download_path, energy_source, output_type)
                 if output_type_name in loaded_model:
                     del loaded_model[output_type_name]
                 if os.path.exists(output_path):
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     # test getting model from archived
     os.environ['MODEL_SERVER_ENABLE'] = "false"
     output_type = ModelOutputType[output_type_name]
-    output_path = get_download_output_path(energy_source, output_type)
+    output_path = get_download_output_path(download_path, energy_source, output_type)
     if output_type_name in loaded_model:
         del loaded_model[output_type_name]
     if os.path.exists(output_path):
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     reset_failed_list()
     if output_type_name in loaded_model:
         del loaded_model[output_type_name]
-    output_path = get_download_output_path(energy_source, output_type)
+    output_path = get_download_output_path(download_path, energy_source, output_type)
     if os.path.exists(output_path):
         shutil.rmtree(output_path)
     request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.KubeletOnly], output_type=output_type_name)

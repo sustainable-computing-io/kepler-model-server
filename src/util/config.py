@@ -21,6 +21,9 @@ MNT_PATH = "/mnt"
 # can be read only (for configmap mount)
 CONFIG_PATH = "/etc/kepler/kepler.config"
 
+DOWNLOAD_FOLDERNAME = "download"
+MODEL_FOLDERNAME = "models"
+
 DEFAULT_TOTAL_SOURCE = "acpi"
 DEFAULT_COMPONENTS_SOURCE = "rapl"
 TOTAL_KEY = "TOTAL"
@@ -62,11 +65,8 @@ CONFIG_PATH = getConfig('CONFIG_PATH', CONFIG_PATH)
 
 initial_pipeline_url = getConfig('INITIAL_PIPELINE_URL', get_pipeline_url())
 
-default_model_path = os.path.join(os.path.dirname(__file__), '..', 'models')
-model_toppath =  getPath(getConfig('MODEL_PATH', default_model_path))
-
-if not os.path.exists(model_toppath):
-    os.mkdir(model_toppath)
+model_toppath =  getConfig('MODEL_PATH', getPath(MODEL_FOLDERNAME))
+download_path = getConfig('MODEL_PATH', getPath(DOWNLOAD_FOLDERNAME))
 
 ERROR_KEY = 'mae'
 ERROR_KEY = getConfig('ERROR_KEY', ERROR_KEY)

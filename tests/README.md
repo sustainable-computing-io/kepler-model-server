@@ -153,7 +153,7 @@ Optional arguments:
 
  Run:
  ```
- python estimate_mode_test.py
+ python estimator_model_test.py
  ```
 
  Reuse (test_model):

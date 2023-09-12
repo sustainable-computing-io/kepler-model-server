@@ -9,8 +9,8 @@ import codecs
 util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
 
-from config import is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint
-from loader import get_download_path, get_download_output_path
+from config import is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint, download_path
+from loader import get_download_output_path
 from train_types import ModelOutputType
 
 def make_model_request(power_request):
@@ -19,8 +19,8 @@ def make_model_request(power_request):
 TMP_FILE = 'tmp.zip'
 
 def unpack(energy_source, output_type, response, replace=True):
-    output_path = get_download_output_path(energy_source, output_type)
-    tmp_filepath = os.path.join(get_download_path(), TMP_FILE)
+    output_path = get_download_output_path(download_path, energy_source, output_type)
+    tmp_filepath = os.path.join(download_path, TMP_FILE)
     if os.path.exists(output_path):
         if not replace:
             # delete downloaded file

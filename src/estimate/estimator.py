@@ -37,7 +37,7 @@ from model_server_connector import ModelOutputType, make_request
 from archived_model import get_achived_model
 from model import load_downloaded_model
 from loader import get_download_output_path
-from config import set_env_from_model_config, SERVE_SOCKET
+from config import set_env_from_model_config, SERVE_SOCKET, download_path
 from train_types import is_support_output_type
 
 loaded_model = dict()
@@ -56,7 +56,7 @@ def handle_request(data):
     output_type = ModelOutputType[power_request.output_type]
 
     if output_type.name not in loaded_model:
-        output_path = get_download_output_path(power_request.energy_source, output_type)
+        output_path = get_download_output_path(download_path, power_request.energy_source, output_type)
         if not os.path.exists(output_path):
             # try connecting to model server
             output_path = make_request(power_request)
