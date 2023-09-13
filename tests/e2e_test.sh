@@ -97,6 +97,7 @@ test() {
     if [ ! -z ${ESTIMATOR} ]; then
         # with estimator
         if [ ! -z ${TEST} ]; then
+            # dummy kepler
             kubectl patch ds kepler-exporter -n kepler --patch-file ${top_dir}/manifests/test/power-request-client.yaml
             if [ ! -z ${SERVER} ]; then
                 restart_model_server
@@ -109,18 +110,26 @@ test() {
         fi
 
         if [ ! -z ${SERVER} ]; then
+            # with server
             wait_for_server
             wait_for_keyword estimator "load model from model server" "estimator should be able to load model from server"
+        else
+            # no server
+            wait_for_keyword estimator "load model from config" "estimator should be able to load model from config"
         fi
     else
         # no estimator
         if [ ! -z ${SERVER} ]; then
+            # with server
             if [ ! -z ${TEST} ]; then 
+                # dummy kepler
                 kubectl patch ds kepler-exporter -n kepler --patch-file ${top_dir}/manifests/test/model-request-client.yaml
                 restart_model_server
                 sleep 1
                 wait_for_kepler
                 wait_for_keyword kepler Done "cannot get model weight"
+            else
+                wait_for_keyword kepler "getWeightFromServer.*core" "kepler should get weight from server"
             fi
         fi
     fi

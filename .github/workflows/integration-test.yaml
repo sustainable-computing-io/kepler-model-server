@@ -39,6 +39,20 @@ jobs:
           make cleanup
         env:
           OPTS: "ESTIMATOR"
+      - name: test deploying kepler with only server
+        run: |
+          make deploy
+          make e2e-test
+          make cleanup
+        env:
+          OPTS: "SERVER"
+      - name: test deploying kepler with estimator and model server
+        run: |
+          make deploy
+          make e2e-test
+          make cleanup
+        env:
+          OPTS: "ESTIMATOR SERVER"
       - name: test deploying dummy kepler with only estimator
         run: |
           make deploy
