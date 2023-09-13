@@ -13,7 +13,7 @@ sys.path.append(src_path)
 sys.path.append(util_path)
 
 from util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup
-from util.config import getConfig, model_toppath, ERROR_KEY, MODEL_SERVER_MODEL_REQ_PATH, MODEL_SERVER_MODEL_LIST_PATH, initial_pipeline_url
+from util.config import getConfig, model_toppath, ERROR_KEY, MODEL_SERVER_MODEL_REQ_PATH, MODEL_SERVER_MODEL_LIST_PATH, initial_pipeline_url, download_path
 from util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME, get_pipeline_path, any_node_type, is_matched_type
 
 ###############################################
@@ -179,15 +179,16 @@ def load_init_pipeline():
     # unpack pipeline
     try:
         TMP_FILE = 'tmp.zip'
-        with codecs.open(TMP_FILE, 'wb') as f:
+        tmp_filepath = os.path.join(download_path, TMP_FILE)
+        with codecs.open(tmp_filepath, 'wb') as f:
             f.write(response.content)
-        shutil.unpack_archive(TMP_FILE, default_pipeline)
-    except:
-        print("failed to unpack downloaded pipeline.")
+        shutil.unpack_archive(tmp_filepath, default_pipeline)
+    except Exception as e:
+        print("failed to unpack downloaded pipeline: ", e)
         return
 
     # remove downloaded zip
-    os.remove(TMP_FILE)
+    os.remove(tmp_filepath)
     print("initial pipeline is loaded to {}".format(default_pipeline))
 
 if __name__ == '__main__':

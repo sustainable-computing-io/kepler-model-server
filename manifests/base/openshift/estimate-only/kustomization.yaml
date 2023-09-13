@@ -1,0 +1,9 @@
+namespace: kepler
+
+patchesStrategicMerge:
+- ./patch/patch-estimator-sidecar.yaml
+- ./patch/patch-openshift.yaml
+
+resources:
+- ../kepler
+- ./openshift/scc.yaml

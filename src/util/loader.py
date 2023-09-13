@@ -15,7 +15,6 @@ ARRAY_DELIMIT = ','
 
 DEFAULT_PIPELINE = 'default'
 CHECKPOINT_FOLDERNAME = 'checkpoint'
-DOWNLOAD_FOLDERNAME = 'download'
 PREPROCESS_FOLDERNAME = "preprocessed_data"
 
 default_init_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/"
@@ -233,12 +232,8 @@ def load_pipeline_metadata(pipeline_path, energy_source, model_type):
     pipeline_metadata_filename = _pipeline_model_metadata_filename(energy_source, model_type)
     return load_csv(pipeline_path, pipeline_metadata_filename)
 
-def get_download_path():
-    path = os.path.join(os.path.dirname(__file__), DOWNLOAD_FOLDERNAME)
-    return assure_path(path)
-
-def get_download_output_path(energy_source, output_type):
-    energy_source_path = assure_path(os.path.join(get_download_path(), energy_source))
+def get_download_output_path(download_path, energy_source, output_type):
+    energy_source_path = assure_path(os.path.join(download_path, energy_source))
     return os.path.join(energy_source_path, output_type.name)
 
 def get_url(output_type, feature_group=default_feature_group, trainer_name=default_trainer_name, node_type=default_node_type, model_topurl=default_init_model_url, energy_source="rapl", pipeline_name=default_init_pipeline_name):

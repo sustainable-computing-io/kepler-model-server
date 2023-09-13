@@ -3,8 +3,6 @@ kind: ConfigMap
 metadata:
   name: kepler-model-server-cfm
   namespace: system
-data:
-  MODEL_PATH: /data/models
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -31,7 +29,7 @@ spec:
         configMap:
           name: kepler-model-server-cfm
       - emptyDir: {}
-        name: model-data
+        name: mnt
       containers:
       - name: server-api
         image: kepler_model_server
@@ -43,8 +41,8 @@ spec:
           - name: cfm
             mountPath: /etc/kepler/kepler.config
             readOnly: true
-          - name: model-data
-            mountPath: /data
+          - name: mnt
+            mountPath: /mnt
             readOnly: false
         command: [ "python3.8" ]
         args: ["-u", "src/server/model_server.py" ]

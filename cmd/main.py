@@ -13,9 +13,6 @@ default_version = "v0.6"
 UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
 data_path = os.getenv("CPE_DATAPATH", data_path)
 
-# set model top path to data path
-os.environ['MODEL_PATH'] = data_path
-
 cur_path = os.path.join(os.path.dirname(__file__), '.')
 sys.path.append(cur_path)
 src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
@@ -749,6 +746,9 @@ def export(args):
             
 
 if __name__ == "__main__":
+    # set model top path to data path
+    os.environ['MODEL_PATH'] = data_path
+
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description="Kepler model server entrypoint")
     parser.add_argument("command", type=str, help="The command to execute.")

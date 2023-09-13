@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    openshift.io/description: "Kepler exporter"
+    openshift.io/display-name: ""
+  name: kepler
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kepler-exporter
+  namespace: kepler
+spec:
+  template:
+    spec:
+      containers:
+      - name: kepler-exporter
+        volumeMounts:
+        - name: kernel-src
+          mountPath: /usr/src/kernels
+        securityContext:
+          privileged: true
+      volumes:      
+      - name: kernel-src
+        hostPath:
+          path: /usr/src/kernels
+          type: Directory

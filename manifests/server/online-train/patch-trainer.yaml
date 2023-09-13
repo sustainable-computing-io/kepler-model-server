@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: kepler-model-server-cfm
-  namespace: system
+  namespace: kepler
 data:
   PROM_SERVER: 'http://prometheus-k8s.monitoring.svc.cluster.local:9090'
   PROM_QUERY_INTERVAL: '20'
@@ -14,7 +14,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kepler-model-server
-  namespace: system
+  namespace: kepler
 spec:
   template:
     spec:
@@ -27,8 +27,8 @@ spec:
           - name: cfm
             mountPath: /etc/kepler/kepler.config
             readOnly: true
-          - name: model-data
-            mountPath: /data
+          - name: mnt
+            mountPath: /mnt
             readOnly: false
         command: [ "python3.8" ]
         args: ["-u", "src/train/online_trainer.py" ]

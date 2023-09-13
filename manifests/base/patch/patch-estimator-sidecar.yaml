@@ -37,6 +37,10 @@ spec:
           readOnly: true
         - mountPath: /tmp
           name: tmp
+        - mountPath: /mnt
+          name: mnt
       volumes:
       - emptyDir: {}
         name: tmp
+      - emptyDir: {}
+        name: mnt

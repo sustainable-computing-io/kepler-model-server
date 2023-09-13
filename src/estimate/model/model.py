@@ -11,6 +11,7 @@ cur_path = os.path.join(os.path.dirname(__file__), '.')
 sys.path.append(cur_path)
 
 from loader import load_metadata, get_download_output_path
+from config import download_path
 from prom_types import TIMESTAMP_COL, valid_container_query
 
 from scikit_model import ScikitModel
@@ -132,5 +133,5 @@ def load_model(model_path):
 
 # download model folder has no subfolder of energy source and feature group because it has been already determined by model request
 def load_downloaded_model(energy_source, output_type):
-    model_path = get_download_output_path(energy_source, output_type)
+    model_path = get_download_output_path(download_path, energy_source, output_type)
     return load_model(model_path)
