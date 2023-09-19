@@ -17,7 +17,7 @@ body:
     validations:
       required: true
 
-    - type: textarea
+  - type: textarea
     id: documentFixDetail
     attributes:
       label: How do you suggest this is fixed?
