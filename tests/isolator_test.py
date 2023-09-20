@@ -94,5 +94,6 @@ def process(test_isolators=test_isolators, customize_isolators=[], extract_path=
 if __name__ == '__main__':
     # Add customize isolator here
     customize_isolators = [TrainIsolator(idle_data=test_idle_data, profiler=DefaultProfiler)]
+    customize_isolators = [TrainIsolator(target_hints=["coremark"])]
     customize_isolators += [ProfileBackgroundIsolator(test_profiles, test_idle_data)]
     process(customize_isolators=customize_isolators)

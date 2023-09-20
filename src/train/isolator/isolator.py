@@ -54,6 +54,7 @@ def isolate_container(extracted_data, background_containers, label_cols):
     target_containers, background_containers = get_target_containers(extracted_data, background_containers)
     target_data = extracted_data[extracted_data[container_id_colname].isin(target_containers)]
     background_data = extracted_data[~extracted_data[container_id_colname].isin(target_containers)]
+    print("Target containers:", target_containers)
     target_data = squeeze_data(target_data, label_cols)
     background_data = squeeze_data(background_data, label_cols)
     return target_data, background_data

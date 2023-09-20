@@ -3,8 +3,9 @@
 Use kepler model server function as a standalone docker container.
 
 ```
-usage: main.py [-h] [-i INPUT] [-o OUTPUT] [-s SERVER] [--interval INTERVAL] [--step STEP] [--metric-prefix METRIC_PREFIX] [-p PIPELINE_NAME] [--extractor EXTRACTOR] [--isolator ISOLATOR] [--profile PROFILE] [-e ENERGY_SOURCE] [--abs-trainers ABS_TRAINERS]
-               [--dyn-trainers DYN_TRAINERS] [--benchmark BENCHMARK] [-ot OUTPUT_TYPE] [-fg FEATURE_GROUP] [--model-name MODEL_NAME] [--target-data TARGET_DATA] [--id ID] [--version VERSION] [--publisher PUBLISHER] [--include-raw INCLUDE_RAW]
+usage: main.py [-h] [-i INPUT] [-o OUTPUT] [-s SERVER] [--interval INTERVAL] [--step STEP] [--metric-prefix METRIC_PREFIX] [-p PIPELINE_NAME] [--extractor EXTRACTOR] [--isolator ISOLATOR] [--profile PROFILE] [--target-hints TARGET_HINTS] [--bg-hints BG_HINTS]
+               [-e ENERGY_SOURCE] [--abs-trainers ABS_TRAINERS] [--dyn-trainers DYN_TRAINERS] [--benchmark BENCHMARK] [-ot OUTPUT_TYPE] [-fg FEATURE_GROUP] [--model-name MODEL_NAME] [--target-data TARGET_DATA] [--scenario SCENARIO] [--id ID] [--version VERSION]
+               [--publisher PUBLISHER] [--include-raw INCLUDE_RAW]
                command
 
 Kepler model server entrypoint
@@ -30,6 +31,9 @@ optional arguments:
                         Specify extractor name (default, smooth).
   --isolator ISOLATOR   Specify isolator name (none, min, profile, trainer).
   --profile PROFILE     Specify profile input (required for trainer and profile isolator).
+  --target-hints TARGET_HINTS
+                        Specify dynamic workload container name hints (used by TrainIsolator)
+  --bg-hints BG_HINTS   Specify background workload container name hints (used by TrainIsolator)
   -e ENERGY_SOURCE, --energy-source ENERGY_SOURCE
                         Specify energy source.
   --abs-trainers ABS_TRAINERS
@@ -46,6 +50,7 @@ optional arguments:
                         Specify target model name for energy estimation.
   --target-data TARGET_DATA
                         Speficy target plot data (preprocess, estimate)
+  --scenario SCENARIO   Speficy scenario
   --id ID               specify machine id
   --version VERSION     Specify model server version.
   --publisher PUBLISHER
