@@ -54,8 +54,8 @@ if __name__ == '__main__':
         for fg_name, best_model in valid_fgs.items():
             if os.path.exists(output_path):
                 shutil.rmtree(output_path)
-            if output_type.name in loaded_model:
-                del loaded_model[output_type.name]
+            if output_type.name in loaded_model and energy_source in loaded_model[output_type.name]:
+                del loaded_model[output_type.name][energy_source]
             metrics = FeatureGroups[FeatureGroup[fg_name]]
             request_json = generate_request(None, n=10, metrics=metrics, output_type=output_type_name)
             data = json.dumps(request_json)
@@ -74,8 +74,8 @@ if __name__ == '__main__':
             response = requests.get(url)
             if response.status_code == 200:
                 output_path = get_download_output_path(download_path, energy_source, output_type)
-                if output_type_name in loaded_model:
-                    del loaded_model[output_type_name]
+                if output_type_name in loaded_model and energy_source in loaded_model[output_type.name]:
+                    del loaded_model[output_type_name][energy_source]
                 if os.path.exists(output_path):
                     shutil.rmtree(output_path)
                 request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.Full], output_type=output_type_name)
@@ -94,8 +94,8 @@ if __name__ == '__main__':
     os.environ['MODEL_SERVER_ENABLE'] = "false"
     output_type = ModelOutputType[output_type_name]
     output_path = get_download_output_path(download_path, energy_source, output_type)
-    if output_type_name in loaded_model:
-        del loaded_model[output_type_name]
+    if output_type_name in loaded_model and energy_source in loaded_model[output_type.name]:
+        del loaded_model[output_type_name][energy_source]
     if os.path.exists(output_path):
         shutil.rmtree(output_path)
     # valid model
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     output = handle_request(data)
     assert len(output['powers']) > 0, "cannot get power {}\n {}".format(output['msg'], request_json)
     print("result {}/{} from static set: {}".format(output_type_name, FeatureGroup.KubeletOnly.name, output))
-    del loaded_model[output_type_name]
+    del loaded_model[output_type_name][energy_source]
     # invalid model
     os.environ[init_url_key] = get_url(output_type=output_type, feature_group=FeatureGroup.BPFOnly)
     print("Requesting from ", os.environ[init_url_key])
@@ -119,8 +119,8 @@ if __name__ == '__main__':
     set_env_from_model_config()
     print("Requesting from ", os.environ[init_url_key])
     reset_failed_list()
-    if output_type_name in loaded_model:
-        del loaded_model[output_type_name]
+    if output_type_name in loaded_model and energy_source in loaded_model[output_type.name]:
+        del loaded_model[output_type_name][energy_source]
     output_path = get_download_output_path(download_path, energy_source, output_type)
     if os.path.exists(output_path):
         shutil.rmtree(output_path)
