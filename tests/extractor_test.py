@@ -62,7 +62,9 @@ def save_extract_results(instance, feature_group, extracted_data, node_level, sa
     save_csv(save_path, filename, extracted_data)
 
 def get_expected_power_columns(energy_components=test_energy_components, num_of_unit=test_num_of_unit):
-    return [component_to_col(component, "package", unit_val) for component in energy_components for unit_val in range(0,num_of_unit)]
+    # TODO: if ratio applied, 
+    # return [component_to_col(component, "package", unit_val) for component in energy_components for unit_val in range(0,num_of_unit)]
+    return [component_to_col(component) for component in energy_components]
 
 def assert_extract(extracted_data, power_columns, energy_components, num_of_unit, feature_group):
     extracted_data_column_names = extracted_data.columns
@@ -70,10 +72,12 @@ def assert_extract(extracted_data, power_columns, energy_components, num_of_unit
     assert extracted_data is not None, "extracted data is None"
     assert len(power_columns) > 0, "no power label column {}".format(extracted_data_column_names)
     assert node_info_column in extracted_data_column_names, "no {} in column {}".format(node_info_column, extracted_data_column_names)
-    expected_power_column_length = len(energy_components) * num_of_unit
+    # TODO: if ratio applied, expected_power_column_length = len(energy_components) * num_of_unit
+    expected_power_column_length = len(energy_components) 
     # detail assert
     assert len(power_columns) == expected_power_column_length, "unexpected power label columns {}, expected {}".format(power_columns, expected_power_column_length)
-    expected_col_size = expected_power_column_length + len(FeatureGroups[FeatureGroup[feature_group]]) + 1 + num_of_unit # power ratio
+    # TODO: if ratio applied, expected_col_size must + 1 for power_ratio
+    expected_col_size = expected_power_column_length + len(FeatureGroups[FeatureGroup[feature_group]]) + num_of_unit # power ratio
     assert len(extracted_data_column_names) == expected_col_size, "unexpected column length: expected {}, got {}({}) ".format(expected_col_size, extracted_data_column_names, len(extracted_data_column_names))
 
 def process(query_results, feature_group, save_path=extractor_output_path, customize_extractors=test_customize_extractors, energy_source=test_energy_source, num_of_unit=2):

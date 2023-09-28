@@ -128,7 +128,8 @@ class ProfileBackgroundIsolator(Isolator):
             data = data.reset_index()
         data = data.set_index([TIMESTAMP_COL])
         target_data, _ = isolate_container(data, self.background_containers, label_cols)
-        isolated_data = target_data.copy()
+        isolated_data = squeeze_data(target_data, label_cols)
+        print(isolated_data)
         try:
             for label_col in label_cols:
                 component = col_to_component(label_col)
@@ -137,7 +138,6 @@ class ProfileBackgroundIsolator(Isolator):
                     return None
                 isolated_data[label_col] = isolated_data[label_col] - isolated_data['profile']
                 isolated_data.drop(columns='profile', inplace=True)
-            isolated_data = isolated_data.reset_index()
             if index_list[0] is not None:
                 isolated_data = isolated_data.set_index(index_list)
             return isolated_data
