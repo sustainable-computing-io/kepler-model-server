@@ -52,7 +52,7 @@ def save_results(instance, extractor_name, feature_group, isolated_data, save_pa
 def assert_isolate(extractor_result, isolated_data):
     isolated_data_column_names = isolated_data.columns
     assert isolated_data is not None, "isolated data is None"
-    value_df = isolated_data.drop(columns=container_level_index)
+    value_df = isolated_data.reset_index().drop(columns=container_level_index)
     negative_df = value_df[(value_df<0).all(1)]
     assert len(negative_df) == 0, "all data must be non-negative \n {}".format(negative_df) 
     assert len(extractor_result.columns) == len(isolated_data_column_names), "unexpected column length: expected {}, got {}({}) ".format(len(extractor_result.columns), isolated_data_column_names, len(isolated_data_column_names))
@@ -90,10 +90,9 @@ def process(test_isolators=test_isolators, customize_isolators=[], extract_path=
                 save_results(test_instance, extractor_name, feature_group, isolated_data, save_path=save_path)
 
 
-
 if __name__ == '__main__':
     # Add customize isolator here
-    customize_isolators = [TrainIsolator(idle_data=test_idle_data, profiler=DefaultProfiler)]
-    customize_isolators = [TrainIsolator(target_hints=["coremark"])]
-    customize_isolators += [ProfileBackgroundIsolator(test_profiles, test_idle_data)]
+    customize_isolators = [ProfileBackgroundIsolator(test_profiles, test_idle_data)]
+    customize_isolators += [TrainIsolator(idle_data=test_idle_data, profiler=DefaultProfiler)]
+    customize_isolators += [TrainIsolator(target_hints=["coremark"])]
     process(customize_isolators=customize_isolators)

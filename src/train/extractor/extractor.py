@@ -147,7 +147,7 @@ class DefaultExtractor(Extractor):
             
             if all(col in aggr_query_data.columns for col in container_id_cols):
                 aggr_query_data.rename(columns={query: feature}, inplace=True)
-                aggr_query_data[container_id_colname] = aggr_query_data[container_id_cols].apply(lambda x: '/'.join(x), axis=1)
+                aggr_query_data[container_id_colname] = aggr_query_data[container_id_cols].apply(lambda x: '/'.join([str(xi) for xi in x]), axis=1)
                 # separate for each container_id
                 container_id_list = pd.unique(aggr_query_data[container_id_colname])
 
@@ -230,17 +230,20 @@ class DefaultExtractor(Extractor):
                 if usage_ratio_query not in query_results:
                     # sum over mode (idle, dynamic) and unit col
                     df = aggr_query_data.groupby([TIMESTAMP_COL]).sum().reset_index().set_index(TIMESTAMP_COL)
+                    time_diff_values = df.reset_index()[[TIMESTAMP_COL]].diff().dropna().values.mean()
                     df = df.loc[:, df.columns != unit_col]
                     # rename
                     colname = component_to_col(component)
                     df.rename(columns={query: colname}, inplace=True)
                     # find current value from aggregated query
                     df = df.sort_index()[colname].diff().dropna()
+                    df /= time_diff_values
                     df = df.mask(df.lt(0)).ffill().fillna(0).convert_dtypes()
                     power_data_list += [df]
                 else:
                      # sum over mode (idle, dynamic)
                     aggr_query_data = aggr_query_data.groupby([unit_col, TIMESTAMP_COL]).sum().reset_index().set_index(TIMESTAMP_COL)
+                    time_diff_values = aggr_query_data.reset_index()[[TIMESTAMP_COL]].diff().dropna().values.mean()
                     # add per unit_col
                     unit_vals = pd.unique(aggr_query_data[unit_col])
                     for unit_val in unit_vals:
@@ -250,16 +253,19 @@ class DefaultExtractor(Extractor):
                         df.rename(columns={query: colname}, inplace=True)
                         # find current value from aggregated query
                         df = df.sort_index()[colname].diff().dropna()
+                        df /= time_diff_values
                         df = df.mask(df.lt(0)).ffill().fillna(0).convert_dtypes()
                         power_data_list += [df]
             else:
                 # sum over mode
                 aggr_query_data = aggr_query_data.groupby([TIMESTAMP_COL]).sum()
+                time_diff_values = aggr_query_data.reset_index()[[TIMESTAMP_COL]].diff().dropna().values.mean()
                 # rename
                 colname = component_to_col(component)
                 aggr_query_data.rename(columns={query: colname}, inplace=True)
                 # find current value from aggregated query
                 df = aggr_query_data.sort_index()[colname].diff().dropna()
+                df /= time_diff_values
                 df = df.mask(df.lt(0)).ffill().fillna(0).convert_dtypes()
                 power_data_list += [df]
         power_data = pd.concat(power_data_list, axis=1).dropna()
