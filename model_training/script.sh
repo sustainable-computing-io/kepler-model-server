@@ -14,6 +14,7 @@ export VERSION=${VERSION-v0.6}
 export PIPELINE_PREFIX=${PIPELINE_PREFIX-"std_"}
 export CPE_DATAPATH=${CPE_DATAPATH-"$(pwd)/data"}
 export ENTRYPOINT_IMG=${ENTRYPOINT_IMG-"quay.io/sustainable_computing_io/kepler_model_server:v0.6"}
+export MODEL_PATH=$CPE_DATAPATH
 
 mkdir -p $HOME/bin
 export PATH=$HOME/bin:$PATH
@@ -113,7 +114,7 @@ function wait_for_benchmark() {
 function save_benchmark() {
     BENCHMARK=$1
     BENCHMARK_NS=$2
-    kubectl get benchmark $BENCHMARK -n ${BENCHMARK_NS} -ojson > data/${BENCHMARK}.json
+    kubectl get benchmark $BENCHMARK -n ${BENCHMARK_NS} -ojson > $CPE_DATAPATH/${BENCHMARK}.json
 }
 
 function collect_idle() {
@@ -180,7 +181,7 @@ function quick_collect() {
 }
 
 function train() {
-    train_model stressng_kepler_query,coremark_kepler_query,parsec_kepler_query ${VERSION}
+    train_model stressng_kepler_query ${VERSION}
 }
 
 function quick_train() {

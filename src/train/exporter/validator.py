@@ -6,7 +6,6 @@ sys.path.append(util_path)
 
 from loader import load_train_args
 from config import ERROR_KEY
-from train_types import PowerSourceMap
 
 required_benchmark = ["stressng_kepler_query"]
 
