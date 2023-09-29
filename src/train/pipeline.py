@@ -163,7 +163,7 @@ class Pipeline():
         all_metadata = get_all_metadata(model_toppath, self.name)
         for energy_source, model_type_metadata in all_metadata.items():
             for model_type, metadata_df in model_type_metadata.items():
-                metadata_df = metadata_df.sort_values(by=[ERROR_KEY])
+                metadata_df = metadata_df.sort_values(by=["feature_group", ERROR_KEY])
                 save_pipeline_metadata(self.path, self.metadata, energy_source, model_type, metadata_df)
     
     def print_pipeline_process_end(self, energy_source, feature_group, abs_data, dyn_data):
@@ -214,7 +214,10 @@ def initial_trainers(trainer_names, node_level, pipeline_name, target_energy_sou
         energy_components = PowerSourceMap[energy_source]
         for feature_group in valid_feature_groups:
             for trainer_name in trainer_names:
-                trainer_class = load_class("trainer", trainer_name)
+                try:
+                    trainer_class = load_class("trainer", trainer_name)
+                except:
+                    continue
                 trainer = trainer_class(energy_components, feature_group.name, energy_source, node_level, pipeline_name=pipeline_name)
                 trainers += [trainer]
     return trainers

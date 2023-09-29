@@ -16,8 +16,9 @@ from train_types import ModelOutputType, PowerSourceMap, FeatureGroup
 from loader import load_csv, load_pipeline_metadata, get_model_group_path, load_metadata, load_train_args, get_preprocess_folder, get_general_filename
 from saver import WEIGHT_FILENAME, save_pipeline_metadata, save_train_args
 from format import time_to_str
+from writer import generate_pipeline_page, generate_validation_results, append_version_readme
 
-def export(pipeline_path, machine_path, version, publisher, collect_date, include_raw=False):
+def export(data_path, pipeline_path, machine_path, machine_id, version, publisher, collect_date, include_raw=False):
     if not validate_arguments(pipeline_path):
         return 
 
@@ -47,7 +48,9 @@ def export(pipeline_path, machine_path, version, publisher, collect_date, includ
         
     extractor = pipeline_metadata["extractor"]
     isolator = pipeline_metadata["isolator"]
+    mae_validated_df_map = dict()
     for energy_source in PowerSourceMap.keys():
+        mae_validated_df_map[energy_source] = dict()
         for ot in ModelOutputType:
             metadata_df = load_pipeline_metadata(pipeline_path, energy_source, ot.name)
             if metadata_df is None:
@@ -80,8 +83,19 @@ def export(pipeline_path, machine_path, version, publisher, collect_date, includ
                 save_pipeline_metadata(out_pipeline_path, pipeline_metadata, energy_source, ot.name, mae_validated_df)
                 print("Exported models for {}/{}".format(energy_source, ot.name))
                 print(mae_validated_df)
+                mae_validated_df_map[energy_source][ot.name] = mae_validated_df
             else:
                 print("No valid models exported for {}/{}".format(energy_source, ot.name))
-                
+
+    train_args = load_train_args(pipeline_path)
+    train_args["machine_id"] = machine_id
+
     # save train args
-    save_train_args(out_pipeline_path, load_train_args(pipeline_path))
+    save_train_args(out_pipeline_path, train_args)
+
+    # generate document
+    generate_pipeline_page(data_path, machine_path, train_args)
+    generate_validation_results(machine_path, train_args, mae_validated_df_map)
+    append_version_readme(machine_path, train_args, pipeline_metadata, include_raw)
+
+

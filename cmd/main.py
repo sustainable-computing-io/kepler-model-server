@@ -327,7 +327,8 @@ def extract(args):
     if args.output:
         save_csv(data_path, "extracted_" + args.output, feature_power_data)
         query = feature_to_query(FeatureGroups[fg][0])
-        query_results[query][[TIMESTAMP_COL, query]].groupby([TIMESTAMP_COL]).sum().to_csv(args.output[0:-4]+"_raw.csv")
+        raw_data = query_results[query][[TIMESTAMP_COL, query]].groupby([TIMESTAMP_COL]).sum()
+        save_csv(data_path, "extracted_" + args.output[0:-4]+"_raw.csv", raw_data)
     return feature_power_data, power_cols
 
 def isolate(args):
@@ -407,10 +408,12 @@ def train(args):
         print_cols = ["feature_group", "model_name", "mae"]
         print("AbsPower pipeline results:")
         metadata_df = load_pipeline_metadata(pipeline.path, energy_source, ModelOutputType.AbsPower.name)
-        print(metadata_df.sort_values(by=[ERROR_KEY])[print_cols])
+        if metadata_df is not None:
+            print(metadata_df.sort_values(by=[ERROR_KEY])[print_cols])
         print("DynPower pipeline results:")
         metadata_df = load_pipeline_metadata(pipeline.path, energy_source, ModelOutputType.DynPower.name)
-        print(metadata_df.sort_values(by=[ERROR_KEY])[print_cols])
+        if metadata_df is not None:
+            print(metadata_df.sort_values(by=[ERROR_KEY])[print_cols])
 
         warnings.resetwarnings()
 
@@ -616,7 +619,7 @@ def _summary_plot(energy_source, summary_df, output_folder, name):
         sns.barplot(data=data, x="Feature Group", y="MAE", hue="Model", ax=ax)
         ax.set_title(component)
         ax.set_ylabel("MAE (Watt)")
-        ax.set_ylim((0, 50))
+        ax.set_ylim((0, 100))
         if i < col_num-1:
             ax.set_xlabel("")
         ax.legend(bbox_to_anchor=(1.05, 1.05))
@@ -671,7 +674,8 @@ def plot(args):
         from estimate import default_predicted_col_func
         from sklearn.preprocessing import MaxAbsScaler
 
-        best_result_map, power_labels_map, best_model_id_map, _ = estimate(args)
+        best_result_map, power_labels_map, best_model_id_map, summary_df = estimate(args)
+        print(summary_df)
         for energy_source, best_restult in best_result_map.items():
             best_restult = best_restult.reset_index()
             power_labels = power_labels_map[energy_source]
@@ -737,7 +741,7 @@ def export(args):
     machine_path = get_machine_path(output_path, args.version, machine_id)
 
     collect_date, _ = extract_time(args.benchmark)
-    exporter.export(pipeline_path, machine_path, version=args.version, publisher=args.publisher, collect_date=collect_date, include_raw=args.include_raw)
+    exporter.export(data_path, pipeline_path, machine_path, machine_id=machine_id, version=args.version, publisher=args.publisher, collect_date=collect_date, include_raw=args.include_raw)
 
     args.energy_source = ",".join(PowerSourceMap.keys())
 
@@ -838,7 +842,6 @@ def plot_scenario(args):
                 power_data = data.groupby([TIMESTAMP_COL]).max()
                 data_filename = get_general_filename(args.target_data, energy_source, None, ot, args.extractor, args.isolator) + "_" + args.scenario
                 _ts_plot(power_data, power_cols, "Power source: {} ({})".format(energy_source, args.scenario), output_folder, data_filename, ylabel="Power (W)")
-
 
 if __name__ == "__main__":
     # set model top path to data path
