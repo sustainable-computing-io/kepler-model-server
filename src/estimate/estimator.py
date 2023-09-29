@@ -58,7 +58,7 @@ def handle_request(data):
 
     if output_type.name not in loaded_model:
         loaded_model[output_type.name] = dict()
-    
+    output_path = ""
     if energy_source not in loaded_model[output_type.name]:
         output_path = get_download_output_path(download_path, power_request.energy_source, output_type)
         if not os.path.exists(output_path):
@@ -82,8 +82,8 @@ def handle_request(data):
     model = loaded_model[output_type.name][energy_source]
     powers, msg = model.get_power(power_request.datapoint)
     if msg != "":
-        print("{} fail to predict, removed".format(model.model_name))
-        if os.path.exists(output_path):
+        print("{} fail to predict, removed: {}".format(model.model_name, msg))
+        if output_path != "" and os.path.exists(output_path):
             shutil.rmtree(output_path)
     return {"powers": powers, "msg": msg}
 
