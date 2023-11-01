@@ -1,6 +1,6 @@
 export IMAGE_REGISTRY ?= quay.io/sustainable_computing_io
 IMAGE_NAME := kepler_model_server
-IMAGE_VERSION := 0.6
+IMAGE_VERSION := 0.7
 
 IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):v$(IMAGE_VERSION)
 LATEST_TAG_IMAGE := $(IMAGE_REGISTRY)/$(IMAGE_NAME):latest

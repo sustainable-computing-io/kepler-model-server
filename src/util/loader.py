@@ -17,6 +17,9 @@ DEFAULT_PIPELINE = 'default'
 CHECKPOINT_FOLDERNAME = 'checkpoint'
 PREPROCESS_FOLDERNAME = "preprocessed_data"
 
+# TODO: change to v0.7 when the model is updated to database
+# default_init_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.7/nx12"
+# default_init_pipeline_name = "std_v0.7"
 default_init_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.6/nx12"
 default_init_pipeline_name = "std_v0.6"
 default_trainer_name = "GradientBoostingRegressorTrainer"

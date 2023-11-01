@@ -10,10 +10,10 @@ export REGISTRY_PORT=${REGISTRY_PORT:-5101}
 export IMAGE_REPO=${IMAGE_REPO:-localhost:5101}
 export PROM_SERVER=${PROM_SERVER:-http://localhost:9090}
 export ENERGY_SOURCE=${ENERGY_SOURCE:-rapl,acpi}
-export VERSION=${VERSION-v0.6}
+export VERSION=${VERSION-v0.7}
 export PIPELINE_PREFIX=${PIPELINE_PREFIX-"std_"}
 export CPE_DATAPATH=${CPE_DATAPATH-"$(pwd)/data"}
-export ENTRYPOINT_IMG=${ENTRYPOINT_IMG-"quay.io/sustainable_computing_io/kepler_model_server:v0.6"}
+export ENTRYPOINT_IMG=${ENTRYPOINT_IMG-"quay.io/sustainable_computing_io/kepler_model_server:v0.7"}
 export MODEL_PATH=$CPE_DATAPATH
 
 mkdir -p $HOME/bin
