@@ -7,9 +7,10 @@ on:
     paths:
       - dockerfiles/requirements.txt
       - dockerfiles/Dockerfile.base
+      - .github/workflows/docker-base-image.yml
 
 env:
-  IMAGE_VERSION: '0.6'
+  IMAGE_VERSION: '0.7'
 
 jobs:
   build:
