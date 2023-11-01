@@ -8,7 +8,7 @@ data_path = "/data"
 default_output_filename = "output"
 default_trainer_names = [ 'PolynomialRegressionTrainer', 'GradientBoostingRegressorTrainer', 'SGDRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer','SVRRegressorTrainer']
 default_trainers = ",".join(default_trainer_names)
-default_version = "v0.6"
+default_version = "v0.7"
 
 UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
 data_path = os.getenv("CPE_DATAPATH", data_path)

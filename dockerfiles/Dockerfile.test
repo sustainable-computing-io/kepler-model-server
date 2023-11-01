@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:v0.6
+FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:v0.7
 
 WORKDIR /usr/local
 
