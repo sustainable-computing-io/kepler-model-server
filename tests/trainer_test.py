@@ -19,8 +19,7 @@ from extractor_test import test_extractors, get_extract_results, test_energy_sou
 import pandas as pd
 import threading
 
-test_trainer_names = [ 'PolynomialRegressionTrainer', 'GradientBoostingRegressorTrainer', 'SGDRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer','SVRRegressorTrainer']
-
+test_trainer_names = [ 'PolynomialRegressionTrainer', 'GradientBoostingRegressorTrainer', 'SGDRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer','SVRRegressorTrainer', 'XgboostFitTrainer' ]
 pipeline_lock = threading.Lock()
 
 def assert_train(trainer, data, energy_components):

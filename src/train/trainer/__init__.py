@@ -130,7 +130,7 @@ class Trainer(metaclass=ABCMeta):
             self.load_model(node_type)
             node_type_filtered_data = data[data[node_info_column] == node_type]
             if self.node_scalers[node_type] is None:
-                self.print_log("fit scaler to latest data".format(node_type, self.feature_group_name))
+                self.print_log("fit scaler to latest data {1} for node_type={0}".format(node_type, self.feature_group_name))
                 # no profiled scaler
                 x_values = node_type_filtered_data[self.features].values
                 self.node_scalers[node_type] = MaxAbsScaler()

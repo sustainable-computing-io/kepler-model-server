@@ -15,11 +15,13 @@ from config import download_path
 from prom_types import TIMESTAMP_COL, valid_container_query
 
 from scikit_model import ScikitModel
+from xgboost_model import XgboostModel
 # from keras_model import KerasModel
 
 # model wrapper
 MODELCLASS = {
-    'scikit': ScikitModel
+    'scikit': ScikitModel,
+    'xgboost': XgboostModel
     # 'keras': KerasModel,
 }
 
