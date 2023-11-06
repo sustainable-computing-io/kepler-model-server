@@ -50,6 +50,7 @@ class FeatureGroup(enum.Enum):
     Basic = 9
     BPFIRQ = 10
     AcceleratorOnly = 11
+    ThirdParty = 12
     Unknown = 99
 
 class EnergyComponentLabelGroup(enum.Enum):

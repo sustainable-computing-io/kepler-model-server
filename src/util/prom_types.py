@@ -1,7 +1,7 @@
 
 from config import getConfig
 import pandas as pd
-from train_types import SYSTEM_FEATURES, FeatureGroups, FeatureGroup, get_valid_feature_groups
+from train_types import SYSTEM_FEATURES, WORKLOAD_FEATURES, FeatureGroups, FeatureGroup, deep_sort, get_valid_feature_groups
 PROM_SERVER = 'http://localhost:9090'
 PROM_SSL_DISABLE = 'True'
 PROM_HEADERS = ''
@@ -14,6 +14,8 @@ PROM_HEADERS = None if PROM_HEADERS == '' else PROM_HEADERS
 PROM_SSL_DISABLE = True if getConfig('PROM_SSL_DISABLE', PROM_SSL_DISABLE).lower() == 'true' else False
 PROM_QUERY_INTERVAL = getConfig('PROM_QUERY_INTERVAL', PROM_QUERY_INTERVAL)
 PROM_QUERY_STEP = getConfig('PROM_QUERY_STEP', PROM_QUERY_STEP)
+
+PROM_THIRDPARTY_METRICS = getConfig('PROM_THIRDPARTY_METRICS', "").split(',')
 
 metric_prefix = "kepler_"
 TIMESTAMP_COL = "timestamp"
@@ -47,10 +49,17 @@ def feature_to_query(feature):
         return "{}_{}".format(node_query_prefix, feature)
     if feature in FeatureGroups[FeatureGroup.AcceleratorOnly]:
         return  "{}_{}".format(node_query_prefix, feature)
+    if FeatureGroup.ThirdParty in FeatureGroups is not None and feature in FeatureGroups[FeatureGroup.ThirdParty]:
+        return feature
     return "{}_{}_{}".format(container_query_prefix, feature, container_query_suffix)
 
 def energy_component_to_query(component):
     return "{}_{}_{}".format(node_query_prefix, component, node_query_suffix)
+
+def update_thirdparty_metrics(metrics):
+    global FeatureGroups
+    FeatureGroups[FeatureGroup.ThirdParty] = metrics
+    FeatureGroups[FeatureGroup.WorkloadOnly] = deep_sort(WORKLOAD_FEATURES + metrics)
 
 def get_valid_feature_group_from_queries(queries):
     all_workload_features = FeatureGroups[FeatureGroup.WorkloadOnly]
