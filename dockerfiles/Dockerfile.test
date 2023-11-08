@@ -21,5 +21,7 @@ EXPOSE 8100
 EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
+# TODO: remove after kepler_model_server_base:v0.7 built
+RUN pip install Werkzeug==2.2.2
 
 CMD [ "python3.8", "-u", "src/server/model_server.py" ]
