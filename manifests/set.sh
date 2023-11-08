@@ -24,7 +24,7 @@ for opt in ${DEPLOY_OPTIONS}; do export $opt=true; done;
 
 echo ${DEPLOY_OPTIONS}
 
-version=$(kubectl version --short | grep 'Client Version' | sed 's/.*v//g' | cut -b -4)
+version=$(kubectl version| grep 'Client Version' | sed 's/.*v//g' | cut -b -4)
 if [ 1 -eq "$(echo "${version} < 1.21" | bc)" ]
 then
     echo "You need to update your kubectl version to 1.21+ to support kustomize"
