@@ -28,7 +28,9 @@ CLUSTER_PROVIDER=${CLUSTER_PROVIDER:-"kind"}
 
 . ./prometheus.sh
 . ./kind/kind.sh
-. ./microshift/microshift.sh
+if [ ${CLUSTER_PROVIDER} != "kind" ]; then
+    . ./microshift/microshift.sh
+fi
 
 # check CPU arch
 CPUArch=$(uname -m)
