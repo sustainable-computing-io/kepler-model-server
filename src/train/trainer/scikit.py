@@ -86,8 +86,6 @@ class ScikitTrainer(Trainer):
                         "Categorical_Variables": dict(),
                         "Numerical_Variables": {self.features[i]: 
                                                 {"scale": scaler.scale_[i],
-                                                "mean": 0, 
-                                                "variance": 0, 
                                                 "weight": model.coef_[i], 
                                                 }
                                                 for i in range(len(self.features))},
