@@ -18,7 +18,4 @@ EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
 
-# TODO: remove after kepler_model_server_base:v0.7 built
-RUN pip install Werkzeug==2.2.2
-
 ENTRYPOINT ["python3.8", "cmd/main.py"]
