@@ -7,7 +7,7 @@ sys.path.append(util_path)
 from loader import load_train_args
 from config import ERROR_KEY
 
-required_benchmark = ["stressng_kepler_query"]
+required_benchmark = ["sample_kepler_query", "stressng_kepler_query", "customBenchmark_kepler_query"]
 
 default_threshold_percent = 20
 

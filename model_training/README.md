@@ -54,7 +54,31 @@ This is only for testing purpose.
 
 It might take an hour to run and collect all benchmarks. Output including CPE CR and Prometheus query response will be in `data` folder by default.
 
-## 3. Profile and train 
+## 3. Collect metrics without running benchmark
+Users might want to run a custom benchmark outside of `kepler-model-server` and collect metrics for training the model using `kepler-model-server`.
+
+### Custom Benchmark
+
+    ./script.sh custom_collect
+
+When this command is run, it creates a file `customBenchmark.json` with a default start and end timestamps for querying metrics from Prometheus. If the desired time window for metrics collection is different, manually update the timestamps in that file accordinly. Then run again the same command to collect the metrics.
+
+## 4. Validate collected metrics
+Validation of metrics happens by default at the time of their collection. It is also possible to validate the collected metrics explicitly.
+
+### Quick sample
+
+    ./script.sh validate sample
+
+### Full run
+
+    ./script.sh validate stressng
+
+### Custom benchmark
+
+    ./script.sh validate customBenchmark
+
+## 5. Profile and train
 
 You can train the model by using docker image which require no environment setup but can be limited by docker limitation or train the model natively by setting up your python environment as follows.
 
@@ -71,6 +95,12 @@ You can train the model by using docker image which require no environment setup
 
 ```
 ./script.sh train
+```
+
+#### Custom benchmark
+
+```
+./script.sh custom_train
 ```
 
 Training output will be in `/data` folder by default. The folder contains:
@@ -106,20 +136,21 @@ Run
 
 1. Fork `kepler-model-db`.
 
-1. Validate and make a copy by export command. Need to define `machine id`, `local path to forked kepler-model-db/models`, and `author github account`. 
+1. Validate and make a copy by export command. Need to define `machine id`, `local path to forked kepler-model-db/models`, `author github account` and `benchmark type`.
 
     Run
     ```
-    ./script.sh export <machine id> <path to kepler-model-db/models> <author github account>
+    ./script.sh export <machine id> <path to kepler-model-db/models> <author github account> <benchmark type>
     ```
 
-    If you are agree to also share the raw data (preprocessed data and archived file of full pipeline), run
+    If you also agree to share the raw data (preprocessed data and archived file of full pipeline), run
 
     ```
-    ./script.sh export_with_raw <machine id> <path to kepler-model-db/models> <author github account>
+    ./script.sh export_with_raw <machine id> <path to kepler-model-db/models> <author github account> <benchmark type>
     ```
 
     - set `NATIVE="true"` to export natively.
+    - Benchmark type accepts one of the values `sample`, `stressng` or `customBenchmark`.
 
 2. Add information of your machine in `./models/README.md` in `kepler-model-db`. You may omit any column as needed.
 3. Push PR to `kepler-model-db.

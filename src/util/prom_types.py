@@ -18,6 +18,7 @@ PROM_QUERY_STEP = getConfig('PROM_QUERY_STEP', PROM_QUERY_STEP)
 PROM_THIRDPARTY_METRICS = getConfig('PROM_THIRDPARTY_METRICS', "").split(',')
 
 metric_prefix = "kepler_"
+custom_metrics = "node_cpu_seconds_total"
 TIMESTAMP_COL = "timestamp"
 PACKAGE_COL = "package"
 SOURCE_COL = "source"

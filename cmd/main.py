@@ -19,7 +19,7 @@ src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 
 from util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_HEADERS, PROM_SSL_DISABLE, PROM_THIRDPARTY_METRICS
-from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, node_info_column, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics
+from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, custom_metrics as CUSTOM_METRICS, node_info_column, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics
 from util.train_types import ModelOutputType, FeatureGroup, FeatureGroups, is_single_source_feature_group, SingleSourceFeatures
 from util.loader import load_json, DEFAULT_PIPELINE, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_machine_path, get_preprocess_folder, get_general_filename
 from util.saver import save_json, save_csv, save_train_args
@@ -46,6 +46,15 @@ def extract_time(benchmark_filename):
     start = datetime.datetime.strptime(start_str, '%Y-%m-%dT%H:%M:%SZ')
     end_str = data["status"]["results"][-1]["repetitions"][-1]["pushedTime"].split(".")[0]
     end = datetime.datetime.strptime(end_str, '%Y-%m-%d %H:%M:%S')
+    print(UTC_OFFSET_TIMEDELTA)
+    return start-UTC_OFFSET_TIMEDELTA, end-UTC_OFFSET_TIMEDELTA
+
+def custom_extract_time(benchmark_filename):
+    data = load_json(data_path, benchmark_filename)
+    start_str = data["startTimeUTC"]
+    start = datetime.datetime.strptime(start_str, '%Y-%m-%dT%H:%M:%SZ')
+    end_str = data["endTimeUTC"]
+    end = datetime.datetime.strptime(end_str, '%Y-%m-%dT%H:%M:%SZ')
     print(UTC_OFFSET_TIMEDELTA)
     return start-UTC_OFFSET_TIMEDELTA, end-UTC_OFFSET_TIMEDELTA
 
@@ -181,6 +190,30 @@ def get_validate_df(benchmark_filename, query_response):
     print(validate_df.groupby(["scenarioID", "query"]).sum()[["count", ">0"]])
     return validate_df
 
+def get_custom_validate_df(benchmark_filename, query_response, queries):
+    items = []
+    query_results = prom_responses_to_results(query_response)
+    print("queries: {}".format(queries))
+    for query in queries:
+        df = query_results[query]
+        if df.empty:
+            continue
+        print("query: {}".format(query))
+        print("df: {}".format(df))
+        # set validate item
+        item = dict()
+        item["pod"] = benchmark_filename
+        item["scenarioID"] = ""
+        item["query"] = query
+        item["count"] = len(df)
+        item[">0"] = len(df[df[query] > 0])
+        item["total"] = df[query].max()
+        items += [item]
+    validate_df = pd.DataFrame(items)
+    if not validate_df.empty:
+        print(validate_df.groupby(["scenarioID", "query"]).sum()[["count", ">0"]])
+    return validate_df
+
 def check_ot_fg(args, valid_fg):
     ot = None
     fg = None
@@ -231,6 +264,56 @@ def query(args):
         validate_df = get_validate_df(benchmark_filename, response)
         summary_validation(validate_df)
         save_csv(path=data_path, name=args.output + "_validate_result", data=validate_df)
+
+def custom_query(args):
+    from prometheus_api_client import PrometheusConnect
+    prom = PrometheusConnect(url=args.server, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
+    benchmark_filename = args.input
+    filepath = os.path.join(data_path, benchmark_filename+".json")
+    if not os.path.isfile(filepath):
+        print("Query last {} interval.".format(args.interval))
+        end = datetime.datetime.now(datetime.timezone.utc)
+        start = end - datetime.timedelta(seconds=args.interval)
+        item = dict()
+        item["startTimeUTC"] = start.strftime("%Y-%m-%dT%H:%M:%SZ")
+        item["endTimeUTC"] = end.strftime("%Y-%m-%dT%H:%M:%SZ")
+        save_json(path=data_path, name=benchmark_filename, data=item)
+        print("Warning: Re-run after checking if start and end timestamps are as desired in the file {}".format(filepath))
+        exit()
+    else:
+        print("Query from {}.".format(benchmark_filename))
+        start, end = custom_extract_time(benchmark_filename)
+    available_metrics = prom.all_metrics()
+    queries = [m for m in available_metrics if args.metric_prefix in m]
+    custom_metrics_list = args.custom_metrics.split(",")
+    queries.extend(custom_metrics_list)
+
+    print("Start {} End {}".format(start, end))
+    response = _range_queries(prom, queries, start, end, args.step, None)
+    save_json(path=data_path, name=args.output, data=response)
+    # perform custom validation
+    validate_df = get_custom_validate_df(benchmark_filename, response, queries)
+    summary_validation(validate_df)
+    save_csv(path=data_path, name=args.output + "_validate_result", data=validate_df)
+
+def custom_validate(args):
+    from prometheus_api_client import PrometheusConnect
+    prom = PrometheusConnect(url=args.server, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
+    available_metrics = prom.all_metrics()
+    queries = [m for m in available_metrics if args.metric_prefix in m]
+    custom_metrics_list = args.custom_metrics.split(",")
+    queries.extend(custom_metrics_list)
+
+    if not args.benchmark:
+        print("Need --benchmark")
+        exit()
+
+    response_filename = args.input
+    response = load_json(data_path, response_filename)
+    validate_df = get_custom_validate_df(args.benchmark, response, queries)
+    summary_validation(validate_df)
+    if args.output:
+        save_csv(path=data_path, name=args.output, data=validate_df)
 
 def validate(args):
     if not args.benchmark:
@@ -655,7 +738,7 @@ def plot(args):
     energy_sources = args.energy_source.split(",")
     output_folder = os.path.join(data_path, args.output)
     if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
+        os.makedirs(output_folder, exist_ok=True)
     if args.target_data == "preprocess":
         data_saved_path = get_preprocess_folder(pipeline_path)
         feature_plot = []
@@ -752,7 +835,10 @@ def export(args):
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
     machine_path = get_machine_path(output_path, args.version, machine_id)
 
-    collect_date, _ = extract_time(args.benchmark)
+    if args.benchmark == "customBenchmark":
+        collect_date, _ = custom_extract_time(args.benchmark)
+    else:
+        collect_date, _ = extract_time(args.benchmark)
     exporter.export(data_path, pipeline_path, machine_path, machine_id=machine_id, version=args.version, publisher=args.publisher, collect_date=collect_date, include_raw=args.include_raw)
 
     args.energy_source = ",".join(PowerSourceMap.keys())
@@ -873,6 +959,7 @@ if __name__ == "__main__":
     parser.add_argument("--step", type=str, help="Specify query step.", default=PROM_QUERY_STEP)
     parser.add_argument("--metric-prefix", type=str, help="Specify metrix prefix to filter.", default=KEPLER_METRIC_PREFIX)
     parser.add_argument("-tm", "--thirdparty-metrics", nargs='+', help="Specify the thirdparty metrics that not included by Kepler", default="")
+    parser.add_argument("--custom-metrics", type=str, help="Specify comma seperated custom metrics list.", default=CUSTOM_METRICS)
 
     # Train arguments
     parser.add_argument("-p", "--pipeline-name", type=str, help="Specify pipeline name.")

@@ -14,7 +14,7 @@ def assure_path(path):
     if path == '':
         return ''
     if not os.path.exists(path):
-        os.mkdir(path)
+        os.makedirs(path, exist_ok=True)
     return path
 
 def save_json(path, name, data):
