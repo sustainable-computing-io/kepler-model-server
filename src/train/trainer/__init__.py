@@ -100,6 +100,10 @@ class Trainer(metaclass=ABCMeta):
     @abstractmethod
     def get_mae(self, node_type, component, X_test, y_test):
         return NotImplemented
+    
+    @abstractmethod
+    def get_mape(self, node_type, component, X_test, y_test):
+        return NotImplemented
 
     @abstractmethod
     def get_weight_dict(self, node_type):
@@ -183,7 +187,7 @@ class Trainer(metaclass=ABCMeta):
                 y_values += unit_y_values
         return X_values, y_values
 
-    def save_metadata(self, node_type, mae, mae_map, item):
+    def save_metadata(self, node_type, mae, mae_map, mape, mape_map, item):
         save_path = self._get_save_path(node_type)
         model_name, model_file = self._model_filename(node_type)
         item['model_name'] = model_name
@@ -193,7 +197,9 @@ class Trainer(metaclass=ABCMeta):
         item['fe_files'] = [] if not hasattr(self, 'fe_files') else self.fe_files
         item['output_type'] = self.output_type.name
         item['mae'] = mae
+        item['mape'] = mape
         item.update(mae_map)
+        item.update(mape_map)
         self.metadata = item
         save_metadata(save_path, item)
 
@@ -230,14 +236,20 @@ class Trainer(metaclass=ABCMeta):
         save_json(save_path, model_dict_filename, model_dict)
         # save metadata
         max_mae = None
+        max_mape = None
         mae_map = dict()
+        mape_map = dict()
         item = self.get_basic_metadata(node_type)
         for component in self.energy_components:
             mae = self.get_mae(node_type, component, X_test_map[component], y_test_map[component])
+            mape = self.get_mape(node_type, component, X_test_map[component], y_test_map[component])
             if max_mae is None or mae > max_mae:
                 max_mae = mae
+            if max_mape is None or mape > max_mape:
+                max_mape = mape
             mae_map["{}_mae".format(component)] = mae
-        self.save_metadata(node_type, max_mae, mae_map, item)
+            mape_map["{}_mape".format(component)] = mape
+        self.save_metadata(node_type, max_mae, mae_map, mape, mape_map, item)
         # archive model
         self.archive_model(node_type)
         print("save model to {}".format(save_path))

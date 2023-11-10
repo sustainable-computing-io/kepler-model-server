@@ -55,12 +55,13 @@ def get_reconstructed_power_colname(energy_component):
 
 class Model():
     def __init__(self, model_path, model_class, model_name, output_type, model_file, features, fe_files=[],\
-            mae=None, mse=None, mae_val=None, mse_val=None, \
+            mae=None, mse=None, mape=None, mae_val=None, mse_val=None, \
             abs_model=None, abs_mae=None, abs_mae_val=None, abs_mse=None, abs_mse_val=None, abs_max_corr=None, \
             reconstructed_mae=None, reconstructed_mse=None, avg_mae=None, **kwargs):
         self.model_name = model_name
         self.estimator = MODELCLASS[model_class](model_path, model_name, output_type, model_file, features, fe_files)
         self.mae = mae
+        self.mape = mape
         self.mae_val = mae_val
         self.mse = mse
         self.mse_val = mse_val

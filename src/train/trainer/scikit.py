@@ -54,6 +54,12 @@ class ScikitTrainer(Trainer):
         predicted_values = self.predict(node_type, component, X_test, skip_preprocess=True)
         mae = mean_absolute_error(y_test,predicted_values)
         return mae
+    
+    def get_mape(self, node_type, component, X_test, y_test):
+        predicted_values = self.predict(node_type, component, X_test, skip_preprocess=True)
+        absolute_percentage_errors = np.abs((y_test - predicted_values) / y_test) * 100
+        mape = np.mean(absolute_percentage_errors)
+        return mape
 
     def save_model(self, component_save_path, node_type, component):
         model = self.node_models[node_type][component]
