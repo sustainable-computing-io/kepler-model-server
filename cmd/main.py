@@ -677,7 +677,7 @@ def plot(args):
                 feature_cols = FeatureGroups[fg]
                 power_cols = [col for col in data.columns if "power" in col]
                 feature_data = data.groupby([TIMESTAMP_COL]).sum()
-                _ts_plot(feature_data[feature_data[feature_cols]>0], feature_cols, "Feature group: {}".format(fg.name), output_folder, data_filename)
+                _ts_plot(feature_data, feature_cols, "Feature group: {}".format(fg.name), output_folder, data_filename)
                 if not energy_plot:
                     power_data = data.groupby([TIMESTAMP_COL]).max()
                     data_filename = get_general_filename(args.target_data, energy_source, None, ot, args.extractor, args.isolator)

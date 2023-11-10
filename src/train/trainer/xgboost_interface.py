@@ -100,15 +100,10 @@ class XgboostTrainer(Trainer):
                 return
             weight_dict[component] = {
                 "All_Weights": {
-                        "Bias_Weight": 0,
                         "Categorical_Variables": dict(),
                         "Numerical_Variables": {self.features[i]: 
-                                                {"scale": scaler.scale_[i],
-                                                "mean": 0, 
-                                                "variance": 0, 
-                                                "weight": model_in_json 
-                                                }
-                                                for i in range(len(self.features))},
+                                                {"scale": scaler.scale_[i]} for i in range(len(self.features))},
+                        "XGboost_Weights": model_in_json 
                 }
             }
         return weight_dict
