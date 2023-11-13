@@ -130,22 +130,18 @@ function collect_data() {
     BENCHMARK=$1
     BENCHMARK_NS=$2
     SLEEP_TIME=$3
-    kubectl apply -f benchmark/${BENCHMARK}.yaml
-    wait_for_benchmark ${BENCHMARK} ${BENCHMARK_NS} ${SLEEP_TIME}
-    save_benchmark ${BENCHMARK} ${BENCHMARK_NS}
+    if [ "$BENCHMARK" != "customBenchmark" ]; then
+        kubectl apply -f benchmark/${BENCHMARK}.yaml
+        wait_for_benchmark ${BENCHMARK} ${BENCHMARK_NS} ${SLEEP_TIME}
+        save_benchmark ${BENCHMARK} ${BENCHMARK_NS}
+        kubectl delete -f benchmark/${BENCHMARK}.yaml
+    fi
     ARGS="-i ${BENCHMARK} -o ${BENCHMARK}_kepler_query -s ${PROM_SERVER}"
     if [ -z "$NATIVE" ]; then
         docker run --rm -v $CPE_DATAPATH:/data --network=host ${ENTRYPOINT_IMG} query ${ARGS}|| true
     else
         python ../cmd/main.py query ${ARGS}|| true
     fi
-    kubectl delete -f benchmark/${BENCHMARK}.yaml
-}
-
-function custom_collect_data() {
-    BENCHMARK=$1
-    ARGS="-i ${BENCHMARK} -o ${BENCHMARK}_kepler_query -s ${PROM_SERVER}"
-    python ../cmd/main.py custom_query ${ARGS}|| true
 }
 
 function deploy_prom_dependency(){
@@ -183,7 +179,7 @@ function collect() {
 }
 
 function custom_collect() {
-    custom_collect_data customBenchmark
+    collect_data customBenchmark
 }
 
 function quick_collect() {
@@ -205,12 +201,8 @@ function custom_train() {
 function validate() {
     BENCHMARK=$1
     ARGS="-i ${BENCHMARK}_kepler_query --benchmark ${BENCHMARK}"
-    if [ -z "$NATIVE" -a "${BENCHMARK}" == "customBenchmark" ]; then
-        docker run --rm -v $CPE_DATAPATH:/data ${ENTRYPOINT_IMG} custom_validate ${ARGS}
-    elif [ -z "$NATIVE" ]; then
+    if [ -z "$NATIVE" ]; then
         docker run --rm -v $CPE_DATAPATH:/data ${ENTRYPOINT_IMG} validate ${ARGS}
-    elif [ "${BENCHMARK}" == "customBenchmark" ]; then
-        python ../cmd/main.py custom_validate ${ARGS}|| true
     else
         python ../cmd/main.py validate ${ARGS}|| true
     fi
@@ -224,7 +216,7 @@ function _export() {
     INCLUDE_RAW=$5
 
     if [ $# -lt 4 ]; then
-        echo "need arguements: [machine_id] [path_to_models] [publisher] [benchmark_type]"
+        echo "need arguements: [machine_id] [path_to_models] [publisher] [benchmark_name]"
         exit 2
     fi
 

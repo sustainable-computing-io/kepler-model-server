@@ -61,7 +61,7 @@ Users might want to run a custom benchmark outside of `kepler-model-server` and 
 
     ./script.sh custom_collect
 
-When this command is run, it creates a file `customBenchmark.json` with a default start and end timestamps for querying metrics from Prometheus. If the desired time window for metrics collection is different, manually update the timestamps in that file accordinly. Then run again the same command to collect the metrics.
+Use either `interval` or [`start_time`, `end_time`] options to set the desired time window for metrics collection from Prometheus.
 
 ## 4. Validate collected metrics
 Validation of metrics happens by default at the time of their collection. It is also possible to validate the collected metrics explicitly.

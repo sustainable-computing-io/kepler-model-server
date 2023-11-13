@@ -18,8 +18,8 @@ sys.path.append(cur_path)
 src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 
-from util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_HEADERS, PROM_SSL_DISABLE, PROM_THIRDPARTY_METRICS
-from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, custom_metrics as CUSTOM_METRICS, node_info_column, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics
+from util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_QUERY_START_TIME, PROM_QUERY_END_TIME, PROM_HEADERS, PROM_SSL_DISABLE, PROM_THIRDPARTY_METRICS
+from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, node_info_column, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics
 from util.train_types import ModelOutputType, FeatureGroup, FeatureGroups, is_single_source_feature_group, SingleSourceFeatures
 from util.loader import load_json, DEFAULT_PIPELINE, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_machine_path, get_preprocess_folder, get_general_filename
 from util.saver import save_json, save_csv, save_train_args
@@ -42,19 +42,16 @@ def print_file_to_stdout(args):
 
 def extract_time(benchmark_filename):
     data = load_json(data_path, benchmark_filename)
-    start_str = data["metadata"]["creationTimestamp"]
-    start = datetime.datetime.strptime(start_str, '%Y-%m-%dT%H:%M:%SZ')
-    end_str = data["status"]["results"][-1]["repetitions"][-1]["pushedTime"].split(".")[0]
-    end = datetime.datetime.strptime(end_str, '%Y-%m-%d %H:%M:%S')
-    print(UTC_OFFSET_TIMEDELTA)
-    return start-UTC_OFFSET_TIMEDELTA, end-UTC_OFFSET_TIMEDELTA
-
-def custom_extract_time(benchmark_filename):
-    data = load_json(data_path, benchmark_filename)
-    start_str = data["startTimeUTC"]
-    start = datetime.datetime.strptime(start_str, '%Y-%m-%dT%H:%M:%SZ')
-    end_str = data["endTimeUTC"]
-    end = datetime.datetime.strptime(end_str, '%Y-%m-%dT%H:%M:%SZ')
+    if benchmark_filename != "customBenchmark":
+        start_str = data["metadata"]["creationTimestamp"]
+        start = datetime.datetime.strptime(start_str, '%Y-%m-%dT%H:%M:%SZ')
+        end_str = data["status"]["results"][-1]["repetitions"][-1]["pushedTime"].split(".")[0]
+        end = datetime.datetime.strptime(end_str, '%Y-%m-%d %H:%M:%S')
+    else:
+        start_str = data["startTimeUTC"]
+        start = datetime.datetime.strptime(start_str, '%Y-%m-%dT%H:%M:%SZ')
+        end_str = data["endTimeUTC"]
+        end = datetime.datetime.strptime(end_str, '%Y-%m-%dT%H:%M:%SZ')
     print(UTC_OFFSET_TIMEDELTA)
     return start-UTC_OFFSET_TIMEDELTA, end-UTC_OFFSET_TIMEDELTA
 
@@ -110,11 +107,11 @@ def summary_validation(validate_df):
 def get_validate_df(benchmark_filename, query_response):
     items = []
     query_results = prom_responses_to_results(query_response)
-    queries = [query for query in query_results.keys() if "container" in query]
+    container_queries = [query for query in query_results.keys() if "container" in query]
     status_data = load_json(data_path, benchmark_filename)
-    if status_data is None:
+    if status_data is None or status_data.get("status", None) == None:
         # select all with keyword
-        for query in queries:
+        for query in container_queries:
             df = query_results[query]
             if len(df) == 0:
                 # set validate item // no value
@@ -150,7 +147,7 @@ def get_validate_df(benchmark_filename, query_response):
             repetitions = result["repetitions"]
             for rep in repetitions:
                 podname = rep["pod"]
-                for query in queries:
+                for query in container_queries:
                     df = query_results[query]
                     if len(df) == 0:
                         # set validate item // no value
@@ -176,30 +173,40 @@ def get_validate_df(benchmark_filename, query_response):
     energy_queries = [query for query in query_results.keys() if "_joules" in query]
     for query in energy_queries:
         df = query_results[query]
-        filtered_df = df.copy()
+        if len(df) == 0:
+            # set validate item // no value
+            item = dict()
+            item["pod"] = ""
+            item["scenarioID"] = ""
+            item["query"] = query
+            item["count"] = 0
+            item[">0"] = 0
+            item["total"] = 0
+            items += [item]
+            continue
         # set validate item
         item = dict()
         item["pod"] = ""
         item["scenarioID"] = ""
         item["query"] = query
-        item["count"] = len(filtered_df)
-        item[">0"] = len(filtered_df[filtered_df[query] > 0])
-        item["total"] = filtered_df[query].max()
+        item["count"] = len(df)
+        item[">0"] = len(df[df[query] > 0])
+        item["total"] = df[query].max()
         items += [item]
-    validate_df = pd.DataFrame(items)
-    print(validate_df.groupby(["scenarioID", "query"]).sum()[["count", ">0"]])
-    return validate_df
-
-def get_custom_validate_df(benchmark_filename, query_response, queries):
-    items = []
-    query_results = prom_responses_to_results(query_response)
-    print("queries: {}".format(queries))
-    for query in queries:
+    other_queries = [query for query in query_results.keys() if query not in container_queries and query not in energy_queries]
+    for query in other_queries:
         df = query_results[query]
-        if df.empty:
+        if len(df) == 0:
+            # set validate item // no value
+            item = dict()
+            item["pod"] = benchmark_filename
+            item["scenarioID"] = ""
+            item["query"] = query
+            item["count"] = 0
+            item[">0"] = 0
+            item["total"] = 0
+            items += [item]
             continue
-        print("query: {}".format(query))
-        print("df: {}".format(df))
         # set validate item
         item = dict()
         item["pod"] = benchmark_filename
@@ -240,9 +247,27 @@ def query(args):
     prom = PrometheusConnect(url=args.server, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
     benchmark_filename = args.input
     if benchmark_filename == "":
-        print("Query last {} interval.".format(args.interval))
-        end = datetime.datetime.now()
-        start = end - datetime.timedelta(seconds=args.interval)
+        print("need name of the benchmark: sample, stressng, or customBenchmark")
+        exit()
+    filepath = os.path.join(data_path, benchmark_filename+".json")
+    if not os.path.isfile(filepath):
+        if args.start_time != "" and args.end_time != "":
+            # by [start time, end time]
+            print("Query from start_time {} to end_time {}.".format(args.start_time, args.end_time))
+            start = datetime.datetime.strptime(args.start_time, '%Y-%m-%dT%H:%M:%SZ')
+            end = datetime.datetime.strptime(args.end_time , '%Y-%m-%dT%H:%M:%SZ')
+        else:
+            # by interval
+            print("Query last {} interval.".format(args.interval))
+            end = datetime.datetime.now(datetime.timezone.utc)
+            start = end - datetime.timedelta(seconds=args.interval)
+        # save benchmark
+        item = dict()
+        item["startTimeUTC"] = start.strftime("%Y-%m-%dT%H:%M:%SZ")
+        item["endTimeUTC"] = end.strftime("%Y-%m-%dT%H:%M:%SZ")
+        save_json(path=data_path, name=benchmark_filename, data=item)
+        start = datetime.datetime.strptime(item["startTimeUTC"], '%Y-%m-%dT%H:%M:%SZ') - UTC_OFFSET_TIMEDELTA
+        end = datetime.datetime.strptime(item["endTimeUTC"], '%Y-%m-%dT%H:%M:%SZ') - UTC_OFFSET_TIMEDELTA
     else:
         print("Query from {}.".format(benchmark_filename))
         start, end = extract_time(benchmark_filename)
@@ -260,60 +285,9 @@ def query(args):
     response = _range_queries(prom, queries, start, end, args.step, None)
     save_json(path=data_path, name=args.output, data=response)
     # try validation if applicable
-    if benchmark_filename != "" and args.metric_prefix == KEPLER_METRIC_PREFIX:
-        validate_df = get_validate_df(benchmark_filename, response)
-        summary_validation(validate_df)
-        save_csv(path=data_path, name=args.output + "_validate_result", data=validate_df)
-
-def custom_query(args):
-    from prometheus_api_client import PrometheusConnect
-    prom = PrometheusConnect(url=args.server, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
-    benchmark_filename = args.input
-    filepath = os.path.join(data_path, benchmark_filename+".json")
-    if not os.path.isfile(filepath):
-        print("Query last {} interval.".format(args.interval))
-        end = datetime.datetime.now(datetime.timezone.utc)
-        start = end - datetime.timedelta(seconds=args.interval)
-        item = dict()
-        item["startTimeUTC"] = start.strftime("%Y-%m-%dT%H:%M:%SZ")
-        item["endTimeUTC"] = end.strftime("%Y-%m-%dT%H:%M:%SZ")
-        save_json(path=data_path, name=benchmark_filename, data=item)
-        print("Warning: Re-run after checking if start and end timestamps are as desired in the file {}".format(filepath))
-        exit()
-    else:
-        print("Query from {}.".format(benchmark_filename))
-        start, end = custom_extract_time(benchmark_filename)
-    available_metrics = prom.all_metrics()
-    queries = [m for m in available_metrics if args.metric_prefix in m]
-    custom_metrics_list = args.custom_metrics.split(",")
-    queries.extend(custom_metrics_list)
-
-    print("Start {} End {}".format(start, end))
-    response = _range_queries(prom, queries, start, end, args.step, None)
-    save_json(path=data_path, name=args.output, data=response)
-    # perform custom validation
-    validate_df = get_custom_validate_df(benchmark_filename, response, queries)
+    validate_df = get_validate_df(benchmark_filename, response)
     summary_validation(validate_df)
     save_csv(path=data_path, name=args.output + "_validate_result", data=validate_df)
-
-def custom_validate(args):
-    from prometheus_api_client import PrometheusConnect
-    prom = PrometheusConnect(url=args.server, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
-    available_metrics = prom.all_metrics()
-    queries = [m for m in available_metrics if args.metric_prefix in m]
-    custom_metrics_list = args.custom_metrics.split(",")
-    queries.extend(custom_metrics_list)
-
-    if not args.benchmark:
-        print("Need --benchmark")
-        exit()
-
-    response_filename = args.input
-    response = load_json(data_path, response_filename)
-    validate_df = get_custom_validate_df(args.benchmark, response, queries)
-    summary_validation(validate_df)
-    if args.output:
-        save_csv(path=data_path, name=args.output, data=validate_df)
 
 def validate(args):
     if not args.benchmark:
@@ -835,10 +809,7 @@ def export(args):
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
     machine_path = get_machine_path(output_path, args.version, machine_id)
 
-    if args.benchmark == "customBenchmark":
-        collect_date, _ = custom_extract_time(args.benchmark)
-    else:
-        collect_date, _ = extract_time(args.benchmark)
+    collect_date, _ = extract_time(args.benchmark)
     exporter.export(data_path, pipeline_path, machine_path, machine_id=machine_id, version=args.version, publisher=args.publisher, collect_date=collect_date, include_raw=args.include_raw)
 
     args.energy_source = ",".join(PowerSourceMap.keys())
@@ -956,10 +927,11 @@ if __name__ == "__main__":
     # Query arguments
     parser.add_argument("-s", "--server", type=str, help="Specify prometheus server.", default=PROM_SERVER)
     parser.add_argument("--interval", type=int, help="Specify query interval.", default=PROM_QUERY_INTERVAL)
+    parser.add_argument("--start-time", type=str, help="Specify query start time.", default=PROM_QUERY_START_TIME)
+    parser.add_argument("--end-time", type=str, help="Specify query end time.", default=PROM_QUERY_END_TIME)
     parser.add_argument("--step", type=str, help="Specify query step.", default=PROM_QUERY_STEP)
     parser.add_argument("--metric-prefix", type=str, help="Specify metrix prefix to filter.", default=KEPLER_METRIC_PREFIX)
-    parser.add_argument("-tm", "--thirdparty-metrics", nargs='+', help="Specify the thirdparty metrics that not included by Kepler", default="")
-    parser.add_argument("--custom-metrics", type=str, help="Specify comma seperated custom metrics list.", default=CUSTOM_METRICS)
+    parser.add_argument("-tm", "--thirdparty-metrics", nargs='+', help="Specify the thirdparty metrics that are not included by Kepler", default="")
 
     # Train arguments
     parser.add_argument("-p", "--pipeline-name", type=str, help="Specify pipeline name.")
