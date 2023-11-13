@@ -130,16 +130,18 @@ function collect_data() {
     BENCHMARK=$1
     BENCHMARK_NS=$2
     SLEEP_TIME=$3
-    kubectl apply -f benchmark/${BENCHMARK}.yaml
-    wait_for_benchmark ${BENCHMARK} ${BENCHMARK_NS} ${SLEEP_TIME}
-    save_benchmark ${BENCHMARK} ${BENCHMARK_NS}
+    if [ "$BENCHMARK" != "customBenchmark" ]; then
+        kubectl apply -f benchmark/${BENCHMARK}.yaml
+        wait_for_benchmark ${BENCHMARK} ${BENCHMARK_NS} ${SLEEP_TIME}
+        save_benchmark ${BENCHMARK} ${BENCHMARK_NS}
+        kubectl delete -f benchmark/${BENCHMARK}.yaml
+    fi
     ARGS="-i ${BENCHMARK} -o ${BENCHMARK}_kepler_query -s ${PROM_SERVER}"
     if [ -z "$NATIVE" ]; then
         docker run --rm -v $CPE_DATAPATH:/data --network=host ${ENTRYPOINT_IMG} query ${ARGS}|| true
     else
         python ../cmd/main.py query ${ARGS}|| true
     fi
-    kubectl delete -f benchmark/${BENCHMARK}.yaml
 }
 
 function deploy_prom_dependency(){
@@ -176,16 +178,24 @@ function collect() {
     collect_data stressng cpe-operator-system 60
 }
 
+function custom_collect() {
+    collect_data customBenchmark
+}
+
 function quick_collect() {
     collect_data sample cpe-operator-system 10
 }
 
 function train() {
-    train_model stressng_kepler_query ${VERSION}
+    train_model stressng_kepler_query ${VERSION}_stressng
 }
 
 function quick_train() {
     train_model sample_kepler_query ${VERSION}_sample
+}
+
+function custom_train() {
+    train_model customBenchmark_kepler_query ${VERSION}_customBenchmark
 }
 
 function validate() {
@@ -202,16 +212,16 @@ function _export() {
     ID=$1
     OUTPUT=$2
     PUBLISHER=$3
-    INCLUDE_RAW=$4
+    MAIN_COLLECT_INPUT=$4
+    INCLUDE_RAW=$5
 
-    if [ $# -lt 3 ]; then
-        echo "need arguements: [machine_id] [path_to_models] [publisher]"
+    if [ $# -lt 4 ]; then
+        echo "need arguements: [machine_id] [path_to_models] [publisher] [benchmark_name]"
         exit 2
     fi
 
-    PIPELINE_NAME=${PIPELINE_PREFIX}${VERSION}
-    VALIDATE_INPUT="stressng_kepler_query"
-    MAIN_COLLECT_INPUT="stressng"
+    PIPELINE_NAME=${PIPELINE_PREFIX}${VERSION}_${MAIN_COLLECT_INPUT}
+    VALIDATE_INPUT="${MAIN_COLLECT_INPUT}_kepler_query"
     ARGS="--id ${ID} -p ${PIPELINE_NAME}  -i ${VALIDATE_INPUT} --benchmark ${MAIN_COLLECT_INPUT} --version ${VERSION} --publisher ${PUBLISHER} ${INCLUDE_RAW}"
     echo "${ARGS}"
     if [ -z "$NATIVE" ]; then
@@ -222,11 +232,11 @@ function _export() {
 }
 
 function export() {
-    _export $1 $2 $3
+    _export $1 $2 $3 $4
 }
 
 function export_with_raw() {
-    _export $1 $2 $3 "--include-raw true"
+    _export $1 $2 $3 $4 "--include-raw true"
 }
 
 function cleanup() {

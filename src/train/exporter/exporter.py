@@ -11,7 +11,7 @@ sys.path.append(util_path)
 cur_path = os.path.join(os.path.dirname(__file__))
 sys.path.append(cur_path)
 
-from validator import validate_arguments, find_acceptable_mae
+from validator import find_acceptable_mae
 from train_types import ModelOutputType, PowerSourceMap, FeatureGroup
 from loader import load_csv, load_pipeline_metadata, get_model_group_path, load_metadata, load_train_args, get_preprocess_folder, get_general_filename
 from saver import WEIGHT_FILENAME, save_pipeline_metadata, save_train_args
@@ -19,9 +19,6 @@ from format import time_to_str
 from writer import generate_pipeline_page, generate_validation_results, append_version_readme
 
 def export(data_path, pipeline_path, machine_path, machine_id, version, publisher, collect_date, include_raw=False):
-    if not validate_arguments(pipeline_path):
-        return 
-
     pipeline_metadata = load_metadata(pipeline_path)
     if pipeline_metadata is None:
         print("no pipeline metadata")
