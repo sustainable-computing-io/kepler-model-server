@@ -7,18 +7,7 @@ sys.path.append(util_path)
 from loader import load_train_args
 from config import ERROR_KEY
 
-required_benchmark = ["sample_kepler_query", "stressng_kepler_query", "customBenchmark_kepler_query"]
-
 default_threshold_percent = 20
-
-def validate_arguments(pipeline_path):
-    train_args = load_train_args(pipeline_path)
-    inputs = train_args["input"].split(",")
-    missing_inputs = [input for input in required_benchmark if input not in inputs]
-    if len(missing_inputs) > 0:
-        print("missing required training inputs: ", missing_inputs)
-        return False
-    return True
     
 def find_acceptable_mae(preprocess_data, metadata):
     power_cols = [col for col in preprocess_data.columns if "power" in col]
