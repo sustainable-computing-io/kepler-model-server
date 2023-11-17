@@ -6,7 +6,7 @@ import pandas as pd
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
-from loader import load_json, get_machine_path, default_init_model_url, get_url, trainers_with_weight
+from loader import load_json, get_machine_path, get_url, lr_trainers, xgboost_trainers
 from config import ERROR_KEY
 from train_types import ModelOutputType, FeatureGroup
 
@@ -113,18 +113,20 @@ def generate_pipeline_page(data_path, machine_path, train_args, skip_if_exist=Tr
     write_markdown(markdown_filepath, markdown_content)
 
 def model_url(version, machine_id, pipeline_name, energy_source, output_type, feature_group, model_name, weight):
-    machine_path = get_machine_path(default_init_model_url, version, machine_id, assure=False)
+    repo_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models"
+    machine_path = get_machine_path(repo_url, version, machine_id, assure=False)
     model_url = get_url(ModelOutputType[output_type], FeatureGroup[feature_group], model_name=model_name, model_topurl=machine_path, energy_source=energy_source, pipeline_name=pipeline_name, weight=weight)
     return model_url
 
-def format_error_content(train_args, mae_validated_df_map, weight):
+def format_error_content(train_args, mae_validated_df_map, trainer_list=None):
+    weight = trainer_list is not None
     content = ""
     for energy_source, mae_validated_df_outputs in mae_validated_df_map.items():
         for output_type, mae_validated_df in mae_validated_df_outputs.items():
             content += "### {} {} model\n\n".format(energy_source, output_type)
             df = mae_validated_df
             if weight:
-                df = mae_validated_df[mae_validated_df["model_name"].str.contains('|'.join(trainers_with_weight))]
+                df = mae_validated_df[mae_validated_df["model_name"].str.contains('|'.join(trainer_list))]
             items = []
             min_err_rows = df.loc[df.groupby(["feature_group"])[ERROR_KEY].idxmin()]
             for _, row in min_err_rows.iterrows():
@@ -144,10 +146,12 @@ def generate_validation_results(pipeline_path, train_args, mae_validated_df_map)
     markdown_filepath = os.path.join(pipeline_path, "README.md")
 
     markdown_content = "# Validation results\n\n"
-    markdown_content += "## With local estimator\n\n"
-    markdown_content += format_error_content(train_args, mae_validated_df_map, weight=True)
+    markdown_content += "## With local LR estimator\n\n"
+    markdown_content += format_error_content(train_args, mae_validated_df_map, trainer_list=lr_trainers)
+    markdown_content += "## With local Xgboost estimator\n\n"
+    markdown_content += format_error_content(train_args, mae_validated_df_map, trainer_list=xgboost_trainers)
     markdown_content += "## With sidecar estimator\n\n"
-    markdown_content += format_error_content(train_args, mae_validated_df_map, weight=False)
+    markdown_content += format_error_content(train_args, mae_validated_df_map, trainer_list=None)
     write_markdown(markdown_filepath, markdown_content)
 
 def append_version_readme(machine_path, train_args, pipeline_metadata, include_raw):
