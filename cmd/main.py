@@ -474,7 +474,7 @@ def train(args):
         pipeline.save_metadata()
         # save pipeline
         pipeline.archive_pipeline()
-        print_cols = ["feature_group", "model_name", "mae"]
+        print_cols = ["feature_group", "model_name", "mae", "mape"]
         print("AbsPower pipeline results:")
         metadata_df = load_pipeline_metadata(pipeline.path, energy_source, ModelOutputType.AbsPower.name)
         if metadata_df is not None:

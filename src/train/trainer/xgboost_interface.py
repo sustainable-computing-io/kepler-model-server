@@ -3,11 +3,12 @@ import os
 import sys
 import xgboost as xgb
 import numpy as np
+import base64
 
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
-from util import save_pkl, load_pkl, load_json
+from util import save_pkl, load_pkl
 from abc import abstractmethod
 
 from . import Trainer
@@ -28,7 +29,7 @@ class XgboostTrainer(Trainer):
         self.fe_files = []
 
     def init_model(self):
-        return xgb.XGBRegressor(n_estimators=1000, learning_rate=0.1)
+        return xgb.XGBRegressor(n_estimators=100, learning_rate=0.1)
     
     @abstractmethod
     def _train(self, node_type, component, X_values, y_values):
@@ -75,8 +76,13 @@ class XgboostTrainer(Trainer):
         return mae
     
     def get_mape(self, node_type, component, X_test, y_test):
+        y_test = list(y_test)
         predicted_values = self.predict(node_type, component, X_test, skip_preprocess=True)
-        absolute_percentage_errors = np.abs((y_test - predicted_values) / y_test) * 100
+        non_zero_predicted_values = np.array([predicted_values[i] for i in range(len(predicted_values)) if y_test[i] > 0])
+        if len(non_zero_predicted_values) == 0:
+            return 0
+        non_zero_y_test = np.array([y for y in y_test if y > 0])
+        absolute_percentage_errors = np.abs((non_zero_y_test - non_zero_predicted_values) / non_zero_y_test) * 100
         mape = np.mean(absolute_percentage_errors)
         return mape
 
@@ -88,22 +94,24 @@ class XgboostTrainer(Trainer):
     def component_model_filename(self, component):
         return component + ".json"
     
-    def get_weight_dict(self, node_type):    
+    
+    def get_weight_dict(self, node_type):
         weight_dict = dict()
+        scaler = self.node_scalers[node_type]
         for component in self.energy_components:
-            scaler = self.node_scalers[node_type]
             checkpoint_filename = _json_filepath(self._checkpoint_filename(component, node_type))
-            model_in_json = load_json(self.checkpoint_toppath, checkpoint_filename)
-            if model_in_json is None:
-                self.print_log("cannot load model in json")
-                # failed to get model from local checkpoint
+            filename = os.path.join(self.checkpoint_toppath, checkpoint_filename)
+            if not os.path.exists(filename):
+                self.print_log("cannot get checkpoint file (in json) for xgboost")
                 return
+            with open(filename, "r") as f:
+                contents = f.read()
             weight_dict[component] = {
                 "All_Weights": {
                         "Categorical_Variables": dict(),
                         "Numerical_Variables": {self.features[i]: 
                                                 {"scale": scaler.scale_[i]} for i in range(len(self.features))},
-                        "XGboost_Weights": model_in_json 
+                        "XGboost_Weights": base64.b64encode(contents.encode('utf-8')).decode('utf-8')
                 }
             }
         return weight_dict
