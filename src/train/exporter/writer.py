@@ -140,8 +140,8 @@ def format_error_content(train_args, mae_validated_df_map, weight):
             content += dict_to_markdown_table(print_df.sort_values(by=["feature group"]))
     return content
 
-def generate_validation_results(machine_path, train_args, mae_validated_df_map):
-    markdown_filepath = os.path.join(machine_path, "README.md")
+def generate_validation_results(pipeline_path, train_args, mae_validated_df_map):
+    markdown_filepath = os.path.join(pipeline_path, "README.md")
 
     markdown_content = "# Validation results\n\n"
     markdown_content += "## With local estimator\n\n"
@@ -153,13 +153,14 @@ def generate_validation_results(machine_path, train_args, mae_validated_df_map):
 def append_version_readme(machine_path, train_args, pipeline_metadata, include_raw):
     readme_path = os.path.join(_version_path(machine_path), "README.md")
 
-    content_to_append = "{0}|[{1}](./.doc/{1}.md)|{2}|{3}|{4}|[{5}](https://github.com/{5})|[link](./{6}/README.md)\n".format(train_args["machine_id"],  \
+    content_to_append = "{0}|[{1}](./.doc/{1}.md)|{2}|{3}|{4}|[{5}](https://github.com/{5})|[link](./{6}/{7}/README.md)\n".format(train_args["machine_id"],  \
            train_args["pipeline_name"], \
            "&check;" if include_raw else "X", \
            pipeline_metadata["collect_time"], \
            pipeline_metadata["last_update_time"], \
            pipeline_metadata["publisher"],\
-           train_args["machine_id"]\
+           train_args["machine_id"],\
+           pipeline_metadata["name"]
            )
 
     with open(readme_path, 'a') as file:
