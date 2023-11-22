@@ -56,8 +56,13 @@ class ScikitTrainer(Trainer):
         return mae
     
     def get_mape(self, node_type, component, X_test, y_test):
+        y_test = list(y_test)
         predicted_values = self.predict(node_type, component, X_test, skip_preprocess=True)
-        absolute_percentage_errors = np.abs((y_test - predicted_values) / y_test) * 100
+        non_zero_predicted_values = np.array([predicted_values[i] for i in range(len(predicted_values)) if y_test[i] > 0])
+        if len(non_zero_predicted_values) == 0:
+            return 0
+        non_zero_y_test = np.array([y for y in y_test if y > 0])
+        absolute_percentage_errors = np.abs((non_zero_y_test - non_zero_predicted_values) / non_zero_y_test) * 100
         mape = np.mean(absolute_percentage_errors)
         return mape
 

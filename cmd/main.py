@@ -474,7 +474,7 @@ def train(args):
         pipeline.save_metadata()
         # save pipeline
         pipeline.archive_pipeline()
-        print_cols = ["feature_group", "model_name", "mae"]
+        print_cols = ["feature_group", "model_name", "mae", "mape"]
         print("AbsPower pipeline results:")
         metadata_df = load_pipeline_metadata(pipeline.path, energy_source, ModelOutputType.AbsPower.name)
         if metadata_df is not None:
@@ -813,23 +813,24 @@ def export(args):
     exporter.export(data_path, pipeline_path, machine_path, machine_id=machine_id, version=args.version, publisher=args.publisher, collect_date=collect_date, include_raw=args.include_raw)
 
     args.energy_source = ",".join(PowerSourceMap.keys())
-
+    out_pipeline_path = os.path.join(machine_path, pipeline_name)
+    
     for ot in ModelOutputType:
         args.output_type = ot.name
 
         # plot preprocess data
         args.target_data = "preprocess"
-        args.output = get_preprocess_folder(machine_path)
+        args.output = get_preprocess_folder(out_pipeline_path)
         plot(args)
 
         # plot error
         args.target_data = "error"
-        args.output = os.path.join(machine_path, "error_summary")
+        args.output = os.path.join(out_pipeline_path, "error_summary")
         plot(args)
 
 
     args.target_data = "estimate"
-    args.output = os.path.join(machine_path, "best_estimation")
+    args.output = os.path.join(out_pipeline_path, "best_estimation")
     for ot in ModelOutputType:
         args.output_type = ot.name
         # plot estimate

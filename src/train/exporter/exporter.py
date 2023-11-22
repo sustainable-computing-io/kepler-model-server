@@ -38,7 +38,7 @@ def export(data_path, pipeline_path, machine_path, machine_id, version, publishe
     if include_raw:
         # copy preprocessed_data
         if os.path.exists(preprocess_folder):
-            destination_folder = get_preprocess_folder(machine_path)
+            destination_folder = get_preprocess_folder(out_pipeline_path)
             shutil.copytree(preprocess_folder, destination_folder, dirs_exist_ok=True)
         else:
             print("cannot export raw data: {} does not exist.", preprocess_folder)
@@ -92,7 +92,7 @@ def export(data_path, pipeline_path, machine_path, machine_id, version, publishe
 
     # generate document
     generate_pipeline_page(data_path, machine_path, train_args)
-    generate_validation_results(machine_path, train_args, mae_validated_df_map)
+    generate_validation_results(out_pipeline_path, train_args, mae_validated_df_map)
     append_version_readme(machine_path, train_args, pipeline_metadata, include_raw)
 
 

@@ -27,7 +27,8 @@ default_node_type = "1"
 any_node_type = -1
 default_feature_group = FeatureGroup.BPFOnly
 
-trainers_with_weight = ["SGDRegressorTrainer"]
+lr_trainers = ["SGDRegressorTrainer"]
+xgboost_trainers = ["XgboostFitTrainer"]
 
 def load_json(path, name):
     if ".json" not in name:
