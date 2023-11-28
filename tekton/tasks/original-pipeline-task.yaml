@@ -1,0 +1,68 @@
+######################################
+##
+## train-pipeline:
+##
+##    load kepler_query.json and run training pipeline
+##
+######################################
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: original-pipeline-task
+spec:
+  params:
+  - name: MODEL_SERVER_IMAGE
+    description: Specify model server image
+    default: quay.io/sustainable_computing_io/kepler_model_server:v0.7
+  - name: PIPELINE_NAME
+    description: Specify output pipeline name
+    default: default
+  - name: EXTRACTOR
+    description: Specify extractor class (default or smooth)
+    default: default
+  - name: ISOLATOR
+    description: Specify isolator class (none, min, profile, or trainer (if ABS_PIPELINE_NAME is set)
+    default: min
+  - name: ABS_TRAINERS
+    description: Specify a list of trainers for training AbsPower models
+    default: default
+  - name: DYN_TRAINERS
+    description: Specify a list of trainers for training DynPower models
+    default: default
+  - name: ENERGY_SOURCE
+    description: Specify target energy source (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
+    default: acpi,rapl
+  - name: TARGET_HINTS
+    description: Specify target process keywords to keep in DynPower model training
+    default: stress
+  - name: BG_HINTS
+    description: Specify background process keywords to remove from DynPower model training
+    default: ""
+  - name: THIRDPARTY_METRICS
+    description: Specify list of third party metric to export (required only for ThirdParty feature group)
+    default: ""
+  workspaces:
+  - name: mnt
+    optional: true
+  steps:
+    - name: pipeline-train
+      image: $(params.MODEL_SERVER_IMAGE)
+      command: ["python3.8"]
+      env:
+      - name: MODEL_PATH
+        value: $(workspaces.mnt.path)/models
+      args:
+      - cmd/main.py
+      - train
+      - --data-path=$(workspaces.mnt.path)/data
+      - --input=kepler_query
+      - --pipeline-name=$(params.PIPELINE_NAME)
+      - --extractor=$(params.EXTRACTOR)
+      - --isolator=$(params.ISOLATOR)
+      - --profile=idle
+      - --target-hints="$(params.TARGET_HINTS)"
+      - --bg-hints="$(params.BG_HINTS)"
+      - --abs-trainers=$(params.ABS_TRAINERS)
+      - --dyn-trainers=$(params.DYN_TRAINERS)
+      - --energy-source=$(params.ENERGY_SOURCE)
+      - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"

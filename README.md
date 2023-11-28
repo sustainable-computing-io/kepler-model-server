@@ -4,7 +4,7 @@
 This repository contains source code related to Kepler power model. The modules in this reposioty connects to [core Kepler project](https://github.com/sustainable-computing-io/kepler) and [kepler-model-db](https://github.com/sustainable-computing-io/kepler-model-db) as below.
 ![](./fig/model-server-components-simplified.png)
 
-## Deployment
+## Model server and estimator deployment 
 
 Deploy with estimator sidecar
 ```
@@ -15,6 +15,10 @@ Deploy with estimator sidecar and model server
 ```
 OPTS="ESTIMATOR SERVER" make deploy
 ```
+
+## Model training
+- [Use Tekton pipeline](./tekton)
+- [Use Bash script with CPE operator](./model_training/)
 
 ## Local test
 ### via docker

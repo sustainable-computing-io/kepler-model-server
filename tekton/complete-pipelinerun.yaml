@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: example-complete-train-pipeline
+spec:
+  workspaces:
+  - name: mnt
+    persistentVolumeClaim:
+      claimName: task-pvc
+  params:
+  - name: PIPELINE_NAME
+    value: CompleteTrainPipelineExample
+  pipelineRef:
+    name: complete-train-pipeline

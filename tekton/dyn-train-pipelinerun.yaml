@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: example-dyn-train-pipeline
+spec:
+  workspaces:
+  - name: mnt
+    persistentVolumeClaim:
+      claimName: task-pvc
+  params:
+  - name: PIPELINE_NAME
+    value: DynPowerTrainPipelineExample
+  - name: OUTPUT_TYPE
+    value: DynPower
+  pipelineRef:
+    name: single-train-pipeline
