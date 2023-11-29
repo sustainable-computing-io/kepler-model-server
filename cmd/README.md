@@ -2,63 +2,6 @@
 
 Use kepler model server function as a standalone docker container.
 
-```
-usage: main.py [-h] [-i INPUT] [-o OUTPUT] [-s SERVER] [--interval INTERVAL] [--step STEP] [--metric-prefix METRIC_PREFIX] [-p PIPELINE_NAME] [--extractor EXTRACTOR] [--isolator ISOLATOR] [--profile PROFILE] [--target-hints TARGET_HINTS] [--bg-hints BG_HINTS]
-               [-e ENERGY_SOURCE] [--abs-trainers ABS_TRAINERS] [--dyn-trainers DYN_TRAINERS] [--benchmark BENCHMARK] [-ot OUTPUT_TYPE] [-fg FEATURE_GROUP] [--model-name MODEL_NAME] [--target-data TARGET_DATA] [--scenario SCENARIO] [--id ID] [--version VERSION]
-               [--publisher PUBLISHER] [--include-raw INCLUDE_RAW]
-               command
-
-Kepler model server entrypoint
-
-positional arguments:
-  command               The command to execute.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i INPUT, --input INPUT
-                        Specify input file/folder name.
-  -o OUTPUT, --output OUTPUT
-                        Specify output file/folder name
-  -s SERVER, --server SERVER
-                        Specify prometheus server.
-  --interval INTERVAL   Specify query interval.
-  --step STEP           Specify query step.
-  --metric-prefix METRIC_PREFIX
-                        Specify metrix prefix to filter.
-  -p PIPELINE_NAME, --pipeline-name PIPELINE_NAME
-                        Specify pipeline name.
-  --extractor EXTRACTOR
-                        Specify extractor name (default, smooth).
-  --isolator ISOLATOR   Specify isolator name (none, min, profile, trainer).
-  --profile PROFILE     Specify profile input (required for trainer and profile isolator).
-  --target-hints TARGET_HINTS
-                        Specify dynamic workload container name hints (used by TrainIsolator)
-  --bg-hints BG_HINTS   Specify background workload container name hints (used by TrainIsolator)
-  -e ENERGY_SOURCE, --energy-source ENERGY_SOURCE
-                        Specify energy source.
-  --abs-trainers ABS_TRAINERS
-                        Specify trainer names (use comma(,) as delimiter).
-  --dyn-trainers DYN_TRAINERS
-                        Specify trainer names (use comma(,) as delimiter).
-  --benchmark BENCHMARK
-                        Specify benchmark file name.
-  -ot OUTPUT_TYPE, --output-type OUTPUT_TYPE
-                        Specify output type (AbsPower or DynPower) for energy estimation.
-  -fg FEATURE_GROUP, --feature-group FEATURE_GROUP
-                        Specify target feature group for energy estimation.
-  --model-name MODEL_NAME
-                        Specify target model name for energy estimation.
-  --target-data TARGET_DATA
-                        Speficy target plot data (preprocess, estimate)
-  --scenario SCENARIO   Speficy scenario
-  --id ID               specify machine id
-  --version VERSION     Specify model server version.
-  --publisher PUBLISHER
-                        Specify github account of model publisher
-  --include-raw INCLUDE_RAW
-                        Include raw query data
-```
-
 ## Get started
 
 1. Deploy Kepler with Prometheus in the cluster exporting prometheus to port `:9090`

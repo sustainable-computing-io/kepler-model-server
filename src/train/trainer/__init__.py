@@ -242,7 +242,9 @@ class Trainer(metaclass=ABCMeta):
         item = self.get_basic_metadata(node_type)
         for component in self.energy_components:
             mae = self.get_mae(node_type, component, X_test_map[component], y_test_map[component])
+            mae = round(mae, 2)
             mape = self.get_mape(node_type, component, X_test_map[component], y_test_map[component])
+            mape = round(mape, 2)
             if max_mae is None or mae > max_mae:
                 max_mae = mae
             if max_mape is None or mape > max_mape:

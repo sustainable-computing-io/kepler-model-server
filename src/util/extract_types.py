@@ -37,3 +37,8 @@ def get_num_of_unit(energy_source, label_cols):
     energy_components = PowerSourceMap(energy_source)
     num_of_unit = len(label_cols)/len(energy_components)
     return num_of_unit
+
+def get_expected_power_columns(energy_components, num_of_unit=1):
+    # TODO: if ratio applied, 
+    # return [component_to_col(component, "package", unit_val) for component in energy_components for unit_val in range(0,num_of_unit)]
+    return [component_to_col(component) for component in energy_components]
