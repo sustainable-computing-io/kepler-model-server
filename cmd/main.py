@@ -30,7 +30,7 @@ from train.exporter import exporter
 from train import load_class
 
 from cmd_plot import ts_plot, feature_power_plot, summary_plot
-from cmd_util import extract_time, get_validate_df, summary_validation, get_extractor, check_ot_fg, get_pipeline, assert_train, get_isolator, UTC_OFFSET_TIMEDELTA
+from cmd_util import extract_time, save_query_results, get_validate_df, summary_validation, get_extractor, check_ot_fg, get_pipeline, assert_train, get_isolator, UTC_OFFSET_TIMEDELTA
 
 import threading
 
@@ -50,9 +50,10 @@ arguments:
                 - CPE benchmark resource in json if you run workload with CPE-operator (https://github.com/IBM/cpe-operator)
                 - custom benchmark in json with `startTimeUTC` and `endTimeUTC` data
     - --benchmark : file to save query timestamp according to either of the following raw parameters
-        - --start-time, --end-time : start time and end time in UTC (date -u +%Y-%m-%dT%H:%M:%SZ) 
+        - --start-time, --end-time : start time and end time (date +%Y-%m-%dT%H:%M:%SZ) 
         - --interval : last interval in second
     * The priority is input > start-time,end-time > interval
+- --to-csv : to save converted query result in csv format
 """
 
 def query(args):
@@ -103,6 +104,8 @@ def query(args):
     print("Start {} End {}".format(start, end))
     response = _range_queries(prom, queries, start, end, args.step, None)
     save_json(path=data_path, name=args.output, data=response)
+    if args.to_csv:
+        save_query_results(data_path, args.output, response)
     # try validation if applicable
     validate_df = get_validate_df(data_path, benchmark_filename, response)
     summary_validation(validate_df)
@@ -195,8 +198,9 @@ arguments:
                   - AbsPower (index = timestamp), DynPower (index = timestamp and container ID)
                   - check https://sustainable-computing.io/kepler_model_server/pipeline/#power-isolation
 - --thirdparty-metrics : specify list of third party metric to export (required only for ThirdParty feature group)
-- --pipeline-name : specify pipeline name to be used for initializing profile and trainer isolator (only required for profile and trainer isolator)
+- --abs-pipeline-name : specify pipeline name to be used for initializing trainer isolator (only required for trainer isolator)
 - --profile : specify kepler query result when running no workload (required only for profile isolator)
+- --pipeline-name : specify output pipeline name to save processed profile data (only required when --profile is set)
 - Hints required only for trainer isolator to separate background process can be specified by either of 
     - --target-hints : specify target process keywords (pod's substring with comma delimiter) to keep in DynPower model training
     - --bg-hints : specify background process keywords to remove from DynPower model training
@@ -226,8 +230,9 @@ arguments:
 - --feature-group : specify target feature group (check https://sustainable-computing.io/kepler_model_server/pipeline/#feature-group)
 - --energy-source : specify target energy source (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
 - --thirdparty-metrics : specify list of third party metric to export (required only for ThirdParty feature group)
-- --pipeline-name : specify pipeline name to be used for initializing profile and trainer isolator (only required for profile and trainer isolator)
+- --abs-pipeline-name : specify pipeline name to be used for initializing trainer isolator (only required for trainer isolator)
 - --profile : specify kepler query result when running no workload (required only for profile isolator)
+- --pipeline-name : specify output pipeline name to save processed profile data (only required when --profile is set)
 - Hints required only for trainer isolator to separate background process can be specified by either of 
     - --target-hints : specify target process keywords (pod's substring with comma delimiter) to keep in DynPower model training
     - --bg-hints : specify background process keywords to remove from DynPower model training
@@ -307,6 +312,7 @@ arguments:
         - The trained model will be saved in folder [pipeline_name]/[energy_source]/[output_type]/[feature_group]/[model_name]_[node_type]
 - --extractor : specify extractor class (default or smooth)
 - --isolator : specify isolator class (none, profile, min, trainer)
+- --abs-pipeline-name : specify pipeline name to be used for initializing trainer isolator (only required for trainer isolator)
 - --profile : specify kepler query result when running no workload (required only for profile isolator)
 - Hints required only for trainer isolator to separate background process can be specified by either of 
     - --target-hints : specify target process keywords (pod's substring with comma delimiter) to keep in DynPower model training
@@ -813,6 +819,7 @@ if __name__ == "__main__":
     parser.add_argument("--step", type=str, help="Specify query step.", default=PROM_QUERY_STEP)
     parser.add_argument("--metric-prefix", type=str, help="Specify metrix prefix to filter.", default=KEPLER_METRIC_PREFIX)
     parser.add_argument("-tm", "--thirdparty-metrics", nargs='+', help="Specify the thirdparty metrics that are not included by Kepler", default="")
+    parser.add_argument("--to-csv", type=bool, help="To save converted query response to csv format", default=False)
 
     # Train arguments
     parser.add_argument("-p", "--pipeline-name", type=str, help="Specify pipeline name.")

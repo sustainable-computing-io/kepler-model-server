@@ -13,6 +13,7 @@ sys.path.append(src_path)
 from util.prom_types import node_info_column, prom_responses_to_results
 from util.train_types import ModelOutputType, FeatureGroup
 from util.loader import load_json, get_pipeline_path
+from util.saver import assure_path, save_csv
 
 def print_file_to_stdout(data_path, args):
     file_path = os.path.join(data_path, args.output)
@@ -39,6 +40,13 @@ def extract_time(data_path, benchmark_filename):
         end = datetime.datetime.strptime(end_str, '%Y-%m-%dT%H:%M:%SZ')
     print(UTC_OFFSET_TIMEDELTA)
     return start-UTC_OFFSET_TIMEDELTA, end-UTC_OFFSET_TIMEDELTA
+
+def save_query_results(data_path, output_filename, query_response):
+    query_results = prom_responses_to_results(query_response)
+    save_path = os.path.join(data_path, "{}_csv".format(output_filename))
+    assure_path(save_path)
+    for query, data in query_results.items():
+        save_csv(save_path, query, data)
 
 def summary_validation(validate_df):
     if len(validate_df) == 0:
@@ -109,7 +117,9 @@ def get_validate_df(data_path, benchmark_filename, query_response):
                 item["total"] = 0
                 items += [item]
                 continue
-            filtered_df = df[df["pod_name"].str.contains(benchmark_filename)]
+            filtered_df = df.copy()
+            if "pod_name" in df.columns:
+                filtered_df = filtered_df[filtered_df["pod_name"].str.contains(benchmark_filename)]
             # set validate item
             item = dict()
             item["pod"] = benchmark_filename
