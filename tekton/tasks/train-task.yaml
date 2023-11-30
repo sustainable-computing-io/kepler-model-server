@@ -1,0 +1,57 @@
+######################################
+##
+## train-model:
+##
+##    train model from extracted data/isolated data
+##
+######################################
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: train-model
+spec:
+  params:
+  - name: MODEL_SERVER_IMAGE
+    description: Specify model server image
+    default: quay.io/sustainable_computing_io/kepler_model_server:v0.7
+  - name: INPUT_DATA
+    description: Specify input data file name (extracted_data or isolated_data)
+  - name: PIPELINE_NAME
+    description: Specify pipeline name (output prefix/folder)
+    default: default
+  - name: OUTPUT_TYPE
+    description: Specify target output type (check https://sustainable-computing.io/kepler_model_server/pipeline/#power-isolation)
+    default: AbsPower
+  - name: ENERGY_SOURCE
+    description: Specify target energy source (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
+    default: rapl
+  - name: FEATURE_GROUP
+    description: Specify target feature group (check https://sustainable-computing.io/kepler_model_server/pipeline/#feature-group)
+    default: BPFOnly
+  - name: TRAINERS
+    description: Specify trainer names (use comma(,) as delimiter)
+    default: XgboostFitTrainer
+  - name: THIRDPARTY_METRICS
+    description: Specify list of third party metric to export (required only for ThirdParty feature group)
+    default: ""
+  workspaces:
+  - name: mnt
+    optional: true
+  steps:
+    - name: train-from-data
+      image: $(params.MODEL_SERVER_IMAGE)
+      command: ["python3.8"]
+      env:
+      - name: MODEL_PATH
+        value: $(workspaces.mnt.path)/models
+      args:
+      - cmd/main.py
+      - train_from_data
+      - --data-path=$(workspaces.mnt.path)/data
+      - --input=$(params.INPUT_DATA)
+      - --pipeline-name=$(params.PIPELINE_NAME)
+      - --feature-group=$(params.FEATURE_GROUP)
+      - --energy-source=$(params.ENERGY_SOURCE)
+      - --output-type=$(params.OUTPUT_TYPE)
+      - --trainers=$(params.TRAINERS)
+      - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"

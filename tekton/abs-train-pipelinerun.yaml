@@ -1,0 +1,18 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: example-abs-train-pipeline
+spec:
+  workspaces:
+  - name: mnt
+    persistentVolumeClaim:
+      claimName: task-pvc
+  params:
+  - name: PIPELINE_NAME
+    value: AbsPowerTrainPipelineExample
+  - name: OUTPUT_TYPE
+    value: AbsPower
+  - name: IDLE_COLLECT_INTERVAL
+    value: 1
+  pipelineRef:
+    name: single-train-pipeline
