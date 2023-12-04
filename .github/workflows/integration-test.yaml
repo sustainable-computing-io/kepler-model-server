@@ -20,7 +20,7 @@ jobs:
           docker pull quay.io/sustainable_computing_io/kepler:latest
           kind load docker-image quay.io/sustainable_computing_io/kepler:latest
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: set up Docker Buildx
