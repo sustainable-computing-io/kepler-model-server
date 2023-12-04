@@ -24,7 +24,7 @@ jobs:
 
     - name: Login to Quay
       if: ${{ (github.repository_owner == 'sustainable-computing-io') && (github.ref == 'refs/heads/main') }}
-      uses: docker/login-action@v1
+      uses: docker/login-action@v3
       with:
           registry: quay.io/sustainable_computing_io
           username: ${{ secrets.BOT_NAME }}
