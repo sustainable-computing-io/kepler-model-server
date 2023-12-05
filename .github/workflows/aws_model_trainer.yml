@@ -1,0 +1,76 @@
+name: AWS EC2 GitHub Runner Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_access_key_id:
+        description: 'AWS Access Key ID'
+        required: true
+      aws_secret_access_key:
+        description: 'AWS Secret Access Key'
+        required: true
+      github_token:
+        description: 'GitHub Token'
+        required: true
+      aws_region:
+        description: 'AWS Region'
+        default: 'us-east-2'
+        required: false
+      aws_security_group_id:
+        description: 'AWS Security Group ID'
+        required: true
+
+env:
+  AWS_REGION: ${{ github.event.inputs.aws_region }}
+  GITHUB_TOKEN: ${{ github.event.inputs.github_token }}
+  AWS_ACCESS_KEY_ID: ${{ github.event.inputs.aws_access_key_id }}
+  AWS_SECRET_ACCESS_KEY: ${{ github.event.inputs.aws_secret_access_key }}
+  AWS_SECURITY_GROUP_ID: ${{ github.event.inputs.aws_security_group_id }}
+
+jobs:
+  setup-runner:
+    runs-on: ubuntu-latest
+    outputs:
+      instance_id: ${{ steps.setup_script.outputs.instance_id }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install aws cli
+      run: |
+            sudo apt-get update
+            sudo apt-get install -y python3-pip bc
+            sudo pip3 install awscli
+
+    - name: Run Setup Script
+      id: setup_script
+      run: |
+        INSTANCE_ID=$(script/setup-ec2-runner.sh)
+        echo "::set-output name=instance_id::$INSTANCE_ID"
+
+  test:
+    needs: setup-runner
+    runs-on: self-hosted
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Run Tests
+      run: |
+        INSTANCE_ID=${{ needs.setup-runner.outputs.instance_id }}
+        echo "Running tests on self-hosted runner with instance $INSTANCE_ID"
+
+  destroy-runner:
+    if: always()
+    needs: [setup-runner, test]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Unregister GitHub Runner
+      run: |
+        INSTANCE_ID=${{ needs.setup-runner.outputs.instance_id }}
+        # Unregister runner commands
+
+    - name: Terminate EC2 Instance
+      run: |
+        INSTANCE_ID=${{ needs.setup-runner.outputs.instance_id }}
+        # Terminate EC2 instance commands
