@@ -3,35 +3,29 @@ name: AWS EC2 GitHub Runner Workflow
 on:
   workflow_dispatch:
     inputs:
-      aws_access_key_id:
-        description: 'AWS Access Key ID'
-        required: true
-      aws_secret_access_key:
-        description: 'AWS Secret Access Key'
-        required: true
-      github_token:
-        description: 'GitHub Token'
-        required: true
-      aws_region:
-        description: 'AWS Region'
-        default: 'us-east-2'
+      ami_id:
+        description: 'AWS Machine Image ID'
         required: false
-      aws_security_group_id:
-        description: 'AWS Security Group ID'
-        required: true
-
+        default: 'ami-0e83be366243f524a'
+      instance_type:
+        description: 'AWS EC2 Instance Type'
+        required: false
+        default: 't2.micro'
 env:
-  AWS_REGION: ${{ github.event.inputs.aws_region }}
-  GITHUB_TOKEN: ${{ github.event.inputs.github_token }}
-  AWS_ACCESS_KEY_ID: ${{ github.event.inputs.aws_access_key_id }}
-  AWS_SECRET_ACCESS_KEY: ${{ github.event.inputs.aws_secret_access_key }}
-  AWS_SECURITY_GROUP_ID: ${{ github.event.inputs.aws_security_group_id }}
-
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  SECURITY_GROUP_ID: ${{ secrets.AWS_SECURITY_GROUP_ID }}
+  GITHUB_REPO: ${{ github.repository }}
+  AMI_ID: ${{ github.event.inputs.ami_id }}
+  INSTANCE_TYPE: ${{ github.event.inputs.instance_type }}
 jobs:
   setup-runner:
     runs-on: ubuntu-latest
     outputs:
       instance_id: ${{ steps.setup_script.outputs.instance_id }}
+      runner_name: ${{ steps.setup_script.outputs.runner_name }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -45,8 +39,7 @@ jobs:
     - name: Run Setup Script
       id: setup_script
       run: |
-        INSTANCE_ID=$(script/setup-ec2-runner.sh)
-        echo "::set-output name=instance_id::$INSTANCE_ID"
+          script/setup-ec2-runner.sh create
 
   test:
     needs: setup-runner
@@ -57,20 +50,26 @@ jobs:
 
     - name: Run Tests
       run: |
-        INSTANCE_ID=${{ needs.setup-runner.outputs.instance_id }}
+        export INSTANCE_ID=${{ needs.setup-runner.outputs.instance_id }}
         echo "Running tests on self-hosted runner with instance $INSTANCE_ID"
+        uname -a # or any other command
 
   destroy-runner:
     if: always()
     needs: [setup-runner, test]
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
     - name: Unregister GitHub Runner
       run: |
-        INSTANCE_ID=${{ needs.setup-runner.outputs.instance_id }}
+        export RUNNER_NAME=${{ needs.setup-runner.outputs.runner_name }}
         # Unregister runner commands
+        ./script/setup-ec2-runner.sh unregister $RUNNER_NAME
 
     - name: Terminate EC2 Instance
       run: |
-        INSTANCE_ID=${{ needs.setup-runner.outputs.instance_id }}
+        export INSTANCE_ID=${{ needs.setup-runner.outputs.instance_id }}
         # Terminate EC2 instance commands
+        ./script/setup-ec2-runner.sh terminate $INSTANCE_ID
