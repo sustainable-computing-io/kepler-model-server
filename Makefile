@@ -11,10 +11,10 @@ CTR_CMD = docker
 DOCKERFILES_PATH := "./dockerfiles"
 
 build:
-	$(CTR_CMD) build --platform linux/amd64 -t $(IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile .
+	$(CTR_CMD) build -t $(IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile .
 
 build-test:
-	$(CTR_CMD) build --platform linux/amd64 -t $(TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test .
+	$(CTR_CMD) build -t $(TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test .
 
 push:
 	$(CTR_CMD) push $(IMAGE)
