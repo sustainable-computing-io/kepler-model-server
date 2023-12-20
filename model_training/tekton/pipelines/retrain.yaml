@@ -1,10 +1,7 @@
 ##############################################
 ##
-##  single-train-pipeline:
+##  retrain-pipeline:
 ##    
-##    - presteps (collect metrics at idle state and record start time)
-##    - run stressng workloads (tasks/stressng-task.yaml)
-##    - collect metrics (record end time and collect metrics when running stressng)
 ##    - For AbsPower, extract kepler metrics in node level into dataframe (tasks/extract.yaml)
 ##    - For DynPower, extract kepler metrics into dataframe in container level and remove background power (tasks/isolate.yaml)
 ##    - train power model from the preprocess dataframe
@@ -13,7 +10,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: single-train-pipeline
+  name: retrain-pipeline
 spec:
   workspaces:
   - name: mnt
@@ -32,20 +29,6 @@ spec:
   - name: FEATURE_GROUP
     description: Specify target feature group (check https://sustainable-computing.io/kepler_model_server/pipeline/#feature-group)
     default: BPFOnly
-  - name: IDLE_COLLECT_INTERVAL
-    description: Specify interval time to collect profile (idle) data before start the workload
-    default: 100
-  - name: STRESS_BREAK_INTERVAL
-    description: Specify break interval between each stress load
-    default: 5
-  - name: STRESS_TIMEOUT
-    description: Specify stress duration (timeout to stop stress)
-    default: 30
-  - name: STRESS_ARGS
-    description: List arguments for CPU frequency and stressng workload (CPU_FREQUENCY;STRESS_LOAD;STRESS_INSTANCE_NUM;STRESS_EXTRA_PARAM_KEYS;STRESS_EXTRA_PARAM_VALS)
-    type: array
-    default:
-    - "3900000;cpu;8;none;none"
   - name: EXTRACTOR
     description: Specify extractor class (default or smooth)
     default: default
@@ -61,95 +44,21 @@ spec:
   - name: ABS_PIPELINE_NAME
     description: Specify pipeline name to be used for initializing trainer isolator
     default: ""
+  - name: COS_PROVIDER
+    description: Specify COS provider (supported choices are ibmcloud, aws)
+    default: ""
+  - name: COS_SECRET_NAME
+    description: Specify COS secret name
+    default: ""
+  - name: MACHINE_ID
+    description: Specify machine id to group model result in bucket
+    default: ""
   tasks:
-    - name: presteps
-      params:
-        - name: IDLE_COLLECT_INTERVAL
-          value: $(params.IDLE_COLLECT_INTERVAL)
-        - name: THIRDPARTY_METRICS
-          value: $(params.THIRDPARTY_METRICS)
-        - name: MODEL_SERVER_IMAGE
-          value: $(params.MODEL_SERVER_IMAGE)
-      taskSpec:
-        workspaces:
-          - name: mnt
-            optional: true
-        params:
-          - name: IDLE_COLLECT_INTERVAL
-          - name: THIRDPARTY_METRICS
-          - name: MODEL_SERVER_IMAGE
-        results:
-          - name: stress-start-time
-            description: The time recorded before running the workload
-        steps:
-          - name: collect-idle
-            image: $(params.MODEL_SERVER_IMAGE)
-            args:
-            - cmd/main.py
-            - query
-            - --data-path=$(workspaces.mnt.path)/data
-            - --interval=$(params.IDLE_COLLECT_INTERVAL)
-            - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
-            - --benchmark=idle
-            - -o=idle
-            command: ["python3.8"]
-            env:
-            - name: PROM_SERVER
-              value: http://prometheus-k8s.monitoring.svc:9090
-          - name: record-start-time
-            image: bash:v0.0.0
-            script: |
-                #!/usr/bin/env bash
-                echo -n $(date +%Y-%m-%dT%H:%M:%SZ) > $(results.stress-start-time.path)
-    - name: run-stressng
-      runAfter: [presteps]
-      taskRef:
-        name: run-stressng
-      params:
-        - name: INTERVAL
-          value: $(params.STRESS_BREAK_INTERVAL)
-        - name: TIMEOUT
-          value: $(params.STRESS_TIMEOUT)
-        - name: arguments
-          value: $(params.STRESS_ARGS[*])
-    - name: collect-metric
-      runAfter: [run-stressng]
-      params:
-        - name: THIRDPARTY_METRICS
-          value: $(params.THIRDPARTY_METRICS)
-        - name: MODEL_SERVER_IMAGE
-          value: $(params.MODEL_SERVER_IMAGE)
-      taskSpec:
-        workspaces:
-          - name: mnt
-            optional: true
-        params:
-          - name: BENCHMARK
-            default: stressng
-          - name: THIRDPARTY_METRICS
-          - name: MODEL_SERVER_IMAGE
-        steps:
-          - name: collect-stressng
-            image: $(params.MODEL_SERVER_IMAGE)
-            args:
-            - cmd/main.py
-            - query
-            - --data-path=$(workspaces.mnt.path)/data
-            - --start-time=$(tasks.presteps.results.stress-start-time)
-            - --end-time=$(tasks.run-stressng.results.stress-end-time)
-            - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
-            - --benchmark=stressng
-            - -o=kepler_query
-            command: ["python3.8"]
-            env:
-            - name: PROM_SERVER
-              value: http://prometheus-k8s.monitoring.svc:9090
     - name: extract
       when:
         - input: "$(params.OUTPUT_TYPE)"
           operator: in
           values: ["AbsPower"]
-      runAfter: [collect-metric]
       workspaces:
       - name: mnt
       taskRef:
@@ -174,7 +83,6 @@ spec:
         - input: "$(params.OUTPUT_TYPE)"
           operator: in
           values: ["DynPower"]
-      runAfter: [collect-metric]
       workspaces:
       - name: mnt
       taskRef:
@@ -250,3 +158,38 @@ spec:
         value: $(params.TRAINERS)
       - name: THIRDPARTY_METRICS
         value: $(params.THIRDPARTY_METRICS)
+  finally:
+    - name: ibmcloud-s3-push
+      when:
+      - input: "$(params.COS_PROVIDER)"
+        operator: in
+        values: ["ibmcloud"]
+      - input: "$(params.COS_SECRET_NAME)"
+        operator: notin
+        values: [""]
+      workspaces:
+      - name: mnt
+      params:
+      - name: COS_SECRET_NAME
+        value: $(params.COS_SECRET_NAME)
+      - name: MACHINE_ID
+        value: $(params.MACHINE_ID)
+      taskRef:
+        name: ibmcloud-s3-push
+    - name: aws-s3-push
+      when:
+      - input: "$(params.COS_PROVIDER)"
+        operator: in
+        values: ["aws"]
+      - input: "$(params.COS_SECRET_NAME)"
+        operator: notin
+        values: [""]
+      workspaces:
+      - name: mnt
+      params:
+      - name: COS_SECRET_NAME
+        value: $(params.COS_SECRET_NAME)
+      - name: MACHINE_ID
+        value: $(params.MACHINE_ID)
+      taskRef:
+        name: aws-s3-push

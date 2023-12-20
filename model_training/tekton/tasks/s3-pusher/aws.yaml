@@ -1,0 +1,56 @@
+######################################
+##
+##   s3-push task for AWS
+##
+######################################
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: aws-s3-push
+spec:
+  params:
+  - name: COS_SECRET_NAME
+    description: Specify cos secret name
+    default: ""
+  - name: MACHINE_ID
+    description: Specify machine id to group model result in bucket
+    default: ""
+  workspaces:
+  - name: mnt
+    optional: true
+  steps:
+    - name: push
+      image: quay.io/sustainability/kepler_model_server/s3_pusher:v0.7
+      env:
+      - name: ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: $(params.COS_SECRET_NAME)
+            key: accessKeyID
+      - name: ACCESS_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: $(params.COS_SECRET_NAME)
+            key: accessSecret
+      - name: REGION_NAME
+        valueFrom:
+          secretKeyRef:
+            name: $(params.COS_SECRET_NAME)
+            key: regionName
+      - name: BUCKET_NAME
+        valueFrom:
+          secretKeyRef:
+            name: $(params.COS_SECRET_NAME)
+            key: bucketName
+      command: ["python3.8"]
+      args:
+      - s3-pusher.py
+      - aws
+      - --aws-access-key-id=$(ACCESS_KEY_ID)
+      - --aws-secret-access-key=$(ACCESS_SECRET)
+      - --region-name=$(REGION_NAME)
+      - --bucket-name=$(BUCKET_NAME)
+      - --mnt-path=$(workspaces.mnt.path)
+      - --query-data=kepler_query
+      - --idle-data=idle
+      - --machine-id=$(params.MACHINE_ID)

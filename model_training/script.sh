@@ -131,10 +131,10 @@ function collect_data() {
     BENCHMARK_NS=$2
     SLEEP_TIME=$3
     if [ "$BENCHMARK" != "customBenchmark" ]; then
-        kubectl apply -f benchmark/${BENCHMARK}.yaml
+        kubectl apply -f cpe_benchmark/${BENCHMARK}.yaml
         wait_for_benchmark ${BENCHMARK} ${BENCHMARK_NS} ${SLEEP_TIME}
         save_benchmark ${BENCHMARK} ${BENCHMARK_NS}
-        kubectl delete -f benchmark/${BENCHMARK}.yaml
+        kubectl delete -f cpe_benchmark/${BENCHMARK}.yaml
     fi
     ARGS="-i ${BENCHMARK} -o ${BENCHMARK}_kepler_query -s ${PROM_SERVER}"
     if [ -z "$NATIVE" ]; then
@@ -167,7 +167,6 @@ function train_model(){
 
 function prepare_cluster() {
     cluster_up
-    deploy_cpe_operator
     deploy_kepler
     deploy_prom_dependency
     reload_prometheus
