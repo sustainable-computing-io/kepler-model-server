@@ -1,6 +1,6 @@
 ######################################
 ##
-## extract-metric:
+## extract-from-metric:
 ##
 ##    load kepler_query.json and extract data to extracted_data.csv
 ##

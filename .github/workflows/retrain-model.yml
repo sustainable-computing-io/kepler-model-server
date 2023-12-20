@@ -1,0 +1,155 @@
+name: Retrain Power on GitHub Runner
+
+on:
+  push:
+    paths:
+    - src
+    - hack
+    - model_training
+    - .github/workflows/retrain-model.yml
+
+env:
+  AMI_ID: 'ami-0e4d0bb9670ea8db0'
+  VERSION: 0.7
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  KIND_CLUSTER_NAME: kind-for-training
+
+jobs:
+  check-data:
+    name: Check data available
+    runs-on: ubuntu-latest
+
+    outputs:
+      available: ${{ steps.check-data.outputs.available }}
+
+    strategy:
+      matrix:
+        instance_type: [i3.metal, c6i.metal]
+      max-parallel: 1
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Install aws cli
+        run: |
+              sudo apt-get update
+              sudo apt-get install -y python3-pip bc
+              sudo pip3 install awscli
+          
+      - name: Check Data
+        id: check-data
+        run: |
+          export HOST_MNT_PATH=$(pwd)/mnt
+          
+          if [ "$AWS_SECRET_ACCESS_KEY" == "" ]; then
+              echo "available=false" >> "$GITHUB_OUTPUT"
+          else
+              if ./hack/aws_helper.sh check_data ${{ matrix.instance_type }}-${AMI_ID}; then
+                  echo "available=true" >> "$GITHUB_OUTPUT"
+              else
+                  echo "available=false" >> "$GITHUB_OUTPUT"
+              fi
+          fi
+          
+  retrain-model:
+    needs: check-data
+    if: ${{ needs.check-data.outputs.available == 'true' }} 
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        instance_type: [c6i.metal, i3.metal]
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Install aws cli
+        run: |
+              sudo apt-get update
+              sudo apt-get install -y python3-pip bc
+              sudo pip3 install awscli
+
+      - name: Prepare Cluster
+        working-directory: model_training
+        run: |
+          ./script.sh cluster_up
+          cp $HOME/bin/kubectl /usr/local/bin/kubectl
+          kubectl get po -A
+
+      - name: Load data
+        run: |
+          export HOST_MNT_PATH=$(pwd)/mnt
+          ./hack/aws_helper.sh load_data ${{ matrix.instance_type }}-${AMI_ID}
+          docker exec --privileged "${KIND_CLUSTER_NAME}"-control-plane mkdir -p /mnt/data
+          docker cp $(pwd)/mnt/data/idle.json "${KIND_CLUSTER_NAME}"-control-plane:/mnt/data/idle.json
+          docker cp $(pwd)/mnt/data/kepler_query.json "${KIND_CLUSTER_NAME}"-control-plane:/mnt/data/kepler_query.json
+
+      - name: Install Tekton
+        run: |
+          kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+          ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines
+          ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines-resolvers
+
+      - name: Prepare PVC
+        working-directory: model_training/tekton
+        run: |
+          kubectl apply -f pvc/hostpath.yaml
+
+      - name: Deploy S3 Secret
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: aws-cos-secret
+          type: Opaque
+          stringData:
+            accessKeyID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            accessSecret: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            regionName: ${{ secrets.AWS_REGION }}
+            bucketName: kepler-power-model
+          EOF
+
+      - name: Deploy Tasks and Pipelines
+        working-directory: model_training/tekton
+        run: |
+          kubectl apply -f tasks
+          kubectl apply -f tasks/s3-pusher
+          kubectl apply -f pipelines
+
+      - name: Run Tekton Pipeline
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: tekton.dev/v1
+          kind: PipelineRun
+          metadata:
+            name: self-hosted-aws
+          spec:
+            timeouts:
+              pipeline: "6h"
+              tasks: "5h50m"
+            workspaces:
+            - name: mnt
+              persistentVolumeClaim:
+                claimName: task-pvc
+            params:
+            - name: PIPELINE_NAME
+              value: std_v${VERSION}
+            - name: OUTPUT_TYPE
+              value: AbsPower
+            - name: COS_PROVIDER
+              value: aws
+            - name: COS_SECRET_NAME
+              value: aws-cos-secret
+            - name: MACHINE_ID
+              value: ${{ matrix.instance_type }}-${AMI_ID}
+            pipelineRef:
+              name: retrain-pipeline
+          EOF
+          ./hack/k8s_helper.sh wait_for_pipelinerun self-hosted-aws

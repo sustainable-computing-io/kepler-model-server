@@ -3,6 +3,9 @@ kind: PipelineRun
 metadata:
   name: example-complete-train-pipeline
 spec:
+  timeouts:
+    pipeline: "6h"
+    tasks: "5h50m"
   workspaces:
   - name: mnt
     persistentVolumeClaim:

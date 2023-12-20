@@ -1,0 +1,202 @@
+name: Reusable workflow example
+
+on:
+  workflow_call:
+    secrets:
+      self_hosted_github_token:
+        description: 'The GitHub token to use'
+        required: true
+      aws_access_key_id:
+        description: 'The AWS access key id to use'
+        required: true
+      aws_secret_access_key:
+        description: 'The AWS secret access key to use'
+        required: true
+      security_group_id:
+        description: 'The AWS security group id to use'
+        required: true
+      aws_region:
+        description: 'The AWS region to use'
+        required: true
+    inputs:
+      github_repo:
+        description: 'The GitHub repo to use'
+        required: true
+        type: string
+      ami_id:
+        description: 'The AMI ID to use for the EC2 instance'
+        required: true
+        type: string
+      instance_type:
+        description: 'The instance type to use for the EC2 instance'
+        required: true
+        type: string
+
+env:
+  KUBECONFIG: /root/.kube/config
+  VERSION: 0.7
+  
+jobs:
+  setup-runner:
+    name: Setup Self Hosted Runner
+    runs-on: ubuntu-latest
+    outputs:
+      instance_id: ${{ steps.create-runner.outputs.instance_id }}
+      runner_name: ${{ steps.create-runner.outputs.runner_name }}
+
+    steps:
+      - name: Create Runner
+        uses: sustainable-computing-io/aws_ec2_self_hosted_runner@v1
+        id: create-runner
+        with:
+            action: "create"
+            aws_region: ${{ secrets.aws_region }}
+            github_token: ${{ secrets.self_hosted_github_token }}
+            aws_access_key_id: ${{ secrets.aws_access_key_id }}
+            aws_secret_access_key: ${{ secrets.aws_secret_access_key }}
+            security_group_id: ${{ secrets.security_group_id }}
+            github_repo: ${{ inputs.github_repo }}
+            ami_id: ${{ inputs.ami_id }}
+            instance_type: ${{ inputs.instance_type }}
+            create_s3_bucket: "false"
+            spot_instance_only: "true"
+            root_volume_size: "100"
+
+      - name: Print Output
+        id: output
+        run: |
+          echo "instance_id ${{ steps.create-runner.outputs.instance_id }}"
+          echo "instance_ip ${{ steps.create-runner.outputs.instance_ip }}"
+          echo "runner_name ${{ steps.create-runner.outputs.runner_name }}"
+          whoami
+  train-power-model:
+    name: Train Power Model
+    needs: setup-runner
+    runs-on: [self-hosted, linux, x64]
+
+    steps:
+      - name: Enable RAPL module
+        run: |
+          kernel_version=$(uname -r)
+          apt install -y linux-modules-$kernel_version linux-modules-extra-$kernel_version
+          modprobe intel_rapl_common
+
+      - name: Install Docker
+        id: docker
+        run: |
+            # Add Docker's official GPG key:
+            apt-get update -y
+            apt-get install ca-certificates curl gnupg -y
+            install -m 0755 -d /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            chmod a+r /etc/apt/keyrings/docker.gpg
+            # Add the repository to Apt sources:
+            echo \
+              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+              $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+              tee /etc/apt/sources.list.d/docker.list > /dev/null
+            apt-get update -y
+            apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+            docker info
+
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Cluster
+        working-directory: model_training
+        run: |
+          ./script.sh cluster_up
+          cp $HOME/bin/kubectl /usr/local/bin/kubectl
+          kubectl get po -A
+      - name: Install Kepler
+        working-directory: model_training
+        run: |
+          ./script.sh deploy_kepler
+          ./script.sh deploy_prom_dependency
+          kubectl logs $(kubectl get pods -oname -nkepler) -n kepler|grep "obtain power"
+      
+      - name: Install Tekton
+        run: |
+          kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+          ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines
+          ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines-resolvers
+      - name: Prepare PVC
+        working-directory: model_training/tekton
+        run: |
+          kubectl apply -f pvc/hostpath.yaml
+      - name: Deploy S3 Secret
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: aws-cos-secret
+          type: Opaque
+          stringData:
+            accessKeyID: ${{ secrets.aws_access_key_id }}
+            accessSecret: ${{ secrets.aws_secret_access_key }}
+            regionName: ${{ secrets.aws_region }}
+            bucketName: kepler-power-model
+          EOF
+      - name: Deploy Tasks and Pipelines
+        working-directory: model_training/tekton
+        run: |
+          kubectl apply -f tasks
+          kubectl apply -f tasks/s3-pusher
+          kubectl apply -f pipelines
+      - name: Run Tekton Pipeline
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: tekton.dev/v1
+          kind: PipelineRun
+          metadata:
+            name: self-hosted-aws
+          spec:
+            timeouts:
+              pipeline: "6h"
+              tasks: "5h50m"
+            workspaces:
+            - name: mnt
+              persistentVolumeClaim:
+                claimName: task-pvc
+            params:
+            - name: PIPELINE_NAME
+              value: std_v${VERSION}
+            - name: OUTPUT_TYPE
+              value: AbsPower
+            - name: COS_PROVIDER
+              value: aws
+            - name: COS_SECRET_NAME
+              value: aws-cos-secret
+            - name: MACHINE_ID
+              value: ${{ inputs.instance_type }}-${{ inputs.ami_id }}
+            pipelineRef:
+              name: single-train-pipeline
+          EOF
+          ./hack/k8s_helper.sh wait_for_pipelinerun self-hosted-aws
+          df -h
+  
+  destroy-runner:
+    if: always()
+    needs: [setup-runner, train-power-model]
+    name: Destroy Self Hosted Runner
+    runs-on: ubuntu-latest
+    steps:
+      - name: unregister runner
+        id: unregister
+        uses: sustainable-computing-io/aws_ec2_self_hosted_runner@v1
+        with:
+          action: "unregister"
+          runner_name: ${{ needs.setup-runner.outputs.runner_name }}
+          github_token: ${{ secrets.self_hosted_github_token }}
+          github_repo: ${{ inputs.github_repo }}
+
+      - name: terminate instance
+        id: terminate
+        uses: sustainable-computing-io/aws_ec2_self_hosted_runner@v1
+        with:
+          action: "terminate"
+          aws_access_key_id: ${{ secrets.aws_access_key_id }}
+          aws_secret_access_key: ${{ secrets.aws_secret_access_key }}
+          instance_id: ${{ needs.setup-runner.outputs.instance_id }}

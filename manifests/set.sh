@@ -19,10 +19,15 @@
 
 # set options
 # for example: ./set.sh "ESTIMATOR SERVER"
+unset $SERVER
+unset $ONLINE_TRAINER
+unset $ESTIMATOR
+unset $OPENSHIFT_DEPLOY
+
 DEPLOY_OPTIONS=$1
 for opt in ${DEPLOY_OPTIONS}; do export $opt=true; done;
 
-echo ${DEPLOY_OPTIONS}
+echo DEPLOY_OPTIONS=${DEPLOY_OPTIONS}
 
 version=$(kubectl version| grep 'Client Version' | sed 's/.*v//g' | cut -b -4)
 if [ 1 -eq "$(echo "${version} < 1.21" | bc)" ]
