@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: use Kepler action to deploy cluster
-        uses: sustainable-computing-io/kepler-action@v0.0.4
+        uses: sustainable-computing-io/kepler-action@v0.0.5
         with:
           runningBranch: kind
           cluster_provider: kind
