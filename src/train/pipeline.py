@@ -53,22 +53,15 @@ class Pipeline():
         self.metadata["init_time"] = time_to_str(datetime.datetime.utcnow())
 
     def get_abs_data(self, query_results, energy_components, feature_group, energy_source, aggr):
-        extracted_data, power_labels, _, features = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=True, aggr=aggr)
-        self.process_accelerator_feature(features)
+        extracted_data, power_labels, _, _ = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=True, aggr=aggr)
         return extracted_data, power_labels
     
     def get_dyn_data(self, query_results, energy_components, feature_group, energy_source):
-        extracted_data, power_labels, _, features = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=False)
+        extracted_data, power_labels, _, _ = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=False)
         if extracted_data is None or power_labels is None:
             return None
-        self.process_accelerator_feature(features)
         isolated_data = self.isolator.isolate(extracted_data, label_cols=power_labels, energy_source=energy_source)
-        return isolated_data 
-    
-    def process_accelerator_feature(self, features):
-        if features is not None and len(features) != 0:
-            for trainer in self.trainers:
-                trainer.features = features
+        return isolated_data
     
     def prepare_data(self, input_query_results, energy_components, energy_source, feature_group, aggr=True):
         query_results = input_query_results.copy()
