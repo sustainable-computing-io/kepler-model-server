@@ -45,7 +45,10 @@ def get_abs_models(workload_feature_cols, energy_source, toppath=model_toppath, 
         for model_name in model_names:
             model_path = os.path.join(group_path, model_name)
             model = load_model(model_path)
-            abs_models += [model]
+            if model is not None:
+                abs_models += [model]
+            else:
+                print("Model is none: ", model_path)
     return abs_models
 
 # extracted_power_labels: sum of power labels over sorted timestamp for each energy_components

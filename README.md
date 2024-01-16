@@ -17,7 +17,7 @@ OPTS="ESTIMATOR SERVER" make deploy
 ```
 
 ## Model training
-- [Use Tekton pipeline](./tekton)
+- [Use Tekton pipeline](./model_training/tekton/)
 - [Use Bash script with CPE operator](./model_training/)
 
 ## Local test
