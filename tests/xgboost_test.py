@@ -24,16 +24,12 @@ energy_components = ["package", "core", "uncore", "dram"]
 feature_group = FeatureGroup.BPFIRQ.name
 energy_source = "rapl"
 
-prom_response_file = os.path.join(os.path.dirname(__file__), 'data', 'prom_response.json')
-
-
-import pandas as pd
+prom_response_file = os.path.join(os.path.dirname(__file__), 'data', 'prom_output', 'prom_response.json')
 
 def read_sample_query_results():
     with open(prom_response_file) as f:
         response = json.load(f)
         return response_to_result(response)
-    return dict()
 
 if __name__ == '__main__':
     # Note that extractor mutates the query results
