@@ -13,7 +13,7 @@ from util.loader import DEFAULT_PIPELINE
 
 from prom_test import get_query_results, prom_output_path, prom_output_filename
 from extractor_test import test_extractors, test_energy_source
-from isolator_test import test_isolators, test_profiles
+from isolator_test import test_isolators
 from trainer_test import test_trainer_names, assert_train
 
 def assert_pipeline(pipeline, query_results, feature_group, energy_source, energy_components):

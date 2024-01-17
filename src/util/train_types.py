@@ -90,6 +90,39 @@ SingleSourceFeatures = [FeatureGroup.CounterOnly.name, FeatureGroup.CgroupOnly.n
 def is_single_source_feature_group(fg):
     return fg.name in SingleSourceFeatures
 
+default_main_feature_map = {
+    FeatureGroup.Full: "cpu_instructions",
+    FeatureGroup.WorkloadOnly: "cpu_instructions",
+    FeatureGroup.CounterOnly: "cpu_instructions",
+    FeatureGroup.CgroupOnly: "cgroupfs_cpu_usage_us",
+    FeatureGroup.BPFOnly: "bpf_cpu_time_us",
+    FeatureGroup.KubeletOnly: "kubelet_cpu_usage",
+    FeatureGroup.BPFIRQ: "bpf_cpu_time_us",
+    FeatureGroup.CounterIRQCombined: "cpu_instructions",
+    FeatureGroup.Basic: "cpu_instructions",
+    FeatureGroup.AcceleratorOnly: "accelerator_intel_qat",
+}
+default_dram_feature_map = {
+    FeatureGroup.Full: "cache_miss",
+    FeatureGroup.WorkloadOnly: "cache_miss",
+    FeatureGroup.CounterOnly: "cache_miss",
+    FeatureGroup.CgroupOnly: "cgroupfs_memory_usage_bytes",
+    FeatureGroup.BPFOnly: "bpf_page_cache_hit",
+    FeatureGroup.KubeletOnly: "kubelet_memory_bytes",
+    FeatureGroup.BPFIRQ: "bpf_page_cache_hit",
+    FeatureGroup.CounterIRQCombined: "cache_miss",
+    FeatureGroup.Basic: "cache_miss"
+}
+
+def main_feature(feature_group_name, energy_component):
+    feature_group = FeatureGroup[feature_group_name]
+    features = FeatureGroups[feature_group]
+    if energy_component == "dram" and feature_group in default_dram_feature_map:
+        feature = default_dram_feature_map[feature_group]
+    else:
+        feature = default_main_feature_map[feature_group]
+    return features.index(feature)
+
 # XGBoostRegressionTrainType
 class XGBoostRegressionTrainType(enum.Enum):
     TrainTestSplitFit = 1

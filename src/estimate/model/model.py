@@ -16,12 +16,14 @@ from prom_types import TIMESTAMP_COL, valid_container_query
 
 from scikit_model import ScikitModel
 from xgboost_model import XgboostModel
+from curvefit_model import CurveFitModel
 # from keras_model import KerasModel
 
 # model wrapper
 MODELCLASS = {
     'scikit': ScikitModel,
-    'xgboost': XgboostModel
+    'xgboost': XgboostModel,
+    'curvefit': CurveFitModel
     # 'keras': KerasModel,
 }
 

@@ -11,6 +11,7 @@ sys.path.append(util_path)
 from util import assure_path, ModelOutputType, FeatureGroups, FeatureGroup,save_json, save_metadata, load_metadata, save_scaler, save_weight
 
 from util.prom_types import  node_info_column
+from util.train_types import main_feature
 from util.extract_types import component_to_col, get_unit_vals, ratio_to_col
 from util.loader import get_model_group_path, get_save_path, get_model_name, get_archived_file, CHECKPOINT_FOLDERNAME, load_scaler
 from util.config import model_toppath
@@ -39,7 +40,6 @@ class Trainer(metaclass=ABCMeta):
         self.features = FeatureGroups[self.feature_group]
         self.energy_source = energy_source
         self.node_level = node_level
-
         self.trainer_name = self.__class__.__name__
         self.model_class = model_class
         self.output_type = ModelOutputType.AbsPower if node_level else ModelOutputType.DynPower
@@ -124,6 +124,9 @@ class Trainer(metaclass=ABCMeta):
                 # init if failed to load any checkpoint
                 self.node_models[node_type][component] = self.init_model()
                 self.print_log("Newly initialize model ({})".format(component))
+            if hasattr(self.node_models[node_type][component], "set_feature_index"):
+                feature_index = main_feature(self.feature_group_name, component)
+                self.node_models[node_type][component].set_feature_index(feature_index)
 
     def process(self, data, power_labels, pipeline_lock):
         node_types = pd.unique(data[node_info_column])

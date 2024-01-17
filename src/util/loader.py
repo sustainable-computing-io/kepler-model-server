@@ -38,7 +38,8 @@ def load_json(path, name):
         with open(filepath) as f:
             res = json.load(f)
         return res
-    except:
+    except Exception as err:
+        print(err)
         return None
     
 def load_pkl(path, name):

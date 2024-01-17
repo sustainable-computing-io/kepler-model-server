@@ -6,8 +6,7 @@ import sys
 import json
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-
-from train import PowerSourceMap, DefaultExtractor
+from prom_test import get_query_results
 
 src_path = os.path.join(os.path.dirname(__file__), '../src')
 train_path = os.path.join(os.path.dirname(__file__), '../src/train')
@@ -22,14 +21,13 @@ sys.path.append(util_path)
 # model_tester.py
 # to get the test result across different train/test data set
 
+from train import DefaultExtractor
 from profile import profile_process, get_min_max_watt
-
-from train_types import ModelOutputType
+from train_types import ModelOutputType, PowerSourceMap
 from train.isolator.train_isolator import get_background_containers, isolate_container
 from offline_trainer_test import get_pipeline_name, isolators, offline_trainer_output_path
 from estimator.load import load_model
 
-from extractor_test import prom_response_file, prom_response_idle_file
 from prom_types import prom_responses_to_results, TIMESTAMP_COL
 
 extractor = DefaultExtractor()
@@ -46,15 +44,11 @@ def compute_error(predicted_power, actual_powers):
     return mae, mse
 
 # return model, metadata
-def process(train_dataset_name, test_dataset_name, test_json_file_path, test_idle_file_path, target_path):
-    with open(test_idle_file_path) as f:
-        idle_response = json.load(f)
-        idle_data = prom_responses_to_results(idle_response)
-        background_containers = get_background_containers(idle_data)
-        profiles = profile_process(idle_data)
-    with open(test_json_file_path) as f:
-        test_response = json.load(f)
-        test_data = prom_responses_to_results(test_response)
+def process(train_dataset_name, test_dataset_name, target_path):
+    idle_data = get_query_results(save_name="idle")
+    background_containers = get_background_containers(idle_data)
+    profiles = profile_process(idle_data)
+    test_data = prom_responses_to_results()
     node_types, _ = extractor.get_node_types(idle_data)
     if node_types is None:
         node_type = "1" # default node type
@@ -153,8 +147,6 @@ def process(train_dataset_name, test_dataset_name, test_json_file_path, test_idl
 
 if __name__ == '__main__':
     dataset_name = "sample_data"
-    json_file_path = prom_response_file
-    idle_file_path = prom_response_idle_file
     target_path = offline_trainer_output_path
     # same train/test dataset
-    process(dataset_name, dataset_name, json_file_path, idle_file_path, target_path)
+    process(dataset_name, dataset_name, target_path)
