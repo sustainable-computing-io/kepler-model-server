@@ -45,7 +45,7 @@ serve_port = 8102
 """
 TrainRequest
 name - pipeline/model name
-energy_source - target enery source to train for (such as rapl, acpi) 
+energy_source - target enery source to train for (such as intel_rapl, acpi) 
 trainer - attribute to construct a training pipeline
     - abs_trainers - trainer class name list for absolute power training 
     - dyn_trainers - trainer class name list for dynamic power training

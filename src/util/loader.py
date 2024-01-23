@@ -243,7 +243,7 @@ def get_download_output_path(download_path, energy_source, output_type):
     energy_source_path = assure_path(os.path.join(download_path, energy_source))
     return os.path.join(energy_source_path, output_type.name)
 
-def get_url(output_type, feature_group=default_feature_group, trainer_name=default_trainer_name, node_type=default_node_type, model_topurl=default_init_model_url, energy_source="rapl", pipeline_name=default_init_pipeline_name, model_name=None, weight=False):
+def get_url(output_type, feature_group=default_feature_group, trainer_name=default_trainer_name, node_type=default_node_type, model_topurl=default_init_model_url, energy_source="intel_rapl", pipeline_name=default_init_pipeline_name, model_name=None, weight=False):
     group_path = get_model_group_path(model_topurl, output_type=output_type, feature_group=feature_group, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
     if model_name is None:
         model_name = get_model_name(trainer_name, node_type)

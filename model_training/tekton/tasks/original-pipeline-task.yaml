@@ -31,7 +31,7 @@ spec:
     default: default
   - name: ENERGY_SOURCE
     description: Specify target energy source (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
-    default: acpi,rapl
+    default: acpi,intel_rapl
   - name: TARGET_HINTS
     description: Specify target process keywords to keep in DynPower model training
     default: stress

@@ -40,7 +40,7 @@ Use kepler model server function as a standalone docker container.
     ├── profile # if --profile is providied
     │   ├── acpi.json
     │   └── rapl.json
-    ├── <energy_source> # provided by --energy-source (default: rapl)
+    ├── <energy_source> # provided by --energy-source (default: intel_rapl)
     │   ├── <model_type> # AbsPower or DynPower
     │   │   ├── <feature_group>  # e.g., BPFOnly
     │   │   │   ├── <model_name>
