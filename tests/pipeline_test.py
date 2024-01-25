@@ -26,15 +26,21 @@ def assert_pipeline(pipeline, query_results, feature_group, energy_source, energ
             else:
                 assert_train(trainer, dyn_data, energy_components)
 
-def process(save_pipeline_name=DEFAULT_PIPELINE, prom_save_path=prom_output_path, prom_save_name=prom_output_filename, abs_trainer_names=test_trainer_names, dyn_trainer_names=test_trainer_names, extractors=test_extractors, isolators=test_isolators, target_energy_sources=[test_energy_source]):
+def process(save_pipeline_name=DEFAULT_PIPELINE, prom_save_path=prom_output_path, prom_save_name=prom_output_filename, abs_trainer_names=test_trainer_names, dyn_trainer_names=test_trainer_names, extractors=test_extractors, isolators=test_isolators, target_energy_sources=[test_energy_source], valid_feature_groups=None):
     query_results = get_query_results(save_path=prom_save_path, save_name=prom_save_name)
-    valid_feature_groups = get_valid_feature_group_from_queries(query_results.keys()) 
+    if valid_feature_groups is None:
+        valid_feature_groups = get_valid_feature_group_from_queries(query_results.keys()) 
     for extractor in extractors:
         for isolator in isolators:
-            energy_components = PowerSourceMap[test_energy_source]
             pipeline = NewPipeline(save_pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=target_energy_sources ,valid_feature_groups=valid_feature_groups)
-            for feature_group in valid_feature_groups:
-                assert_pipeline(pipeline, query_results, feature_group, test_energy_source, energy_components)
+            for energy_source in target_energy_sources:
+                energy_components = PowerSourceMap[energy_source]
+                for feature_group in valid_feature_groups:
+                    assert_pipeline(pipeline, query_results, feature_group, energy_source, energy_components)
+            # save metadata
+            pipeline.save_metadata()
+            # save pipeline
+            pipeline.archive_pipeline()
 
 if __name__ == '__main__':
-    process()
+    process(target_energy_sources=PowerSourceMap.keys())

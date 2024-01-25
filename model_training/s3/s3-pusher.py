@@ -3,24 +3,9 @@
 ## upload all files in mnt path 
 # <provider>_upload(client, mnt_path) 
 
-def new_ibm_client(args):
-    import ibm_boto3
-    from ibm_botocore.client import Config
-    cos = ibm_boto3.resource('s3',
-        ibm_api_key_id=args.api_key,
-        ibm_service_instance_id=args.service_instance_id,
-        config=Config(signature_version='oauth'),
-        endpoint_url=args.service_endpoint
-    )
-    return cos
-    
-def new_aws_client(args):
-    import boto3 as aws_boto3
-    s3 = aws_boto3.client('s3', aws_access_key_id=args.aws_access_key_id, aws_secret_access_key=args.aws_secret_access_key, region_name=args.region_name)
-    return s3
-
 model_dir="models"
 data_dir="data"
+machine_spec_dir="machine_spec"
 import os
 def get_bucket_file_map(machine_id, mnt_path, query_data, idle_data):
     model_path = os.path.join(mnt_path, model_dir)
@@ -28,11 +13,12 @@ def get_bucket_file_map(machine_id, mnt_path, query_data, idle_data):
     top_key_path = ""
     if machine_id is not None and machine_id != "":
         top_key_path = "/" + machine_id
-    for root, _, files in os.walk(model_path):
-        for file in files:
-            filepath = os.path.join(root, file)
-            key = filepath.replace(model_path, top_key_path + "/models")
-            bucket_file_map[key] = filepath
+    if os.path.exists(model_path):
+        for root, _, files in os.walk(model_path):
+            for file in files:
+                filepath = os.path.join(root, file)
+                key = filepath.replace(model_path, "/models")
+                bucket_file_map[key] = filepath
     data_path = os.path.join(mnt_path, data_dir)
     for data_filename in [query_data, idle_data]:
         if data_filename is not None:
@@ -40,6 +26,10 @@ def get_bucket_file_map(machine_id, mnt_path, query_data, idle_data):
             if os.path.exists(filepath):
                 key = filepath.replace(data_path, top_key_path + "/data")
                 bucket_file_map[key] = filepath
+    filepath = os.path.join(data_path, machine_spec_dir, machine_id + ".json")
+    if os.path.exists(filepath):
+        key = filepath.replace(data_path, top_key_path + "/data")
+        bucket_file_map[key] = filepath
     return bucket_file_map
 
 def aws_upload(client, bucket_name, machine_id, mnt_path, query_data, idle_data):
@@ -64,29 +54,13 @@ def add_common_args(subparser):
     subparser.add_argument("--machine-id", help="Machine ID")
 
 import argparse
+import util
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="S3 Pusher")
-    subparsers = parser.add_subparsers(title="S3 provider", dest="provider")
-
-    ibm_parser = subparsers.add_parser("ibmcloud", help="IBM Cloud")
-    ibm_parser.add_argument("--api-key", type=str, help="API key", required=True)
-    ibm_parser.add_argument("--service-instance-id", type=str, help="Service instance ID", required=True)
-    ibm_parser.add_argument("--service-endpoint", type=str, help="Service endpoint", required=True)
-    add_common_args(ibm_parser)
-    ibm_parser.set_defaults(new_client_func=new_ibm_client, upload_func=ibm_upload)
-
-    aws_parser = subparsers.add_parser("aws", help="AWS")
-    aws_parser.add_argument("--aws-access-key-id", type=str, help="Access key ID", required=True)
-    aws_parser.add_argument("--aws-secret-access-key", type=str, help="Secret key", required=True)
-    aws_parser.add_argument("--region-name", type=str, help="Region name", required=True)
-    add_common_args(aws_parser)
-    aws_parser.set_defaults(new_client_func=new_aws_client, upload_func=aws_upload)
-
-    args = parser.parse_args()
-
-    if hasattr(args, "new_client_func") and hasattr(args, "upload_func"):
+    args = util.get_command(parser, add_common_args, ibm_upload, aws_upload)
+    if hasattr(args, "new_client_func") and hasattr(args, "func"):
         client = args.new_client_func(args)
-        args.upload_func(client, args.bucket_name, args.machine_id, args.mnt_path, args.query_data, args.idle_data)
+        args.func(client, args.bucket_name, args.machine_id, args.mnt_path, args.query_data, args.idle_data)
     else:
         parser.print_help()

@@ -6,7 +6,7 @@
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
-  name: aws-s3-push
+  name: aws-s3-load
 spec:
   params:
   - name: COS_SECRET_NAME
@@ -15,12 +15,15 @@ spec:
   - name: MACHINE_ID
     description: Specify machine id to group model result in bucket
     default: ""
+  - name: PIPELINE_NAME
+    description: Specify pipeline name (output prefix/folder)
+    default: default
   workspaces:
   - name: mnt
     optional: true
   steps:
-    - name: push
-      image: quay.io/sustainability/kepler_model_server/s3_pusher:v0.7
+    - name: load
+      image: quay.io/sustainability/kepler_model_server/s3:v0.7
       env:
       - name: ACCESS_KEY_ID
         valueFrom:
@@ -44,13 +47,12 @@ spec:
             key: bucketName
       command: ["python3.8"]
       args:
-      - s3-pusher.py
+      - s3-loader.py
       - aws
       - --aws-access-key-id=$(ACCESS_KEY_ID)
       - --aws-secret-access-key=$(ACCESS_SECRET)
       - --region-name=$(REGION_NAME)
       - --bucket-name=$(BUCKET_NAME)
       - --mnt-path=$(workspaces.mnt.path)
-      - --query-data=kepler_query
-      - --idle-data=idle
+      - --pipeline-name=$(params.PIPELINE_NAME)
       - --machine-id=$(params.MACHINE_ID)

@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: example-dyn-train-pipeline
+  name: test-retrain-ibmcloud
 spec:
   timeouts:
     pipeline: "6h"
@@ -12,8 +12,8 @@ spec:
       claimName: task-pvc
   params:
   - name: PIPELINE_NAME
-    value: DynPowerTrainPipelineExample
+    value: AbsPowerTrainPipelineExample
   - name: OUTPUT_TYPE
-    value: DynPower
+    value: AbsPower
   pipelineRef:
-    name: single-train-pipeline
+    name: single-retrain-pipeline

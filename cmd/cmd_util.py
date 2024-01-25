@@ -10,8 +10,8 @@ sys.path.append(cur_path)
 src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 
-from util.prom_types import node_info_column, prom_responses_to_results
-from util.train_types import ModelOutputType, FeatureGroup
+from util.prom_types import node_info_column, prom_responses_to_results, SOURCE_COL, energy_component_to_query
+from util.train_types import ModelOutputType, FeatureGroup, PowerSourceMap
 from util.loader import load_json, get_pipeline_path
 from util.saver import assure_path, save_csv
 
@@ -55,14 +55,15 @@ def summary_validation(validate_df):
     items = []
     metric_to_validate_pod = {
         "cgroup": "kepler_container_cgroupfs_cpu_usage_us_total",
-        # "hwc": "kepler_container_cpu_instructions_total",
-        "hwc": "kepler_container_cpu_cycles_total",
+        # CPU instruction is mainly used for ratio.
+        # reference:  https://github.com/sustainable-computing-io/kepler/blob/0b328cf7c79db9a11426fb80a1a922383e40197c/pkg/config/config.go#L92
+        "hwc": "kepler_container_cpu_instructions_total", 
         "kubelet": "kepler_container_kubelet_cpu_usage_total",
         "bpf": "kepler_container_bpf_cpu_time_us_total",
     }
     metric_to_validate_power = {
-        "rapl": "kepler_node_package_joules_total",
-        "platform": "kepler_node_platform_joules_total"
+        "intel_rapl": "kepler_node_package_joules_total",
+        "acpi": "kepler_node_platform_joules_total"
     }
     for metric, query in metric_to_validate_pod.items():
         target_df = validate_df[validate_df["query"]==query]
@@ -166,28 +167,31 @@ def get_validate_df(data_path, benchmark_filename, query_response):
                     item["total"] = filtered_df[query].max()
                     items += [item]
     energy_queries = [query for query in query_results.keys() if "_joules" in query]
-    for query in energy_queries:
-        df = query_results[query]
-        if len(df) == 0:
-            # set validate item // no value
+    for energy_source, energy_components in PowerSourceMap.items():
+        for component in energy_components:
+            query = energy_component_to_query(component)
+            df = query_results[query]
+            df = df[df[SOURCE_COL] == energy_source]
+            if len(df) == 0:
+                # set validate item // no value
+                item = dict()
+                item["pod"] = ""
+                item["scenarioID"] = energy_source
+                item["query"] = query
+                item["count"] = 0
+                item[">0"] = 0
+                item["total"] = 0
+                items += [item]
+                continue
+            # set validate item
             item = dict()
             item["pod"] = ""
-            item["scenarioID"] = ""
+            item["scenarioID"] = energy_source
             item["query"] = query
-            item["count"] = 0
-            item[">0"] = 0
-            item["total"] = 0
+            item["count"] = len(df)
+            item[">0"] = len(df[df[query] > 0])
+            item["total"] = df[query].max()
             items += [item]
-            continue
-        # set validate item
-        item = dict()
-        item["pod"] = ""
-        item["scenarioID"] = ""
-        item["query"] = query
-        item["count"] = len(df)
-        item[">0"] = len(df[df[query] > 0])
-        item["total"] = df[query].max()
-        items += [item]
     other_queries = [query for query in query_results.keys() if query not in container_queries and query not in energy_queries]
     for query in other_queries:
         df = query_results[query]

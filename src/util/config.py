@@ -13,7 +13,7 @@
 #################################################
 
 import os
-from loader import get_url, get_pipeline_url
+from loader import get_url, get_pipeline_url, default_init_model_url
 from train_types import ModelOutputType, is_support_output_type
 
 # must be writable (for shared volume mount)
@@ -63,7 +63,8 @@ if not os.path.exists(MNT_PATH) or not os.access(MNT_PATH, os.W_OK):
 
 CONFIG_PATH = getConfig('CONFIG_PATH', CONFIG_PATH)
 
-initial_pipeline_url = getConfig('INITIAL_PIPELINE_URL', get_pipeline_url())
+model_topurl = getConfig('MODEL_TOPURL', default_init_model_url)
+initial_pipeline_url = getConfig('INITIAL_PIPELINE_URL', get_pipeline_url(model_topurl=model_topurl))
 
 model_toppath =  getConfig('MODEL_PATH', getPath(MODEL_FOLDERNAME))
 download_path = getConfig('MODEL_PATH', getPath(DOWNLOAD_FOLDERNAME))
@@ -118,14 +119,14 @@ def get_energy_source(prefix):
         return DEFAULT_COMPONENTS_SOURCE
 
 # get_init_model_url: get initial model from URL if estimator is enabled
-def get_init_model_url(energy_source, output_type):
+def get_init_model_url(energy_source, output_type, model_topurl=model_topurl):
     for prefix in modelConfigPrefix:
         if get_energy_source(prefix) == energy_source:
             modelURL = get_init_url(prefix)
             print("get init url", modelURL)
             if modelURL == "" and is_support_output_type(output_type):
                 print("init URL is not set, try using default URL".format(output_type))
-                return get_url(output_type=ModelOutputType[output_type], energy_source=energy_source)
+                return get_url(output_type=ModelOutputType[output_type], energy_source=energy_source, model_topurl=model_topurl)
             else:
                 return modelURL
     print("no match config for {}, {}".format(output_type, energy_source))

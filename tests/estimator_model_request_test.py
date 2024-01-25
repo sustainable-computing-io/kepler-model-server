@@ -16,6 +16,12 @@ import requests
 import os
 import sys
 
+file_server_port = 8110
+# set environment
+os.environ['MODEL_SERVER_URL'] = 'http://localhost:8100'
+model_topurl = 'http://localhost:{}'.format(file_server_port)
+os.environ['MODEL_TOPURL'] = model_topurl
+
 server_path = os.path.join(os.path.dirname(__file__), '../src')
 util_path = os.path.join(os.path.dirname(__file__), '../src/util')
 train_path = os.path.join(os.path.dirname(__file__), '../src/train')
@@ -28,6 +34,7 @@ sys.path.append(train_path)
 sys.path.append(prom_path)
 sys.path.append(estimate_path)
 
+from http_server import http_file_server
 from train_types import FeatureGroups, FeatureGroup, ModelOutputType
 from loader import get_download_output_path
 from estimate.estimator import handle_request, loaded_model, PowerRequest
@@ -38,7 +45,7 @@ from extractor_test import test_energy_source
 
 from estimator_power_request_test import generate_request
 
-os.environ['MODEL_SERVER_URL'] = 'http://localhost:8100'
+http_file_server(file_server_port)
 
 import json
 
@@ -72,17 +79,17 @@ if __name__ == '__main__':
         if url != "":
             print("Download: ", url)
             response = requests.get(url)
-            if response.status_code == 200:
-                output_path = get_download_output_path(download_path, energy_source, output_type)
-                if output_type_name in loaded_model and energy_source in loaded_model[output_type.name]:
-                    del loaded_model[output_type_name][energy_source]
-                if os.path.exists(output_path):
-                    shutil.rmtree(output_path)
-                request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.Full], output_type=output_type_name)
-                data = json.dumps(request_json)
-                output = handle_request(data)
-                assert len(output['powers']) > 0, "cannot get power {}\n {}".format(output['msg'], request_json)
-                print("result from {}: {}".format(url, output))
+            assert response.status_code == 200, "init url must be set and valid"
+            output_path = get_download_output_path(download_path, energy_source, output_type)
+            if output_type_name in loaded_model and energy_source in loaded_model[output_type.name]:
+                del loaded_model[output_type_name][energy_source]
+            if os.path.exists(output_path):
+                shutil.rmtree(output_path)
+            request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.Full], output_type=output_type_name)
+            data = json.dumps(request_json)
+            output = handle_request(data)
+            assert len(output['powers']) > 0, "cannot get power {}\n {}".format(output['msg'], request_json)
+            print("result from {}: {}".format(url, output))
 
     output_type_name = 'AbsPower'
     estimator_enable_key = "NODE_COMPONENTS_ESTIMATOR"
@@ -99,23 +106,23 @@ if __name__ == '__main__':
     if os.path.exists(output_path):
         shutil.rmtree(output_path)
     # valid model
-    os.environ[init_url_key] = get_url(output_type=output_type, feature_group=FeatureGroup.KubeletOnly)
+    os.environ[init_url_key] = get_url(output_type=output_type, feature_group=FeatureGroup.CgroupOnly, model_topurl=model_topurl)
     print("Requesting from ", os.environ[init_url_key])
-    request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.KubeletOnly], output_type=output_type_name)
+    request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.CgroupOnly], output_type=output_type_name)
     data = json.dumps(request_json)
     output = handle_request(data)
     assert len(output['powers']) > 0, "cannot get power {}\n {}".format(output['msg'], request_json)
-    print("result {}/{} from static set: {}".format(output_type_name, FeatureGroup.KubeletOnly.name, output))
+    print("result {}/{} from static set: {}".format(output_type_name, FeatureGroup.CgroupOnly.name, output))
     del loaded_model[output_type_name][energy_source]
     # invalid model
-    os.environ[init_url_key] = get_url(output_type=output_type, feature_group=FeatureGroup.BPFOnly)
+    os.environ[init_url_key] = get_url(output_type=output_type, feature_group=FeatureGroup.BPFOnly, model_topurl=model_topurl)
     print("Requesting from ", os.environ[init_url_key])
-    request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.KubeletOnly], output_type=output_type_name)
+    request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.CgroupOnly], output_type=output_type_name)
     data = json.dumps(request_json)
     power_request = json.loads(data, object_hook = lambda d : PowerRequest(**d))
     output_path = get_achived_model(power_request)
     assert output_path is None, "model should be invalid\n {}".format(output_path)
-    os.environ['MODEL_CONFIG'] = "{}=true\n{}={}\n".format(estimator_enable_key,init_url_key,get_url(output_type=output_type, feature_group=FeatureGroup.KubeletOnly))
+    os.environ['MODEL_CONFIG'] = "{}=true\n{}={}\n".format(estimator_enable_key,init_url_key,get_url(output_type=output_type, feature_group=FeatureGroup.CgroupOnly, model_topurl=model_topurl))
     set_env_from_model_config()
     print("Requesting from ", os.environ[init_url_key])
     reset_failed_list()
@@ -124,7 +131,7 @@ if __name__ == '__main__':
     output_path = get_download_output_path(download_path, energy_source, output_type)
     if os.path.exists(output_path):
         shutil.rmtree(output_path)
-    request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.KubeletOnly], output_type=output_type_name)
+    request_json = generate_request(None, n=10, metrics=FeatureGroups[FeatureGroup.CgroupOnly], output_type=output_type_name)
     data = json.dumps(request_json)
     output = handle_request(data)
     assert len(output['powers']) > 0, "cannot get power {}\n {}".format(output['msg'], request_json)

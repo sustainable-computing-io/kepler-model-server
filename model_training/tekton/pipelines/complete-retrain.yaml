@@ -1,0 +1,159 @@
+##############################################
+##
+##  complete-retrain-pipeline:
+##    
+##    - run original model server pipeline which produces AbsPower and DynPower
+##      for all available feature groups
+##
+##############################################
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: complete-retrain-pipeline
+spec:
+  workspaces:
+  - name: mnt
+    description: Mount path
+  params:
+  - name: MODEL_SERVER_IMAGE
+    description: Specify model server image
+    default: quay.io/sustainable_computing_io/kepler_model_server:v0.7
+  - name: PIPELINE_NAME
+    description: Specify pipeline name (output prefix/folder)
+  - name: ENERGY_SOURCE
+    description: Specify target energy sources (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
+    default: acpi,intel_rapl
+  - name: EXTRACTOR
+    description: Specify extractor class (default or smooth)
+    default: default
+  - name: ISOLATOR
+    description: Specify isolator class (none, min, profile, or trainer (if ABS_PIPELINE_NAME is set)
+    default: min
+  - name: ABS_TRAINERS
+    description: Specify trainer names for AbsPower training (use comma(,) as delimiter)
+    default: default
+  - name: DYN_TRAINERS
+    description: Specify trainer names for DynPower training (use comma(,) as delimiter)
+    default: default
+  - name: THIRDPARTY_METRICS
+    description: Specify list of third party metric to export (required only for ThirdParty feature group)
+    default: ""
+  - name: ABS_PIPELINE_NAME
+    description: Specify pipeline name to be used for initializing trainer isolator
+    default: ""
+  - name: COS_PROVIDER
+    description: Specify COS provider (supported choices are ibmcloud, aws)
+    default: ""
+  - name: COS_SECRET_NAME
+    description: Specify COS secret name
+    default: ""
+  - name: MACHINE_ID
+    description: Specify machine id to group model result in bucket
+    default: ""
+  - name: LOAD_DATA
+    description: Specify whether to load data
+    default: true
+  tasks:
+    - name: ibmcloud-s3-load
+      when:
+      - input: "$(params.LOAD_DATA)"
+        operator: in
+        values: ["true"]
+      - input: "$(params.COS_PROVIDER)"
+        operator: in
+        values: ["ibmcloud"]
+      - input: "$(params.COS_SECRET_NAME)"
+        operator: notin
+        values: [""]
+      workspaces:
+      - name: mnt
+      params:
+      - name: COS_SECRET_NAME
+        value: $(params.COS_SECRET_NAME)
+      - name: MACHINE_ID
+        value: $(params.MACHINE_ID)
+      - name: PIPELINE_NAME
+        value: $(params.PIPELINE_NAME)
+      taskRef:
+        name: ibmcloud-s3-load
+    - name: aws-s3-load
+      when:
+      - input: "$(params.LOAD_DATA)"
+        operator: in
+        values: ["true"]
+      - input: "$(params.COS_PROVIDER)"
+        operator: in
+        values: ["aws"]
+      - input: "$(params.COS_SECRET_NAME)"
+        operator: notin
+        values: [""]
+      workspaces:
+      - name: mnt
+      params:
+      - name: COS_SECRET_NAME
+        value: $(params.COS_SECRET_NAME)
+      - name: MACHINE_ID
+        value: $(params.MACHINE_ID)
+      - name: PIPELINE_NAME
+        value: $(params.PIPELINE_NAME)
+      taskRef:
+        name: aws-s3-load
+    - name: train-from-query
+      runAfter: [ibmcloud-s3-load, aws-s3-load]
+      workspaces:
+      - name: mnt
+      taskRef:
+        name: original-pipeline-task
+      params:
+      - name: MODEL_SERVER_IMAGE
+        value: $(params.MODEL_SERVER_IMAGE)
+      - name: PIPELINE_NAME
+        value: $(params.PIPELINE_NAME)
+      - name: EXTRACTOR
+        value: $(params.EXTRACTOR)
+      - name: ISOLATOR
+        value: $(params.ISOLATOR)
+      - name: ABS_TRAINERS
+        value: $(params.ABS_TRAINERS)
+      - name: DYN_TRAINERS
+        value: $(params.DYN_TRAINERS)
+      - name: ENERGY_SOURCE
+        value: $(params.ENERGY_SOURCE)
+      - name: THIRDPARTY_METRICS
+        value: $(params.THIRDPARTY_METRICS)
+    - name: ibmcloud-s3-push
+      runAfter: [train-from-query]
+      when:
+      - input: "$(params.COS_PROVIDER)"
+        operator: in
+        values: ["ibmcloud"]
+      - input: "$(params.COS_SECRET_NAME)"
+        operator: notin
+        values: [""]
+      workspaces:
+      - name: mnt
+      params:
+      - name: COS_SECRET_NAME
+        value: $(params.COS_SECRET_NAME)
+      - name: MACHINE_ID
+        value: $(params.MACHINE_ID)
+      taskRef:
+        name: ibmcloud-s3-push
+    - name: aws-s3-push
+      runAfter: [train-from-query]
+      when:
+      - input: "$(params.COS_PROVIDER)"
+        operator: in
+        values: ["aws"]
+      - input: "$(params.COS_SECRET_NAME)"
+        operator: notin
+        values: [""]
+      workspaces:
+      - name: mnt
+      params:
+      - name: COS_SECRET_NAME
+        value: $(params.COS_SECRET_NAME)
+      - name: MACHINE_ID
+        value: $(params.MACHINE_ID)
+      taskRef:
+        name: aws-s3-push

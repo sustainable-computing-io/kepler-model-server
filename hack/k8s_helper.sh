@@ -72,7 +72,7 @@ wait_for_pipelinerun() {
     name=$1
     namespace=default
     
-    if kubectl get taskruns|grep run-stressng; then
+    if kubectl get taskruns|grep ${name}-run-stressng; then
         value=$(_get_succeed_condition $resource $name $namespace)
         while [ "$value" == "Unknown" ] ; 
         do

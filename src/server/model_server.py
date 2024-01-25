@@ -14,7 +14,7 @@ sys.path.append(util_path)
 
 from util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup
 from util.config import getConfig, model_toppath, ERROR_KEY, MODEL_SERVER_MODEL_REQ_PATH, MODEL_SERVER_MODEL_LIST_PATH, initial_pipeline_url, download_path
-from util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME, get_pipeline_path, any_node_type, is_matched_type
+from util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME, get_pipeline_path, any_node_type, is_matched_type, lr_trainers
 
 ###############################################
 # model request 
@@ -47,6 +47,8 @@ def select_best_model(valid_groupath, filters, trainer_name="", node_type=any_no
                     f != CHECKPOINT_FOLDERNAME \
                     and not os.path.isfile(os.path.join(valid_groupath,f)) \
                     and (trainer_name == "" or trainer_name in f)]
+    if weight:
+        model_names = [name for name in model_names if name.split("_")[0] in lr_trainers]
     # Load metadata of trainers
     best_cadidate = None
     best_response = None
@@ -81,6 +83,11 @@ def get_model():
     model_request = request.get_json()
     print("get request /model: {}".format(model_request))
     req = ModelRequest(**model_request)
+    energy_source = req.source
+    # TODO: need revisit if get more than one rapl energy source
+    if energy_source is None or 'rapl' in energy_source:
+        energy_source = 'intel_rapl'
+
     # find valid feature groups from available metrics in request
     valid_fgs = get_valid_feature_groups(req.metrics)
     # parse filtering conditions of metadata attribute from request if exists  (e.g., minimum mae)
@@ -90,7 +97,7 @@ def get_model():
     best_response = None
     # find best model comparing best candidate from each valid feature group complied with filtering conditions
     for fg in valid_fgs:
-        valid_groupath = get_model_group_path(model_toppath, output_type, fg, req.source)
+        valid_groupath = get_model_group_path(model_toppath, output_type, fg, energy_source)
         if os.path.exists(valid_groupath):
             best_candidate, response = select_best_model(valid_groupath, filters, req.trainer_name, req.node_type, req.weight)
             if best_candidate is None:
@@ -134,8 +141,8 @@ def get_available_models():
             output_types = [ot for ot in ModelOutputType] 
         else:
             output_types = [ModelOutputType[ot]]
-
-        if energy_source is None:
+        # TODO: need revisit if get more than one rapl energy source
+        if energy_source is None or 'rapl' in energy_source:
             energy_source = 'intel_rapl'
 
         if filter is None:

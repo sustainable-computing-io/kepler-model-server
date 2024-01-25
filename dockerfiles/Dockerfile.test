@@ -15,6 +15,8 @@ RUN mkdir -p tests/data
 COPY tests/data/prom_output tests/data/prom_output 
 COPY tests/*.py tests/
 
+RUN mkdir -p /mnt/models
+
 # port for Model Server
 EXPOSE 8100
 # port for Online Trainer (TODO: reserved for event-based online training)

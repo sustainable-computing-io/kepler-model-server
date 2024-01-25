@@ -74,6 +74,9 @@ spec:
   - name: MACHINE_ID
     description: Specify machine id to group model result in bucket
     default: ""
+  - name: CPU_FREQUENCY_ENABLED
+    description: Enable/Disable CPU Frequency Steps
+    default: true
   tasks:
     - name: presteps
       params:
@@ -126,6 +129,8 @@ spec:
           value: $(params.STRESS_TIMEOUT)
         - name: arguments
           value: $(params.STRESS_ARGS[*])
+        - name: CPU_FREQUENCY_ENABLED
+          value: $(params.CPU_FREQUENCY_ENABLED)
     - name: collect-metric
       runAfter: [run-stressng]
       params:

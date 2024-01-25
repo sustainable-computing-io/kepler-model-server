@@ -13,5 +13,17 @@ spec:
   params:
   - name: PIPELINE_NAME
     value: CompleteTrainPipelineExample
+  # the below parameters are for short test run
+  - name: STRESS_ARGS
+    value:
+    - "cpu;none;none"
+  - name: STRESS_TIMEOUT
+    value: 20
+  - name: STRESS_BREAK_INTERVAL
+    value: 1
+  - name: IDLE_COLLECT_INTERVAL
+    value: 20
+  - name: CPU_FREQUENCY_ENABLED
+    value: false
   pipelineRef:
     name: complete-train-pipeline
