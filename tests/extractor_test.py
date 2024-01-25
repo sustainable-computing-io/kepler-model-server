@@ -36,7 +36,7 @@ if not os.path.exists(extractor_output_path):
 
 test_extractors = [DefaultExtractor(), SmoothExtractor()]
 
-test_energy_source = "rapl"
+test_energy_source = "intel_rapl"
 test_energy_components = PowerSourceMap[test_energy_source]
 test_num_of_unit = 2
 test_customize_extractors = []

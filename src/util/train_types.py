@@ -24,7 +24,7 @@ WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEAT
 BASIC_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + KUBELET_FEATURES
 
 PowerSourceMap = {
-    "rapl": ["package", "core", "uncore", "dram"],
+    "intel_rapl": ["package", "core", "uncore", "dram"],
     "acpi": ["platform"]
 }
 

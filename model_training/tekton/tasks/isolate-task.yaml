@@ -19,7 +19,7 @@ spec:
     default: default
   - name: ENERGY_SOURCE
     description: Specify target energy source (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
-    default: rapl
+    default: intel_rapl
   - name: FEATURE_GROUP
     description: Specify target feature group (check https://sustainable-computing.io/kepler_model_server/pipeline/#feature-group)
     default: BPFOnly

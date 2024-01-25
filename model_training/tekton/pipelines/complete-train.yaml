@@ -25,7 +25,7 @@ spec:
     description: Specify pipeline name (output prefix/folder)
   - name: ENERGY_SOURCE
     description: Specify target energy sources (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
-    default: acpi,rapl
+    default: acpi,intel_rapl
   - name: IDLE_COLLECT_INTERVAL
     description: Specify interval time to collect profile (idle) data before start the workload
     default: 100

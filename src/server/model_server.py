@@ -20,8 +20,8 @@ from util.loader import parse_filters, is_valid_model, load_json, load_weight, g
 # model request 
 
 class ModelRequest():
-    def __init__(self, metrics, output_type, source='rapl', node_type=-1, weight=False, trainer_name="", filter=""):
-        # target source of power metric to be predicted (e.g., rapl, acpi)
+    def __init__(self, metrics, output_type, source='intel_rapl', node_type=-1, weight=False, trainer_name="", filter=""):
+        # target source of power metric to be predicted (e.g., intel_rapl, acpi)
         self.source = source
         # type of node to select a model learned from similar nodes (default: -1, applied universal model learned by all node_type (TODO))
         self.node_type = node_type
@@ -136,7 +136,7 @@ def get_available_models():
             output_types = [ModelOutputType[ot]]
 
         if energy_source is None:
-            energy_source = 'rapl'
+            energy_source = 'intel_rapl'
 
         if filter is None:
             filters = dict()

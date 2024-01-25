@@ -60,7 +60,7 @@ extractor_process(query_results, feature_group)
 Optional arguments:
  - save_path: path to save a extracted result (default: data/extractor_output)
  - customize_extractors: additional extractor names (default: [])
- - energy_source: target energy source (default: rapl)
+ - energy_source: target energy source (default: intel_rapl)
  - num_of_unit: number of component units (default: 2)
 
 ## Isolator
@@ -115,7 +115,7 @@ for feature_group, result in isolator_results.items():
 ```
 Optional arguments:
  - trainer_names: trainer names to be initiated (default: test_trainer_names)
- - energy_source: target energy source (default: rapl)
+ - energy_source: target energy source (default: intel_rapl)
  - power_columns: extracted power columns (default: generated power columns from prom_response)
  - pipeline_name: pipeline name to be saved under model top path, /models, (default: default)
 
@@ -139,7 +139,7 @@ pipeline_process()
 Optional arguments:
  - prom_save_path: path of prometheus response (default: data/prom_output)
  - prom_save_name: prometheus response filename (default: prom_response)
- - target_energy_sources: list of target energy sources (default: [rapl])
+ - target_energy_sources: list of target energy sources (default: [intel_rapl])
  - extractors: list of extractor instances (default: [DefaultExtractor])
  - isolators: list of isolator instances (default: [MinIsolator, NoneIsolator])
  - abs_trainer_names: list of trainer names to learn for DynPower (default: test_trainer_names)
@@ -246,7 +246,7 @@ offline_trainer_client_process(dataset_name, train_prom_response, idle_prom_resp
 ```
 
 Optional arguments:
- - energy_source: target energy source (default: rapl)
+ - energy_source: target energy source (default: intel_rapl)
  - isolators: dict map of isolator class name to argument dict map (default: {"MinIdleIsolator": {}, "NoneIsolator": {}, "ProfileBackgroundIsolator": {}, "TrainIsolator": {"abs_pipeline_name": DEFAULT_PIPELINE}})
  - target_path:  path to save trained ouput (default: data/offline_trainer_output)
 

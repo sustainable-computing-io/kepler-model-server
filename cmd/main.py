@@ -829,7 +829,7 @@ if __name__ == "__main__":
     parser.add_argument("--target-hints", type=str, help="Specify dynamic workload container name hints (used by TrainIsolator)")
     parser.add_argument("--bg-hints", type=str, help="Specify background workload container name hints (used by TrainIsolator)")
     parser.add_argument("--abs-pipeline-name", type=str, help="Specify AbsPower model pipeline (used by TrainIsolator)", default="")
-    parser.add_argument("-e", "--energy-source", type=str, help="Specify energy source.", default="rapl")
+    parser.add_argument("-e", "--energy-source", type=str, help="Specify energy source.", default="intel_rapl")
     parser.add_argument("--abs-trainers", type=str, help="Specify trainer names for train command (use comma(,) as delimiter).", default="default")
     parser.add_argument("--dyn-trainers", type=str, help="Specify trainer names for train command (use comma(,) as delimiter).", default="default")
     parser.add_argument("--trainers", type=str, help="Specify trainer names for train_from_data command (use comma(,) as delimiter).", default="XgboostFitTrainer")
