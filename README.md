@@ -2,10 +2,34 @@
 [Get started with Kepler Model Server.](https://sustainable-computing.io/kepler_model_server/get_started/)
 
 This repository contains source code related to Kepler power model. The modules in this reposioty connects to [core Kepler project](https://github.com/sustainable-computing-io/kepler) and [kepler-model-db](https://github.com/sustainable-computing-io/kepler-model-db) as below.
-![](./fig/model-server-components-simplified.png)
+![](./fig/comm_diagram.png)
+
+For more detail, check [the component diagram](./fig/model-server-components-simplified.png).
 
 ## Model server and estimator deployment 
 
+### By Kepler Operator
+
+```yaml
+apiVersion: kepler.system.sustainable.computing.io/v1alpha1
+kind: KeplerInternal
+metadata:
+  name: kepler
+spec:
+..
+  modelServer:
+    enabled: <true|false>
+  estimator:
+    node:
+      components:
+        sidecar: <true|false>
+        initUrl: <static model URL>
+      total:
+        sidecar: <true|false>
+        initUrl: <static model URL>
+```
+
+### By manifests with setup script:
 Deploy with estimator sidecar
 ```
 OPTS="ESTIMATOR" make deploy
@@ -17,8 +41,8 @@ OPTS="ESTIMATOR SERVER" make deploy
 ```
 
 ## Model training
-- [Use Tekton pipeline](./model_training/tekton/)
-- [Use Bash script with CPE operator](./model_training/)
+- [Use Tekton pipeline](./model_training/tekton/README.md)
+- [Use Bash script with CPE operator](./model_training/cpe_script_instruction.md)
 
 ## Local test
 ### via docker
