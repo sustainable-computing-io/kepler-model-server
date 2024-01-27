@@ -1,8 +1,29 @@
+name: Integration Test
 on:
-  push:
-  pull_request:
+  workflow_call:
+    secrets:
+      docker_username:
+        description: 'Docker username'
+        required: false
+      docker_password:
+        description: 'Docker password'
+        required: false
+    inputs:
+      base_change:
+        description: 'Change flag on base image'
+        required: true
+        type: string
+      image_repo:
+        description: 'The image repo to use'
+        required: true
+        type: string
+      image_tag:
+        description: 'The image tag to use'
+        required: true
+        type: string
 
 env:
+  BASE_IMAGE: ${{ inputs.image_repo }}/kepler_model_server_base:${{ inputs.image_tag }}
   IMAGE: localhost:5001/kepler_model_server:devel
 
 jobs:
@@ -21,6 +42,21 @@ jobs:
           kind load docker-image quay.io/sustainable_computing_io/kepler:latest
       - name: checkout
         uses: actions/checkout@v4
+      - name: Login to Docker
+        if: ${{ inputs.base_change == 'true' }} 
+        uses: docker/login-action@v3
+        with:
+            registry: ${{ inputs.image_repo }}
+            username: ${{ secrets.docker_username }}
+            password: ${{ secrets.docker_password }} 
+      - name: Replace value in Dockerfile
+        if: ${{ inputs.base_change == 'true' }} 
+        run: |
+          sed -i "s|quay.io/sustainable_computing_io/kepler_model_server_base:v0.7|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile
+      - name: Replace value in Dockerfile.test
+        if: ${{ inputs.base_change == 'true' }} 
+        run: |
+          sed -i "s|quay.io/sustainable_computing_io/kepler_model_server_base:v0.7|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile.test
       - name: set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: set up Docker Buildx

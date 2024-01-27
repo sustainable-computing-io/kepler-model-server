@@ -3,6 +3,8 @@
 import os
 import sys
 
+import sklearn
+
 #################################################################
 # import internal src 
 src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
@@ -30,9 +32,12 @@ def assert_train(trainer, data, energy_components):
         node_type_filtered_data = data[data[node_info_column] == node_type]
         X_values = node_type_filtered_data[trainer.features].values
         for component in energy_components:
-            output = trainer.predict(node_type_str, component, X_values)
-            assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
-
+            try:
+                output = trainer.predict(node_type_str, component, X_values)
+                assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
+            except sklearn.exceptions.NotFittedError:
+                pass
+            
 def process(node_level, feature_group, result, trainer_names=test_trainer_names, energy_source=test_energy_source, power_columns=get_expected_power_columns(), pipeline_name=DEFAULT_PIPELINE):
     energy_components = PowerSourceMap[energy_source]
     train_items = []

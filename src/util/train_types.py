@@ -18,10 +18,9 @@ COUNTER_FEAUTRES = ["cache_miss", "cpu_cycles", "cpu_instructions"]
 CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"]
 BPF_FEATURES = ["bpf_cpu_time_us", "bpf_page_cache_hit"]
 IRQ_FEATURES = ["bpf_block_irq", "bpf_net_rx_irq", "bpf_net_tx_irq"]
-KUBELET_FEATURES =['kubelet_memory_bytes', 'kubelet_cpu_usage']
 ACCELERATE_FEATURES = ['accelerator_intel_qat']
-WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + KUBELET_FEATURES + ACCELERATE_FEATURES
-BASIC_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + KUBELET_FEATURES
+WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + ACCELERATE_FEATURES
+BASIC_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES 
 
 PowerSourceMap = {
     "intel_rapl": ["package", "core", "uncore", "dram"],
@@ -44,13 +43,12 @@ class FeatureGroup(enum.Enum):
     CounterOnly = 3
     CgroupOnly = 4
     BPFOnly = 5
-    KubeletOnly = 6
-    IRQOnly = 7
-    CounterIRQCombined = 8
-    Basic = 9
-    BPFIRQ = 10
-    AcceleratorOnly = 11
-    ThirdParty = 12
+    IRQOnly = 6
+    CounterIRQCombined = 7
+    Basic = 8
+    BPFIRQ = 9
+    AcceleratorOnly = 10
+    ThirdParty = 11
     Unknown = 99
 
 class EnergyComponentLabelGroup(enum.Enum):
@@ -62,7 +60,6 @@ class EnergyComponentLabelGroup(enum.Enum):
 class ModelOutputType(enum.Enum):
     AbsPower = 1
     DynPower = 2
-    XGBoostStandalonePower = 3
 
 def is_support_output_type(output_type_name):
     return any(output_type_name == item.name for item in ModelOutputType)
@@ -78,14 +75,13 @@ FeatureGroups = {
     FeatureGroup.CounterOnly: deep_sort(COUNTER_FEAUTRES),
     FeatureGroup.CgroupOnly: deep_sort(CGROUP_FEATURES),
     FeatureGroup.BPFOnly: deep_sort(BPF_FEATURES),
-    FeatureGroup.KubeletOnly: deep_sort(KUBELET_FEATURES),
     FeatureGroup.BPFIRQ: deep_sort(BPF_FEATURES + IRQ_FEATURES),
     FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + IRQ_FEATURES),
     FeatureGroup.Basic: deep_sort(BASIC_FEATURES),
     FeatureGroup.AcceleratorOnly: deep_sort(ACCELERATE_FEATURES),
 }
 
-SingleSourceFeatures = [FeatureGroup.CounterOnly.name, FeatureGroup.CgroupOnly.name, FeatureGroup.BPFOnly.name, FeatureGroup.BPFIRQ.name, FeatureGroup.KubeletOnly.name]
+SingleSourceFeatures = [FeatureGroup.CounterOnly.name, FeatureGroup.CgroupOnly.name, FeatureGroup.BPFOnly.name, FeatureGroup.BPFIRQ.name]
 
 def is_single_source_feature_group(fg):
     return fg.name in SingleSourceFeatures
@@ -96,7 +92,6 @@ default_main_feature_map = {
     FeatureGroup.CounterOnly: "cpu_instructions",
     FeatureGroup.CgroupOnly: "cgroupfs_cpu_usage_us",
     FeatureGroup.BPFOnly: "bpf_cpu_time_us",
-    FeatureGroup.KubeletOnly: "kubelet_cpu_usage",
     FeatureGroup.BPFIRQ: "bpf_cpu_time_us",
     FeatureGroup.CounterIRQCombined: "cpu_instructions",
     FeatureGroup.Basic: "cpu_instructions",
@@ -108,7 +103,6 @@ default_dram_feature_map = {
     FeatureGroup.CounterOnly: "cache_miss",
     FeatureGroup.CgroupOnly: "cgroupfs_memory_usage_bytes",
     FeatureGroup.BPFOnly: "bpf_page_cache_hit",
-    FeatureGroup.KubeletOnly: "kubelet_memory_bytes",
     FeatureGroup.BPFIRQ: "bpf_page_cache_hit",
     FeatureGroup.CounterIRQCombined: "cache_miss",
     FeatureGroup.Basic: "cache_miss"

@@ -12,3 +12,4 @@ xgboost==2.0.1
 scikit-learn==1.1.2
 py-cpuinfo==9.0.0
 seaborn==0.12.2
+psutil==5.9.8

@@ -1,0 +1,39 @@
+name: Unit Test
+
+on:
+  workflow_call:
+    secrets:
+      docker_username:
+        description: 'Docker username'
+        required: false
+      docker_password:
+        description: 'Docker password'
+        required: false
+    inputs:
+      base_change:
+        description: 'Change flag on base image'
+        required: true
+        type: string
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+      - name: Build test with base image
+        if: ${{ inputs.base_change != 'true' }}
+        run: make build-test
+      - name: Build test without base image
+        if: ${{ inputs.base_change == 'true' }} 
+        run: make build-test-nobase
+      - name: Test pipeline # need to run first to build the models
+        run: make test-pipeline
+      - name: Test model server
+        run: make test-model-server
+      - name: Test estimator
+        run: make test-estimator
+        timeout-minutes: 5
+      - name: Test offline trainer
+        run: make test-offline-trainer

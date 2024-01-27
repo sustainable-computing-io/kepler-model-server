@@ -54,12 +54,14 @@ def handle_request(data):
         return {"powers": dict(), "msg": msg}
     
     output_type = ModelOutputType[power_request.output_type]
-    energy_source = power_request.energy_source
+    # TODO: need revisit if get more than one rapl energy source
+    if power_request.energy_source is None or 'rapl' in power_request.energy_source:
+        power_request.energy_source = "intel_rapl"
 
     if output_type.name not in loaded_model:
         loaded_model[output_type.name] = dict()
     output_path = ""
-    if energy_source not in loaded_model[output_type.name]:
+    if power_request.energy_source not in loaded_model[output_type.name]:
         output_path = get_download_output_path(download_path, power_request.energy_source, output_type)
         if not os.path.exists(output_path):
             # try connecting to model server
@@ -75,11 +77,11 @@ def handle_request(data):
                     print("load model from config: ", output_path)
             else:
                 print("load model from model server: ", output_path)
-        loaded_model[output_type.name][energy_source] = load_downloaded_model(power_request.energy_source, output_type)
+        loaded_model[output_type.name][power_request.energy_source] = load_downloaded_model(power_request.energy_source, output_type)
         # remove loaded model
         shutil.rmtree(output_path)
 
-    model = loaded_model[output_type.name][energy_source]
+    model = loaded_model[output_type.name][power_request.energy_source]
     powers, msg = model.get_power(power_request.datapoint)
     if msg != "":
         print("{} fail to predict, removed: {}".format(model.model_name, msg))

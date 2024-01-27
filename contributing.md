@@ -3,6 +3,18 @@
 
 - The main source codes are in [src directory](./src/).
 
+## PR Hands-on
+
+- Create related [issue](https://github.com/sustainable-computing-io/kepler-model-server/issues) with your name assigned first (if not exist). 
+
+- Set required secret and environment for local repository test if needed. Check below table.
+
+Objective|Required Secret|Required Environment
+---|---|---
+Push to private repo|BOT_NAME, BOT_TOKEN|IMAGE_REPO
+Change on base image|BOT_NAME, BOT_TOKEN|IMAGE_REPO
+Save data/models to AWS COS|AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_REGION|
+
 ## Improve components in training pipelines
 Learn more details about [Training Pipeline](https://sustainable-computing.io/kepler_model_server/pipeline/)
 
@@ -26,7 +38,11 @@ Learn more details about [model training](./model_training/)
 The new benchmark must be supported by [CPE operator](https://github.com/IBM/cpe-operator) for automation.
 Find [examples](https://github.com/IBM/cpe-operator/tree/main/examples).
 
+### CPE-based (deprecated)
 `Benchmark` CR has a dependency on `BenchmarkOperator`. Default `BechmarkOperator` is to support [batch/v1/Job API](https://github.com/IBM/cpe-operator/blob/main/examples/none/cpe_v1_none_operator.yaml).
+
+### Tekton
+Create workload `Task` and provide example `Pipeline` to run.
 
 ### Add new trained models
 TBD
@@ -36,3 +52,7 @@ Any improvement in `src` and `cmd`.
 
 ## Test and CI improvement
 Any improvement in `tests`, `dockerfiles`, `manifests` and `.github/workflows`
+
+## Documentation
+
+Detailed documentation should be posted to [kepler-doc](https://github.com/sustainable-computing-io/kepler-doc) repository.

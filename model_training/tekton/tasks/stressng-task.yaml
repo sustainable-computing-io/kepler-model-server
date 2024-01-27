@@ -20,6 +20,9 @@ spec:
   - name: INTERVAL
     description: Interval between each run
     default: 5
+  - name: CPU_FREQUENCY_ENABLED
+    description: Enable/Disable CPU Frequency Steps
+    default: true
   results:
   - name: stress-end-time
     description: The time recorded after running the workload
@@ -150,7 +153,7 @@ spec:
             TOTAL_CPUS=$(lscpu|grep "CPU(s):"|head -n 1|awk '{print $2}')
             OVERCOMMIT=$((TOTAL_CPUS + 8))
             
-            if [ -f "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" ]; then
+            if [ -f "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" ] && [ "$CPU_FREQUENCY_ENABLED" = true ]; then
               FREQ_COUNT=$(((MAX_FREQ-START_FREQ)/CPU_FREQUENCY_STEP+1))
             else
               FREQ_COUNT=1
@@ -167,7 +170,7 @@ spec:
             echo "Estimation Time (s): $ESTIMATE_SEC"
 
             for argument in "$@"; do
-                if [ -f "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" ]; then
+                if [ -f "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" ] && [ "$CPU_FREQUENCY_ENABLED" = true ]; then
                   echo "Frequency range: $START_FREQ $CPU_FREQUENCY_STEP $MAX_FREQ"
                   for freq in $(seq $START_FREQ $CPU_FREQUENCY_STEP $MAX_FREQ); do
                     run_freq $freq $argument $TOTAL_CPUS $OVERCOMMIT

@@ -1,0 +1,174 @@
+name: Tekton Test
+
+on:
+  workflow_call:
+    secrets:
+      docker_username:
+        description: 'Docker username'
+        required: false
+      docker_password:
+        description: 'Docker password'
+        required: false
+    inputs:
+      base_change:
+        description: 'Change flag on base image'
+        required: true
+        type: string
+      image_repo:
+        description: 'The image repo to use'
+        required: true
+        type: string
+      image_tag:
+        description: 'The image tag to use'
+        required: true
+        type: string
+      pipeline_name: 
+        description: 'Pipeline name'
+        required: true
+        type: string
+      output_type:
+        description: 'Model output type (AbsPower, DynPower)'
+        required: false
+        type: string
+        default: AbsPower
+
+env:
+  BASE_IMAGE: ${{ inputs.image_repo }}/kepler_model_server_base:${{ inputs.image_tag }}
+  IMAGE: ${{ inputs.image_repo }}/kepler_model_server:${{ inputs.image_tag }}
+
+jobs:
+  tekton-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker
+        if: ${{ inputs.base_change == 'true' }} 
+        uses: docker/login-action@v3
+        with:
+            registry: ${{ inputs.image_repo }}
+            username: ${{ secrets.docker_username }}
+            password: ${{ secrets.docker_password }} 
+      - name: Replace value in file
+        if: ${{ inputs.base_change == 'true' }} 
+        run: |
+          sed -i "s|quay.io/sustainable_computing_io/kepler_model_server_base:v0.7|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile
+
+      - name: Build image
+        run: |
+          docker build -t $IMAGE -f dockerfiles/Dockerfile .
+
+      - name: Prepare Cluster
+        working-directory: model_training
+        run: |
+          ./script.sh cluster_up
+          cp $HOME/bin/kubectl /usr/local/bin/kubectl
+          kubectl get po -A
+
+      - name: Load built image to cluster
+        run: |
+          kind load docker-image $IMAGE --name=kind-for-training
+
+      - name: Install Kepler
+        working-directory: model_training
+        run: |
+          ./script.sh deploy_kepler
+          ./script.sh deploy_prom_dependency
+          podname=$(kubectl get pods -oname -nkepler)
+          echo $podname
+          kubectl get $podname -n kepler -oyaml
+          kubectl logs $podname -n kepler
+          kubectl get $podname -n kepler
+
+      - name: Install Tekton
+        run: |
+          kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+          ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines
+          ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines-resolvers
+
+      - name: Prepare PVC
+        working-directory: model_training/tekton
+        run: |
+          kubectl apply -f pvc/hostpath.yaml
+
+      - name: Deploy Tasks and Pipelines
+        working-directory: model_training/tekton
+        run: |
+          kubectl apply -f tasks
+          kubectl apply -f tasks/s3
+          kubectl apply -f pipelines
+
+      - name: Run Tekton Collect
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: tekton.dev/v1
+          kind: PipelineRun
+          metadata:
+            name: test-collect
+          spec:
+            timeouts:
+              pipeline: "1h"
+              tasks: "45m"
+            workspaces:
+            - name: mnt
+              persistentVolumeClaim:
+                claimName: task-pvc
+            params:
+            - name: MODEL_SERVER_IMAGE
+              value: $IMAGE
+            - name: PIPELINE_NAME
+              value: ${{ inputs.pipeline_name }}
+            - name: STRESS_ARGS
+              value:
+              - "cpu;none;none"
+            - name: STRESS_TIMEOUT
+              value: 20
+            - name: STRESS_BREAK_INTERVAL
+              value: 1
+            - name: IDLE_COLLECT_INTERVAL
+              value: 20
+            - name: CPU_FREQUENCY_ENABLED
+              value: false
+            pipelineRef:
+              name: collect-data-pipeline
+          EOF
+          ./hack/k8s_helper.sh wait_for_pipelinerun test-collect
+
+      - name: Run Tekton Retrain
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: tekton.dev/v1
+          kind: PipelineRun
+          metadata:
+            name: test-retrain
+          spec:
+            timeouts:
+              pipeline: "1h"
+              tasks: "45m"
+            workspaces:
+            - name: mnt
+              persistentVolumeClaim:
+                claimName: task-pvc
+            params:
+            - name: MODEL_SERVER_IMAGE
+              value: $IMAGE
+            - name: PIPELINE_NAME
+              value: ${{ inputs.pipeline_name }}
+            - name: OUTPUT_TYPE
+              value: ${{ inputs.output_type }}
+            - name: MACHINE_ID
+              value: test
+            - name: ENERGY_SOURCE
+              value: intel_rapl
+            - name: FEATURE_GROUP
+              value: BPFOnly
+            - name: TRAINERS
+              value: XgboostFitTrainer
+            pipelineRef:
+              name: single-retrain-pipeline
+          EOF
+          ./hack/k8s_helper.sh wait_for_pipelinerun test-retrain

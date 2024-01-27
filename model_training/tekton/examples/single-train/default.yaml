@@ -1,7 +1,9 @@
+# kepler-default
+#   running pipelines with all default value to train AbsPower model (intel_rapl, BPFOnly) with COS
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: example-abs-train-pipeline
+  name: default
 spec:
   timeouts:
     pipeline: "6h"

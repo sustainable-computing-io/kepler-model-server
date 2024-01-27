@@ -1,4 +1,4 @@
-name: Reusable workflow example
+name: Self-hosted Collect Data Workflow
 
 on:
   workflow_call:
@@ -31,10 +31,13 @@ on:
         description: 'The instance type to use for the EC2 instance'
         required: true
         type: string
+      model_server_image:
+        description: 'Kepler Model Server image'
+        required: true
+        type: string
 
 env:
   KUBECONFIG: /root/.kube/config
-  VERSION: 0.7
   
 jobs:
   setup-runner:
@@ -69,8 +72,8 @@ jobs:
           echo "instance_ip ${{ steps.create-runner.outputs.instance_ip }}"
           echo "runner_name ${{ steps.create-runner.outputs.runner_name }}"
           whoami
-  train-power-model:
-    name: Train Power Model
+  collect-data:
+    name: Collect Data
     needs: setup-runner
     runs-on: [self-hosted, linux, x64]
 
@@ -121,6 +124,7 @@ jobs:
           kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
           ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines
           ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines-resolvers
+          
       - name: Prepare PVC
         working-directory: model_training/tekton
         run: |
@@ -145,13 +149,13 @@ jobs:
           kubectl apply -f tasks
           kubectl apply -f tasks/s3-pusher
           kubectl apply -f pipelines
-      - name: Run Tekton Pipeline
+      - name: Run Tekton Pipeline with S3Push
         run: |
           cat <<EOF | kubectl apply -f -
           apiVersion: tekton.dev/v1
           kind: PipelineRun
           metadata:
-            name: self-hosted-aws
+            name: self-hosted-aws-collect
           spec:
             timeouts:
               pipeline: "6h"
@@ -161,10 +165,8 @@ jobs:
               persistentVolumeClaim:
                 claimName: task-pvc
             params:
-            - name: PIPELINE_NAME
-              value: std_v${VERSION}
-            - name: OUTPUT_TYPE
-              value: AbsPower
+            - name: MODEL_SERVER_IMAGE
+              value: ${{ inputs.model_server_image }}}
             - name: COS_PROVIDER
               value: aws
             - name: COS_SECRET_NAME
@@ -172,14 +174,12 @@ jobs:
             - name: MACHINE_ID
               value: ${{ inputs.instance_type }}-${{ inputs.ami_id }}
             pipelineRef:
-              name: single-train-pipeline
+              name: collect-data-pipeline
           EOF
-          ./hack/k8s_helper.sh wait_for_pipelinerun self-hosted-aws
-          df -h
-  
+
   destroy-runner:
     if: always()
-    needs: [setup-runner, train-power-model]
+    needs: [setup-runner, collect-data]
     name: Destroy Self Hosted Runner
     runs-on: ubuntu-latest
     steps:

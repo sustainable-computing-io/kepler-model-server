@@ -40,7 +40,7 @@ Previous step: [Prepare cluster](./README.md#1-prepare-cluster)
     kind: Secret
     metadata:
         name: ibm-cos-secret
-        type: Opaque
+    type: Opaque
     stringData:
         accessKeyID: ${AWS_ACCESS_KEY_ID}
         accessSecret: ${AWS_SECRET_ACCESS_KEY}
@@ -54,7 +54,7 @@ Previous step: [Prepare cluster](./README.md#1-prepare-cluster)
     kind: Secret
     metadata:
         name: aws-cos-secret
-        type: Opaque
+    type: Opaque
     stringData:
         serviceEndpoint: ${IBMCLOUD_SERVICE_ENDPOINT}
         apiKey: ${IBMCLOUD_API_KEY}
@@ -78,7 +78,7 @@ The minimum required pipelinerun for default power model of Kepler on VM is as b
 ![](../../fig/tekton-kepler-default.png)
 
 ```
-kubectl apply -f pipelineruns/kepler-default.yaml
+kubectl apply -f examples/single-train/default.yaml
 ```
 > If the secret is not deployed and not specified, the s3-push step will be skipped. 
 
@@ -97,13 +97,13 @@ check [single-train](./pipelines/single-train.yaml) pipeline.
 Example for AbsPower model:
     
 ```
-kubectl apply -f pipelineruns/abs-train-pipelinerun.yaml
+kubectl apply -f examples/single-train/abs-power.yaml
 ```
 
 Example of DynPower model:
 
 ```
-kubectl apply -f pipelineruns/dyn-train-pipelinerun.yaml
+kubectl apply -f examples/single-train/dyn-power.yaml
 ```
 
 To customize feature metrics, set
@@ -137,7 +137,7 @@ check [complete-train](./pipelines/complete-train.yaml) pipeline.
 > If the secret is not deployed and not specified, the s3-push step will be skipped. 
 
 ```
-kubectl apply -f pipelineruns/complete-pipelinerun.yaml
+kubectl apply -f examples/complete-pipelinerun.yaml
 ```
 
 To customize `ThirdParty` feature group, set

@@ -1,0 +1,58 @@
+######################################
+##
+##   s3-push task for IBM Cloud
+##
+######################################
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: ibmcloud-s3-load
+spec:
+  params:
+  - name: COS_SECRET_NAME
+    description: Specify cos secret name
+    default: ""
+  - name: MACHINE_ID
+    description: Specify machine id to group model result in bucket
+    default: ""
+  - name: PIPELINE_NAME
+    description: Specify pipeline name (output prefix/folder)
+    default: default
+  workspaces:
+  - name: mnt
+    optional: true
+  steps:
+    - name: load
+      image: quay.io/sustainability/kepler_model_server/s3:v0.7
+      env:
+      - name: SERVICE_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: $(params.COS_SECRET_NAME)
+            key: serviceEndpoint
+      - name: API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: $(params.COS_SECRET_NAME)
+            key: apiKey
+      - name: SERVICE_INSTANCE_ID
+        valueFrom:
+          secretKeyRef:
+            name: $(params.COS_SECRET_NAME)
+            key: serviceInstanceID
+      - name: BUCKET_NAME
+        valueFrom:
+          secretKeyRef:
+            name: $(params.COS_SECRET_NAME)
+            key: bucketName
+      command: ["python3.8"]
+      args:
+      - s3-loader.py
+      - ibmcloud
+      - --service-endpoint=$(SERVICE_ENDPOINT)
+      - --api-key=$(API_KEY)
+      - --service-instance-id=$(SERVICE_INSTANCE_ID)
+      - --bucket-name=$(BUCKET_NAME)
+      - --mnt-path=$(workspaces.mnt.path)
+      - --pipeline-name=$(params.PIPELINE_NAME)
+      - --machine-id=$(params.MACHINE_ID)

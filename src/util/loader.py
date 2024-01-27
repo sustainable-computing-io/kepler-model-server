@@ -13,15 +13,13 @@ FILTER_ITEM_DELIMIT = ';'
 VALUE_DELIMIT = ':'
 ARRAY_DELIMIT = ','
 
-DEFAULT_PIPELINE = 'default'
 CHECKPOINT_FOLDERNAME = 'checkpoint'
 PREPROCESS_FOLDERNAME = "preprocessed_data"
 
-# TODO: change to v0.7 when the model is updated to database
+# TODO: change to v0.7 when the model is updated to database, need document update
 # default_init_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.7/nx12"
-# default_init_pipeline_name = "std_v0.7"
+DEFAULT_PIPELINE = "std_v0.7"
 default_init_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.6/nx12"
-default_init_pipeline_name = "std_v0.6"
 default_trainer_name = "GradientBoostingRegressorTrainer"
 default_node_type = "1"
 any_node_type = -1
@@ -243,7 +241,7 @@ def get_download_output_path(download_path, energy_source, output_type):
     energy_source_path = assure_path(os.path.join(download_path, energy_source))
     return os.path.join(energy_source_path, output_type.name)
 
-def get_url(output_type, feature_group=default_feature_group, trainer_name=default_trainer_name, node_type=default_node_type, model_topurl=default_init_model_url, energy_source="intel_rapl", pipeline_name=default_init_pipeline_name, model_name=None, weight=False):
+def get_url(output_type, feature_group=default_feature_group, trainer_name=default_trainer_name, node_type=default_node_type, model_topurl=default_init_model_url, energy_source="intel_rapl", pipeline_name=DEFAULT_PIPELINE, model_name=None, weight=False):
     group_path = get_model_group_path(model_topurl, output_type=output_type, feature_group=feature_group, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
     if model_name is None:
         model_name = get_model_name(trainer_name, node_type)
@@ -252,7 +250,7 @@ def get_url(output_type, feature_group=default_feature_group, trainer_name=defau
         file_ext = ".json" 
     return os.path.join(group_path, model_name + file_ext)
 
-def get_pipeline_url(model_topurl=default_init_model_url, pipeline_name=default_init_pipeline_name, weight=False):
+def get_pipeline_url(model_topurl=default_init_model_url, pipeline_name=DEFAULT_PIPELINE, weight=False):
     file_ext = ".zip"
     if weight:
         file_ext = ".json" 

@@ -43,6 +43,11 @@ get_server_log() {
     kubectl logs -n kepler $(get_component model-server) -c server-api
 }
 
+get_db_log(){
+    kubectl logs -n kepler model-db -c trainer
+    kubectl logs -n kepler model-db
+}
+
 wait_for_kepler() {
     kubectl rollout status ds kepler-exporter -n kepler --timeout 5m
     kubectl describe ds -n kepler kepler-exporter
@@ -55,6 +60,13 @@ wait_for_server() {
     wait_for_keyword server "Press CTRL+C to quit" "server has not started yet"
 }
 
+wait_for_db() {
+    kubectl get po model-db -n kepler
+    kubectl wait -n kepler --for=jsonpath='{.status.phase}'=Running pod/model-db --timeout 5m
+    wait_for_keyword db "Http File Serve Serving" "model-db is not serving"
+    get_db_log
+}
+
 wait_for_keyword() {
     num_iterations=10
     component=$1
@@ -64,16 +76,23 @@ wait_for_keyword() {
         if grep -q "$keyword" <<< $(get_${component}_log); then
             return
         fi
-        kubectl get po -n kepler -oyaml
         sleep 2
     done
     echo "timeout ${num_iterations}s waiting for '${keyword}' from ${component} log"
     echo "Error: $message"
 
+    kubectl get po -n kepler -oyaml
+
     echo "${component} log:"
     get_${component}_log
     # show all status
     kubectl get po -A
+    if [ ! -z ${SERVER} ]; then
+        get_server_log
+    fi
+    if [ ! -z ${ESTIMATOR} ]; then
+        get_estimator_log
+    fi
     exit 1
 }
 
@@ -84,6 +103,7 @@ check_estimator_set_and_init() {
 restart_model_server() {
     kubectl delete po  -l app.kubernetes.io/component=model-server -n kepler
     wait_for_server
+    get_server_log
 }
 
 test() {
@@ -93,6 +113,22 @@ test() {
     echo ${DEPLOY_OPTIONS}
 
     for opt in ${DEPLOY_OPTIONS}; do export $opt=true; done;
+
+    # train and deploy local modelDB
+    kubectl apply -f ${top_dir}/manifests/test/file-server.yaml
+    sleep 10
+    wait_for_db
+
+    # patch MODEL_TOPURL environment
+    if [ ! -z ${ESTIMATOR} ]; then
+        kubectl patch configmap -n kepler kepler-cfm --type merge -p "$(cat ${top_dir}/manifests/test/patch-estimator-sidecar.yaml)"
+        kubectl patch ds kepler-exporter -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"estimator","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
+    fi
+    if [ ! -z ${SERVER} ]; then
+        kubectl patch deploy kepler-model-server -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"server-api","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
+        kubectl delete po -n kepler -l app.kubernetes.io/component=model-server
+    fi
+    kubectl delete po -n kepler -l app.kubernetes.io/component=exporter
 
     if [ ! -z ${ESTIMATOR} ]; then
         # with estimator

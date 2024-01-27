@@ -1,0 +1,40 @@
+# manually run on collect needed
+on:
+  workflow_dispatch:
+
+jobs:
+  collect-data:
+    uses: ./.github/workflows/collect-data-self-hosted.yml
+    strategy:
+      matrix:
+        instance_type: [i3.metal]
+      max-parallel: 1
+    with:
+      instance_type: ${{ matrix.instance_type }}
+      ami_id: 'ami-0e4d0bb9670ea8db0'
+      github_repo: ${{ github.repository }}
+      model_server_image: ${{ vars.IMAGE_REPO }}/kepler-model-server:v0.7
+    secrets:
+      self_hosted_github_token: ${{ secrets.GH_SELF_HOSTED_RUNNER_TOKEN }}
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      security_group_id: ${{ secrets.AWS_SECURITY_GROUP_ID }}
+      aws_region: ${{ secrets.AWS_REGION }}
+      
+  train-model:
+    strategy:
+      matrix:
+        instance_type: [i3.metal]
+    uses: ./.github/workflows/train-model.yml
+    with:
+      pipeline_name: std_v0.7
+      instance_type: ${{ matrix.instance_type }}
+      ami_id: 'ami-0e4d0bb9670ea8db0'
+      github_repo: ${{ github.repository }}
+      model_server_image: ${{ vars.IMAGE_REPO }}/kepler-model-server:v0.7
+      trainers: LogisticRegressionTrainer,ExponentialRegressionTrainer,SGDRegressorTrainer,GradientBoostingRegressorTrainer,XgboostFitTrainer
+    secrets:
+      self_hosted_github_token: ${{ secrets.GH_SELF_HOSTED_RUNNER_TOKEN }}
+      aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      aws_region: ${{ secrets.AWS_REGION }}
