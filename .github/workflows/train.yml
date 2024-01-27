@@ -35,7 +35,7 @@ jobs:
       instance_type: ${{ matrix.instance_type }}
       ami_id: 'ami-0e4d0bb9670ea8db0'
       github_repo: ${{ github.repository }}
-      model_server_image: ${{ vars.IMAGE_REPO }}/kepler-model-server:v0.7
+      model_server_image: ${{ vars.IMAGE_REPO }}/kepler_model_server:v0.7
       trainers: LogisticRegressionTrainer,ExponentialRegressionTrainer,SGDRegressorTrainer,GradientBoostingRegressorTrainer,XgboostFitTrainer
     secrets:
       self_hosted_github_token: ${{ secrets.GH_SELF_HOSTED_RUNNER_TOKEN }}
