@@ -102,6 +102,6 @@ Use kepler model server function as a standalone docker container.
     KEPLER_MODEL_DB_MODELS_PATH= < path to kepler-model-db/models >
     MACHINE_ID= < machine id >
     GH_ACCOUNT= < github account >
-    docker run --rm -v "${KEPLER_MODEL_DB_MODELS_PATH}":/output -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler-model-server:v0.7 export $MACHINE_ID /output $GH_ACCOUNT
+    docker run --rm -v "${KEPLER_MODEL_DB_MODELS_PATH}":/output -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7 export $MACHINE_ID /output $GH_ACCOUNT
     ```
 
