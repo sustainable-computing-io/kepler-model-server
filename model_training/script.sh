@@ -12,9 +12,9 @@ export PROM_SERVER=${PROM_SERVER:-http://localhost:9090}
 export ENERGY_SOURCE=${ENERGY_SOURCE:-intel_rapl,acpi}
 export VERSION=${VERSION-v0.7}
 export PIPELINE_PREFIX=${PIPELINE_PREFIX-"std_"}
-export CPE_DATAPATH=${CPE_DATAPATH-"$(pwd)/data"}
+export DATAPATH=${DATAPATH-"$(pwd)/data"}
 export ENTRYPOINT_IMG=${ENTRYPOINT_IMG-"quay.io/sustainable_computing_io/kepler_model_server:v0.7"}
-export MODEL_PATH=$CPE_DATAPATH
+export MODEL_PATH=$DATAPATH
 
 mkdir -p $HOME/bin
 export PATH=$HOME/bin:$PATH
@@ -114,13 +114,13 @@ function wait_for_benchmark() {
 function save_benchmark() {
     BENCHMARK=$1
     BENCHMARK_NS=$2
-    kubectl get benchmark $BENCHMARK -n ${BENCHMARK_NS} -ojson > $CPE_DATAPATH/${BENCHMARK}.json
+    kubectl get benchmark $BENCHMARK -n ${BENCHMARK_NS} -ojson > $DATAPATH/${BENCHMARK}.json
 }
 
 function collect_idle() {
     ARGS="-o idle --interval 1000"
     if [ -z "$NATIVE" ]; then
-        docker run --rm -v $CPE_DATAPATH:/data --network=host ${ENTRYPOINT_IMG} query ${ARGS}
+        docker run --rm -v $DATAPATH:/data --network=host ${ENTRYPOINT_IMG} query ${ARGS}
     else
         python ../cmd/main.py query ${ARGS}|| true
     fi
@@ -138,7 +138,7 @@ function collect_data() {
     fi
     ARGS="-i ${BENCHMARK} -o ${BENCHMARK}_kepler_query -s ${PROM_SERVER}"
     if [ -z "$NATIVE" ]; then
-        docker run --rm -v $CPE_DATAPATH:/data --network=host ${ENTRYPOINT_IMG} query ${ARGS}|| true
+        docker run --rm -v $DATAPATH:/data --network=host ${ENTRYPOINT_IMG} query ${ARGS}|| true
     else
         python ../cmd/main.py query ${ARGS}|| true
     fi
@@ -154,11 +154,11 @@ function train_model(){
     PIPELINE_NAME=${PIPELINE_PREFIX}$2
     echo "input=$QUERY_RESPONSE"
     echo "pipeline=$PIPELINE_NAME"
-    echo $CPE_DATAPATH
+    echo $DATAPATH
     ARGS="-i ${QUERY_RESPONSE} -p ${PIPELINE_NAME} --energy-source ${ENERGY_SOURCE}"
     if [ -z "$NATIVE" ]; then
         echo "Train with docker"
-        docker run --rm -v $CPE_DATAPATH:/data ${ENTRYPOINT_IMG} train ${ARGS}|| true
+        docker run --rm -v $DATAPATH:/data ${ENTRYPOINT_IMG} train ${ARGS}|| true
     else
         echo "Train natively"
         python ../cmd/main.py train ${ARGS}|| true
@@ -201,7 +201,7 @@ function validate() {
     BENCHMARK=$1
     ARGS="-i ${BENCHMARK}_kepler_query --benchmark ${BENCHMARK}"
     if [ -z "$NATIVE" ]; then
-        docker run --rm -v $CPE_DATAPATH:/data ${ENTRYPOINT_IMG} validate ${ARGS}
+        docker run --rm -v $DATAPATH:/data ${ENTRYPOINT_IMG} validate ${ARGS}
     else
         python ../cmd/main.py validate ${ARGS}|| true
     fi
@@ -224,7 +224,7 @@ function _export() {
     ARGS="--id ${ID} -p ${PIPELINE_NAME}  -i ${VALIDATE_INPUT} --benchmark ${MAIN_COLLECT_INPUT} --version ${VERSION} --publisher ${PUBLISHER} ${INCLUDE_RAW}"
     echo "${ARGS}"
     if [ -z "$NATIVE" ]; then
-        docker run --rm -v $CPE_DATAPATH:/data -v ${OUTPUT}:/models ${ENTRYPOINT_IMG} export ${ARGS} -o /models 
+        docker run --rm -v $DATAPATH:/data -v ${OUTPUT}:/models ${ENTRYPOINT_IMG} export ${ARGS} -o /models 
     else
         python ../cmd/main.py export ${ARGS} -o ${OUTPUT}
     fi

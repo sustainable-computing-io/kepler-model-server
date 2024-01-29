@@ -37,6 +37,12 @@ CATEGORICAL_LABEL_TO_VOCAB = {
                     "cpu_scaling_frequency_hertz": ["1GHz", "2GHz", "3GHz"],
                     }
 
+no_weight_trainers = ['PolynomialRegressionTrainer', 'GradientBoostingRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer','SVRRegressorTrainer', 'XgboostFitTrainer']
+weight_support_trainers = ['SGDRegressorTrainer', 'LogarithmicRegressionTrainer', 'LogisticRegressionTrainer', 'ExponentialRegressionTrainer']
+default_trainer_names = no_weight_trainers + weight_support_trainers
+default_trainers = ",".join(default_trainer_names)
+
+
 class FeatureGroup(enum.Enum):
     Full = 1
     WorkloadOnly = 2

@@ -35,7 +35,7 @@ node_query_suffix = "joules_total"
 
 usage_ratio_query = "kepler_container_cpu_usage_per_package_ratio"
 # mostly available
-valid_container_query = "kepler_container_kubelet_cpu_usage_total"
+valid_container_query = "kepler_container_bpf_cpu_time_us_total"
 node_info_query = "kepler_node_node_info"
 cpu_frequency_info_query = "kepler_node_cpu_scaling_frequency_hertz"
 

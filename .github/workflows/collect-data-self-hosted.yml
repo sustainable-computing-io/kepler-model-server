@@ -147,7 +147,7 @@ jobs:
         working-directory: model_training/tekton
         run: |
           kubectl apply -f tasks
-          kubectl apply -f tasks/s3-pusher
+          kubectl apply -f tasks/s3
           kubectl apply -f pipelines
       - name: Run Tekton Pipeline with S3Push
         run: |
@@ -166,7 +166,7 @@ jobs:
                 claimName: task-pvc
             params:
             - name: MODEL_SERVER_IMAGE
-              value: ${{ inputs.model_server_image }}}
+              value: ${{ inputs.model_server_image }}
             - name: COS_PROVIDER
               value: aws
             - name: COS_SECRET_NAME
@@ -176,6 +176,10 @@ jobs:
             pipelineRef:
               name: collect-data-pipeline
           EOF
+
+      - name: Wait for PipelineRun
+        run: |
+          ./hack/k8s_helper.sh wait_for_pipelinerun self-hosted-aws-collect
 
   destroy-runner:
     if: always()

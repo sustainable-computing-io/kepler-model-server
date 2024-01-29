@@ -179,6 +179,8 @@ spec:
         value: $(params.TRAINERS)
       - name: THIRDPARTY_METRICS
         value: $(params.THIRDPARTY_METRICS)
+      - name: MACHINE_ID
+        value: $(params.MACHINE_ID)
     - name: train-dynamic-power-model
       when:
         - input: "$(params.OUTPUT_TYPE)"
@@ -206,6 +208,8 @@ spec:
         value: $(params.TRAINERS)
       - name: THIRDPARTY_METRICS
         value: $(params.THIRDPARTY_METRICS)
+      - name: MACHINE_ID
+        value: $(params.MACHINE_ID)
     - name: ibmcloud-s3-push
       runAfter: [train-absolute-power-model, train-dynamic-power-model]
       when:

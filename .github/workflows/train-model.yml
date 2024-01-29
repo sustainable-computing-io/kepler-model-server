@@ -171,7 +171,7 @@ jobs:
                 claimName: task-pvc
             params:
             - name: MODEL_SERVER_IMAGE
-              value: ${{ inputs.model_server_image }}}
+              value: ${{ inputs.model_server_image }}
             - name: PIPELINE_NAME
               value: ${{ inputs.pipeline_name }}
             - name: COS_PROVIDER

@@ -12,9 +12,9 @@ util_path = os.path.join(os.path.dirname(__file__), 'util')
 sys.path.append(src_path)
 sys.path.append(util_path)
 
-from util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup
+from util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup, weight_support_trainers
 from util.config import getConfig, model_toppath, ERROR_KEY, MODEL_SERVER_MODEL_REQ_PATH, MODEL_SERVER_MODEL_LIST_PATH, initial_pipeline_url, download_path
-from util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME, get_pipeline_path, any_node_type, is_matched_type, lr_trainers
+from util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME, get_pipeline_path, any_node_type, is_matched_type
 
 ###############################################
 # model request 
@@ -48,7 +48,7 @@ def select_best_model(valid_groupath, filters, trainer_name="", node_type=any_no
                     and not os.path.isfile(os.path.join(valid_groupath,f)) \
                     and (trainer_name == "" or trainer_name in f)]
     if weight:
-        model_names = [name for name in model_names if name.split("_")[0] in lr_trainers]
+        model_names = [name for name in model_names if name.split("_")[0] in weight_support_trainers]
     # Load metadata of trainers
     best_cadidate = None
     best_response = None

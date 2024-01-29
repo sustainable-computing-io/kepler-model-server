@@ -6,9 +6,11 @@ import pandas as pd
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
-from loader import load_json, get_machine_path, get_url, lr_trainers, xgboost_trainers
-from config import ERROR_KEY
-from train_types import ModelOutputType, FeatureGroup
+from loader import load_json, version
+from saver import assure_path
+from validator import mae_threshold, mape_threshold
+
+error_report_foldername = "error_report"
 
 def write_markdown(markdown_filepath, markdown_content):
 
@@ -21,8 +23,8 @@ def write_markdown(markdown_filepath, markdown_content):
         print(f"Cannot write '{markdown_filepath}': {e}")
 
 
-# Function to convert a dictionary to a Markdown table
-def dict_to_markdown_table(data):
+# Function to convert a dataframe to a Markdown table
+def data_to_markdown_table(data):
     # Get the column headers
     headers = list(data.keys())
 
@@ -44,33 +46,27 @@ def format_cpe_content(data):
     for iteration in iterations:
         items[iteration["name"]] = iteration["values"]
     df = pd.DataFrame(items)
-    content = dict_to_markdown_table(df)
+    content = data_to_markdown_table(df)
     content += "\nrepetition: {}".format(spec["repetition"])
     return content
 
-def format_trainer(trainers):
-    trainer_content = ""
-    for trainer in trainers.split(","):
-        trainer_content += "  - {}\n".format(trainer)
-    return trainer_content
-
-def _version_path(machine_path):
-    return os.path.join(machine_path, "..")
-
-def generate_pipeline_page(data_path, machine_path, train_args, skip_if_exist=True):
-    doc_path = os.path.join(_version_path(machine_path), ".doc")
-    pipeline_name = train_args["pipeline_name"]
-    markdown_filename = "{}.md".format(pipeline_name)
-    markdown_filepath = os.path.join(doc_path, markdown_filename)
-    if skip_if_exist and os.path.exists(markdown_filepath):
-        print(f"Markdown file '{markdown_filepath}' already exists.")
-        return
-
+def get_workload_content(data_path, inputs):
     workload_content = ""
-    inputs = train_args["input"].split(",")
+    
     for input in inputs:
-        benchmark_name = "".join(input.split("_")[0:-2])
+        content = None
+        benchmark_name = input
+        if "_kepler_query" in input:
+            benchmark_name = input.replace("_kepler_query", "")
         data = load_json(data_path, benchmark_name)
+        if data is not None:
+            content = format_cpe_content(data)
+        else:
+            # read file directly
+            filepath = os.path.join(data_path, input)
+            if os.path.exists(filepath):
+                with open(filepath, 'r') as file:
+                    content = file.read()
 
         workload_content += """
 ### {}
@@ -83,8 +79,24 @@ def generate_pipeline_page(data_path, machine_path, train_args, skip_if_exist=Tr
 
 </details>
 
-        """.format(benchmark_name, format_cpe_content(data))
+        """.format(benchmark_name.split(".")[0], content)
+    return workload_content
 
+def format_trainer(trainers):
+    trainer_content = ""
+    for trainer in trainers:
+        trainer_content += "  - {}\n".format(trainer)
+    return trainer_content
+
+def generate_pipeline_page(version_path, pipeline_metadata, workload_content, skip_if_exist=True):
+    doc_path = os.path.join(version_path, ".doc")
+    assure_path(doc_path)
+    pipeline_name = pipeline_metadata["name"]
+    markdown_filename = "{}.md".format(pipeline_name)
+    markdown_filepath = os.path.join(doc_path, markdown_filename)
+    if skip_if_exist and os.path.exists(markdown_filepath):
+        print(f"Markdown file '{markdown_filepath}' already exists.")
+        return
 
     markdown_content = """
 # Pipeline {} 
@@ -108,64 +120,111 @@ def generate_pipeline_page(data_path, machine_path, train_args, skip_if_exist=Tr
 ## Workload information
 
 {}
-    """.format(pipeline_name, train_args["extractor"], train_args["isolator"], format_trainer(train_args["abs_trainers"]), "  (same as AbsPower Trainers)" if train_args["abs_trainers"] == train_args["dyn_trainers"] else train_args["dyn_trainers"], workload_content)
+    """.format(pipeline_name, pipeline_metadata["extractor"], pipeline_metadata["isolator"], format_trainer(pipeline_metadata["abs_trainers"]), "  (same as AbsPower Trainers)" if pipeline_metadata["abs_trainers"] == pipeline_metadata["dyn_trainers"] else pipeline_metadata["dyn_trainers"], workload_content)
 
     write_markdown(markdown_filepath, markdown_content)
 
-def model_url(version, machine_id, pipeline_name, energy_source, output_type, feature_group, model_name, weight):
-    repo_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models"
-    machine_path = get_machine_path(repo_url, version, machine_id, assure=False)
-    model_url = get_url(ModelOutputType[output_type], FeatureGroup[feature_group], model_name=model_name, model_topurl=machine_path, energy_source=energy_source, pipeline_name=pipeline_name, weight=weight)
-    return model_url
+# error_report_url called by generate_pipeline_readme
+def _error_report_url(export_path, node_type, assure):
+    error_report_folder = os.path.join(export_path, error_report_foldername)
+    if assure:
+        assure_path(error_report_folder)
+    node_type_file = "node_type_{}.md".format(node_type)
+    return os.path.join(error_report_folder, node_type_file)
 
-def format_error_content(train_args, mae_validated_df_map, trainer_list=None):
-    weight = trainer_list is not None
-    content = ""
-    for energy_source, mae_validated_df_outputs in mae_validated_df_map.items():
-        for output_type, mae_validated_df in mae_validated_df_outputs.items():
-            content += "### {} {} model\n\n".format(energy_source, output_type)
-            df = mae_validated_df
-            if weight:
-                df = mae_validated_df[mae_validated_df["model_name"].str.contains('|'.join(trainer_list))]
+# get_error_df for each node type
+def get_error_dict(remote_version_path, best_model_collection):
+    collection = best_model_collection.collection
+    error_dict = dict()
+    error_dict_with_weight = dict()
+    for energy_source in collection.keys():
+        error_dict[energy_source] = dict()
+        error_dict_with_weight[energy_source] = dict()
+        for output_type_name in collection[energy_source].keys():
             items = []
-            min_err_rows = df.loc[df.groupby(["feature_group"])[ERROR_KEY].idxmin()]
-            for _, row in min_err_rows.iterrows():
-                item = dict()
-                feature_group = row["feature_group"]
-                model_name = row["model_name"]
-                item["url"] = model_url(train_args["version"], train_args["machine_id"], train_args["pipeline_name"], energy_source, output_type, feature_group, model_name, weight)
-                item[ERROR_KEY] = "{:.2f}".format(row[ERROR_KEY])
-                item["feature group"] = feature_group
-                item["model name"] = model_name
-                items += [item]
-            print_df = pd.DataFrame(items, columns=["feature group", "model name", ERROR_KEY, "url"])
-            content += dict_to_markdown_table(print_df.sort_values(by=["feature group"]))
+            weight_items = []
+            for feature_group_name, best_item in collection[energy_source][output_type_name].items():
+                best_item_with_weight = best_model_collection.get_best_item_with_weight(energy_source, output_type_name, feature_group_name)
+                if best_item is not None:
+                    items += [ {
+                        "Feature group": feature_group_name,
+                        "Model name": best_item.model_name,
+                        "MAE": "{:.2f}".format(best_item.metadata['mae']),
+                        "MAPE (%)": "{:.1f}".format(best_item.metadata['mape']),
+                        "URL": best_item.get_archived_filepath(remote_version_path)
+                        } ]
+                if best_item_with_weight is not None:
+                    weight_items += [ {
+                        "Feature group": feature_group_name,
+                        "Model name": best_item_with_weight.model_name, 
+                        "MAE": "{:.2f}".format(best_item_with_weight.metadata['mae']),
+                        "MAPE (%)": "{:.1f}".format(best_item_with_weight.metadata['mape']),
+                        "URL": best_item_with_weight.get_weight_filepath(remote_version_path)
+                    }]
+            error_dict[energy_source][output_type_name] = pd.DataFrame(items)
+            error_dict_with_weight[energy_source][output_type_name] = pd.DataFrame(weight_items)
+    return error_dict, error_dict_with_weight
+
+def format_error_report(error_dict):
+    content = ""
+    for energy_source in sorted(error_dict.keys()):
+        for outputy_type_name in sorted(error_dict[energy_source].keys()):
+            df = error_dict[energy_source][outputy_type_name]
+            content += "### {} {} model\n\n".format(energy_source, outputy_type_name)
+            if len(df) == 0:
+                content += "No model available\n\n"
+            else:
+                content += data_to_markdown_table(df.sort_values(by=["Feature group"]))
     return content
 
-def generate_validation_results(pipeline_path, train_args, mae_validated_df_map):
-    markdown_filepath = os.path.join(pipeline_path, "README.md")
+# generate_report_results - version/pipeline_name/error_report/node_type_x.md
+def generate_report_results(local_export_path, best_model_collections, node_type_index_json, remote_version_path):
+    for node_type, collection in best_model_collections.items():
+        if best_model_collections[int(node_type)].has_model:
+            markdown_filepath = _error_report_url(local_export_path , node_type, assure=True)
+            error_dict, error_dict_with_weight = get_error_dict(remote_version_path, collection)
+            markdown_content = "# Validation results on node type {}\n\n".format(node_type)
+            markdown_content += data_to_markdown_table(pd.DataFrame([node_type_index_json[str(node_type)]['attrs']])) + "\n"
 
-    markdown_content = "# Validation results\n\n"
-    markdown_content += "## With local LR estimator\n\n"
-    markdown_content += format_error_content(train_args, mae_validated_df_map, trainer_list=lr_trainers)
-    markdown_content += "## With local Xgboost estimator\n\n"
-    markdown_content += format_error_content(train_args, mae_validated_df_map, trainer_list=xgboost_trainers)
-    markdown_content += "## With sidecar estimator\n\n"
-    markdown_content += format_error_content(train_args, mae_validated_df_map, trainer_list=None)
+            # add links
+            markdown_content += "[With local estimator](#with-local-estimator)\n\n"
+            markdown_content += "[With sidecar estimator](#with-sidecar-estimator)\n\n"
+            # add content
+            markdown_content += "## With local estimator\n\n"
+            markdown_content += format_error_report(error_dict_with_weight) 
+            markdown_content += "## With sidecar estimator\n\n"
+            markdown_content += format_error_report(error_dict)
+            write_markdown(markdown_filepath, markdown_content)
+
+# generate_pipeline_readme - version/pipeline_name/README.md
+def generate_pipeline_readme(pipeline_name, local_export_path, node_type_index_json, best_model_collections):
+    markdown_filepath = os.path.join(local_export_path, "README.md")
+    markdown_content = "# {} on v{} Build\n\n".format(pipeline_name, version)
+    markdown_content += "MAE Threshold = {}, MAPE Threshold = {}%\n\n".format(mae_threshold, int(mape_threshold))
+    
+    items = []
+    for node_type, spec_json in node_type_index_json.items():
+        if best_model_collections[int(node_type)].has_model:
+            error_file = _error_report_url('.', node_type, assure=False)
+            item = {"node type": node_type}
+            item.update(spec_json['attrs'])
+            item["member size"] = len(spec_json["members"])
+            item["error report"] = "[link]({})".format(error_file)
+            items += [item]
+    df = pd.DataFrame(items)
+    markdown_content += "Available Node Type: {}\n\n".format(len(df))
+    markdown_content += data_to_markdown_table(df.sort_values(by=["node type"]))
     write_markdown(markdown_filepath, markdown_content)
+    return markdown_filepath
 
-def append_version_readme(machine_path, train_args, pipeline_metadata, include_raw):
-    readme_path = os.path.join(_version_path(machine_path), "README.md")
-
-    content_to_append = "{0}|[{1}](./.doc/{1}.md)|{2}|{3}|{4}|[{5}](https://github.com/{5})|[link](./{6}/{7}/README.md)\n".format(train_args["machine_id"],  \
-           train_args["pipeline_name"], \
-           "&check;" if include_raw else "X", \
+# append_version_readme - version/README.md
+def append_version_readme(local_version_path, pipeline_metadata):
+    readme_path = os.path.join(local_version_path, "README.md")
+    content_to_append = "[{0}](./.doc/{0}.md)|{1}|{2}|[{3}](https://github.com/{3})|[link](./{0})\n".format(  \
+           pipeline_metadata["name"], \
            pipeline_metadata["collect_time"], \
            pipeline_metadata["last_update_time"], \
-           pipeline_metadata["publisher"],\
-           train_args["machine_id"],\
-           pipeline_metadata["name"]
+           pipeline_metadata["publisher"]
            )
-
     with open(readme_path, 'a') as file:
         file.write(content_to_append)

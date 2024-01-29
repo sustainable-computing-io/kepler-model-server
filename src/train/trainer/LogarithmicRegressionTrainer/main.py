@@ -10,12 +10,11 @@ import numpy as np
 def p0_func(x, y):
     print(y.max(), y.min())
     a = y.max()-y.min()
-    b = 1
-    c = y.min()
-    return [a, b, c]
+    b = y.min()
+    return [a, b]
 
-def log_func(x, a, b, c):
-    y = [a * np.log(b*xi) + c if b*xi > 0 and a * np.log(b*xi) > 0 else c for xi in x]
+def log_func(x, a, b):
+    y = [a * np.log(xi) + b if xi > 0 else 0 for xi in x]
     return y
 
 class LogarithmicRegressionTrainer(CurveFitTrainer):

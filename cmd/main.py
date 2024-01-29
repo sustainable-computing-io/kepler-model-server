@@ -6,11 +6,8 @@ import pandas as pd
 
 data_path = "/data"
 default_output_filename = "output"
-default_trainer_names = [ 'PolynomialRegressionTrainer', 'GradientBoostingRegressorTrainer', 'SGDRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer','SVRRegressorTrainer', 'XgboostFitTrainer']
-default_trainers = ",".join(default_trainer_names)
-default_version = "v0.7"
 
-data_path = os.getenv("CPE_DATAPATH", data_path)
+data_path = os.getenv("DATAPATH", data_path)
 
 cur_path = os.path.join(os.path.dirname(__file__), '.')
 sys.path.append(cur_path)
@@ -18,16 +15,17 @@ src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 
 from util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_QUERY_START_TIME, PROM_QUERY_END_TIME, PROM_HEADERS, PROM_SSL_DISABLE, PROM_THIRDPARTY_METRICS
-from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics
+from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics, node_info_column
 from util.extract_types import get_expected_power_columns
-from util.train_types import ModelOutputType, FeatureGroups, is_single_source_feature_group, SingleSourceFeatures, all_feature_groups
-from util.loader import load_json, DEFAULT_PIPELINE, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_machine_path, get_preprocess_folder, get_general_filename
+from util.train_types import ModelOutputType, FeatureGroups, is_single_source_feature_group, all_feature_groups, default_trainers
+from util.loader import load_json, DEFAULT_PIPELINE, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_preprocess_folder, get_general_filename, load_machine_spec
 from util.saver import save_json, save_csv, save_train_args
-from util.config import ERROR_KEY
+from util.config import ERROR_KEY, model_toppath
 from util import get_valid_feature_group_from_queries, PowerSourceMap
 from train.prom.prom_query import _range_queries
 from train.exporter import exporter
 from train import load_class
+from train.profiler.node_type_index import NodeTypeIndexCollection, NodeTypeSpec, generate_spec
 
 from cmd_plot import ts_plot, feature_power_plot, summary_plot
 from cmd_util import extract_time, save_query_results, get_validate_df, summary_validation, get_extractor, check_ot_fg, get_pipeline, assert_train, get_isolator, UTC_OFFSET_TIMEDELTA
@@ -54,9 +52,15 @@ arguments:
         - --interval : last interval in second
     * The priority is input > start-time,end-time > interval
 - --to-csv : to save converted query result in csv format
+- --id : specify machine ID
 """
 
 def query(args):
+    if not args.id:
+        args.id = "unknown"
+        print("Machine ID has not defined by --id, use `unknown`")
+    machine_id = args.id
+    generate_spec(data_path, machine_id)
     from prometheus_api_client import PrometheusConnect
     prom = PrometheusConnect(url=args.server, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
     start = None
@@ -288,6 +292,23 @@ def train_from_data(args):
 
     energy_components = PowerSourceMap[args.energy_source]
 
+    node_type = None
+    node_collection = None
+    if args.id:
+        machine_id = args.id
+        pipeline_path = get_pipeline_path(model_toppath, pipeline_name=args.pipeline_name)
+        node_collection = NodeTypeIndexCollection(pipeline_path)
+        machine_spec_json = load_machine_spec(data_path, machine_id)
+        if machine_spec_json is not None:
+            new_spec = NodeTypeSpec()
+            new_spec.load(machine_spec_json)
+            node_type = node_collection.index_train_machine(machine_id, new_spec)
+            print("Replace {} with {}".format(node_info_column, node_type))
+            data[node_info_column] = int(node_type)
+
+    if node_type is None:
+        print("Machine ID has not defined by --id or machine spec is not available, do not auto-replace node_type")
+
     trainers =  args.trainers.split(",")
     metadata_list = []
     for trainer in trainers:
@@ -300,6 +321,10 @@ def train_from_data(args):
     metadata_df = pd.concat(metadata_list)
     print_cols = ["model_name", "mae", "mape"]
     print(metadata_df[print_cols])
+
+    if node_collection is not None:
+        print("Save node index")
+        node_collection.save()
     
 """
 train
@@ -322,6 +347,7 @@ arguments:
 - --dyn-trainers : specify a list of trainers for training DynPower models (use comma(,) as delimiter) - default: apply all available trainers
 - --energy-source : specify target energy sources (use comma(,) as delimiter) 
 - --thirdparty-metrics : specify list of third party metric to export (required only for ThirdParty feature group)
+- --id : specify machine ID 
 """
 
 def train(args):
@@ -366,14 +392,28 @@ def train(args):
 
     abs_trainer_names = args.abs_trainers.split(",")
     dyn_trainer_names = args.dyn_trainers.split(",")
-    pipeline = get_pipeline(data_path, pipeline_name, args.extractor, args.profile, args.target_hints, args.bg_hints, args.abs_pipeline_name, args.isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups)
+    
+    node_type=None
+    if args.id:
+        machine_id = args.id
+        pipeline = get_pipeline(data_path, pipeline_name, args.extractor, args.profile, args.target_hints, args.bg_hints, args.abs_pipeline_name, args.isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups)
+        machine_spec_json = load_machine_spec(data_path, machine_id)
+        if machine_spec_json is not None:
+            new_spec = NodeTypeSpec()
+            new_spec.load(machine_spec_json)
+            node_type = pipeline.node_collection.index_train_machine(machine_id, new_spec)
+            node_type = int(node_type)
+
+    if node_type is None:
+        print("Machine ID has not defined by --id or machine spec is not available, do not auto-replace node_type")
+    
     if pipeline is None:
         print("cannot get pipeline")
         exit()
     for energy_source in energy_sources:
         energy_components = PowerSourceMap[energy_source]
         for feature_group in valid_feature_groups:
-            success, abs_data, dyn_data = pipeline.process_multiple_query(input_query_results_list, energy_components, energy_source, feature_group=feature_group.name)
+            success, abs_data, dyn_data = pipeline.process_multiple_query(input_query_results_list, energy_components, energy_source, feature_group=feature_group.name, replace_node_type=node_type)
             assert success, "failed to process pipeline {}".format(pipeline.name)
             for trainer in pipeline.trainers:
                 if trainer.feature_group == feature_group and trainer.energy_source == energy_source:
@@ -396,6 +436,8 @@ def train(args):
         print("Train args:", argparse_dict)
         # save metadata
         pipeline.save_metadata()
+        # save node collection
+        pipeline.node_collection.save()
         # save pipeline
         pipeline.archive_pipeline()
         print_cols = ["feature_group", "model_name", "mae", "mape"]
@@ -650,19 +692,17 @@ export
     export preprocessed data and trained models to the kepler-model-db path
     
 arguments:
-- --id : specify machine ID 
 - --pipeline-name : specify pipeline name that contains the trained models
 - --output : specify kepler-model-db/models in local path
 - --publisher : specify publisher (github) account
 - --benchmark : specify benchmark file that contains data of start time and end time which could be either of the following format
                 - CPE benchmark resource in json if you run workload with CPE-operator (https://github.com/IBM/cpe-operator)
                 - custom benchmark in json with `startTimeUTC` and `endTimeUTC` data
+- --collect-date : specify collection time manually in UTC
+- --input : specify kepler query response file (output of `query` function) - optional
 """
 
 def export(args):
-    if not args.id:
-        print("need to specify --id")
-        exit()
 
     if not args.pipeline_name:
         print("need to specify pipeline name via -p or --pipeline-name")
@@ -677,43 +717,22 @@ def export(args):
         print("need to specify --publisher")
         exit()
 
-    if not args.benchmark:
-        print("need to specify --benchmark to extract collection time")
+    if args.benchmark:
+        collect_date, _ = extract_time(data_path, args.benchmark)
+    elif args.collect_date:
+        collect_date = args.collect_date
+    else:
+        print("need to specify --benchmark or --collect-date")
         exit()
 
+    inputs = []
+    if args.input:
+        inputs = args.input.split(",")
+
     pipeline_name = args.pipeline_name
-    machine_id = args.id
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
-    machine_path = get_machine_path(output_path, args.version, machine_id)
 
-    collect_date, _ = extract_time(data_path, args.benchmark)
-    exporter.export(data_path, pipeline_path, machine_path, machine_id=machine_id, version=args.version, publisher=args.publisher, collect_date=collect_date, include_raw=args.include_raw)
-
-    args.energy_source = ",".join(PowerSourceMap.keys())
-    out_pipeline_path = os.path.join(machine_path, pipeline_name)
-    
-    for ot in ModelOutputType:
-        args.output_type = ot.name
-
-        # plot preprocess data
-        args.target_data = "preprocess"
-        args.output = get_preprocess_folder(out_pipeline_path)
-        plot(args)
-
-        # plot error
-        args.target_data = "error"
-        args.output = os.path.join(out_pipeline_path, "error_summary")
-        plot(args)
-
-
-    args.target_data = "estimate"
-    args.output = os.path.join(out_pipeline_path, "best_estimation")
-    for ot in ModelOutputType:
-        args.output_type = ot.name
-        # plot estimate
-        for feature_group in SingleSourceFeatures:
-            args.feature_group = feature_group
-            plot(args)
+    exporter.export(data_path, pipeline_path, output_path, publisher=args.publisher, collect_date=collect_date, inputs=inputs)
 
 """
 plot_scenario
@@ -847,10 +866,11 @@ if __name__ == "__main__":
     parser.add_argument("--scenario", type=str, help="Speficy scenario")
 
     # Export arguments
-    parser.add_argument("--id", type=str, help="specify machine id")
-    parser.add_argument("--version", type=str, help="Specify model server version.", default=default_version)
     parser.add_argument("--publisher", type=str, help="Specify github account of model publisher")
     parser.add_argument("--include-raw", type=bool, help="Include raw query data")
+    parser.add_argument("--collect-date", type=str, help="Specify collect date directly")
+
+    parser.add_argument("--id", type=str, help="specify machine id")
 
     # Parse the command-line arguments
     args = parser.parse_args()
@@ -867,7 +887,7 @@ if __name__ == "__main__":
                 os.makedirs(data_path)
                 print("create new folder for data: {}".format(data_path))
             else:
-                print("{} must be mount, add -v \"$(pwd)\":{} .".format(data_path, data_path))
+                print("{0} not exists. For docker run, {0} must be mount, add -v \"$(pwd)\":{0}. For native run, set DATAPATH".format(data_path))
                 exit()
         getattr(sys.modules[__name__], args.command)(args)
 

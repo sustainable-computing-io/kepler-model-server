@@ -22,6 +22,7 @@ jobs:
       aws_region: ${{ secrets.AWS_REGION }}
       
   train-model:
+    needs: [collect-data]
     strategy:
       matrix:
         instance_type: [i3.metal]

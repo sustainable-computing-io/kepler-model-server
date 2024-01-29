@@ -62,17 +62,22 @@ Previous step: [Prepare cluster](./README.md#1-prepare-cluster)
         bucketName: kepler-power-model
     ```
 
-    3.2. Uncomment COS-related varaiable values in `pipelineruns/kepler-default.yaml`
+    3.2. Uncomment COS-related varaiable values in `examples/single-train/default.yaml`
 
 ## 2. Deploy Tekton tasks and pipelines
 
 ```
 kubectl apply -f tasks
-kubectl apply -f tasks/s3-pusher
+kubectl apply -f tasks/s3
 kubectl apply -f pipelines
 ```
 
-## 3. Run Tekton pipeline
+## 3. Quick test
+```
+kubectl apply -f examples/single-train/abs-power.yaml
+```
+
+## 4. Run Tekton pipeline
 
 The minimum required pipelinerun for default power model of Kepler on VM is as below:
 ![](../../fig/tekton-kepler-default.png)

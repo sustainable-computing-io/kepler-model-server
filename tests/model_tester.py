@@ -27,6 +27,7 @@ from train_types import ModelOutputType, PowerSourceMap
 from train.isolator.train_isolator import get_background_containers, isolate_container
 from offline_trainer_test import get_pipeline_name, isolators, offline_trainer_output_path
 from estimator.load import load_model
+from loader import default_node_type
 
 from prom_types import prom_responses_to_results, TIMESTAMP_COL
 
@@ -51,9 +52,9 @@ def process(train_dataset_name, test_dataset_name, target_path):
     test_data = prom_responses_to_results()
     node_types, _ = extractor.get_node_types(idle_data)
     if node_types is None:
-        node_type = "1" # default node type
+        node_type = default_node_type # default node type
     else:
-        node_type = node_types[0] # limit only one node type in single data set
+        node_type = int(node_types[0]) # limit only one node type in single data set
 
     # find best_ab
     best_abs_model = find_best_abs_model()
