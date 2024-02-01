@@ -31,6 +31,11 @@ on:
         required: false
         type: string
         default: AbsPower
+      trainers:
+        description: 'Model trainer list (delimit: ,)'
+        required: false
+        type: string
+        default: XgboostFitTrainer        
 
 env:
   BASE_IMAGE: ${{ inputs.image_repo }}/kepler_model_server_base:${{ inputs.image_tag }}
@@ -172,3 +177,34 @@ jobs:
               name: single-retrain-pipeline
           EOF
           ./hack/k8s_helper.sh wait_for_pipelinerun test-retrain
+
+      - name: Run Tekton Complete Retrain
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: tekton.dev/v1
+          kind: PipelineRun
+          metadata:
+            name: test-complete-retrain
+          spec:
+            timeouts:
+              pipeline: "6h"
+              tasks: "5h50m"
+            workspaces:
+            - name: mnt
+              persistentVolumeClaim:
+                claimName: task-pvc
+            params:
+            - name: MODEL_SERVER_IMAGE
+              value: $IMAGE
+            - name: PIPELINE_NAME
+              value: ${{ inputs.pipeline_name }}
+            - name: MACHINE_ID
+              value: test
+            - name: ABS_TRAINERS
+              value: ${{ inputs.trainers }}
+            - name: DYN_TRAINERS
+              value: ${{ inputs.trainers }}
+            pipelineRef:
+              name: complete-retrain-pipeline
+          EOF
+          ./hack/k8s_helper.sh wait_for_pipelinerun test-complete-retrain

@@ -65,6 +65,8 @@ spec:
           value: $(params.THIRDPARTY_METRICS)
         - name: MODEL_SERVER_IMAGE
           value: $(params.MODEL_SERVER_IMAGE)
+        - name: MACHINE_ID
+          value: $(params.MACHINE_ID)
       taskSpec:
         workspaces:
           - name: mnt
@@ -73,6 +75,7 @@ spec:
           - name: IDLE_COLLECT_INTERVAL
           - name: THIRDPARTY_METRICS
           - name: MODEL_SERVER_IMAGE
+          - name: MACHINE_ID
         results:
           - name: stress-start-time
             description: The time recorded before running the workload
@@ -92,6 +95,7 @@ spec:
             - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
             - --benchmark=idle
             - -o=idle
+            - --id=$(params.MACHINE_ID)
             command: ["python3.8"]
             env:
             - name: PROM_SERVER
@@ -122,6 +126,8 @@ spec:
           value: $(params.THIRDPARTY_METRICS)
         - name: MODEL_SERVER_IMAGE
           value: $(params.MODEL_SERVER_IMAGE)
+        - name: MACHINE_ID
+          value: $(params.MACHINE_ID)
       taskSpec:
         workspaces:
           - name: mnt
@@ -131,6 +137,7 @@ spec:
             default: stressng
           - name: THIRDPARTY_METRICS
           - name: MODEL_SERVER_IMAGE
+          - name: MACHINE_ID
         steps:
           - name: collect-stressng
             image: $(params.MODEL_SERVER_IMAGE)
@@ -141,6 +148,7 @@ spec:
             - --start-time=$(tasks.presteps.results.stress-start-time)
             - --end-time=$(tasks.run-stressng.results.stress-end-time)
             - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
+            - --id=$(params.MACHINE_ID)
             - --benchmark=stressng
             - -o=kepler_query
             command: ["python3.8"]

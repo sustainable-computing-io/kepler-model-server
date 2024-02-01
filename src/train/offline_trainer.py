@@ -22,8 +22,6 @@ prom_path = os.path.join(os.path.dirname(__file__), 'prom')
 sys.path.append(prom_path)
 extractor_path = os.path.join(os.path.dirname(__file__), 'extractor')
 sys.path.append(extractor_path)
-profiler_path = os.path.join(os.path.dirname(__file__), 'profiler')
-sys.path.append(profiler_path)
 isolator_path = os.path.join(os.path.dirname(__file__), 'isolator')
 sys.path.append(isolator_path)
 
@@ -31,7 +29,7 @@ from config import model_toppath
 from loader import get_pipeline_path, DEFAULT_PIPELINE
 from train_types import PowerSourceMap
 from prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
-from profiler import Profiler, generate_profiles
+from profiler.profiler import Profiler, generate_profiles
 from extractor import DefaultExtractor
 from isolator import ProfileBackgroundIsolator
 from train_isolator import TrainIsolator

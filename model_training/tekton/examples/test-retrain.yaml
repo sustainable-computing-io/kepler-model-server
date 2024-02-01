@@ -1,3 +1,5 @@
+# example-abs-train-pipeline:
+#   running pipelines with all default value to train AbsPower model (intel_rapl, BPFOnly)
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:

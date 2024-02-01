@@ -12,7 +12,7 @@ sys.path.append(src_path)
 
 from util.prom_types import node_info_column, prom_responses_to_results, SOURCE_COL, energy_component_to_query
 from util.train_types import ModelOutputType, FeatureGroup, PowerSourceMap
-from util.loader import load_json, get_pipeline_path
+from util.loader import load_json, get_pipeline_path, default_node_type
 from util.saver import assure_path, save_csv
 
 def print_file_to_stdout(data_path, args):
@@ -58,7 +58,6 @@ def summary_validation(validate_df):
         # CPU instruction is mainly used for ratio.
         # reference:  https://github.com/sustainable-computing-io/kepler/blob/0b328cf7c79db9a11426fb80a1a922383e40197c/pkg/config/config.go#L92
         "hwc": "kepler_container_cpu_instructions_total", 
-        "kubelet": "kepler_container_kubelet_cpu_usage_total",
         "bpf": "kepler_container_bpf_cpu_time_us_total",
     }
     metric_to_validate_power = {
@@ -245,15 +244,14 @@ def assert_train(trainer, data, energy_components):
     import pandas as pd
     node_types = pd.unique(data[node_info_column])
     for node_type in node_types:
-        node_type_str = int(node_type)
         node_type_filtered_data = data[data[node_info_column] == node_type]
         X_values = node_type_filtered_data[trainer.features].values
         for component in energy_components:
-            output = trainer.predict(node_type_str, component, X_values)
+            output = trainer.predict(node_type, component, X_values)
             if output is not None:
                 assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
 
-def get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_hints, abs_pipeline_name):
+def get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_hints, abs_pipeline_name, replace_node_type=default_node_type):
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
     from train import MinIdleIsolator, NoneIsolator, DefaultProfiler, ProfileBackgroundIsolator, TrainIsolator, generate_profiles
     supported_isolator = {
@@ -278,7 +276,7 @@ def get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_h
         if idle_data is None:
             print("failed to read idle data")
             return None
-        profile_map = DefaultProfiler.process(idle_data, profile_top_path=pipeline_path)
+        profile_map = DefaultProfiler.process(idle_data, profile_top_path=pipeline_path, replace_node_type=replace_node_type)
         profiles = generate_profiles(profile_map)
         profile_isolator =  ProfileBackgroundIsolator(profiles, idle_data)
         supported_isolator[profile_isolator.get_name()] = profile_isolator
@@ -306,9 +304,9 @@ def get_extractor(extractor):
         return None
     return supported_extractor[extractor]
 
-def get_pipeline(data_path, pipeline_name, extractor, profile, target_hints, bg_hints, abs_pipeline_name, isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups):
+def get_pipeline(data_path, pipeline_name, extractor, profile, target_hints, bg_hints, abs_pipeline_name, isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups, replace_node_type=default_node_type):
     from train import NewPipeline
-    isolator = get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_hints, abs_pipeline_name)
+    isolator = get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_hints, abs_pipeline_name, replace_node_type=replace_node_type)
     extractor = get_extractor(extractor)
     pipeline = NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=energy_sources ,valid_feature_groups=valid_feature_groups)
     return pipeline

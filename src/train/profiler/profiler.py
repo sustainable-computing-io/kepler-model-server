@@ -81,7 +81,7 @@ class Profiler():
     def __init__(self, extractor):
         self.extractor = extractor
 
-    def process(self, query_results, profile_top_path=default_profile_top_path, save=True):
+    def process(self, query_results, profile_top_path=default_profile_top_path, save=True, replace_node_type=default_node_type):
         profile_path =prepare_profile_path(profile_top_path)
 
         node_types, node_info_data = self.extractor.get_node_types(query_results)
@@ -94,13 +94,13 @@ class Profiler():
              #######################
             profile = dict()
             if node_types is None:
-                node_types = [default_node_type]
+                node_types = [replace_node_type]
             for node_type in node_types:
                 power_data= self.extractor.get_power_data(query_results, energy_components, source)
                 if node_info_data is not None:
                     power_data = power_data.join(node_info_data)
                 else:
-                    power_data[node_info_column] = default_node_type
+                    power_data[node_info_column] = replace_node_type
                 power_labels = power_data.columns
                 for component in energy_components:
                     power_label = component_to_col(component) 

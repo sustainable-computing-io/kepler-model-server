@@ -6,6 +6,9 @@ METADATA_FILENAME = 'metadata'
 SCALER_FILENAME = 'scaler'
 WEIGHT_FILENAME = 'weight'
 TRAIN_ARGS_FILENAME = 'train_arguments'
+NODE_TYPE_INDEX_FILENAME = 'node_type_index'
+
+MACHINE_SPEC_PATH = "machine_spec"
 
 def _pipeline_model_metadata_filename(energy_source, model_type):
     return "{}_{}_model_metadata".format(energy_source, model_type)
@@ -41,6 +44,14 @@ def save_csv(path, name, data):
     filename = os.path.join(path, name)   
     data.to_csv(filename)
     return name
+
+def save_machine_spec(data_path, machine_id, spec):
+    machine_spec_path = os.path.join(data_path, MACHINE_SPEC_PATH)
+    assure_path(machine_spec_path)
+    save_json(machine_spec_path, machine_id, spec.get_json())
+
+def save_node_type_index(pipeline_path, node_type_index):
+    return save_json(pipeline_path, NODE_TYPE_INDEX_FILENAME, node_type_index)
 
 def save_metadata(model_path, metadata):
     return save_json(model_path, METADATA_FILENAME, metadata)

@@ -34,6 +34,9 @@ spec:
   - name: THIRDPARTY_METRICS
     description: Specify list of third party metric to export (required only for ThirdParty feature group)
     default: ""
+  - name: MACHINE_ID
+    description: Specify machine id to identify node_type
+    default: ""
   workspaces:
   - name: mnt
     optional: true
@@ -55,3 +58,4 @@ spec:
       - --output-type=$(params.OUTPUT_TYPE)
       - --trainers=$(params.TRAINERS)
       - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
+      - --id=$(params.MACHINE_ID)

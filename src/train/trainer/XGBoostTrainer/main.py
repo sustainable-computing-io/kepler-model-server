@@ -17,8 +17,7 @@ sys.path.append(train_path)
 sys.path.append(prom_path)
 sys.path.append(util_path)
 
-from train_types import FeatureGroup, FeatureGroups, EnergyComponentLabelGroups, EnergyComponentLabelGroup, ModelOutputType, XGBoostMissingModelXOrModelDescException, XGBoostModelFeatureOrLabelIncompatabilityException, XGBoostRegressionTrainType
-from prom.query import PrometheusClient
+from train_types import FeatureGroup, FeatureGroups, EnergyComponentLabelGroups, EnergyComponentLabelGroup, XGBoostMissingModelXOrModelDescException, XGBoostModelFeatureOrLabelIncompatabilityException, XGBoostRegressionTrainType
 from extractor.extractor import DefaultExtractor
 
 

@@ -25,13 +25,14 @@ set -e
 
 BUCKET_NAME="${BUCKET_NAME:-kepler-power-model}"
 HOST_MNT_PATH="${HOST_MNT_PATH:-/mnt}"
+MACHINE_SPEC_DIR="machine_spec"
 MACHINE_ID=""
 
 PIPELINE_NAME="${PIPELINE_NAME:-std_v0.7}"
 POWER_SOURCE="${POWER_SOURCE:-intel_rapl}"
 MODEL_TYPE="${MODEL_TYPE:-AbsPower}"
 FEATURE_NAME="${FEATURE_NAME:-BPFOnly}"
-TRAINER_NAME="${TRAINER_NAME:-XgboostFitTrainer_1}"
+TRAINER_NAME="${TRAINER_NAME:-XgboostFitTrainer_0}"
 DOWNLOAD_PATH=""
 
 check_data() {
@@ -41,16 +42,19 @@ check_data() {
 # load_data: try loading data
 load_data() {
     mkdir -p $HOST_MNT_PATH/data
+    mkdir -p $HOST_MNT_PATH/data/$MACHINE_SPEC_DIR
     echo "Loading data to $HOST_MNT_PATH/data"
     aws s3api get-object --bucket $BUCKET_NAME --key /$MACHINE_ID/data/idle.json $HOST_MNT_PATH/data/idle.json 2>&1 >/dev/null
     echo "Idle data loaded"
     aws s3api get-object --bucket $BUCKET_NAME --key /$MACHINE_ID/data/idle.json $HOST_MNT_PATH/data/kepler_query.json 2>&1 >/dev/null
     echo "Stress data loaded"
+    aws s3api get-object --bucket $BUCKET_NAME --key /$MACHINE_ID/data/$MACHINE_SPEC_DIR/$MACHINE_ID.json $HOST_MNT_PATH/data/$MACHINE_SPEC_DIR/$MACHINE_ID.json 2>&1 >/dev/null
+    echo "Spec loaded"
 }
 
 # load all model path
 load_model_all() {
-    keys=$(aws s3api list-objects --bucket kepler-power-model --query "Contents[?contains(Key, '/$MACHINE_ID/models')]" --output json|jq -r '.[].Key')
+    keys=$(aws s3api list-objects --bucket kepler-power-model --query "Contents[?contains(Key, '/models/$PIPELINE_NAME')]" --output json|jq -r '.[].Key')
     for key in $keys; do
         MODEL_LOC=$(echo $key|cut -d'/' -f 3-15)
         DIR=$(echo "$MODEL_LOC" | rev | cut -d'/' -f2- | rev)
@@ -63,11 +67,11 @@ load_model_all() {
 # load model weight file
 load_model_weight() {
     # load model
-    key=/$MACHINE_ID/models/$PIPELINE_NAME/$POWER_SOURCE/$MODEL_TYPE/$FEATURE_NAME/$TRAINER_NAME/weight.json
+    key=/models/$PIPELINE_NAME/$POWER_SOURCE/$MODEL_TYPE/$FEATURE_NAME/$TRAINER_NAME/weight.json
     echo GET $key
     aws s3api get-object --bucket $BUCKET_NAME --key $key $DOWNLOAD_PATH/${POWER_SOURCE}_${MODEL_TYPE}.json  2>&1 >/dev/null
     # load metadata
-    key=/$MACHINE_ID/models/$PIPELINE_NAME/$POWER_SOURCE/$MODEL_TYPE/$FEATURE_NAME/$TRAINER_NAME/metadata.json 
+    key=/models/$PIPELINE_NAME/$POWER_SOURCE/$MODEL_TYPE/$FEATURE_NAME/$TRAINER_NAME/metadata.json 
     echo GET $key
     aws s3api get-object --bucket $BUCKET_NAME --key $key $DOWNLOAD_PATH/${POWER_SOURCE}_${MODEL_TYPE}_metadata.json 2>&1 >/dev/null
     cat $DOWNLOAD_PATH/${POWER_SOURCE}_${MODEL_TYPE}_metadata.json|jq
@@ -75,7 +79,7 @@ load_model_weight() {
 
 # load model zip file and unzip
 load_model_zip() {
-    key=/$MACHINE_ID/models/$PIPELINE_NAME/$POWER_SOURCE/$MODEL_TYPE/$FEATURE_NAME/$TRAINER_NAME.zip
+    key=/models/$PIPELINE_NAME/$POWER_SOURCE/$MODEL_TYPE/$FEATURE_NAME/$TRAINER_NAME.zip
     echo GET $key
     aws s3api get-object --bucket $BUCKET_NAME --key $key tmp.zip 2>&1 >/dev/null
     mkdir -p $DOWNLOAD_PATH/$POWER_SOURCE
@@ -119,8 +123,7 @@ case "$1" in
             echo "Download path is not set"
             exit 1
         fi
-        MACHINE_ID=$3
-        DOWNLOAD_PATH=$4
+        DOWNLOAD_PATH=$3
         mkdir -p $DOWNLOAD_PATH
         load_model_$2
         ;;

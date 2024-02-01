@@ -121,7 +121,8 @@ class DefaultExtractor(Extractor):
         if node_info_data is not None:
             feature_power_data = feature_power_data.join(node_info_data)
         if node_info_column not in feature_power_data.columns:
-            feature_power_data[node_info_column] = int(default_node_type)
+            feature_power_data[node_info_column] = default_node_type
+        feature_power_data[node_info_column] = feature_power_data[node_info_column].astype(int)
         
         # 6. validate input with correlation
         corr = find_correlations(energy_source, feature_power_data, power_columns, workload_features)

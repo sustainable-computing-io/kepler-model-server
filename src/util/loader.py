@@ -2,12 +2,14 @@ import os
 import json
 import joblib
 import pandas as pd
-from saver import assure_path, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME, TRAIN_ARGS_FILENAME, _pipeline_model_metadata_filename
+from saver import assure_path, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME, TRAIN_ARGS_FILENAME, NODE_TYPE_INDEX_FILENAME, MACHINE_SPEC_PATH, _pipeline_model_metadata_filename
 from train_types import ModelOutputType, FeatureGroup, PowerSourceMap, all_feature_groups
 from urllib.request import urlopen
 
 import requests
 import codecs
+
+version = 0.7
 
 FILTER_ITEM_DELIMIT = ';'
 VALUE_DELIMIT = ':'
@@ -18,15 +20,12 @@ PREPROCESS_FOLDERNAME = "preprocessed_data"
 
 # TODO: change to v0.7 when the model is updated to database, need document update
 # default_init_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.7/nx12"
-DEFAULT_PIPELINE = "std_v0.7"
+DEFAULT_PIPELINE = "std_v{}".format(version)
 default_init_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.6/nx12"
 default_trainer_name = "GradientBoostingRegressorTrainer"
-default_node_type = "1"
+default_node_type = 1
 any_node_type = -1
 default_feature_group = FeatureGroup.BPFOnly
-
-lr_trainers = ["SGDRegressorTrainer"]
-xgboost_trainers = ["XgboostFitTrainer"]
 
 def load_json(path, name):
     if ".json" not in name:
@@ -59,6 +58,13 @@ def load_remote_pkl(url_path):
         return loaded_model
     except:
         return None
+    
+def load_machine_spec(data_path, machine_id):
+    machine_spec_path = os.path.join(data_path, MACHINE_SPEC_PATH)
+    return load_json(machine_spec_path, machine_id)
+    
+def load_node_type_index(pipeline_path):
+    return load_json(pipeline_path, NODE_TYPE_INDEX_FILENAME)
 
 def load_metadata(model_path):
     return load_json(model_path, METADATA_FILENAME)
@@ -210,6 +216,9 @@ def _get_metadata_df(group_path):
 def get_metadata_df(model_toppath, model_type, fg, energy_source, pipeline_name):
     group_path = get_model_group_path(model_toppath, output_type=ModelOutputType[model_type], feature_group=FeatureGroup[fg], energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
     metadata_df = _get_metadata_df(group_path)
+    if len(metadata_df) > 0:
+        metadata_df[['trainer', 'node_type']] = metadata_df['model_name'].str.split('_', 1, expand=True)
+        metadata_df['node_type'] = metadata_df['node_type'].astype(int)
     return metadata_df, group_path
 
 def get_all_metadata(model_toppath, pipeline_name, clean_empty=False):
@@ -259,8 +268,15 @@ def get_pipeline_url(model_topurl=default_init_model_url, pipeline_name=DEFAULT_
 def class_to_json(class_obj):
     return json.loads(json.dumps(class_obj.__dict__))
 
-def get_machine_path(output_path, version, machine_id, assure=True):
-    export_path = os.path.join(output_path, version, machine_id)
+def get_version_path(output_path, assure=True):
+    version_path = os.path.join(output_path, "v{}".format(version))
+    if assure:
+        return assure_path(version_path)
+    return version_path
+
+def get_export_path(output_path, pipeline_name, assure=True):
+    version_path = get_version_path(output_path)
+    export_path = os.path.join(version_path, pipeline_name)
     if assure:
         return assure_path(export_path)
     return export_path

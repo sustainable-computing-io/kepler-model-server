@@ -9,8 +9,6 @@ prom_path = os.path.join(os.path.dirname(__file__), 'prom')
 sys.path.append(prom_path)
 extractor_path = os.path.join(os.path.dirname(__file__), 'extractor')
 sys.path.append(extractor_path)
-profiler_path = os.path.join(os.path.dirname(__file__), 'profiler')
-sys.path.append(profiler_path)
 isolator_path = os.path.join(os.path.dirname(__file__), 'isolator')
 sys.path.append(isolator_path)
 
@@ -27,7 +25,7 @@ from train_types import PowerSourceMap, FeatureGroups
 from pipeline import NewPipeline
 from extractor import DefaultExtractor
 from isolator import MinIdleIsolator, ProfileBackgroundIsolator
-from profiler import load_all_profiles
+from profiler.profiler import load_all_profiles
 
 
 default_trainers = ['GradientBoostingRegressorTrainer']

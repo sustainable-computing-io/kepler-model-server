@@ -3,6 +3,8 @@ import sys
 import threading
 import pandas as pd
 
+cur_path = os.path.join(os.path.dirname(__file__), '.')
+sys.path.append(cur_path)
 util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
 extractor_path = os.path.join(os.path.dirname(__file__), 'extractor')
@@ -10,10 +12,12 @@ sys.path.append(extractor_path)
 isolator_path = os.path.join(os.path.dirname(__file__), 'isolator')
 sys.path.append(isolator_path)
 
+from profiler.node_type_index import NodeTypeIndexCollection
 from extractor import DefaultExtractor
 from isolator import MinIdleIsolator
 
 from train_types import PowerSourceMap, FeatureGroups, ModelOutputType
+from prom_types import node_info_column
 from config import model_toppath, ERROR_KEY
 from loader import get_all_metadata, get_pipeline_path, get_metadata_df, get_archived_file
 from saver import save_pipeline_metadata
@@ -44,6 +48,7 @@ class Pipeline():
         self.name = name
         self.lock = threading.Lock()
         self.path = get_pipeline_path(model_toppath=model_toppath ,pipeline_name=self.name)
+        self.node_collection = NodeTypeIndexCollection(self.path)
         self.metadata = dict()
         self.metadata["name"] = self.name
         self.metadata["isolator"] = isolator.get_name()
@@ -116,8 +121,10 @@ class Pipeline():
             futures = []
             for trainer in self.trainers:
                 if trainer.feature_group_name != feature_group:
+                    print("Skip feature: ", feature_group)
                     continue
                 if trainer.energy_source != energy_source:
+                    print("Skip energy source: ", energy_source)
                     continue
                 if trainer.node_level and abs_data is not None:
                     future = executor.submit(run_train, trainer, abs_data, power_labels, pipeline_lock=self.lock)
@@ -130,20 +137,28 @@ class Pipeline():
             self.print_log('{}/{} trainers are trained from {} to {}'.format(len(futures), len(self.trainers), feature_group, energy_source))
             
 
-    def process(self, input_query_results, energy_components, energy_source, feature_group, aggr=True):
+    def process(self, input_query_results, energy_components, energy_source, feature_group, aggr=True, replace_node_type=None):
         self.print_log("{} start processing.".format(feature_group))
         abs_data, dyn_data, power_labels = self.prepare_data(input_query_results, energy_components, energy_source, feature_group, aggr)
         if abs_data is None and dyn_data is None:
             return False, None, None
+        if replace_node_type is not None:
+            self.print_log("Replace Node Type: ", replace_node_type)
+            abs_data[node_info_column] = replace_node_type
+            dyn_data[node_info_column] = replace_node_type
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
         self.print_pipeline_process_end(energy_source, feature_group, abs_data, dyn_data)
         self.metadata["last_update_time"] = time_to_str(datetime.datetime.utcnow())
         return True, abs_data, dyn_data
     
-    def process_multiple_query(self, input_query_results_list, energy_components, energy_source, feature_group, aggr=True):
+    def process_multiple_query(self, input_query_results_list, energy_components, energy_source, feature_group, aggr=True, replace_node_type=None):
         abs_data, dyn_data, power_labels = self.prepare_data_from_input_list(input_query_results_list, energy_components, energy_source, feature_group, aggr)
         if (abs_data is None or len(abs_data) == 0) and (dyn_data is None or len(dyn_data) == 0):
             return False, None, None
+        if replace_node_type is not None:
+            self.print_log("Replace Node Type: ", replace_node_type)
+            abs_data[node_info_column] = replace_node_type
+            dyn_data[node_info_column] = replace_node_type
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
         self.print_pipeline_process_end(energy_source, feature_group, abs_data, dyn_data)
         self.metadata["last_update_time"] = time_to_str(datetime.datetime.utcnow())
@@ -165,7 +180,8 @@ class Pipeline():
         if abs_data is not None:
             abs_trainer_names = set([trainer.__class__.__name__ for trainer in self.trainers if trainer.node_level])
             abs_metadata_df, abs_group_path = get_metadata_df(model_toppath, ModelOutputType.AbsPower.name, feature_group, energy_source, self.name)
-            abs_min_mae = -1 if len(abs_metadata_df) == 0 else abs_metadata_df.loc[abs_metadata_df[ERROR_KEY].idxmin()][ERROR_KEY]
+            node_types = pd.unique(abs_metadata_df[node_info_column])
+            
             abs_messages = [
                 "Pipeline {} has finished for modeling {} power by {} feature".format(self.name, energy_source, feature_group),
                 "    Extractor: {}".format(self.metadata["extractor"]),
@@ -174,22 +190,27 @@ class Pipeline():
                 "    Input data size: {}".format(len(abs_data)),
                 "    Model Trainers: {}".format(abs_trainer_names),
                 "    Output: {}".format(abs_group_path),
-                "    Min {}: {}".format(ERROR_KEY, abs_min_mae),
                 " "
             ]
+            for node_type in node_types:
+                filtered_data = abs_metadata_df[abs_metadata_df[node_info_column]==node_type]
+                min_mae = -1 if len(filtered_data) == 0 else filtered_data.loc[filtered_data[ERROR_KEY].idxmin()][ERROR_KEY]
+                abs_messages += [ "    NodeType {} Min {}: {}".format(node_type, ERROR_KEY, min_mae) ]
+            abs_messages += [" "]
 
         if dyn_data is not None:
             dyn_trainer_names = set([trainer.__class__.__name__ for trainer in self.trainers if not trainer.node_level])
             dyn_metadata_df, dyn_group_path = get_metadata_df(model_toppath, ModelOutputType.DynPower.name, feature_group, energy_source, self.name)
-            dyn_min_mae = -1 if len(dyn_metadata_df) == 0 else dyn_metadata_df.loc[dyn_metadata_df[ERROR_KEY].idxmin()][ERROR_KEY]
-
             dyn_messages = [
                 "Dynamic Power Modeling:",
                 "    Input data size: {}".format(len(dyn_data)),
                 "    Model Trainers: {}".format(dyn_trainer_names),
                 "    Output: {}".format(dyn_group_path),
-                "    Min {}: {}".format(ERROR_KEY, dyn_min_mae),
             ]
+            for node_type in node_types:
+                filtered_data = dyn_metadata_df[dyn_metadata_df[node_info_column]==node_type]
+                min_mae = -1 if len(filtered_data) == 0 else filtered_data.loc[filtered_data[ERROR_KEY].idxmin()][ERROR_KEY]
+                dyn_messages += [ "    NodeType {} Min {}: {}".format(node_type, ERROR_KEY, min_mae) ]
 
         messages = abs_messages + dyn_messages
         print_bounded_multiline_message(messages)
@@ -207,9 +228,11 @@ def initial_trainers(trainer_names, node_level, pipeline_name, target_energy_sou
         energy_components = PowerSourceMap[energy_source]
         for feature_group in valid_feature_groups:
             for trainer_name in trainer_names:
+                trainer_class = load_class("trainer", trainer_name)
                 try:
                     trainer_class = load_class("trainer", trainer_name)
-                except:
+                except Exception as e:
+                    print("failed to load trainer ", trainer_name, e)
                     continue
                 trainer = trainer_class(energy_components, feature_group.name, energy_source, node_level, pipeline_name=pipeline_name)
                 trainers += [trainer]
