@@ -16,7 +16,7 @@ SYSTEM_FEATURES = ["node_info", "cpu_scaling_frequency_hertz"]
 
 COUNTER_FEAUTRES = ["cache_miss", "cpu_cycles", "cpu_instructions"]
 CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"]
-BPF_FEATURES = ["bpf_cpu_time_us", "bpf_page_cache_hit"]
+BPF_FEATURES = ["bpf_cpu_time_ms", "bpf_page_cache_hit"]
 IRQ_FEATURES = ["bpf_block_irq", "bpf_net_rx_irq", "bpf_net_tx_irq"]
 ACCELERATE_FEATURES = ['accelerator_intel_qat']
 WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + ACCELERATE_FEATURES
@@ -97,8 +97,8 @@ default_main_feature_map = {
     FeatureGroup.WorkloadOnly: "cpu_instructions",
     FeatureGroup.CounterOnly: "cpu_instructions",
     FeatureGroup.CgroupOnly: "cgroupfs_cpu_usage_us",
-    FeatureGroup.BPFOnly: "bpf_cpu_time_us",
-    FeatureGroup.BPFIRQ: "bpf_cpu_time_us",
+    FeatureGroup.BPFOnly: "bpf_cpu_time_ms",
+    FeatureGroup.BPFIRQ: "bpf_cpu_time_ms",
     FeatureGroup.CounterIRQCombined: "cpu_instructions",
     FeatureGroup.Basic: "cpu_instructions",
     FeatureGroup.AcceleratorOnly: "accelerator_intel_qat",
