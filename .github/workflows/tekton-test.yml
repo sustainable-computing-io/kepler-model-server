@@ -2,16 +2,13 @@ name: Tekton Test
 
 on:
   workflow_call:
-    secrets:
-      docker_username:
-        description: 'Docker username'
-        required: false
-      docker_password:
-        description: 'Docker password'
-        required: false
     inputs:
       base_change:
         description: 'Change flag on base image'
+        required: true
+        type: string
+      docker_secret:
+        description: 'Secret check'
         required: true
         type: string
       image_repo:
@@ -43,6 +40,7 @@ env:
 
 jobs:
   tekton-test:
+    if: ${{ (inputs.base_change != 'true') || ( (inputs.base_change == 'true') && (inputs.docker_secret == 'true') ) }}
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -51,22 +49,13 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Login to Docker
-        if: ${{ inputs.base_change == 'true' }} 
-        uses: docker/login-action@v3
-        with:
-            registry: ${{ inputs.image_repo }}
-            username: ${{ secrets.docker_username }}
-            password: ${{ secrets.docker_password }} 
-      - name: Replace value in file
-        if: ${{ inputs.base_change == 'true' }} 
+      - name: Replace value in file if base changes
+        if: ${{ (inputs.base_change == 'true') && (inputs.docker_secret == 'true') }} 
         run: |
           sed -i "s|quay.io/sustainable_computing_io/kepler_model_server_base:v0.7|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile
-
       - name: Build image
         run: |
           docker build -t $IMAGE -f dockerfiles/Dockerfile .
-
       - name: Prepare Cluster
         working-directory: model_training
         run: |
@@ -135,7 +124,7 @@ jobs:
             - name: STRESS_BREAK_INTERVAL
               value: 1
             - name: IDLE_COLLECT_INTERVAL
-              value: 20
+              value: 100
             - name: CPU_FREQUENCY_ENABLED
               value: false
             pipelineRef:

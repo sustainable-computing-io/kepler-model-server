@@ -153,28 +153,22 @@ jobs:
           echo "change=true" >> "$GITHUB_OUTPUT"
 
   tekton-test:
-    needs: [check-branch, base-image]
-    # the changed base-image has been pushed or no change
-    if: ${{ needs.base-image.outputs.change == 'true' || needs.check-change.outputs.base != 'true' }}
+    needs: [check-secret, check-branch, base-image]
+    if: always()
     uses: ./.github/workflows/tekton-test.yml
     with:
-      base_change: ${{ needs.base-image.outputs.change }}
+      base_change: ${{ needs.check-change.outputs.base }}
+      docker_secret: ${{ needs.check-secret.outputs.docker-secret }}
       image_repo: ${{ vars.IMAGE_REPO || 'docker.io/library' }}
       image_tag: ${{ needs.check-branch.outputs.tag }}
       pipeline_name: std_v0.7
-    secrets:
-      docker_username: ${{ secrets.BOT_NAME }}
-      docker_password: ${{ secrets.BOT_TOKEN }}
 
   integration-test:
-    needs: [check-branch, base-image]
-    # the changed base-image has been pushed or no change
-    if: ${{ needs.base-image.outputs.change == 'true' || needs.check-change.outputs.base != 'true' }}
+    needs: [check-secret, check-branch, base-image]
+    if: always()
     uses: ./.github/workflows/integration-test.yml
     with:
-      base_change: ${{ needs.base-image.outputs.change }}
+      base_change: ${{ needs.check-change.outputs.base }}
+      docker_secret: ${{ needs.check-secret.outputs.docker-secret }}
       image_repo: ${{ vars.IMAGE_REPO || 'docker.io/library' }}
       image_tag: ${{ needs.check-branch.outputs.tag }}
-    secrets:
-      docker_username: ${{ secrets.BOT_NAME }}
-      docker_password: ${{ secrets.BOT_TOKEN }}
