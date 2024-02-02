@@ -58,7 +58,7 @@ def summary_validation(validate_df):
         # CPU instruction is mainly used for ratio.
         # reference:  https://github.com/sustainable-computing-io/kepler/blob/0b328cf7c79db9a11426fb80a1a922383e40197c/pkg/config/config.go#L92
         "hwc": "kepler_container_cpu_instructions_total", 
-        "bpf": "kepler_container_bpf_cpu_time_us_total",
+        "bpf": "kepler_container_bpf_cpu_time_ms_total",
     }
     metric_to_validate_power = {
         "intel_rapl": "kepler_node_package_joules_total",

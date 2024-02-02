@@ -3,7 +3,7 @@
 set -e
 # Supported CLUSTER_PROVIDER are kind,microshift
 export CLUSTER_PROVIDER=${CLUSTER_PROVIDER:-kind}
-export IMAGE_TAG=${IMAGE_TAG:-latest-libbpf}
+export IMAGE_TAG=${IMAGE_TAG:-latest}
 export KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-kind-for-training}
 export KIND_REGISTRY_NAME=${KIND_REGISTRY_NAME:-kind-registry-for-training}
 export REGISTRY_PORT=${REGISTRY_PORT:-5101}
