@@ -143,7 +143,7 @@ class Pipeline():
         if abs_data is None and dyn_data is None:
             return False, None, None
         if replace_node_type is not None:
-            self.print_log("Replace Node Type: ", replace_node_type)
+            self.print_log("Replace Node Type:  {}".format(replace_node_type))
             abs_data[node_info_column] = replace_node_type
             dyn_data[node_info_column] = replace_node_type
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
@@ -156,7 +156,7 @@ class Pipeline():
         if (abs_data is None or len(abs_data) == 0) and (dyn_data is None or len(dyn_data) == 0):
             return False, None, None
         if replace_node_type is not None:
-            self.print_log("Replace Node Type: ", replace_node_type)
+            self.print_log("Replace Node Type: {}".format(replace_node_type))
             abs_data[node_info_column] = replace_node_type
             dyn_data[node_info_column] = replace_node_type
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)

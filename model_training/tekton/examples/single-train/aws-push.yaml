@@ -32,7 +32,7 @@ spec:
   - name: STRESS_BREAK_INTERVAL
     value: 1
   - name: IDLE_COLLECT_INTERVAL
-    value: 20
+    value: 100
   - name: CPU_FREQUENCY_ENABLED
     value: false
   pipelineRef:
