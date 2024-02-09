@@ -111,3 +111,39 @@ def summary_plot(args, energy_source, summary_df, output_folder, name):
     filename = os.path.join(output_folder, name + ".png")
     fig.savefig(filename)
     plt.close()
+
+def metadata_plot(args, energy_source, metadata_df, output_folder, name):
+    if metadata_df is None or len(metadata_df) == 0:
+        print("no metadata data to plot")
+        return
+
+    plot_height = 5
+    plot_width = 20
+
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    sns.set(font_scale=1.2)
+
+    energy_components = PowerSourceMap[energy_source]
+    col_num = len(energy_components)
+    fig, axes = plt.subplots(col_num, 1, figsize=(plot_width, plot_height*col_num))
+    for i in range(0, col_num):
+        component = energy_components[i]
+        metadata_df = metadata_df.sort_values(by="feature_group")
+        if col_num == 1:
+            ax = axes
+        else:
+            ax = axes[i]
+        sns.boxplot(data=metadata_df, x="feature_group", y="mae", hue="trainer", ax=ax, hue_order=sorted(metadata_df['trainer'].unique()), showfliers=False, palette="Set3")
+        ax.set_title(component)
+        ax.set_ylabel("MAE (Watt)")
+        ax.set_xlabel("Feature Group")
+        # ax.set_ylim((0, 100))
+        if i < col_num-1:
+            ax.set_xlabel("")
+       #  ax.legend(bbox_to_anchor=(1.05, 1.05))
+    plt.suptitle("Pipieline metadata of {} {}".format(energy_source.upper(), args.output_type))
+    plt.tight_layout()
+    filename = os.path.join(output_folder, name + ".png")
+    fig.savefig(filename)
+    plt.close()
