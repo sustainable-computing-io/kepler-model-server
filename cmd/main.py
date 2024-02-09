@@ -19,7 +19,7 @@ from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, prom_response
 from util.extract_types import get_expected_power_columns
 from util.train_types import ModelOutputType, FeatureGroups, is_single_source_feature_group, all_feature_groups, default_trainers
 from util.loader import load_json, DEFAULT_PIPELINE, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_preprocess_folder, get_general_filename, load_machine_spec
-from util.saver import save_json, save_csv, save_train_args
+from util.saver import save_json, save_csv, save_train_args, _pipeline_model_metadata_filename
 from util.config import ERROR_KEY, model_toppath
 from util import get_valid_feature_group_from_queries, PowerSourceMap
 from train.prom.prom_query import _range_queries
@@ -27,7 +27,7 @@ from train.exporter import exporter
 from train import load_class
 from train.profiler.node_type_index import NodeTypeIndexCollection, NodeTypeSpec, generate_spec
 
-from cmd_plot import ts_plot, feature_power_plot, summary_plot
+from cmd_plot import ts_plot, feature_power_plot, summary_plot, metadata_plot
 from cmd_util import extract_time, save_query_results, get_validate_df, summary_validation, get_extractor, check_ot_fg, get_pipeline, assert_train, get_isolator, UTC_OFFSET_TIMEDELTA
 
 import threading
@@ -597,9 +597,11 @@ arguments:
     - `preprocess` plots time series of usage and power metrics for both AbsPower and DynPower
     - `estimate` passes all arguments to `estimate` function, and plots the predicted time series and correlation between usage and power metrics
     - `error` passes all arguments to `estimate` function, and plots the summary of prediction error
+    - `metadata` plot pipeline metadata 
 - --energy-source : specify target energy sources (use comma(,) as delimiter) 
 - --extractor : specify extractor to get preprocessed data of AbsPower model linked to the input data
 - --isolator : specify isolator to get preprocessed data of DynPower model linked to the input data
+- --pipeline_name : specify pipeline name
 """
 
 def plot(args):
@@ -685,6 +687,12 @@ def plot(args):
         for energy_source in energy_sources:
             data_filename = get_general_filename(args.target_data, energy_source, fg, ot, args.extractor, args.isolator)
             summary_plot(args, energy_source, summary_df, output_folder, data_filename)
+    elif args.target_data == "metadata":
+        for energy_source in energy_sources:
+            data_filename = _pipeline_model_metadata_filename(energy_source, ot.name)
+            pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
+            model_metadata_df = load_pipeline_metadata(pipeline_path, energy_source, ot.name)
+            metadata_plot(args, energy_source, model_metadata_df, output_folder, data_filename)
 
 """
 export
@@ -732,7 +740,15 @@ def export(args):
     pipeline_name = args.pipeline_name
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
 
-    exporter.export(data_path, pipeline_path, output_path, publisher=args.publisher, collect_date=collect_date, inputs=inputs)
+    local_export_path = exporter.export(data_path, pipeline_path, output_path, publisher=args.publisher, collect_date=collect_date, inputs=inputs)
+    args.target_data = "metadata"
+
+    args.output = local_export_path
+    args.output_type = "AbsPower"
+    args.energy_source = ",".join(PowerSourceMap.keys())
+    plot(args)
+    args.output_type = "DynPower"
+    plot(args)
 
 """
 plot_scenario

@@ -11,6 +11,7 @@ sys.path.append(cur_path)
 
 from validator import get_validated_export_items, BestModelCollection
 from loader import load_metadata, load_node_type_index, get_version_path, get_export_path
+from saver import save_pipeline_metadata, save_node_type_index
 from format import time_to_str
 from writer import generate_pipeline_page, generate_report_results, generate_pipeline_readme, append_version_readme, get_workload_content
 from config import ERROR_KEY
@@ -44,7 +45,14 @@ def export(data_path, pipeline_path, db_path, publisher, collect_date, inputs):
     remote_version_path = get_version_path(repo_url, assure=False)
    
     # get validated export items (models)
-    export_items = get_validated_export_items(pipeline_path, pipeline_name)
+    export_items, valid_metadata_df = get_validated_export_items(pipeline_path, pipeline_name)
+    # save pipeline metadata
+    for energy_source, ot_metadata_df in valid_metadata_df.items():
+        for model_type, metadata_df in ot_metadata_df.items():
+            metadata_df = metadata_df.sort_values(by=["feature_group", ERROR_KEY])
+            save_pipeline_metadata(local_export_path, pipeline_metadata, energy_source, model_type, metadata_df)
+    # save node_type_index.json
+    save_node_type_index(local_export_path, node_type_index_json)
     
     for export_item in export_items:
         # export models
@@ -61,3 +69,5 @@ def export(data_path, pipeline_path, db_path, publisher, collect_date, inputs):
     generate_pipeline_readme(pipeline_name, local_export_path, node_type_index_json, best_model_collections)
     # add new pipeline item to version path
     append_version_readme(local_version_path, pipeline_metadata)
+
+    return local_export_path

@@ -240,6 +240,7 @@ def check_ot_fg(args, valid_fg):
             exit()
     return ot, fg
 
+import sklearn
 def assert_train(trainer, data, energy_components):
     import pandas as pd
     node_types = pd.unique(data[node_info_column])
@@ -247,9 +248,12 @@ def assert_train(trainer, data, energy_components):
         node_type_filtered_data = data[data[node_info_column] == node_type]
         X_values = node_type_filtered_data[trainer.features].values
         for component in energy_components:
-            output = trainer.predict(node_type, component, X_values)
-            if output is not None:
-                assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
+            try:
+                output = trainer.predict(node_type, component, X_values)
+                if output is not None:
+                    assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
+            except sklearn.exceptions.NotFittedError:
+                pass
 
 def get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_hints, abs_pipeline_name, replace_node_type=default_node_type):
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)

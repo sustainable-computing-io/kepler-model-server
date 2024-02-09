@@ -7,8 +7,9 @@ util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
 from loader import load_json, version
-from saver import assure_path
+from saver import assure_path,  _pipeline_model_metadata_filename
 from validator import mae_threshold, mape_threshold
+from train_types import ModelOutputType, PowerSourceMap
 
 error_report_foldername = "error_report"
 
@@ -201,7 +202,6 @@ def generate_pipeline_readme(pipeline_name, local_export_path, node_type_index_j
     markdown_filepath = os.path.join(local_export_path, "README.md")
     markdown_content = "# {} on v{} Build\n\n".format(pipeline_name, version)
     markdown_content += "MAE Threshold = {}, MAPE Threshold = {}%\n\n".format(mae_threshold, int(mape_threshold))
-    
     items = []
     for node_type, spec_json in node_type_index_json.items():
         if best_model_collections[int(node_type)].has_model:
@@ -213,6 +213,12 @@ def generate_pipeline_readme(pipeline_name, local_export_path, node_type_index_j
             items += [item]
     df = pd.DataFrame(items)
     markdown_content += "Available Node Type: {}\n\n".format(len(df))
+    # add metadata figures
+    for ot in ModelOutputType:
+        for energy_source in PowerSourceMap.keys():
+            data_filename = _pipeline_model_metadata_filename(energy_source, ot.name)
+            markdown_content += "![]({}.png)\n".format(data_filename)
+
     markdown_content += data_to_markdown_table(df.sort_values(by=["node type"]))
     write_markdown(markdown_filepath, markdown_content)
     return markdown_filepath

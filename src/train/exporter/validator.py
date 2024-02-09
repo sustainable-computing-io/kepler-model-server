@@ -88,13 +88,16 @@ class BestModelCollection():
 # get_validated_export_items return valid export items
 def get_validated_export_items(pipeline_path, pipeline_name):
     export_items = []
+    valid_metadata_df = dict()
     models_path = os.path.join(pipeline_path, "..")
     for energy_source in PowerSourceMap.keys():
+        valid_metadata_df[energy_source] = dict()
         for ot in ModelOutputType:
             metadata_df = load_pipeline_metadata(pipeline_path, energy_source, ot.name)
             if metadata_df is None:
                 print("no metadata for", energy_source, ot.name)
                 continue
+            valid_rows = []
             for _, row in metadata_df.iterrows():
                 if row['mape'] <= mape_threshold or row['mae'] <= mae_threshold:
                     model_name = row["model_name"]
@@ -105,4 +108,6 @@ def get_validated_export_items(pipeline_path, pipeline_name):
                         print("source not exist: ", source_file)
                         continue
                     export_items += [export_item]
-    return export_items
+                    valid_rows += [row]
+            valid_metadata_df[energy_source][ot.name] = pd.DataFrame(valid_rows)
+    return export_items, valid_metadata_df
