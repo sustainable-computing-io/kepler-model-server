@@ -117,7 +117,7 @@ class Pipeline():
 
     def _train(self, abs_data, dyn_data, power_labels, energy_source, feature_group):
         # start the thread pool
-        with ThreadPoolExecutor(2) as executor:
+        with ThreadPoolExecutor(len(self.trainers)) as executor:
             futures = []
             for trainer in self.trainers:
                 if trainer.feature_group_name != feature_group:

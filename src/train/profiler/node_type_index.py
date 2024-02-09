@@ -44,7 +44,7 @@ def generate_spec(data_path, machine_id):
     if "brand_raw" in cpu_info:
         processor = format_processor(cpu_info["brand_raw"])
     cores = psutil.cpu_count(logical=True)
-    chips = psutil.cpu_count(logical=False)
+    chips = int(cores/psutil.cpu_count(logical=False))
     memory = psutil.virtual_memory().total
     memory_gb = int(memory/GB)
     cpu_freq_mhz = round(psutil.cpu_freq(percpu=False).max/100)*100 # round to one decimal of GHz

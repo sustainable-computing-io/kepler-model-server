@@ -130,23 +130,23 @@ class Trainer(metaclass=ABCMeta):
 
     def process(self, data, power_labels, pipeline_lock):
         node_types = pd.unique(data[node_info_column])
-        try:
-            for node_type in node_types:
-                node_type = int(node_type)
-                save_path = self._get_save_path(str(node_type))
-                self.node_scalers[node_type] = load_scaler(save_path)
-                self.load_model(node_type)
-                
-                node_type_filtered_data = data[data[node_info_column] == node_type]
-                if self.node_scalers[node_type] is None:
-                    self.print_log("fit scaler to latest data {1} for node_type={0}".format(node_type, self.feature_group_name))
-                    # no profiled scaler
-                    x_values = node_type_filtered_data[self.features].values
-                    self.node_scalers[node_type] = MaxAbsScaler()
-                    self.node_scalers[node_type].fit(x_values)
-                
-                X_test_map = dict()
-                y_test_map = dict()
+        for node_type in node_types:
+            node_type = int(node_type)
+            save_path = self._get_save_path(str(node_type))
+            self.node_scalers[node_type] = load_scaler(save_path)
+            self.load_model(node_type)
+            
+            node_type_filtered_data = data[data[node_info_column] == node_type]
+            if self.node_scalers[node_type] is None:
+                self.print_log("fit scaler to latest data {1} for node_type={0}".format(node_type, self.feature_group_name))
+                # no profiled scaler
+                x_values = node_type_filtered_data[self.features].values
+                self.node_scalers[node_type] = MaxAbsScaler()
+                self.node_scalers[node_type].fit(x_values)
+            
+            X_test_map = dict()
+            y_test_map = dict()
+            try:
                 for component in self.energy_components:
                     X_values, y_values = self.apply_ratio(component, node_type_filtered_data, power_labels)
                     X_train, X_test, y_train, y_test = normalize_and_split(X_values, y_values, scaler=self.node_scalers[node_type])
@@ -154,15 +154,17 @@ class Trainer(metaclass=ABCMeta):
                     y_test_map[component] = y_test
                     self.train(node_type, component, X_train, y_train)
                     self.save_checkpoint(self.node_models[node_type][component], self._checkpoint_filepath(component, node_type))
-                if self.should_archive(node_type):
-                    pipeline_lock.acquire()
-                    try:
-                        self.save_model_and_metadata(node_type, X_test_map, y_test_map)
-                    finally:
-                        pipeline_lock.release()
-        except Exception as e:
-            print(e)
-            pipeline_lock.release()
+            except Exception as err:
+                self.print_log("failed to process {}: {}".format(node_type, err))
+                continue
+            if self.should_archive(node_type):
+                pipeline_lock.acquire()
+                try:
+                    self.save_model_and_metadata(node_type, X_test_map, y_test_map)
+                except Exception as err:
+                    self.print_log("failed to save model {}: {}".format(node_type, err))
+                finally:
+                    pipeline_lock.release()
 
     def apply_ratio(self, component, node_type_filtered_data, power_labels):
         power_label = component_to_col(component) 

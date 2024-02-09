@@ -20,6 +20,7 @@ def ibmcloud_list_keys(client, bucket_name, prefix):
 
 def get_bucket_file_map(client, bucket_name, machine_id, mnt_path, pipeline_name, list_func):
     bucket_file_map = dict()
+    top_key_path = ""
     if machine_id is not None and machine_id != "":
         top_key_path = "/" + machine_id
     # add data key map
