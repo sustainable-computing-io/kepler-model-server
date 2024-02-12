@@ -1,0 +1,301 @@
+@startuml classes
+set namespaceSeparator none
+class "._SpecialForm" as ._SpecialForm #44BB99 {
+}
+class "_socket.socket" as _socket.socket #grey {
+  {abstract}bind()
+  {abstract}close()
+  {abstract}connect()
+  {abstract}connect_ex()
+  {abstract}detach()
+  {abstract}fileno()
+  {abstract}getblocking()
+  {abstract}getpeername()
+  {abstract}getsockname()
+  {abstract}getsockopt()
+  {abstract}gettimeout()
+  {abstract}listen()
+  {abstract}recv()
+  {abstract}recv_into()
+  {abstract}recvfrom()
+  {abstract}recvfrom_into()
+  {abstract}recvmsg()
+  {abstract}recvmsg_into()
+  {abstract}send()
+  {abstract}sendall()
+  {abstract}sendmsg()
+  {abstract}sendmsg_afalg()
+  {abstract}sendto()
+  {abstract}setblocking()
+  {abstract}setsockopt()
+  {abstract}settimeout()
+  {abstract}shutdown()
+}
+class "estimate.estimator.EstimatorServer" as estimate.estimator.EstimatorServer #77AADD {
+  socket
+  socket_path
+  accepted(connection)
+  start()
+}
+class "estimate.estimator.PowerRequest" as estimate.estimator.PowerRequest #77AADD {
+  datapoint
+  energy_source
+  filter : str
+  metrics
+  output_type
+  system_features
+  trainer_name : str
+}
+class "estimate.model.curvefit_model.CurveFitModel" as estimate.model.curvefit_model.CurveFitModel #99DDFF {
+  comp_type
+  fe_list : list
+  features
+  feauture_group
+  model
+  models : dict
+  name
+  output_type
+  get_power(request)
+}
+class "estimate.model.keras_model.KerasModel" as estimate.model.keras_model.KerasModel #99DDFF {
+  comp_type
+  fe_list : list
+  features
+  model
+  models : dict
+  name
+  output_type
+  get_power(request)
+}
+class "estimate.model.model.Model" as estimate.model.model.Model #99DDFF {
+  abs_mae : NoneType
+  abs_mae_val : NoneType
+  abs_max_corr : NoneType
+  abs_model : NoneType
+  abs_mse : NoneType
+  abs_mse_val : NoneType
+  avg_mae : NoneType
+  estimator
+  mae : NoneType
+  mae_val : NoneType
+  mape : NoneType
+  model_name
+  mse : NoneType
+  mse_val : NoneType
+  reconstructed_mae : NoneType
+  reconstructed_mse : NoneType
+  append_prediction(data, predicted_col_func)
+  feature_check(features)
+  get_power(data)
+  is_valid_model(filters)
+  print_log(message)
+}
+class "estimate.model.scikit_model.ScikitModel" as estimate.model.scikit_model.ScikitModel #99DDFF {
+  comp_type
+  fe_list : list
+  features
+  model
+  models : dict
+  name
+  output_type
+  get_power(request)
+}
+class "estimate.model.xgboost_model.XgboostModel" as estimate.model.xgboost_model.XgboostModel #99DDFF {
+  comp_type
+  fe_list : list
+  features
+  model
+  models : dict
+  name
+  output_type
+  get_power(request)
+}
+class "pandas.core.accessor.CachedAccessor" as pandas.core.accessor.CachedAccessor #BBCC33 {
+}
+class "pandas.core.arraylike.OpsMixin" as pandas.core.arraylike.OpsMixin #BBCC33 {
+}
+class "pandas.core.base.IndexOpsMixin" as pandas.core.base.IndexOpsMixin #BBCC33 {
+  T
+  array
+  dtype
+  empty
+  is_monotonic
+  is_monotonic_decreasing
+  is_monotonic_increasing
+  is_unique
+  nbytes
+  ndim
+  shape
+  size
+  to_list
+}
+class "pandas.core.base.PandasObject" as pandas.core.base.PandasObject #BBCC33 {
+}
+class "pandas.core.frame.DataFrame" as pandas.core.frame.DataFrame #BBCC33 {
+  T
+  agg
+  axes
+  boxplot
+  columns
+  hist
+  index
+  name
+  plot
+  shape
+  sparse
+  style
+  values
+}
+class "pandas.core.generic.NDFrame" as pandas.core.generic.NDFrame #BBCC33 {
+  attrs
+  axes
+  backfill
+  dtypes
+  empty
+  flags
+  index
+  kurtosis
+  ndim
+  pad
+  product
+  shape
+  size
+  values
+}
+class "pandas.core.indexes.base.Index" as pandas.core.indexes.base.Index #BBCC33 {
+  asi8
+  get_level_values
+  has_duplicates
+  is_monotonic
+  is_monotonic_decreasing
+  is_monotonic_increasing
+  isnull
+  name
+  names : property
+  nlevels
+  notnull
+  shape
+  str
+  values
+}
+class "pandas.core.indexes.multi.MultiIndex" as pandas.core.indexes.multi.MultiIndex #BBCC33 {
+  array
+  codes
+  levshape
+  lexsort_depth
+  names : property
+  nlevels
+  rename
+  sortorder : int | None
+  values
+}
+class "pandas.core.indexes.range.RangeIndex" as pandas.core.indexes.range.RangeIndex #BBCC33 {
+  dtype
+  inferred_type
+  is_unique
+  size
+  start
+  step
+  stop
+}
+class "sklearn.base.RegressorMixin" as sklearn.base.RegressorMixin #AAAA00 {
+  score(X, y, sample_weight)
+}
+class "socket.socket" as socket.socket #grey {
+  family
+  type
+  accept()
+  close()
+  detach()
+  dup()
+  get_inheritable()
+  makefile(mode, buffering)
+  sendfile(file, offset, count)
+  set_inheritable(inheritable)
+}
+class "xgboost.core.Booster" as xgboost.core.Booster #EEDD88 {
+  best_iteration
+  best_score
+  feature_names
+  feature_types
+  handle : NoneType, Optional[ctypes.c_void_p]
+}
+class "xgboost.sklearn.XGBModel" as xgboost.sklearn.XGBModel #EEDD88 {
+  base_score : Optional[float]
+  best_iteration
+  best_score
+  booster : Optional[str]
+  callbacks : Optional[List[TrainingCallback]]
+  coef_
+  colsample_bylevel : Optional[float]
+  colsample_bynode : Optional[float]
+  colsample_bytree : Optional[float]
+  device : Optional[str]
+  early_stopping_rounds : Optional[int]
+  enable_categorical : bool
+  eval_metric : Optional[Union[str, List[str], Callable]]
+  evals_result_
+  feature_importances_
+  feature_names_in_
+  feature_types : Optional[FeatureTypes]
+  gamma : Optional[float]
+  grow_policy : Optional[str]
+  importance_type : Optional[str]
+  interaction_constraints : Optional[Union[str, Sequence[Sequence[str]]]]
+  intercept_
+  kwargs : dict
+  learning_rate : Optional[float]
+  max_bin : Optional[int]
+  max_cat_threshold : Optional[int]
+  max_cat_to_onehot : Optional[int]
+  max_delta_step : Optional[float]
+  max_depth : Optional[int]
+  max_leaves : Optional[int]
+  min_child_weight : Optional[float]
+  missing : float
+  monotone_constraints : Optional[Union[Dict[str, int], str]]
+  multi_strategy : Optional[str]
+  n_estimators : Optional[int]
+  n_features_in_
+  n_jobs : Optional[int]
+  num_parallel_tree : Optional[int]
+  objective : Optional[SklObjective]
+  random_state : Optional[Union[np.random.RandomState, int]]
+  reg_alpha : Optional[float]
+  reg_lambda : Optional[float]
+  sampling_method : Optional[str]
+  scale_pos_weight : Optional[float]
+  subsample : Optional[float]
+  tree_method : Optional[str]
+  validate_parameters : Optional[bool]
+  verbosity : Optional[int]
+}
+class "xgboost.sklearn.XGBRegressor" as xgboost.sklearn.XGBRegressor #EEDD88 {
+}
+pandas.core.base.IndexOpsMixin --|> pandas.core.arraylike.OpsMixin
+pandas.core.frame.DataFrame --|> pandas.core.arraylike.OpsMixin
+pandas.core.frame.DataFrame --|> pandas.core.generic.NDFrame
+pandas.core.generic.NDFrame --|> pandas.core.base.PandasObject
+pandas.core.indexes.base.Index --|> pandas.core.base.IndexOpsMixin
+pandas.core.indexes.base.Index --|> pandas.core.base.PandasObject
+pandas.core.indexes.multi.MultiIndex --|> pandas.core.indexes.base.Index
+socket.socket --|> _socket.socket
+xgboost.sklearn.XGBRegressor --|> sklearn.base.RegressorMixin
+xgboost.sklearn.XGBRegressor --|> xgboost.sklearn.XGBModel
+_socket.socket --* estimate.estimator.EstimatorServer : socket
+pandas.core.accessor.CachedAccessor --* pandas.core.frame.DataFrame : plot
+pandas.core.accessor.CachedAccessor --* pandas.core.frame.DataFrame : sparse
+pandas.core.accessor.CachedAccessor --* pandas.core.indexes.base.Index : str
+pandas.core.frame.DataFrame --* estimate.estimator.PowerRequest : datapoint
+pandas.core.frame.DataFrame --* pandas.core.frame.DataFrame : index
+pandas.core.indexes.base.Index --* pandas.core.frame.DataFrame : columns
+pandas.core.indexes.base.Index --* pandas.core.frame.DataFrame : columns
+pandas.core.indexes.base.Index --* pandas.core.frame.DataFrame : index
+pandas.core.indexes.base.Index --* pandas.core.frame.DataFrame : index
+pandas.core.indexes.multi.MultiIndex --* pandas.core.frame.DataFrame : index
+pandas.core.indexes.range.RangeIndex --* pandas.core.frame.DataFrame : index
+pandas.core.indexes.range.RangeIndex --* pandas.core.generic.NDFrame : index
+socket.socket --* estimate.estimator.EstimatorServer : socket
+xgboost.core.Booster --* xgboost.sklearn.XGBModel : _Booster
+xgboost.sklearn.XGBRegressor --* estimate.model.xgboost_model.XgboostModel : model
+@enduml

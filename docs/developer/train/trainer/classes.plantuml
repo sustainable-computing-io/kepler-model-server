@@ -1,0 +1,206 @@
+@startuml classes
+set namespaceSeparator none
+class ".ndarray" as .ndarray #99DDFF {
+}
+class "sklearn.base.BaseEstimator" as sklearn.base.BaseEstimator #44BB99 {
+  feature_names_in_
+  n_features_in_
+  get_params(deep)
+  set_params()
+}
+class "sklearn.base.TransformerMixin" as sklearn.base.TransformerMixin #44BB99 {
+  fit_transform(X, y)
+}
+class "sklearn.preprocessing._polynomial.PolynomialFeatures" as sklearn.preprocessing._polynomial.PolynomialFeatures #BBCC33 {
+  degree : int
+  include_bias : bool
+  interaction_only : bool
+  n_input_features_
+  n_output_features_
+  order : str
+  powers_
+  fit(X, y)
+  get_feature_names(input_features)
+  get_feature_names_out(input_features)
+  transform(X)
+}
+class "train.trainer.ExponentialRegressionTrainer.main.ExponentialRegressionTrainer" as train.trainer.ExponentialRegressionTrainer.main.ExponentialRegressionTrainer #77AADD {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.GradientBoostingRegressorTrainer.main.GradientBoostingRegressorTrainer" as train.trainer.GradientBoostingRegressorTrainer.main.GradientBoostingRegressorTrainer #77AADD {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.KNeighborsRegressorTrainer.main.KNeighborsRegressorTrainer" as train.trainer.KNeighborsRegressorTrainer.main.KNeighborsRegressorTrainer #77AADD {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.LinearRegressionTrainer.main.LinearRegressionTrainer" as train.trainer.LinearRegressionTrainer.main.LinearRegressionTrainer #77AADD {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.LogarithmicRegressionTrainer.main.LogarithmicRegressionTrainer" as train.trainer.LogarithmicRegressionTrainer.main.LogarithmicRegressionTrainer #77AADD {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.LogisticRegressionTrainer.main.LogisticRegressionTrainer" as train.trainer.LogisticRegressionTrainer.main.LogisticRegressionTrainer #77AADD {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.PolynomialRegressionTrainer.main.PolynomialRegressionTrainer" as train.trainer.PolynomialRegressionTrainer.main.PolynomialRegressionTrainer #77AADD {
+  fe : list
+  fe_files : list
+  poly_scaler
+  init_model()
+}
+class "train.trainer.SGDRegressorTrainer.main.SGDRegressorTrainer" as train.trainer.SGDRegressorTrainer.main.SGDRegressorTrainer #77AADD {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.SVRRegressorTrainer.main.SVRRegressorTrainer" as train.trainer.SVRRegressorTrainer.main.SVRRegressorTrainer #77AADD {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.Trainer" as train.trainer.Trainer #AAAA00 {
+  checkpoint_toppath
+  energy_components
+  energy_source
+  feature_group
+  feature_group_name
+  features
+  group_path
+  metadata
+  model_class
+  node_level
+  node_models : dict
+  node_scalers : dict
+  output_type
+  scaler_type : str
+  trainer_name : str
+  apply_ratio(component, node_type_filtered_data, power_labels)
+  archive_model(node_type)
+  {abstract}component_model_filename(component)
+  {abstract}get_basic_metadata(node_type)
+  {abstract}get_mae(node_type, component, X_test, y_test)
+  {abstract}get_mape(node_type, component, X_test, y_test)
+  get_metadata()
+  {abstract}get_weight_dict(node_type)
+  {abstract}init_model()
+  {abstract}load_local_checkpoint(filepath)
+  load_model(node_type)
+  predict(node_type, component, X_values, skip_preprocess)
+  print_log(message)
+  process(data, power_labels, pipeline_lock)
+  {abstract}save_checkpoint(model, filepath)
+  save_metadata(node_type, mae, mae_map, mape, mape_map, item)
+  {abstract}save_model(component_save_path, node_type, component)
+  save_model_and_metadata(node_type, X_test_map, y_test_map)
+  save_scaler(save_path, node_type)
+  {abstract}should_archive(node_type)
+  to_string()
+  {abstract}train(node_type, component, X_values, y_values)
+}
+class "train.trainer.XGBoostTrainer.main.XGBoostRegressionModelGenerationPipeline" as train.trainer.XGBoostTrainer.main.XGBoostRegressionModelGenerationPipeline #77AADD {
+  feature_names : List[str]
+  label_names : List[str]
+  model_desc : str
+  model_filename
+  model_name : str
+  save_location : str
+  model_exists() -> bool
+  model_json_data_exists() -> bool
+  predict(input_values: List[List[float]]) -> Tuple[Optional[List[float]], Optional[Dict[Any, Any]]]
+  retrieve_all_model_data() -> Tuple[Optional[xgb.XGBRegressor], Optional[Dict[Any, Any]]]
+  train(train_type: XGBoostRegressionTrainType, model_data: pd.DataFrame) -> None
+}
+class "train.trainer.XGBoostTrainer.main.XGBoostRegressionStandalonePipeline" as train.trainer.XGBoostTrainer.main.XGBoostRegressionStandalonePipeline #77AADD {
+  energy_components_labels
+  energy_source : str
+  feature_group
+  features
+  model : NoneType
+  model_class : str
+  model_labels : list
+  model_name
+  node_level : bool
+  save_location : str
+  train_type
+  initialize_relevant_models() -> None
+  predict(features_and_predictions: List[Dict[str, float]]) -> Tuple[List[float], Dict[Any, Any]]
+  train(prom_client, refined_results) -> None
+}
+class "train.trainer.XgboostFitTrainer.main.XgboostFitTrainer" as train.trainer.XgboostFitTrainer.main.XgboostFitTrainer #77AADD {
+  fe_files : list
+}
+class "train.trainer.curvefit.CurveFitModel" as train.trainer.curvefit.CurveFitModel #77AADD {
+  feature_index : NoneType
+  fit_func
+  p0_func : NoneType
+  pcov : NoneType
+  popt : NoneType
+  fit(X_values, y_values)
+  predict(X_values)
+  set_feature_index(feature_index)
+}
+class "train.trainer.curvefit.CurveFitTrainer" as train.trainer.curvefit.CurveFitTrainer #77AADD {
+  fe_files : list
+  component_model_filename(component)
+  get_basic_metadata(node_type)
+  get_mae(node_type, component, X_test, y_test)
+  get_mape(node_type, component, X_test, y_test)
+  get_weight_dict(node_type)
+  load_local_checkpoint(filepath)
+  save_checkpoint(model, filepath)
+  save_model(component_save_path, node_type, component)
+  should_archive(node_type)
+  train(node_type, component, X_values, y_values)
+}
+class "train.trainer.scikit.ScikitTrainer" as train.trainer.scikit.ScikitTrainer #77AADD {
+  fe_files : list
+  component_model_filename(component)
+  get_basic_metadata(node_type)
+  get_mae(node_type, component, X_test, y_test)
+  get_mape(node_type, component, X_test, y_test)
+  get_weight_dict(node_type)
+  load_local_checkpoint(filepath)
+  save_checkpoint(model, filepath)
+  save_model(component_save_path, node_type, component)
+  should_archive(node_type)
+  train(node_type, component, X_values, y_values)
+}
+class "train.trainer.xgboost_interface.XgboostTrainer" as train.trainer.xgboost_interface.XgboostTrainer #77AADD {
+  fe_files : list
+  component_model_filename(component)
+  get_basic_metadata(node_type)
+  get_mae(node_type, component, X_test, y_test)
+  get_mape(node_type, component, X_test, y_test)
+  get_weight_dict(node_type)
+  init_model()
+  load_local_checkpoint(filepath)
+  save_checkpoint(model, filepath)
+  save_model(component_save_path, node_type, component)
+  should_archive(node_type)
+  train(node_type, component, X_values, y_values)
+}
+sklearn.preprocessing._polynomial.PolynomialFeatures --|> sklearn.base.BaseEstimator
+sklearn.preprocessing._polynomial.PolynomialFeatures --|> sklearn.base.TransformerMixin
+train.trainer.XgboostFitTrainer.main.XgboostFitTrainer --|> train.trainer.xgboost_interface.XgboostTrainer
+train.trainer.curvefit.CurveFitTrainer --|> train.trainer.Trainer
+train.trainer.scikit.ScikitTrainer --|> train.trainer.Trainer
+train.trainer.xgboost_interface.XgboostTrainer --|> train.trainer.Trainer
+.ndarray --* .ndarray : T
+.ndarray --* .ndarray : flat
+.ndarray --* .ndarray : imag
+.ndarray --* .ndarray : real
+.ndarray --* .ndarray : shape
+.ndarray --* .ndarray : T
+.ndarray --* .ndarray : flat
+.ndarray --* .ndarray : imag
+.ndarray --* .ndarray : real
+.ndarray --* .ndarray : shape
+.ndarray --* train.trainer.curvefit.CurveFitModel : popt
+.ndarray --* train.trainer.curvefit.CurveFitModel : pcov
+sklearn.preprocessing._polynomial.PolynomialFeatures --* train.trainer.PolynomialRegressionTrainer.main.PolynomialRegressionTrainer : poly_scaler
+train.trainer.XGBoostTrainer.main.XGBoostRegressionModelGenerationPipeline --* train.trainer.XGBoostTrainer.main.XGBoostRegressionStandalonePipeline : model
+@enduml

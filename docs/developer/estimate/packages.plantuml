@@ -1,0 +1,37 @@
+@startuml packages
+set namespaceSeparator none
+package "estimate" as estimate #77AADD {
+}
+package "estimate.archived_model" as estimate.archived_model #77AADD {
+}
+package "estimate.estimator" as estimate.estimator #77AADD {
+}
+package "estimate.model" as estimate.model #99DDFF {
+}
+package "estimate.model.curvefit_model" as estimate.model.curvefit_model #99DDFF {
+}
+package "estimate.model.estimate_common" as estimate.model.estimate_common #99DDFF {
+}
+package "estimate.model.keras_model" as estimate.model.keras_model #99DDFF {
+}
+package "estimate.model.model" as estimate.model.model #99DDFF {
+}
+package "estimate.model.scikit_model" as estimate.model.scikit_model #99DDFF {
+}
+package "estimate.model.xgboost_model" as estimate.model.xgboost_model #99DDFF {
+}
+package "estimate.model_server_connector" as estimate.model_server_connector #77AADD {
+}
+estimate --> estimate.model
+estimate.archived_model --> estimate.model_server_connector
+estimate.estimator --> estimate.archived_model
+estimate.estimator --> estimate.model
+estimate.estimator --> estimate.model_server_connector
+estimate.model.curvefit_model --> estimate.model.estimate_common
+estimate.model.keras_model --> estimate.model.estimate_common
+estimate.model.model --> estimate.model.curvefit_model
+estimate.model.model --> estimate.model.scikit_model
+estimate.model.model --> estimate.model.xgboost_model
+estimate.model.scikit_model --> estimate.model.estimate_common
+estimate.model.xgboost_model --> estimate.model.estimate_common
+@enduml

@@ -1,0 +1,12 @@
+@startuml classes
+set namespaceSeparator none
+class "server.model_server.ModelRequest" as server.model_server.ModelRequest #77AADD {
+  filter : str
+  metrics
+  node_type : int
+  output_type
+  source : str
+  trainer_name : str
+  weight : bool
+}
+@enduml
