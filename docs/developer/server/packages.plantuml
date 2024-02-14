@@ -1,0 +1,7 @@
+@startuml packages
+set namespaceSeparator none
+package "server" as server #77AADD {
+}
+package "server.model_server" as server.model_server #77AADD {
+}
+@enduml

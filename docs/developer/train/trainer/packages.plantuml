@@ -1,0 +1,56 @@
+@startuml packages
+set namespaceSeparator none
+package "train.trainer" as train.trainer #77AADD {
+}
+package "train.trainer.ExponentialRegressionTrainer" as train.trainer.ExponentialRegressionTrainer #77AADD {
+}
+package "train.trainer.ExponentialRegressionTrainer.main" as train.trainer.ExponentialRegressionTrainer.main #77AADD {
+}
+package "train.trainer.GradientBoostingRegressorTrainer" as train.trainer.GradientBoostingRegressorTrainer #77AADD {
+}
+package "train.trainer.GradientBoostingRegressorTrainer.main" as train.trainer.GradientBoostingRegressorTrainer.main #77AADD {
+}
+package "train.trainer.KNeighborsRegressorTrainer" as train.trainer.KNeighborsRegressorTrainer #77AADD {
+}
+package "train.trainer.KNeighborsRegressorTrainer.main" as train.trainer.KNeighborsRegressorTrainer.main #77AADD {
+}
+package "train.trainer.LinearRegressionTrainer" as train.trainer.LinearRegressionTrainer #77AADD {
+}
+package "train.trainer.LinearRegressionTrainer.main" as train.trainer.LinearRegressionTrainer.main #77AADD {
+}
+package "train.trainer.LogarithmicRegressionTrainer" as train.trainer.LogarithmicRegressionTrainer #77AADD {
+}
+package "train.trainer.LogarithmicRegressionTrainer.main" as train.trainer.LogarithmicRegressionTrainer.main #77AADD {
+}
+package "train.trainer.LogisticRegressionTrainer" as train.trainer.LogisticRegressionTrainer #77AADD {
+}
+package "train.trainer.LogisticRegressionTrainer.main" as train.trainer.LogisticRegressionTrainer.main #77AADD {
+}
+package "train.trainer.PolynomialRegressionTrainer" as train.trainer.PolynomialRegressionTrainer #77AADD {
+}
+package "train.trainer.PolynomialRegressionTrainer.main" as train.trainer.PolynomialRegressionTrainer.main #77AADD {
+}
+package "train.trainer.SGDRegressorTrainer" as train.trainer.SGDRegressorTrainer #77AADD {
+}
+package "train.trainer.SGDRegressorTrainer.main" as train.trainer.SGDRegressorTrainer.main #77AADD {
+}
+package "train.trainer.SVRRegressorTrainer" as train.trainer.SVRRegressorTrainer #77AADD {
+}
+package "train.trainer.SVRRegressorTrainer.main" as train.trainer.SVRRegressorTrainer.main #77AADD {
+}
+package "train.trainer.XGBoostTrainer" as train.trainer.XGBoostTrainer #77AADD {
+}
+package "train.trainer.XGBoostTrainer.main" as train.trainer.XGBoostTrainer.main #77AADD {
+}
+package "train.trainer.XgboostFitTrainer" as train.trainer.XgboostFitTrainer #77AADD {
+}
+package "train.trainer.XgboostFitTrainer.main" as train.trainer.XgboostFitTrainer.main #77AADD {
+}
+package "train.trainer.curvefit" as train.trainer.curvefit #77AADD {
+}
+package "train.trainer.scikit" as train.trainer.scikit #77AADD {
+}
+package "train.trainer.xgboost_interface" as train.trainer.xgboost_interface #77AADD {
+}
+train.trainer.XgboostFitTrainer.main --> train.trainer.xgboost_interface
+@enduml

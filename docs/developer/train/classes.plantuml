@@ -1,0 +1,478 @@
+@startuml classes
+set namespaceSeparator none
+class ".ndarray" as .ndarray #FFAABB {
+}
+class "enum.Enum" as enum.Enum #grey {
+  name()
+  value()
+}
+class "prometheus_api_client.prometheus_connect.PrometheusConnect" as prometheus_api_client.prometheus_connect.PrometheusConnect #DDDDDD {
+  headers : Optional[dict]
+  prometheus_host
+  ssl_verification : bool
+  url : str
+  all_metrics(params: dict)
+  check_prometheus_connection(params: dict) -> bool
+  custom_query(query: str, params: dict)
+  custom_query_range(query: str, start_time: datetime, end_time: datetime, step: str, params: dict)
+  get_current_metric_value(metric_name: str, label_config: dict, params: dict)
+  get_label_values(label_name: str, params: dict)
+  get_metric_aggregation(query: str, operations: list, start_time: datetime, end_time: datetime, step: str, params: dict)
+  get_metric_range_data(metric_name: str, label_config: dict, start_time: datetime, end_time: datetime, chunk_size: timedelta, store_locally: bool, params: dict)
+}
+class "requests.sessions.Session" as requests.sessions.Session #77AADD {
+  adapters : OrderedDict
+  auth : NoneType
+  cert : NoneType
+  cookies : NoneType, RequestsCookieJar
+  headers : CaseInsensitiveDict
+  hooks
+  max_redirects : int
+  params : dict
+  proxies : dict
+  stream : bool
+  trust_env : bool
+  verify : bool
+  close()
+  delete(url)
+  get(url)
+  get_adapter(url)
+  head(url)
+  merge_environment_settings(url, proxies, stream, verify, cert)
+  mount(prefix, adapter)
+  options(url)
+  patch(url, data)
+  post(url, data, json)
+  prepare_request(request)
+  put(url, data)
+  request(method, url, params, data, headers, cookies, files, auth, timeout, allow_redirects, proxies, hooks, stream, verify, cert, json)
+  send(request)
+}
+class "requests.sessions.SessionRedirectMixin" as requests.sessions.SessionRedirectMixin #77AADD {
+  get_redirect_target(resp)
+  rebuild_auth(prepared_request, response)
+  rebuild_method(prepared_request, response)
+  rebuild_proxies(prepared_request, proxies)
+  resolve_redirects(resp, req, stream, timeout, verify, cert, proxies, yield_requests)
+  should_strip_auth(old_url, new_url)
+}
+class "sklearn.base.BaseEstimator" as sklearn.base.BaseEstimator #99DDFF {
+  feature_names_in_
+  n_features_in_
+  get_params(deep)
+  set_params()
+}
+class "sklearn.base.TransformerMixin" as sklearn.base.TransformerMixin #99DDFF {
+  fit_transform(X, y)
+}
+class "sklearn.preprocessing._polynomial.PolynomialFeatures" as sklearn.preprocessing._polynomial.PolynomialFeatures #44BB99 {
+  degree : int
+  include_bias : bool
+  interaction_only : bool
+  n_input_features_
+  n_output_features_
+  order : str
+  powers_
+  fit(X, y)
+  get_feature_names(input_features)
+  get_feature_names_out(input_features)
+  transform(X)
+}
+class "threading.lock" as threading.lock #grey {
+  acquire(blocking, timeout)
+  locked()
+  {abstract}release()
+}
+class "train.exporter.validator.BestModelCollection" as train.exporter.validator.BestModelCollection #99DDFF {
+  collection : dict
+  error_key
+  has_model : bool
+  weight_collection : dict
+  compare_new_item(export_item)
+  get_best_item(energy_source, output_type_name, feature_group_name)
+  get_best_item_with_weight(energy_source, output_type_name, feature_group_name)
+}
+class "train.exporter.validator.ExportModel" as train.exporter.validator.ExportModel #99DDFF {
+  energy_source
+  feature_group
+  metadata
+  model_name
+  node_type
+  output_type
+  pipeline_name
+  source_model_group_path
+  source_model_path
+  source_model_zip
+  weight : NoneType
+  export(local_version_path)
+  get_archived_filepath(version_path)
+  get_export_path(version_path, assure)
+  get_weight_filepath(version_path)
+}
+class "train.extractor.extractor.DefaultExtractor" as train.extractor.extractor.DefaultExtractor #44BB99 {
+  extract(query_results, energy_components, feature_group, energy_source, node_level, aggr)
+  get_name()
+  get_node_types(query_results)
+  get_power_data(query_results, energy_components, source)
+  get_system_category(query_results)
+  get_system_feature_data(query_results, features)
+  get_workload_feature_data(query_results, features)
+  process_feature(features, feature_to_remove, feature_to_add)
+}
+class "train.extractor.extractor.Extractor" as train.extractor.extractor.Extractor #44BB99 {
+  {abstract}extract(query_results, feature_group)
+  {abstract}get_name()
+}
+class "train.extractor.smooth_extractor.SmoothExtractor" as train.extractor.smooth_extractor.SmoothExtractor #44BB99 {
+  smooth_window : int
+  extract(query_results, energy_components, feature_group, energy_source, node_level, aggr)
+  get_name()
+}
+class "train.isolator.isolator.Isolator" as train.isolator.isolator.Isolator #BBCC33 {
+  {abstract}get_name()
+  {abstract}isolate(data)
+  {abstract}reconstruct(data)
+}
+class "train.isolator.isolator.MinIdleIsolator" as train.isolator.isolator.MinIdleIsolator #BBCC33 {
+  get_name()
+  isolate(data, label_cols, energy_source)
+  reconstruct(extracted_data, data_with_prediction, energy_source, label_cols)
+}
+class "train.isolator.isolator.NoneIsolator" as train.isolator.isolator.NoneIsolator #BBCC33 {
+  get_name()
+  isolate(data, label_cols, energy_source)
+  reconstruct(extracted_data, data_with_prediction, energy_source, label_cols)
+}
+class "train.isolator.isolator.ProfileBackgroundIsolator" as train.isolator.isolator.ProfileBackgroundIsolator #BBCC33 {
+  background_containers
+  idle_data
+  profiles
+  get_name()
+  isolate(data, label_cols, energy_source)
+  reconstruct(extracted_data, data_with_prediction, energy_source, label_cols)
+  transform_component(label_col)
+  transform_profile(node_type, energy_source, component)
+}
+class "train.isolator.train_isolator.TrainIsolator" as train.isolator.train_isolator.TrainIsolator #BBCC33 {
+  abs_pipeline_name : str
+  background_containers : NoneType
+  bg_hints : list
+  idle_data : NoneType
+  profiles
+  target_hints : list
+  get_name()
+  isolate(data, label_cols, energy_source)
+  reconstruct(extracted_data, data_with_prediction, energy_source, label_cols)
+}
+class "train.offline_trainer.TrainAttribute" as train.offline_trainer.TrainAttribute #77AADD {
+  abs_trainers
+  dyn_trainers
+  idle_prom_response
+  isolator
+  isolator_args
+}
+class "train.offline_trainer.TrainRequest" as train.offline_trainer.TrainRequest #77AADD {
+  energy_source
+  name
+  pipeline
+  prom_response
+  trainer
+  get_model()
+  init_isolator(profiler, profiles, idle_data)
+  init_pipeline()
+}
+class "train.pipeline.Pipeline" as train.pipeline.Pipeline #77AADD {
+  extractor
+  isolator
+  lock
+  metadata : dict
+  name
+  node_collection
+  path
+  trainers
+  archive_pipeline()
+  get_abs_data(query_results, energy_components, feature_group, energy_source, aggr)
+  get_dyn_data(query_results, energy_components, feature_group, energy_source)
+  prepare_data(input_query_results, energy_components, energy_source, feature_group, aggr)
+  prepare_data_from_input_list(input_query_results_list, energy_components, energy_source, feature_group, aggr)
+  print_log(message)
+  print_pipeline_process_end(energy_source, feature_group, abs_data, dyn_data)
+  process(input_query_results, energy_components, energy_source, feature_group, aggr, replace_node_type)
+  process_multiple_query(input_query_results_list, energy_components, energy_source, feature_group, aggr, replace_node_type)
+  save_metadata()
+}
+class "train.profiler.node_type_index.NodeAttribute" as train.profiler.node_type_index.NodeAttribute #AAAA00 {
+  name
+}
+class "train.profiler.node_type_index.NodeTypeIndexCollection" as train.profiler.node_type_index.NodeTypeIndexCollection #AAAA00 {
+  node_type_index : dict
+  pipeline_path
+  copy()
+  get_json()
+  get_node_type(compare_spec)
+  index_train_machine(machine_id, new_spec)
+  save()
+}
+class "train.profiler.node_type_index.NodeTypeSpec" as train.profiler.node_type_index.NodeTypeSpec #AAAA00 {
+  attrs : dict
+  members : list
+  add_member(machine_id)
+  complete_info()
+  copy()
+  cover(compare_spec)
+  get_json()
+  get_size()
+  load(json_obj)
+}
+class "train.profiler.profiler.Profile" as train.profiler.profiler.Profile #AAAA00 {
+  max_scaler : dict
+  node_type
+  profile : dict
+  add_profile(source, component, profile_value)
+  get_background_power(source, component)
+  get_max_scaler(feature_key)
+  get_min_power(source, component)
+  load_scaler(node_type, feature_key, scaler_type)
+  print_profile()
+}
+class "train.profiler.profiler.Profiler" as train.profiler.profiler.Profiler #AAAA00 {
+  extractor
+  process(query_results, profile_top_path, save, replace_node_type)
+}
+class "train.prom.prom_query.PrometheusClient" as train.prom.prom_query.PrometheusClient #EEDD88 {
+  interval : int
+  latest_query_result : dict
+  prom
+  step : int
+  query()
+  snapshot_query_result()
+}
+class "train.trainer.ExponentialRegressionTrainer.main.ExponentialRegressionTrainer" as train.trainer.ExponentialRegressionTrainer.main.ExponentialRegressionTrainer #EE8866 {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.GradientBoostingRegressorTrainer.main.GradientBoostingRegressorTrainer" as train.trainer.GradientBoostingRegressorTrainer.main.GradientBoostingRegressorTrainer #EE8866 {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.KNeighborsRegressorTrainer.main.KNeighborsRegressorTrainer" as train.trainer.KNeighborsRegressorTrainer.main.KNeighborsRegressorTrainer #EE8866 {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.LinearRegressionTrainer.main.LinearRegressionTrainer" as train.trainer.LinearRegressionTrainer.main.LinearRegressionTrainer #EE8866 {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.LogarithmicRegressionTrainer.main.LogarithmicRegressionTrainer" as train.trainer.LogarithmicRegressionTrainer.main.LogarithmicRegressionTrainer #EE8866 {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.LogisticRegressionTrainer.main.LogisticRegressionTrainer" as train.trainer.LogisticRegressionTrainer.main.LogisticRegressionTrainer #EE8866 {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.PolynomialRegressionTrainer.main.PolynomialRegressionTrainer" as train.trainer.PolynomialRegressionTrainer.main.PolynomialRegressionTrainer #EE8866 {
+  fe : list
+  fe_files : list
+  poly_scaler
+  init_model()
+}
+class "train.trainer.SGDRegressorTrainer.main.SGDRegressorTrainer" as train.trainer.SGDRegressorTrainer.main.SGDRegressorTrainer #EE8866 {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.SVRRegressorTrainer.main.SVRRegressorTrainer" as train.trainer.SVRRegressorTrainer.main.SVRRegressorTrainer #EE8866 {
+  fe_files : list
+  init_model()
+}
+class "train.trainer.Trainer" as train.trainer.Trainer #77AADD {
+  checkpoint_toppath
+  energy_components
+  energy_source
+  feature_group
+  feature_group_name
+  features
+  group_path
+  metadata
+  model_class
+  node_level
+  node_models : dict
+  node_scalers : dict
+  output_type
+  scaler_type : str
+  trainer_name : str
+  apply_ratio(component, node_type_filtered_data, power_labels)
+  archive_model(node_type)
+  {abstract}component_model_filename(component)
+  {abstract}get_basic_metadata(node_type)
+  {abstract}get_mae(node_type, component, X_test, y_test)
+  {abstract}get_mape(node_type, component, X_test, y_test)
+  get_metadata()
+  {abstract}get_weight_dict(node_type)
+  {abstract}init_model()
+  {abstract}load_local_checkpoint(filepath)
+  load_model(node_type)
+  predict(node_type, component, X_values, skip_preprocess)
+  print_log(message)
+  process(data, power_labels, pipeline_lock)
+  {abstract}save_checkpoint(model, filepath)
+  save_metadata(node_type, mae, mae_map, mape, mape_map, item)
+  {abstract}save_model(component_save_path, node_type, component)
+  save_model_and_metadata(node_type, X_test_map, y_test_map)
+  save_scaler(save_path, node_type)
+  {abstract}should_archive(node_type)
+  to_string()
+  {abstract}train(node_type, component, X_values, y_values)
+}
+class "train.trainer.Trainer" as train.trainer.Trainer #77AADD {
+  checkpoint_toppath
+  energy_components
+  energy_source
+  feature_group
+  feature_group_name
+  features
+  group_path
+  metadata
+  model_class
+  node_level
+  node_models : dict
+  node_scalers : dict
+  output_type
+  scaler_type : str
+  trainer_name : str
+  apply_ratio(component, node_type_filtered_data, power_labels)
+  archive_model(node_type)
+  {abstract}component_model_filename(component)
+  {abstract}get_basic_metadata(node_type)
+  {abstract}get_mae(node_type, component, X_test, y_test)
+  {abstract}get_mape(node_type, component, X_test, y_test)
+  get_metadata()
+  {abstract}get_weight_dict(node_type)
+  {abstract}init_model()
+  {abstract}load_local_checkpoint(filepath)
+  load_model(node_type)
+  predict(node_type, component, X_values, skip_preprocess)
+  print_log(message)
+  process(data, power_labels, pipeline_lock)
+  {abstract}save_checkpoint(model, filepath)
+  save_metadata(node_type, mae, mae_map, mape, mape_map, item)
+  {abstract}save_model(component_save_path, node_type, component)
+  save_model_and_metadata(node_type, X_test_map, y_test_map)
+  save_scaler(save_path, node_type)
+  {abstract}should_archive(node_type)
+  to_string()
+  {abstract}train(node_type, component, X_values, y_values)
+}
+class "train.trainer.XGBoostTrainer.main.XGBoostRegressionModelGenerationPipeline" as train.trainer.XGBoostTrainer.main.XGBoostRegressionModelGenerationPipeline #EE8866 {
+  feature_names : List[str]
+  label_names : List[str]
+  model_desc : str
+  model_filename
+  model_name : str
+  save_location : str
+  model_exists() -> bool
+  model_json_data_exists() -> bool
+  predict(input_values: List[List[float]]) -> Tuple[Optional[List[float]], Optional[Dict[Any, Any]]]
+  retrieve_all_model_data() -> Tuple[Optional[xgb.XGBRegressor], Optional[Dict[Any, Any]]]
+  train(train_type: XGBoostRegressionTrainType, model_data: pd.DataFrame) -> None
+}
+class "train.trainer.XGBoostTrainer.main.XGBoostRegressionStandalonePipeline" as train.trainer.XGBoostTrainer.main.XGBoostRegressionStandalonePipeline #EE8866 {
+  energy_components_labels
+  energy_source : str
+  feature_group
+  features
+  model : NoneType
+  model_class : str
+  model_labels : list
+  model_name
+  node_level : bool
+  save_location : str
+  train_type
+  initialize_relevant_models() -> None
+  predict(features_and_predictions: List[Dict[str, float]]) -> Tuple[List[float], Dict[Any, Any]]
+  train(prom_client, refined_results) -> None
+}
+class "train.trainer.XgboostFitTrainer.main.XgboostFitTrainer" as train.trainer.XgboostFitTrainer.main.XgboostFitTrainer #EE8866 {
+  fe_files : list
+}
+class "train.trainer.curvefit.CurveFitModel" as train.trainer.curvefit.CurveFitModel #EE8866 {
+  feature_index : NoneType
+  fit_func
+  p0_func : NoneType
+  pcov : NoneType
+  popt : NoneType
+  fit(X_values, y_values)
+  predict(X_values)
+  set_feature_index(feature_index)
+}
+class "train.trainer.curvefit.CurveFitTrainer" as train.trainer.curvefit.CurveFitTrainer #EE8866 {
+  fe_files : list
+  component_model_filename(component)
+  get_basic_metadata(node_type)
+  get_mae(node_type, component, X_test, y_test)
+  get_mape(node_type, component, X_test, y_test)
+  get_weight_dict(node_type)
+  load_local_checkpoint(filepath)
+  save_checkpoint(model, filepath)
+  save_model(component_save_path, node_type, component)
+  should_archive(node_type)
+  train(node_type, component, X_values, y_values)
+}
+class "train.trainer.scikit.ScikitTrainer" as train.trainer.scikit.ScikitTrainer #EE8866 {
+  fe_files : list
+  component_model_filename(component)
+  get_basic_metadata(node_type)
+  get_mae(node_type, component, X_test, y_test)
+  get_mape(node_type, component, X_test, y_test)
+  get_weight_dict(node_type)
+  load_local_checkpoint(filepath)
+  save_checkpoint(model, filepath)
+  save_model(component_save_path, node_type, component)
+  should_archive(node_type)
+  train(node_type, component, X_values, y_values)
+}
+class "train.trainer.xgboost_interface.XgboostTrainer" as train.trainer.xgboost_interface.XgboostTrainer #EE8866 {
+  fe_files : list
+  component_model_filename(component)
+  get_basic_metadata(node_type)
+  get_mae(node_type, component, X_test, y_test)
+  get_mape(node_type, component, X_test, y_test)
+  get_weight_dict(node_type)
+  init_model()
+  load_local_checkpoint(filepath)
+  save_checkpoint(model, filepath)
+  save_model(component_save_path, node_type, component)
+  should_archive(node_type)
+  train(node_type, component, X_values, y_values)
+}
+requests.sessions.Session --|> requests.sessions.SessionRedirectMixin
+sklearn.preprocessing._polynomial.PolynomialFeatures --|> sklearn.base.BaseEstimator
+sklearn.preprocessing._polynomial.PolynomialFeatures --|> sklearn.base.TransformerMixin
+train.extractor.extractor.DefaultExtractor --|> train.extractor.extractor.Extractor
+train.isolator.isolator.MinIdleIsolator --|> train.isolator.isolator.Isolator
+train.isolator.isolator.NoneIsolator --|> train.isolator.isolator.Isolator
+train.isolator.isolator.ProfileBackgroundIsolator --|> train.isolator.isolator.Isolator
+train.profiler.node_type_index.NodeAttribute --|> enum.Enum
+train.trainer.XgboostFitTrainer.main.XgboostFitTrainer --|> train.trainer.xgboost_interface.XgboostTrainer
+train.trainer.curvefit.CurveFitTrainer --|> train.trainer.Trainer
+train.trainer.scikit.ScikitTrainer --|> train.trainer.Trainer
+train.trainer.xgboost_interface.XgboostTrainer --|> train.trainer.Trainer
+.ndarray --* .ndarray : T
+.ndarray --* .ndarray : flat
+.ndarray --* .ndarray : imag
+.ndarray --* .ndarray : real
+.ndarray --* .ndarray : shape
+.ndarray --* .ndarray : T
+.ndarray --* .ndarray : flat
+.ndarray --* .ndarray : imag
+.ndarray --* .ndarray : real
+.ndarray --* .ndarray : shape
+.ndarray --* train.trainer.curvefit.CurveFitModel : popt
+.ndarray --* train.trainer.curvefit.CurveFitModel : pcov
+prometheus_api_client.prometheus_connect.PrometheusConnect --* train.prom.prom_query.PrometheusClient : prom
+requests.sessions.Session --* prometheus_api_client.prometheus_connect.PrometheusConnect : _session
+sklearn.preprocessing._polynomial.PolynomialFeatures --* train.trainer.PolynomialRegressionTrainer.main.PolynomialRegressionTrainer : poly_scaler
+threading.lock --* train.pipeline.Pipeline : lock
+train.offline_trainer.TrainAttribute --* train.offline_trainer.TrainRequest : trainer
+train.trainer.XGBoostTrainer.main.XGBoostRegressionModelGenerationPipeline --* train.trainer.XGBoostTrainer.main.XGBoostRegressionStandalonePipeline : model
+@enduml
