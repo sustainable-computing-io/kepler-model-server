@@ -153,7 +153,7 @@ jobs:
           echo "change=true" >> "$GITHUB_OUTPUT"
 
   tekton-test:
-    needs: [check-secret, check-branch, base-image]
+    needs: [check-secret, check-branch, check-change, base-image]
     if: always()
     uses: ./.github/workflows/tekton-test.yml
     with:
@@ -164,7 +164,7 @@ jobs:
       pipeline_name: std_v0.7
 
   integration-test:
-    needs: [check-secret, check-branch, base-image]
+    needs: [check-secret, check-branch, check-change, base-image]
     if: always()
     uses: ./.github/workflows/integration-test.yml
     with:
