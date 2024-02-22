@@ -33,27 +33,44 @@ def rename(name):
     return name
 
 def format_processor(processor):
-    return "_".join(re.sub(r'\(.*\)', '', rename(processor)).split()).replace("-", "_").replace("V", "v").replace("_v", "v")
+    return "_".join(re.sub(r'\(.*\)', '', rename(processor)).split()).replace("-", "_").lower().replace("_v", "v")
+
+def format_vendor(vendor):
+    return vendor.split()[0].replace("-","_").replace(",","").replace("'","").lower()
 
 GB = 1024*1024*1024
 import psutil
 import cpuinfo
+import subprocess
+
+import pyudev
+
 def generate_spec(data_path, machine_id):
-    processor = "unknown"
+    processor = ""
+    vendor = ""
     cpu_info = cpuinfo.get_cpu_info()
     if "brand_raw" in cpu_info:
         processor = format_processor(cpu_info["brand_raw"])
+    context = pyudev.Context()
+    for device in context.list_devices(subsystem="dmi"):
+        if device.get('ID_VENDOR') is not None:
+            vendor = format_vendor(device.get('ID_VENDOR'))
+            break
     cores = psutil.cpu_count(logical=True)
-    chips = int(cores/psutil.cpu_count(logical=False))
+    chips = max(1, int(subprocess.check_output('cat /proc/cpuinfo | grep "physical id" | sort -u | wc -l', shell=True)))
+    threads_per_core = max(1, cores//psutil.cpu_count(logical=False))
     memory = psutil.virtual_memory().total
     memory_gb = int(memory/GB)
-    cpu_freq_mhz = round(psutil.cpu_freq(percpu=False).max/100)*100 # round to one decimal of GHz
+    freq = psutil.cpu_freq(percpu=False)
+    cpu_freq_mhz = round(max(freq.max, freq.current)/100)*100 # round to one decimal of GHz
     spec_values = {
+        "vendor": vendor,
         "processor": processor,
         "cores": cores,
         "chips": chips,
         "memory_gb": memory_gb,
-        "cpu_freq_mhz": cpu_freq_mhz
+        "cpu_freq_mhz": cpu_freq_mhz,
+        "threads_per_core": threads_per_core
     }
     spec = NodeTypeSpec(**spec_values)
     print("Save machine spec ({}): ".format(data_path))
