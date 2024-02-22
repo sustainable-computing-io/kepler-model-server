@@ -1,5 +1,6 @@
 keras_enabled = True
 import cpuinfo
+import numpy as np
 
 cpu_info = cpuinfo.get_cpu_info()
 
@@ -61,7 +62,20 @@ def load_model_by_keras(model_path, model_filename):
 def load_model_by_json(model_path, model_filename):
     return load_json(model_path, model_filename)
 
+# return mae, mse, mape
 def compute_error(predicted_power, actual_powers):
     mse = mean_squared_error(actual_powers, predicted_power)
     mae = mean_absolute_error(actual_powers, predicted_power)
-    return mae, mse
+    actual_power_values = list(actual_powers)
+    predicted_power_values = list(predicted_power)
+    if len(actual_powers) == 0:
+        mape = -1
+    else:
+        non_zero_predicted_powers = np.array([predicted_power_values[i] for i in range(len(predicted_power_values)) if actual_power_values[i] > 0])
+        if len(non_zero_predicted_powers) == 0:
+            mape = -1
+        else:
+            non_zero_y_test = np.array([y for y in actual_powers if y > 0])
+            absolute_percentage_errors = np.abs((non_zero_y_test - non_zero_predicted_powers) / non_zero_y_test) * 100
+            mape = np.mean(absolute_percentage_errors)
+    return mae, mse, mape

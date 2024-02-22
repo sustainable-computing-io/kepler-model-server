@@ -35,7 +35,7 @@ def test_model(group_path, model_name, test_data_with_label, power_columns, powe
         predicted_power_colname = default_predicted_col_func(energy_component)
         sum_power_label = test_data_with_label.groupby([TIMESTAMP_COL]).mean()[label_power_columns].sum(axis=1).sort_index()
         sum_predicted_power = data_with_prediction.groupby([TIMESTAMP_COL]).sum().sort_index()[predicted_power_colname]
-        mae, mse = compute_error(sum_power_label, sum_predicted_power)
+        mae, mse, mape = compute_error(sum_power_label, sum_predicted_power)
         if power_range is None:
             power_range = sum_power_label.max() - sum_power_label.min()
         percent = mae/power_range
@@ -44,6 +44,7 @@ def test_model(group_path, model_name, test_data_with_label, power_columns, powe
         item['mae'] = mae
         item['mse'] = mse
         item['%mae'] = percent * 100
+        item['mape'] = mape
         items += [item]
     return pd.DataFrame(items), data_with_prediction, model
         
