@@ -8,13 +8,13 @@ from trainer.curvefit import CurveFitTrainer, CurveFitModel
 import numpy as np
 
 def p0_func(x, y):
-    print(y.max(), y.min())
     a = y.max()-y.min()
-    b = y.min()
-    return [a, b]
+    b = 1
+    c = y.min()
+    return [a, b, c]
 
-def log_func(x, a, b):
-    y = [a * np.log(xi) + b if xi > 0 else 0 for xi in x]
+def log_func(x, a, b, c):
+    y = a*np.log(b*x+1) + c
     return y
 
 class LogarithmicRegressionTrainer(CurveFitTrainer):

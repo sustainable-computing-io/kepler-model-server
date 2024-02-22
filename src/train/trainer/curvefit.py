@@ -36,9 +36,9 @@ class CurveFitModel():
         flatten_x = self._x_values(X_values)
         flatten_y = np.array(y_values).flatten()
         if self.p0_func is not None:
-            self.popt, self.pcov = curve_fit(self.fit_func, flatten_x, flatten_y, p0=self.p0_func(flatten_x, flatten_y), maxfev=20000)
+            self.popt, self.pcov = curve_fit(self.fit_func, flatten_x, flatten_y, p0=self.p0_func(flatten_x, flatten_y), maxfev=30000)
         else:
-            self.popt, self.pcov = curve_fit(self.fit_func, flatten_x, flatten_y, maxfev=20000)
+            self.popt, self.pcov = curve_fit(self.fit_func, flatten_x, flatten_y, maxfev=30000)
     
     def predict(self, X_values):
         if self.popt is None:

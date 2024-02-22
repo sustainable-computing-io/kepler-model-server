@@ -10,7 +10,7 @@ import numpy as np
 def p0_func(x, y):
     A = y.max() - y.min() # value range
     x0 = 0.5 # sigmoid mid point (as normalized value is in 0 to 1, start mid point = 0.5)
-    k = A/np.std(y) # growth rate (larger std, lower growth)
+    k = A//np.std(y) # growth rate (larger std, lower growth)
     off = y.min() # initial offset
     return [A,x0,k,off]
 
