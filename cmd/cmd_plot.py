@@ -134,7 +134,7 @@ def metadata_plot(args, energy_source, metadata_df, output_folder, name):
             ax = axes
         else:
             ax = axes[i]
-        sns.boxplot(data=metadata_df, x="feature_group", y="mae", hue="trainer", ax=ax, hue_order=sorted(metadata_df['trainer'].unique()), showfliers=False, palette="Set3")
+        sns.barplot(data=metadata_df, x="feature_group", y="mae", hue="trainer", ax=ax, hue_order=sorted(metadata_df['trainer'].unique()), errorbar=None, palette="Set3")
         ax.set_title(component)
         ax.set_ylabel("MAE (Watt)")
         ax.set_xlabel("Feature Group")
@@ -144,6 +144,7 @@ def metadata_plot(args, energy_source, metadata_df, output_folder, name):
        #  ax.legend(bbox_to_anchor=(1.05, 1.05))
     plt.suptitle("Pipieline metadata of {} {}".format(energy_source.upper(), args.output_type))
     plt.tight_layout()
+    plt.legend(frameon=False)
     filename = os.path.join(output_folder, name + ".png")
     fig.savefig(filename)
     plt.close()
