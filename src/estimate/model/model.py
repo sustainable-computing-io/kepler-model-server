@@ -30,6 +30,9 @@ MODELCLASS = {
 def default_predicted_col_func(energy_component):
     return "default_{}_power".format(energy_component)
 
+def default_idle_predicted_col_func(energy_component):
+    return "default_idle_{}_power".format(energy_component)
+
 def get_background_containers(idle_data):
     return pd.unique(idle_data[valid_container_query]["container_name"])
 
@@ -122,6 +125,12 @@ class Model():
     def print_log(self, message):
         print("{} model: {}".format(self.model_name, message))
         
+    def append_idle_prediction(self, data, predicted_col_func=default_idle_predicted_col_func):
+        idle_data = data.copy() 
+        features = self.estimator.features
+        idle_data[features] = 0
+        return self.append_prediction(idle_data, predicted_col_func)
+    
 def load_model(model_path):
     metadata = load_metadata(model_path)
     if metadata is not None:

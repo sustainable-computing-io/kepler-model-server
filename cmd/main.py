@@ -547,10 +547,11 @@ def estimate(args):
                         label_power_columns = [col for col in power_labels if energy_component in col and col != predicted_power_colname]
                         sum_power_label = data.groupby([TIMESTAMP_COL]).mean()[label_power_columns].sum(axis=1).sort_index()
                         sum_predicted_power = data_with_prediction.groupby([TIMESTAMP_COL]).sum().sort_index()[predicted_power_colname]
-                        mae, mse = compute_error(sum_power_label, sum_predicted_power)
+                        mae, mse, mape = compute_error(sum_power_label, sum_predicted_power)
                         summary_item = dict()
                         summary_item["MAE"] = mae
                         summary_item["MSE"] = mse
+                        summary_item["MAPE"] = mape
                         summary_item["n"] = len(sum_predicted_power)
                         summary_item["energy_component"] = energy_component
                         summary_item["energy_source"] = energy_source
