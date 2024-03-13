@@ -18,10 +18,16 @@ on:
         description: 'The image tag to use'
         required: true
         type: string
+      kepler_tag:
+        description: 'Kepler image tag'
+        required: true
+        type: string
 
 env:
   BASE_IMAGE: ${{ inputs.image_repo }}/kepler_model_server_base:${{ inputs.image_tag }}
   IMAGE: localhost:5001/kepler_model_server:devel
+  KEPLER_IMAGE: quay.io/sustainable_computing_io/kepler:${{ inputs.kepler_tag }}
+  DEFAULT_MODEL_SERVER_BASE_IMAGE: quay.io/sustainable_computing_io/kepler_model_server_base:v0.7
 
 jobs:
   run-integration:
@@ -34,10 +40,10 @@ jobs:
           runningBranch: kind
           cluster_provider: kind
           local_dev_cluster_version: v0.0.3
-      - name: load latest kepler image
+      - name: load kepler image
         run: |
-          docker pull quay.io/sustainable_computing_io/kepler:latest
-          kind load docker-image quay.io/sustainable_computing_io/kepler:latest
+          docker pull ${{ env.KEPLER_IMAGE }}
+          kind load docker-image ${{ env.KEPLER_IMAGE }}
       - name: checkout
         uses: actions/checkout@v4
       - name: set up QEMU
@@ -47,11 +53,11 @@ jobs:
       - name: Replace value in Dockerfile if base changes
         if: ${{ (inputs.base_change == 'true') && (inputs.docker_secret == 'true') }}
         run: |
-          sed -i "s|quay.io/sustainable_computing_io/kepler_model_server_base:v0.7|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile
+          sed -i "s|${{ env.DEFAULT_MODEL_SERVER_BASE_IMAGE }}|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile
       - name: Replace value in Dockerfile.test if base changes
         if: ${{ (inputs.base_change == 'true') && (inputs.docker_secret == 'true') }}
         run: |
-          sed -i "s|quay.io/sustainable_computing_io/kepler_model_server_base:v0.7|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile.test
+          sed -i "s|${{ env.DEFAULT_MODEL_SERVER_BASE_IMAGE }}|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile.test
       - name: build Kepler model server and test image and push to local registry
         run: make build build-test push push-test
       - name: set up Kustomize
