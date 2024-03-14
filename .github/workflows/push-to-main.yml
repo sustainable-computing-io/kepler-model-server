@@ -7,6 +7,30 @@ env:
   TAG: "v0.7.7"
 
 jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+
+    outputs:
+      tag: ${{ steps.image-tag.outputs.tag }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Find Image Tag
+      id: image-tag
+      env:
+        BRANCH: ${{ github.ref_name }}
+        COMMIT: ${{ github.sha }}
+      run: |
+          if [ "${{ github.event_name }}" == 'pull_request' ]; then
+            echo "tag=pr-${{ github.event.number }}" >> "$GITHUB_OUTPUT"
+          else
+            if [ "$BRANCH" == "main" ]; then
+                echo "tag=${{ env.TAG }}" >> "$GITHUB_OUTPUT"
+            else
+                echo "tag=$COMMIT" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
   check-change:
     runs-on: ubuntu-latest
 
@@ -31,19 +55,19 @@ jobs:
             - '.github/workflows/train-model.yml'
 
   build-push:
-    needs: [check-change]
+    needs: [check-change, check-branch]
     uses: ./.github/workflows/build-push.yml
     with:
       base_change: ${{ needs.check-change.outputs.base }}
       image_repo: ${{ vars.IMAGE_REPO }}
-      image_tag: ${{ env.TAG }}
+      image_tag: ${{ needs.check-branch.outputs.tag }}
       push: true
     secrets:
       docker_username: ${{ secrets.BOT_NAME }}
       docker_password: ${{ secrets.BOT_TOKEN }}
 
   train-model:
-    needs: [check-change, build-push]
+    needs: [check-change, check-branch, build-push]
     if: ${{ needs.check-change.outputs.modeling == 'true' }}
     strategy:
       matrix:
@@ -54,7 +78,7 @@ jobs:
       instance_type: ${{ matrix.instance_type }}
       ami_id: 'ami-0e4d0bb9670ea8db0'
       github_repo: ${{ github.repository }}
-      model_server_image: ${{ vars.IMAGE_REPO }}/kepler_model_server:${{ env.TAG }}
+      model_server_image: ${{ vars.IMAGE_REPO }}/kepler_model_server:${{ needs.check-branch.outputs.tag }}
       trainers: LogisticRegressionTrainer,ExponentialRegressionTrainer,SGDRegressorTrainer,GradientBoostingRegressorTrainer,XgboostFitTrainer
     secrets:
       self_hosted_github_token: ${{ secrets.GH_SELF_HOSTED_RUNNER_TOKEN }}
