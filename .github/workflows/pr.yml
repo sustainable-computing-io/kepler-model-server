@@ -8,15 +8,14 @@ name: Workflow on Push/PR
 
 on:
   pull_request:
-  push:
     paths-ignore:
-    - 'fig/**'
-    - '.github/ISSUE_TEMPLATE/**'
-    - '.vscode/**'
-    - 'LICENSE'
-    - '.gitignore'
-    - '*.md'
-    - '**/*.md'
+      - 'fig/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.vscode/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '*.md'
+      - '**/*.md'
 
 env:
   TAG: "v0.7.7"
