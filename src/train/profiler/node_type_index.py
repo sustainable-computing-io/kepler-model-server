@@ -121,13 +121,23 @@ class NodeTypeSpec():
     def get_size(self):
         return len(self.members)
     
+    def get_cores(self):
+        return self.attrs[NodeAttribute.CORES]
+    
     # check the comparing node-type spec is covered by this node-type spec
     def cover(self, compare_spec):
         if not isinstance(compare_spec, NodeTypeSpec):
             return False
         for attr in NodeAttribute:
-            if compare_spec.attrs[attr] is not None and str(self.attrs[attr]) != str(compare_spec.attrs[attr]):
-                return False
+            if compare_spec.attrs[attr] is not None:
+                try:
+                    # Attempt to convert values to floats
+                    if float(self.attrs[attr]) != float(compare_spec.attrs[attr]):
+                        return False
+                except ValueError:
+                    # If conversion to float fails, compare as strings
+                    if self.attrs[attr] != compare_spec.attrs[attr]:
+                        return False
         return True
 
     def __str__(self):

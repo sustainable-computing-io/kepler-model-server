@@ -13,8 +13,11 @@ from train_types import ModelOutputType, PowerSourceMap, FeatureGroup, weight_su
 from loader import load_pipeline_metadata, get_model_group_path, load_weight, get_archived_file
 from saver import save_json
 
+# mae and mape are exclusive thresholds to balance between absolute error value and relative error value
 mae_threshold = 10
 mape_threshold = 20
+# hard_threshold is a hard threshold to avoid too-small value on absolute error and too-large value on relative error
+hard_threshold = 100
 
 class ExportModel():
     def __init__(self, models_path, output_type, feature_group, energy_source, pipeline_name, model_name, metadata):
@@ -99,6 +102,8 @@ def get_validated_export_items(pipeline_path, pipeline_name):
                 continue
             valid_rows = []
             for _, row in metadata_df.iterrows():
+                if row['mae'] > hard_threshold or row['mape'] > hard_threshold:
+                    continue
                 if row['mape'] <= mape_threshold or row['mae'] <= mae_threshold:
                     model_name = row["model_name"]
                     fg = FeatureGroup[row["feature_group"]]

@@ -13,8 +13,8 @@
 #################################################
 
 import os
-from loader import get_url, get_pipeline_url, default_init_model_url
-from train_types import ModelOutputType, is_support_output_type
+from loader import get_url, get_pipeline_url, base_model_url, default_pipelines, default_train_output_pipeline
+from train_types import ModelOutputType, is_support_output_type, FeatureGroup
 
 # must be writable (for shared volume mount)
 MNT_PATH = "/mnt"
@@ -63,8 +63,15 @@ if not os.path.exists(MNT_PATH) or not os.access(MNT_PATH, os.W_OK):
 
 CONFIG_PATH = getConfig('CONFIG_PATH', CONFIG_PATH)
 
-model_topurl = getConfig('MODEL_TOPURL', default_init_model_url)
-initial_pipeline_url = getConfig('INITIAL_PIPELINE_URL', get_pipeline_url(model_topurl=model_topurl))
+model_topurl = getConfig('MODEL_TOPURL', base_model_url)
+initial_pipeline_urls = getConfig('INITIAL_PIPELINE_URL', "")
+if initial_pipeline_urls == "":
+    if model_topurl == base_model_url:
+        initial_pipeline_urls = [get_pipeline_url(model_topurl=model_topurl, pipeline_name=pipeline_name) for pipeline_name in default_pipelines.values()]
+    else:
+        initial_pipeline_urls = [get_pipeline_url(model_topurl=model_topurl, pipeline_name=default_train_output_pipeline)]
+else:
+    initial_pipeline_urls = initial_pipeline_urls.split(",")
 
 model_toppath =  getConfig('MODEL_PATH', getPath(MODEL_FOLDERNAME))
 download_path = getConfig('MODEL_PATH', getPath(DOWNLOAD_FOLDERNAME))
@@ -120,13 +127,17 @@ def get_energy_source(prefix):
 
 # get_init_model_url: get initial model from URL if estimator is enabled
 def get_init_model_url(energy_source, output_type, model_topurl=model_topurl):
+    if base_model_url == model_topurl:
+        pipeline_name = default_pipelines[energy_source]
+    else:
+        pipeline_name = default_train_output_pipeline
     for prefix in modelConfigPrefix:
         if get_energy_source(prefix) == energy_source:
             modelURL = get_init_url(prefix)
             print("get init url", modelURL)
             if modelURL == "" and is_support_output_type(output_type):
                 print("init URL is not set, try using default URL".format(output_type))
-                return get_url(output_type=ModelOutputType[output_type], energy_source=energy_source, model_topurl=model_topurl)
+                return get_url(feature_group=FeatureGroup.BPFOnly, output_type=ModelOutputType[output_type], energy_source=energy_source, model_topurl=model_topurl, pipeline_name=pipeline_name)
             else:
                 return modelURL
     print("no match config for {}, {}".format(output_type, energy_source))

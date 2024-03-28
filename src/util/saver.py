@@ -13,6 +13,9 @@ MACHINE_SPEC_PATH = "machine_spec"
 def _pipeline_model_metadata_filename(energy_source, model_type):
     return "{}_{}_model_metadata".format(energy_source, model_type)
 
+def _power_curve_filename(energy_source, model_type):
+    return "{}_{}_power_curve".format(energy_source, model_type)
+
 def assure_path(path):
     if path == '':
         return ''

@@ -121,10 +121,8 @@ class Pipeline():
             futures = []
             for trainer in self.trainers:
                 if trainer.feature_group_name != feature_group:
-                    print("Skip feature: ", feature_group)
                     continue
                 if trainer.energy_source != energy_source:
-                    print("Skip energy source: ", energy_source)
                     continue
                 if trainer.node_level and abs_data is not None:
                     future = executor.submit(run_train, trainer, abs_data, power_labels, pipeline_lock=self.lock)
@@ -134,6 +132,12 @@ class Pipeline():
                     futures += [future]
             self.print_log('Waiting for {} trainers to complete...'.format(len(futures)))
             wait(futures)
+            # Handle exceptions if any
+            for future in futures:
+                if future.exception() is not None:
+                    # Handle the exception here
+                    print(f"Exception occurred: {future.exception()}")
+                    
             self.print_log('{}/{} trainers are trained from {} to {}'.format(len(futures), len(self.trainers), feature_group, energy_source))
             
 

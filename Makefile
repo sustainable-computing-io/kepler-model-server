@@ -48,8 +48,8 @@ test-estimator: run-estimator run-collector-client clean-estimator
 
 # test estimator --> model-server
 run-model-server:
-	$(CTR_CMD) run -d --platform linux/amd64 -e "MODEL_TOPURL=http://localhost:8110" -v ${MODEL_PATH}:/mnt/models -p 8100:8100 --name model-server $(TEST_IMAGE) /bin/bash -c "python3.8 tests/http_server.py & sleep 5 &&  python3.8 src/server/model_server.py"
-	sleep 5
+	$(CTR_CMD) run -d --platform linux/amd64 -e "MODEL_TOPURL=http://localhost:8110" -v ${MODEL_PATH}:/mnt/models -p 8100:8100 --name model-server $(TEST_IMAGE) /bin/bash -c "python3.8 tests/http_server.py & sleep 10 &&  python3.8 src/server/model_server.py"
+	while ! docker logs model-server | grep -q Serving; do   echo "waiting for model-server to serve";  sleep 5; done
 
 run-estimator-client:
 	$(CTR_CMD) exec model-server /bin/bash -c "python3.8 -u ./tests/estimator_model_request_test.py"

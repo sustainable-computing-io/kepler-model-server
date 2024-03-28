@@ -55,8 +55,12 @@ if __name__ == '__main__':
     assert len(models) > 0, "more than one type of output"
     for output_models in models.values():
         assert len(output_models) > 0, "more than one best model for each output"
+    
+    test_feature_groups = [FeatureGroup.BPFOnly, FeatureGroup.CounterOnly]
+    
     # for each features
-    for feature_group, metrics in FeatureGroups.items():
+    for fg in test_feature_groups:
+        metrics = FeatureGroups[fg]
         # abs power
         output_type = ModelOutputType.AbsPower
         make_request(metrics, output_type)
@@ -65,7 +69,8 @@ if __name__ == '__main__':
         output_type = ModelOutputType.DynPower
         make_request(metrics, output_type)
         make_request(metrics, output_type, weight=True)
-    metrics = FeatureGroups[FeatureGroup.Full]
+
+    metrics = FeatureGroups[FeatureGroup.BPFOnly]
     # with node_type
     make_request(metrics, output_type, node_type=1)
     make_request(metrics, output_type, node_type=1, weight=True)

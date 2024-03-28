@@ -58,6 +58,13 @@ wait_for_server() {
     kubectl rollout status deploy kepler-model-server -n kepler --timeout 5m
     wait_for_keyword server "initial pipeline is loaded" "server cannot load initial pipeline"
     wait_for_keyword server "Press CTRL+C to quit" "server has not started yet"
+    get_server_log
+    kubectl get svc kepler-model-server -n kepler
+    kubectl get endpoints kepler-model-server -n kepler
+    # restart kepler-exporter to apply server-api
+    kubectl delete po -n kepler -l app.kubernetes.io/component=exporter
+    sleep 5
+    get_kepler_log
 }
 
 wait_for_db() {
@@ -103,7 +110,6 @@ check_estimator_set_and_init() {
 restart_model_server() {
     kubectl delete po  -l app.kubernetes.io/component=model-server -n kepler
     wait_for_server
-    get_server_log
 }
 
 test() {
@@ -114,21 +120,25 @@ test() {
 
     for opt in ${DEPLOY_OPTIONS}; do export $opt=true; done;
 
-    # train and deploy local modelDB
-    kubectl apply -f ${top_dir}/manifests/test/file-server.yaml
-    sleep 10
-    wait_for_db
+    # patch MODEL_TOPURL environment if DB is not available
+    if [ -z ${DB} ]; then
 
-    # patch MODEL_TOPURL environment
-    if [ ! -z ${ESTIMATOR} ]; then
-        kubectl patch configmap -n kepler kepler-cfm --type merge -p "$(cat ${top_dir}/manifests/test/patch-estimator-sidecar.yaml)"
-        kubectl patch ds kepler-exporter -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"estimator","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
+        # train and deploy local modelDB
+        kubectl apply -f ${top_dir}/manifests/test/file-server.yaml
+        sleep 10
+        wait_for_db
+
+        if [ ! -z ${ESTIMATOR} ]; then
+            kubectl patch configmap -n kepler kepler-cfm --type merge -p "$(cat ${top_dir}/manifests/test/patch-estimator-sidecar.yaml)"
+            kubectl patch ds kepler-exporter -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"estimator","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
+        fi
+        if [ ! -z ${SERVER} ]; then
+            kubectl patch deploy kepler-model-server -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"server-api","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
+            kubectl delete po -n kepler -l app.kubernetes.io/component=model-server
+        fi
+        kubectl delete po -n kepler -l app.kubernetes.io/component=exporter
+
     fi
-    if [ ! -z ${SERVER} ]; then
-        kubectl patch deploy kepler-model-server -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"server-api","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
-        kubectl delete po -n kepler -l app.kubernetes.io/component=model-server
-    fi
-    kubectl delete po -n kepler -l app.kubernetes.io/component=exporter
 
     if [ ! -z ${ESTIMATOR} ]; then
         # with estimator
@@ -148,9 +158,12 @@ test() {
         if [ ! -z ${SERVER} ]; then
             # with server
             wait_for_server
+            get_estimator_log
+            sleep 5
             wait_for_keyword estimator "load model from model server" "estimator should be able to load model from server"
         else
             # no server
+            get_estimator_log
             wait_for_keyword estimator "load model from config" "estimator should be able to load model from config"
         fi
     else
@@ -162,9 +175,10 @@ test() {
                 kubectl patch ds kepler-exporter -n kepler --patch-file ${top_dir}/manifests/test/model-request-client.yaml
                 restart_model_server
                 sleep 1
-                wait_for_kepler
+                wait_for_server
                 wait_for_keyword kepler Done "cannot get model weight"
             else
+                wait_for_server
                 wait_for_keyword kepler "getWeightFromServer.*core" "kepler should get weight from server"
             fi
         fi

@@ -4,7 +4,7 @@ metadata:
   name: kepler-cfm
   namespace: system
 data:
-  KEPLER_LOG_LEVEL: '3'
+  KEPLER_LOG_LEVEL: '4'
 ---
 apiVersion: apps/v1
 kind: DaemonSet

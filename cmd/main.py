@@ -18,8 +18,8 @@ from util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, P
 from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics, node_info_column
 from util.extract_types import get_expected_power_columns
 from util.train_types import ModelOutputType, FeatureGroups, is_single_source_feature_group, all_feature_groups, default_trainers
-from util.loader import load_json, DEFAULT_PIPELINE, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_preprocess_folder, get_general_filename, load_machine_spec
-from util.saver import save_json, save_csv, save_train_args, _pipeline_model_metadata_filename
+from util.loader import default_train_output_pipeline, load_json, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_preprocess_folder, get_general_filename, load_machine_spec
+from util.saver import save_json, save_csv, save_train_args, _pipeline_model_metadata_filename, _power_curve_filename
 from util.config import ERROR_KEY, model_toppath
 from util import get_valid_feature_group_from_queries, PowerSourceMap
 from train.prom.prom_query import _range_queries
@@ -27,7 +27,7 @@ from train.exporter import exporter
 from train import load_class
 from train.profiler.node_type_index import NodeTypeIndexCollection, NodeTypeSpec, generate_spec
 
-from cmd_plot import ts_plot, feature_power_plot, summary_plot, metadata_plot
+from cmd_plot import ts_plot, feature_power_plot, summary_plot, metadata_plot, power_curve_plot
 from cmd_util import extract_time, save_query_results, get_validate_df, summary_validation, get_extractor, check_ot_fg, get_pipeline, assert_train, get_isolator, UTC_OFFSET_TIMEDELTA
 
 import threading
@@ -215,7 +215,7 @@ def isolate(args):
     extracted_data, power_labels = extract(args)
     if extracted_data is None or power_labels is None:
         return None
-    pipeline_name = DEFAULT_PIPELINE if not args.pipeline_name else args.pipeline_name
+    pipeline_name = default_train_output_pipeline if not args.pipeline_name else args.pipeline_name
     isolator = get_isolator(data_path, args.isolator, args.profile, pipeline_name, args.target_hints, args.bg_hints, args.abs_pipeline_name)
     isolated_data = isolator.isolate(extracted_data, label_cols=power_labels, energy_source=args.energy_source)
     if args.output:
@@ -247,7 +247,7 @@ def isolate_from_data(args):
     energy_components = PowerSourceMap[args.energy_source]
     extracted_data = load_csv(data_path, "extracted_" + args.input)
     power_columns = get_expected_power_columns(energy_components=energy_components)
-    pipeline_name = DEFAULT_PIPELINE if not args.pipeline_name else args.pipeline_name
+    pipeline_name = default_train_output_pipeline if not args.pipeline_name else args.pipeline_name
     isolator = get_isolator(data_path, args.isolator, args.profile, pipeline_name, args.target_hints, args.bg_hints, args.abs_pipeline_name)
     isolated_data = isolator.isolate(extracted_data, label_cols=power_columns, energy_source=args.energy_source)
     if args.output:
@@ -365,7 +365,7 @@ def train(args):
     elif PROM_THIRDPARTY_METRICS != [""]:
         update_thirdparty_metrics(PROM_THIRDPARTY_METRICS)
 
-    pipeline_name = DEFAULT_PIPELINE
+    pipeline_name = default_train_output_pipeline
     if args.pipeline_name:
         pipeline_name = args.pipeline_name
 
@@ -599,6 +599,8 @@ arguments:
     - `estimate` passes all arguments to `estimate` function, and plots the predicted time series and correlation between usage and power metrics
     - `error` passes all arguments to `estimate` function, and plots the summary of prediction error
     - `metadata` plot pipeline metadata 
+    - `curve_power` plot curve power
+- --input : specify related path for pipeline metadata
 - --energy-source : specify target energy sources (use comma(,) as delimiter) 
 - --extractor : specify extractor to get preprocessed data of AbsPower model linked to the input data
 - --isolator : specify isolator to get preprocessed data of DynPower model linked to the input data
@@ -606,7 +608,7 @@ arguments:
 """
 
 def plot(args):
-    pipeline_name = DEFAULT_PIPELINE if not args.pipeline_name else args.pipeline_name
+    pipeline_name = default_train_output_pipeline if not args.pipeline_name else args.pipeline_name
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
     if not args.target_data:
         print("must give target data via --target-data to plot.")
@@ -691,9 +693,13 @@ def plot(args):
     elif args.target_data == "metadata":
         for energy_source in energy_sources:
             data_filename = _pipeline_model_metadata_filename(energy_source, ot.name)
-            pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
-            model_metadata_df = load_pipeline_metadata(pipeline_path, energy_source, ot.name)
+            model_metadata_df = load_pipeline_metadata(args.input, energy_source, ot.name)
             metadata_plot(args, energy_source, model_metadata_df, output_folder, data_filename)
+    elif args.target_data == "power_curve":
+        for energy_source in energy_sources:
+            data_filename = _power_curve_filename(energy_source, ot.name)
+            model_metadata_df = load_pipeline_metadata(args.input, energy_source, ot.name)
+            power_curve_plot(args, data_path, energy_source, output_folder, data_filename)
 
 """
 export
@@ -709,6 +715,7 @@ arguments:
                 - custom benchmark in json with `startTimeUTC` and `endTimeUTC` data
 - --collect-date : specify collection time manually in UTC
 - --input : specify kepler query response file (output of `query` function) - optional
+- --zip : specify whether to zip pipeline 
 """
 
 def export(args):
@@ -742,14 +749,18 @@ def export(args):
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
 
     local_export_path = exporter.export(data_path, pipeline_path, output_path, publisher=args.publisher, collect_date=collect_date, inputs=inputs)
-    args.target_data = "metadata"
 
+    args.input = local_export_path
     args.output = local_export_path
-    args.output_type = "AbsPower"
     args.energy_source = ",".join(PowerSourceMap.keys())
-    plot(args)
-    args.output_type = "DynPower"
-    plot(args)
+    for target_data in ["metadata", "power_curve"]:
+        for ot in ModelOutputType:
+            args.target_data = target_data
+            args.output_type = ot.name
+            plot(args)
+    if args.zip:
+        import shutil
+        shutil.make_archive(local_export_path, 'zip', local_export_path)
 
 """
 plot_scenario
@@ -886,6 +897,7 @@ if __name__ == "__main__":
     parser.add_argument("--publisher", type=str, help="Specify github account of model publisher")
     parser.add_argument("--include-raw", type=bool, help="Include raw query data")
     parser.add_argument("--collect-date", type=str, help="Specify collect date directly")
+    parser.add_argument("--zip", type=bool, help="Specify whether to zip pipeline", default=False)
 
     parser.add_argument("--id", type=str, help="specify machine id")
 

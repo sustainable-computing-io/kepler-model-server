@@ -85,7 +85,7 @@ Use kepler model server function as a standalone docker container.
    5.3. Plot prediction result on specific trainer model and feature group (`estimate`)
 
       ```bash
-      docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7 plot --target-data estimate -i output_kepler_query --model-name GradientBoostingRegressorTrainer_1 --feature-group BPFOnly
+      docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7 plot --target-data estimate -i output_kepler_query --model-name GradientBoostingRegressorTrainer_0 --feature-group BPFOnly
       ```
 
    5.4. Plot prediction error comparison among feature group and trainer model (`error`)

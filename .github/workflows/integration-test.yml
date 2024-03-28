@@ -22,6 +22,10 @@ on:
         description: 'Kepler image tag'
         required: true
         type: string
+      additional_opts:
+        description: 'additional deployment opts'
+        required: true
+        type: string
 
 env:
   BASE_IMAGE: ${{ inputs.image_repo }}/kepler_model_server_base:${{ inputs.image_tag }}
@@ -65,45 +69,24 @@ jobs:
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           chmod +x kustomize
           mv kustomize /usr/local/bin/
-      - name: test deploying kepler with only estimator
+      - name: test deploying with only estimator
         run: |
           make deploy
           make e2e-test
           make cleanup
         env:
-          OPTS: "ESTIMATOR"
-      - name: test deploying kepler with only server
+          OPTS: "ESTIMATOR${{ inputs.additional_opts }}"
+      - name: test deploying with only server
         run: |
           make deploy
           make e2e-test
           make cleanup
         env:
-          OPTS: "SERVER"
-      - name: test deploying kepler with estimator and model server
+          OPTS: "SERVER${{ inputs.additional_opts }}"
+      - name: test deploying with estimator and model server
         run: |
           make deploy
           make e2e-test
           make cleanup
         env:
-          OPTS: "ESTIMATOR SERVER"
-      - name: test deploying dummy kepler with only estimator
-        run: |
-          make deploy
-          make e2e-test
-          make cleanup
-        env:
-          OPTS: "ESTIMATOR TEST"
-      - name: test deploying dummy kepler with only server
-        run: |
-          make deploy
-          make e2e-test
-          make cleanup
-        env:
-          OPTS: "SERVER TEST"
-      - name: test deploying dummy kepler with estimator and model server
-        run: |
-          make deploy
-          make e2e-test
-          make cleanup
-        env:
-          OPTS: "ESTIMATOR SERVER TEST"
+          OPTS: "ESTIMATOR SERVER${{ inputs.additional_opts }}"

@@ -45,7 +45,7 @@ isolators = {
     "MinIdleIsolator": {},
     "NoneIsolator": {},
     "ProfileBackgroundIsolator": {}
-    # "TrainIsolator": {"abs_pipeline_name": DEFAULT_PIPELINE} # TODO: too heavy to test on CI
+    # "TrainIsolator": {"abs_pipeline_name": default_train_output_pipeline} # TODO: too heavy to test on CI
 }
 
 def get_target_path(save_path, energy_source, feature_group):

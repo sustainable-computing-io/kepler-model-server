@@ -11,11 +11,14 @@ import sys
 src_path = os.path.join(os.path.dirname(__file__), '..', '..')
 sys.path.append(src_path)
 
+train_path = os.path.join(os.path.dirname(__file__), '..', '..', 'train')
+sys.path.append(train_path)
+
 from util import ModelOutputType
 
 import collections.abc
 
-class CurveFitModel():
+class CurveFitModelEstimator():
     def __init__(self, model_path, model_name, output_type, model_file, features, fe_files, component_init=False, feature_group=None):
         self.name = model_name
         self.features = features
@@ -30,9 +33,10 @@ class CurveFitModel():
             self.models = dict()
             model_info = load_model_by_json(model_path, model_file)
             for comp, model_metadata in model_info.items():
-                model = CurveFitModel(model_path, self.name, self.output_type.name, model_metadata['model_file'], model_metadata['features'], model_metadata['fe_files'], component_init=True)
+                model = CurveFitModelEstimator(model_path, self.name, self.output_type.name, model_metadata['model_file'], model_metadata['features'], model_metadata['fe_files'], component_init=True)
                 feature_index = main_feature(self.feauture_group.name, comp)
-                model.model.set_feature_index(feature_index)
+                if model.model is not None:
+                    model.model.set_feature_index(feature_index)
                 self.models[comp] = model
         else:
             self.model = load_model_by_pickle(model_path, model_file)

@@ -26,7 +26,7 @@ isolator_path = os.path.join(os.path.dirname(__file__), 'isolator')
 sys.path.append(isolator_path)
 
 from config import model_toppath
-from loader import get_pipeline_path, DEFAULT_PIPELINE
+from loader import get_pipeline_path, default_pipelines
 from train_types import PowerSourceMap
 from prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
 from profiler.profiler import Profiler, generate_profiles
@@ -81,7 +81,7 @@ class TrainRequest():
         elif isolator_key == TrainIsolator.__name__:
             if 'abs_pipeline_name' not in isolator_args:
                 # use default pipeline for absolute model training in isolation
-                isolator_args['abs_pipeline_name'] = DEFAULT_PIPELINE
+                isolator_args['abs_pipeline_name'] = default_pipelines[self.energy_source]
             isolator = TrainIsolator(idle_data, profiler=profiler, abs_pipeline_name=isolator_args['abs_pipeline_name'])
         else:
             module_path = importlib.import_module('isolator')
