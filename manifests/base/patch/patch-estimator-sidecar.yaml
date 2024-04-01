@@ -1,3 +1,4 @@
+# TODO: change to official path when kepler-model-db#22 merged
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,9 +7,9 @@ metadata:
 data:
   MODEL_CONFIG: |
     NODE_COMPONENTS_ESTIMATOR=true
-    NODE_COMPONENTS_INIT_URL=https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.6/nx12/std_v0.6/rapl/AbsPower/BPFOnly/GradientBoostingRegressorTrainer_1.zip
+    NODE_COMPONENTS_INIT_URL=https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.7/ec2/intel_rapl/AbsPower/BPFOnly/GradientBoostingRegressorTrainer_0.zip
     NODE_TOTAL_ESTIMATOR=true
-    NODE_TOTAL_INIT_URL=https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.6/nx12/std_v0.6/acpi/AbsPower/BPFOnly/GradientBoostingRegressorTrainer_1.zip  
+    NODE_TOTAL_INIT_URL=https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.7/specpower/acpi/AbsPower/BPFOnly/GradientBoostingRegressorTrainer_0.zip
 ---
 apiVersion: apps/v1
 kind: DaemonSet

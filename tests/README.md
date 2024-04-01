@@ -158,14 +158,14 @@ Optional arguments:
 
  Reuse (test_model):
  ```python
- from util import ModelOutputType, model_toppath, DEFAULT_PIPELINE
+ from util import ModelOutputType, model_toppath, default_train_output_pipeline
  from isolator_test import get_isolate_results
  from extractor_test import get_extract_results, get_expected_power_columns
 
  from estimator_model_test import test_model
  
  # model folder under model_toppath which is ../src/models by default
- pipeline_name = DEFAULT_PIPELINE
+ pipeline_name = default_train_output_pipeline
  # get_expected_power_columns(energy_components=test_energy_components, num_of_unit=test_num_of_unit)
  power_columns = get_expected_power_columns()
 
@@ -247,7 +247,7 @@ offline_trainer_client_process(dataset_name, train_prom_response, idle_prom_resp
 
 Optional arguments:
  - energy_source: target energy source (default: intel_rapl)
- - isolators: dict map of isolator class name to argument dict map (default: {"MinIdleIsolator": {}, "NoneIsolator": {}, "ProfileBackgroundIsolator": {}, "TrainIsolator": {"abs_pipeline_name": DEFAULT_PIPELINE}})
+ - isolators: dict map of isolator class name to argument dict map (default: {"MinIdleIsolator": {}, "NoneIsolator": {}, "ProfileBackgroundIsolator": {}, "TrainIsolator": {"abs_pipeline_name": default_train_output_pipeline}})
  - target_path:  path to save trained ouput (default: data/offline_trainer_output)
 
 # Integration Test

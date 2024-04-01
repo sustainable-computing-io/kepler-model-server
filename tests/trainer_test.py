@@ -13,7 +13,7 @@ sys.path.append(src_path)
 
 from train import load_class
 from util import PowerSourceMap
-from util.loader import DEFAULT_PIPELINE
+from util.loader import default_train_output_pipeline
 from util.train_types import default_trainer_names
 
 from isolator_test import test_isolators, get_isolate_results
@@ -39,7 +39,7 @@ def assert_train(trainer, data, energy_components):
             except sklearn.exceptions.NotFittedError:
                 pass
             
-def process(node_level, feature_group, result, trainer_names=test_trainer_names, energy_source=test_energy_source, power_columns=get_expected_power_columns(), pipeline_name=DEFAULT_PIPELINE):
+def process(node_level, feature_group, result, trainer_names=test_trainer_names, energy_source=test_energy_source, power_columns=get_expected_power_columns(), pipeline_name=default_train_output_pipeline):
     energy_components = PowerSourceMap[energy_source]
     train_items = []
     for trainer_name in trainer_names:
@@ -50,7 +50,7 @@ def process(node_level, feature_group, result, trainer_names=test_trainer_names,
         train_items += [trainer.get_metadata()]
     return pd.concat(train_items)
 
-def process_all(extractors=test_extractors, isolators=test_isolators, trainer_names=test_trainer_names, energy_source=test_energy_source, power_columns=get_expected_power_columns(), pipeline_name=DEFAULT_PIPELINE):
+def process_all(extractors=test_extractors, isolators=test_isolators, trainer_names=test_trainer_names, energy_source=test_energy_source, power_columns=get_expected_power_columns(), pipeline_name=default_train_output_pipeline):
     abs_train_list = []
     dyn_train_list = []
     for extractor in extractors:

@@ -15,7 +15,7 @@ sys.path.append(src_path)
 
 from estimate import load_model, default_predicted_col_func, compute_error
 from train.trainer import model_toppath
-from util.loader import get_model_group_path, DEFAULT_PIPELINE
+from util.loader import get_model_group_path, default_train_output_pipeline
 from util import FeatureGroup, ModelOutputType, list_model_names
 from util.prom_types import TIMESTAMP_COL
 
@@ -51,7 +51,7 @@ def test_model(group_path, model_name, test_data_with_label, power_columns, powe
 # all energy_source, model_output, feature_group
 def test_all_models(test_data_with_label, power_columns, output_type, feature_group, energy_source=test_energy_source):
     result_df_list = []
-    group_path = get_model_group_path(model_toppath, output_type, feature_group, energy_source, assure=False, pipeline_name=DEFAULT_PIPELINE)
+    group_path = get_model_group_path(model_toppath, output_type, feature_group, energy_source, assure=False, pipeline_name=default_train_output_pipeline)
     model_names = list_model_names(group_path)
     for model_name in model_names:
         result_df, _, _ = test_model(group_path, model_name, test_data_with_label, power_columns)

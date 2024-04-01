@@ -75,8 +75,9 @@ Compatible version: python 3.8
     |Test case|Command|
     |---|---|
     |[Training pipeline](./tests/README.md#pipeline)|python -u ./tests/pipeline_test.py|
-    |[Model server](./tests/README.md#estimator-model-request-to-model-server)|Terminal 1: python src/server/model_server.py <br>Terminal 2: python -u tests/estimator_model_request_test.py|
+    |[Model server](./tests/README.md#estimator-model-request-to-model-server)|Terminal 1: export MODEL_PATH=$(pwd)/tests/models;python src/server/model_server.py <br>Terminal 2: python -u tests/estimator_model_request_test.py|
     |[Estimator](./tests/README.md#estimator-power-request-from-collector)|Terminal 1: python src/estimate/estimator.py<br>Terminal 2: python -u tests/estimator_power_request_test.py|
+    |Estimator with Model Server|Terminal 1: export MODEL_PATH=$(pwd)/tests/models;python src/server/model_server.py <br>Terminal 2: export MODEL_SERVER_URL=http://localhost:8100;export MODEL_SERVER_ENABLE=true;python -u src/estimate/estimator.py<br>Terminal 3: python -u tests/estimator_power_request_test.py
     |[Offline Trainer](./tests/README.md#offline-trainer)|Terminal 1: python src/train/offline_trainer.py<br>Terminal 2: python -u tests/offline_trainer_test.py|
 
     For more test information, check [here](./tests/).

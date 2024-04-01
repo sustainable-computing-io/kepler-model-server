@@ -61,7 +61,14 @@ def handle_request(data):
     if output_type.name not in loaded_model:
         loaded_model[output_type.name] = dict()
     output_path = ""
-    if power_request.energy_source not in loaded_model[output_type.name]:
+    request_trainer = True
+    if power_request.trainer_name is not None:
+        if output_type.name in loaded_model and power_request.energy_source in loaded_model[output_type.name]:
+            current_trainer = loaded_model[output_type.name][power_request.energy_source].trainer_name
+            request_trainer = current_trainer == power_request.trainer_name
+            if not request_trainer:
+                print("try obtaining the requesting trainer {} (current: {})".format(power_request.trainer_name, current_trainer))
+    if power_request.energy_source not in loaded_model[output_type.name] or not request_trainer:
         output_path = get_download_output_path(download_path, power_request.energy_source, output_type)
         if not os.path.exists(output_path):
             # try connecting to model server
@@ -77,7 +84,10 @@ def handle_request(data):
                     print("load model from config: ", output_path)
             else:
                 print("load model from model server: ", output_path)
-        loaded_model[output_type.name][power_request.energy_source] = load_downloaded_model(power_request.energy_source, output_type)
+        loaded_item = load_downloaded_model(power_request.energy_source, output_type)
+        if loaded_item is not None and loaded_item.estimator is not None:
+            loaded_model[output_type.name][power_request.energy_source] = loaded_item
+            print("set model {0} for {2} ({1})".format(loaded_item.model_name, output_type.name, power_request.energy_source))
         # remove loaded model
         shutil.rmtree(output_path)
 

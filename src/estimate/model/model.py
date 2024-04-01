@@ -14,17 +14,17 @@ from loader import load_metadata, get_download_output_path
 from config import download_path
 from prom_types import TIMESTAMP_COL, valid_container_query
 
-from scikit_model import ScikitModel
-from xgboost_model import XgboostModel
-from curvefit_model import CurveFitModel
-# from keras_model import KerasModel
+from scikit_model import ScikitModelEstimator
+from xgboost_model import XgboostModelEstimator
+from curvefit_model import CurveFitModelEstimator
+# from keras_model import KerasModelEstimator
 
 # model wrapper
 MODELCLASS = {
-    'scikit': ScikitModel,
-    'xgboost': XgboostModel,
-    'curvefit': CurveFitModel
-    # 'keras': KerasModel,
+    'scikit': ScikitModelEstimator,
+    'xgboost': XgboostModelEstimator,
+    'curvefit': CurveFitModelEstimator
+    # 'keras': KerasModelEstimator,
 }
 
 def default_predicted_col_func(energy_component):
@@ -64,6 +64,7 @@ class Model():
             abs_model=None, abs_mae=None, abs_mae_val=None, abs_mse=None, abs_mse_val=None, abs_max_corr=None, \
             reconstructed_mae=None, reconstructed_mse=None, avg_mae=None, **kwargs):
         self.model_name = model_name
+        self.trainer_name = model_name.split("_")[0]
         self.estimator = MODELCLASS[model_class](model_path, model_name, output_type, model_file, features, fe_files)
         self.mae = mae
         self.mape = mape

@@ -32,6 +32,7 @@ jobs:
         run: make test-pipeline
       - name: Test model server
         run: make test-model-server
+        timeout-minutes: 5
       - name: Test estimator
         run: make test-estimator
         timeout-minutes: 5

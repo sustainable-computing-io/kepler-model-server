@@ -18,12 +18,30 @@ ARRAY_DELIMIT = ','
 CHECKPOINT_FOLDERNAME = 'checkpoint'
 PREPROCESS_FOLDERNAME = "preprocessed_data"
 
-# TODO: change to v0.7 when the model is updated to database, need document update
-# default_init_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.7/nx12"
-DEFAULT_PIPELINE = "std_v{}".format(version)
-default_init_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v0.6/nx12"
+##########################################################################
+# pipeline loader
+
+## default_train_output_pipeline: a default pipeline name which is output from the training pipeline
+default_train_output_pipeline = "std_v{}".format(version)
+default_pipelines = {
+    "intel_rapl": "ec2",
+    "acpi": "specpower"
+}
+base_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v{}".format(version)
+def get_pipeline_url(model_topurl, pipeline_name):
+    file_ext = ".zip"
+    return os.path.join(model_topurl, pipeline_name + file_ext)
+
+def assure_pipeline_name(pipeline_name, energy_source, nodeCollection):
+    if pipeline_name == "":
+        pipeline_name = default_pipelines[energy_source]
+        if pipeline_name not in nodeCollection and default_train_output_pipeline in nodeCollection:
+            pipeline_name = default_train_output_pipeline
+    return pipeline_name
+##########################################################################
+
 default_trainer_name = "GradientBoostingRegressorTrainer"
-default_node_type = 1
+default_node_type = 0
 any_node_type = -1
 default_feature_group = FeatureGroup.BPFOnly
 
@@ -36,7 +54,6 @@ def load_json(path, name):
             res = json.load(f)
         return res
     except Exception as err:
-        print(err)
         return None
     
 def load_pkl(path, name):
@@ -46,7 +63,8 @@ def load_pkl(path, name):
     try:
         res = joblib.load(filepath)
         return res
-    except Exception:
+    except Exception as err:
+        print("fail to load pkl {}: {}".format(filepath, err))
         return None
    
 def load_remote_pkl(url_path):
@@ -134,15 +152,46 @@ def is_valid_model(metadata, filters):
 def get_model_name(trainer_name, node_type):
     return "{}_{}".format(trainer_name, node_type)
 
-def is_matched_type(model_name, node_type):
-    if node_type == any_node_type:
-        return True
-    return model_name.split("_")[-1] == str(node_type)
+def get_node_type_from_name(model_name):
+    return int(model_name.split("_")[-1])
 
-def get_pipeline_path(model_toppath, pipeline_name=DEFAULT_PIPELINE):
+def is_matched_type(nodeCollection, spec, pipeline_name, model_name, node_type, energy_source):
+    model_node_type = get_node_type_from_name(model_name)
+    if model_node_type == node_type:
+        return True
+    if node_type == any_node_type:
+        # if not specify spec, return true
+        if spec is None:
+            return True
+        # if covered by the model's node_type, return true
+        pipeline_name = assure_pipeline_name(pipeline_name, energy_source, nodeCollection)
+        if pipeline_name not in nodeCollection or nodeCollection[pipeline_name].node_type_index[model_node_type].cover(spec):
+            return True
+    return False
+
+def get_largest_candidates(model_names, pipeline_name, nodeCollection, energy_source):
+    pipeline_name = assure_pipeline_name(pipeline_name, energy_source, nodeCollection)
+    if pipeline_name not in nodeCollection:
+        return None
+    node_type_index = nodeCollection[pipeline_name].node_type_index
+    max_cores = 0
+    candidates = dict()
+    for model_name in model_names:
+        model_node_type = get_node_type_from_name(model_name)
+        if model_node_type not in node_type_index:
+            continue
+        cores = node_type_index[model_node_type].get_cores()
+        if cores not in candidates:
+            candidates[cores] = []
+        candidates[cores] += [model_name]
+        if cores > max_cores:
+            max_cores = cores
+    return candidates[max_cores] if max_cores > 0 else None
+
+def get_pipeline_path(model_toppath, pipeline_name):
     return os.path.join(model_toppath, pipeline_name)
 
-def get_model_group_path(model_toppath, output_type, feature_group, energy_source, pipeline_name=DEFAULT_PIPELINE, assure=True):
+def get_model_group_path(model_toppath, output_type, feature_group, energy_source, pipeline_name, assure=True):
     pipeline_path = get_pipeline_path(model_toppath, pipeline_name)
     energy_source_path = os.path.join(pipeline_path, energy_source)
     output_path = os.path.join(energy_source_path, output_type.name)
@@ -186,7 +235,7 @@ def list_pipelines(model_toppath, energy_source, model_type):
     pipeline_names = [f for f in os.listdir(model_toppath) if os.path.exists(os.path.join(model_toppath, f, pipeline_metadata_filename + ".csv"))]
     return pipeline_names
 
-def list_all_abs_models(model_toppath, energy_source, valid_fgs, pipeline_name=DEFAULT_PIPELINE):
+def list_all_abs_models(model_toppath, energy_source, valid_fgs, pipeline_name):
     abs_models_map = dict()
     for fg in valid_fgs:
         group_path = get_model_group_path(model_toppath, output_type=ModelOutputType.AbsPower, feature_group=fg, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
@@ -194,7 +243,7 @@ def list_all_abs_models(model_toppath, energy_source, valid_fgs, pipeline_name=D
         abs_models_map[group_path] = model_names
     return abs_models_map
 
-def list_all_dyn_models(model_toppath, energy_source, valid_fgs, pipeline_name=DEFAULT_PIPELINE):
+def list_all_dyn_models(model_toppath, energy_source, valid_fgs, pipeline_name):
     dyn_models_map = dict()
     for fg in valid_fgs:
         group_path = get_model_group_path(model_toppath, output_type=ModelOutputType.DynPower, feature_group=fg, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
@@ -250,7 +299,9 @@ def get_download_output_path(download_path, energy_source, output_type):
     energy_source_path = assure_path(os.path.join(download_path, energy_source))
     return os.path.join(energy_source_path, output_type.name)
 
-def get_url(output_type, feature_group=default_feature_group, trainer_name=default_trainer_name, node_type=default_node_type, model_topurl=default_init_model_url, energy_source="intel_rapl", pipeline_name=DEFAULT_PIPELINE, model_name=None, weight=False):
+def get_url(output_type, feature_group, energy_source, trainer_name=default_trainer_name, node_type=default_node_type, model_topurl=base_model_url, pipeline_name=None, model_name=None, weight=False):
+    if pipeline_name is None:
+        pipeline_name = default_pipelines[energy_source]
     group_path = get_model_group_path(model_topurl, output_type=output_type, feature_group=feature_group, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
     if model_name is None:
         model_name = get_model_name(trainer_name, node_type)
@@ -258,12 +309,6 @@ def get_url(output_type, feature_group=default_feature_group, trainer_name=defau
     if weight:
         file_ext = ".json" 
     return os.path.join(group_path, model_name + file_ext)
-
-def get_pipeline_url(model_topurl=default_init_model_url, pipeline_name=DEFAULT_PIPELINE, weight=False):
-    file_ext = ".zip"
-    if weight:
-        file_ext = ".json" 
-    return os.path.join(model_topurl, pipeline_name + file_ext)
 
 def class_to_json(class_obj):
     return json.loads(json.dumps(class_obj.__dict__))

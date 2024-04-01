@@ -7,7 +7,7 @@ util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
 from loader import load_json, version
-from saver import assure_path,  _pipeline_model_metadata_filename
+from saver import assure_path,  _pipeline_model_metadata_filename, _power_curve_filename
 from validator import mae_threshold, mape_threshold
 from train_types import ModelOutputType, PowerSourceMap
 
@@ -220,6 +220,15 @@ def generate_pipeline_readme(pipeline_name, local_export_path, node_type_index_j
             markdown_content += "![]({}.png)\n".format(data_filename)
 
     markdown_content += data_to_markdown_table(df.sort_values(by=["node type"]))
+    # add power curve figures
+    for ot in ModelOutputType:
+        for energy_source in PowerSourceMap.keys():
+            data_filename = _power_curve_filename(energy_source, ot.name)
+            png_filename = data_filename + ".png"
+            if os.path.exists(os.path.join(local_export_path, png_filename)):
+                markdown_content += "## {} ({})\n".format(energy_source, ot.name)
+                markdown_content += "![]({})\n".format(png_filename)
+
     write_markdown(markdown_filepath, markdown_content)
     return markdown_filepath
 

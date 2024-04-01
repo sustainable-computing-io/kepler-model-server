@@ -18,7 +18,7 @@ from util.train_types import get_valid_feature_groups
 from util.prom_types import TIMESTAMP_COL, get_container_name_from_id
 from util.extract_types import container_level_index, container_id_colname, col_to_component
 from util.config import model_toppath
-from util.loader import list_all_abs_models, DEFAULT_PIPELINE
+from util.loader import list_all_abs_models, default_train_output_pipeline
 
 def is_better(curr_min_err, err, curr_max_corr, corr, corr_threshold=0.7):
     if curr_min_err is None:
@@ -33,7 +33,7 @@ def is_better(curr_min_err, err, curr_max_corr, corr, corr_threshold=0.7):
         return err < curr_min_err
     return False
 
-def get_abs_models(workload_feature_cols, energy_source, toppath=model_toppath, pipeline_name=DEFAULT_PIPELINE):
+def get_abs_models(workload_feature_cols, energy_source, toppath=model_toppath, pipeline_name=default_train_output_pipeline):
     # from abs_model_path
     # find valid_feature_groups
     # list_model_names
@@ -81,7 +81,7 @@ def get_target_data_with_dyn_power(model, energy_components, extracted_power_lab
     return target_data_with_dyn_power, sum_background_data_with_prediction
 
 # traverse all abs_model with minimum mae for each energy_source
-def find_best_target_data_with_dyn_power(energy_source, energy_components, extracted_data, background_containers, label_cols, toppath=model_toppath, pipeline_name=DEFAULT_PIPELINE):
+def find_best_target_data_with_dyn_power(energy_source, energy_components, extracted_data, background_containers, label_cols, toppath=model_toppath, pipeline_name=default_train_output_pipeline):
     workload_feature_cols = [col for col in extracted_data.columns if col not in label_cols and col not in container_level_index and 'ratio' not in col and 'node' not in col]
     curr_min_err = None
     curr_max_corr= None
@@ -126,7 +126,7 @@ def get_background_container_from_bg_hints(data, bg_hints):
 
 # TO-DO: suppport multiple node types
 class TrainIsolator(Isolator):
-    def __init__(self, idle_data=None, profiler=None, target_hints=[], bg_hints=[], abs_pipeline_name=DEFAULT_PIPELINE):
+    def __init__(self, idle_data=None, profiler=None, target_hints=[], bg_hints=[], abs_pipeline_name=default_train_output_pipeline):
         if profiler is not None and idle_data is not None:
             self.idle_data = idle_data
             self.profiles = profiler.process(self.idle_data)
