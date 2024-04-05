@@ -61,10 +61,6 @@ wait_for_server() {
     get_server_log
     kubectl get svc kepler-model-server -n kepler
     kubectl get endpoints kepler-model-server -n kepler
-    # restart kepler-exporter to apply server-api
-    kubectl delete po -n kepler -l app.kubernetes.io/component=exporter
-    sleep 5
-    get_kepler_log
 }
 
 wait_for_db() {
@@ -83,7 +79,7 @@ wait_for_keyword() {
         if grep -q "$keyword" <<< $(get_${component}_log); then
             return
         fi
-        sleep 2
+        sleep 5
     done
     echo "timeout ${num_iterations}s waiting for '${keyword}' from ${component} log"
     echo "Error: $message"
@@ -107,9 +103,17 @@ check_estimator_set_and_init() {
     wait_for_keyword kepler "Model Config NODE_COMPONENTS: {ModelType:EstimatorSidecar" "Kepler should set desired config"
 }
 
+restart_kepler() {
+    kubectl delete po -n kepler -l app.kubernetes.io/component=exporter
+    sleep 5
+    get_kepler_log
+}
+
 restart_model_server() {
-    kubectl delete po  -l app.kubernetes.io/component=model-server -n kepler
+    kubectl delete po -l app.kubernetes.io/component=model-server -n kepler
+    sleep 10
     wait_for_server
+    restart_kepler
 }
 
 test() {
@@ -158,6 +162,7 @@ test() {
         if [ ! -z ${SERVER} ]; then
             # with server
             wait_for_server
+            restart_kepler
             get_estimator_log
             sleep 5
             wait_for_keyword estimator "load model from model server" "estimator should be able to load model from server"
@@ -174,11 +179,10 @@ test() {
                 # dummy kepler
                 kubectl patch ds kepler-exporter -n kepler --patch-file ${top_dir}/manifests/test/model-request-client.yaml
                 restart_model_server
-                sleep 1
-                wait_for_server
                 wait_for_keyword kepler Done "cannot get model weight"
             else
                 wait_for_server
+                restart_kepler
                 wait_for_keyword kepler "getWeightFromServer.*core" "kepler should get weight from server"
             fi
         fi

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kepler-cfm
+  namespace: kepler
+data:
+  MODEL_CONFIG: |
+    NODE_COMPONENTS_TRAINER=SGDRegressorTrainer
+    NODE_TOTAL_TRAINER=SGDRegressorTrainer
