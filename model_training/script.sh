@@ -15,6 +15,7 @@ export PIPELINE_PREFIX=${PIPELINE_PREFIX-"std_"}
 export DATAPATH=${DATAPATH-"$(pwd)/data"}
 export ENTRYPOINT_IMG=${ENTRYPOINT_IMG-"quay.io/sustainable_computing_io/kepler_model_server:v0.7"}
 export MODEL_PATH=$DATAPATH
+export KUBECONFIG="/tmp/kubeconfig"
 
 mkdir -p $HOME/bin
 export PATH=$HOME/bin:$PATH
@@ -35,19 +36,6 @@ rollout_ns_status() {
 	for res in $resources; do
 		kubectl rollout status $res --namespace $1 --timeout=10m || die "failed to check status of ${res} inside namespace ${1}"
 	done
-}
-
-function cluster_up() {
-	echo "deploying ${CLUSTER_PROVIDER} cluster"
-    pushd custom-cluster
-    ./main.sh up
-    popd
-}
-
-function cluster_down() {
-    pushd custom-cluster
-   	./main.sh down
-    popd
 }
 
 function deploy_kepler() {

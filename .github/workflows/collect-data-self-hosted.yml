@@ -37,7 +37,7 @@ on:
         type: string
 
 env:
-  KUBECONFIG: /root/.kube/config
+  KUBECONFIG: /tmp/kubeconfig
   
 jobs:
   setup-runner:
@@ -78,53 +78,27 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     steps:
-      - name: Enable RAPL module
-        run: |
-          kernel_version=$(uname -r)
-          apt install -y linux-modules-$kernel_version linux-modules-extra-$kernel_version
-          modprobe intel_rapl_common
-
-      - name: Install Docker
-        id: docker
-        run: |
-            # Add Docker's official GPG key:
-            apt-get update -y
-            apt-get install ca-certificates curl gnupg -y
-            install -m 0755 -d /etc/apt/keyrings
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-            chmod a+r /etc/apt/keyrings/docker.gpg
-            # Add the repository to Apt sources:
-            echo \
-              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-              $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-              tee /etc/apt/sources.list.d/docker.list > /dev/null
-            apt-get update -y
-            apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
-            docker info
-
       - name: Checkout
         id: checkout
         uses: actions/checkout@v4
 
-      - name: Prepare Cluster
-        working-directory: model_training
-        run: |
-          ./script.sh cluster_up
-          cp $HOME/bin/kubectl /usr/local/bin/kubectl
-          kubectl get po -A
+      - name: use Kepler action to deploy cluster
+        uses: sustainable-computing-io/kepler-action@main
+        with:
+          ebpfprovider: libbpf
+          cluster_provider: kind
+          install_containerruntime: true
+          prometheus_enable: true
+          tekton_enable: true
+          kernel_module_names: intel_rapl_common
+
       - name: Install Kepler
         working-directory: model_training
         run: |
           ./script.sh deploy_kepler
           ./script.sh deploy_prom_dependency
           kubectl logs $(kubectl get pods -oname -nkepler) -n kepler|grep "obtain power"
-      
-      - name: Install Tekton
-        run: |
-          kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
-          ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines
-          ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines-resolvers
-          
+
       - name: Prepare PVC
         working-directory: model_training/tekton
         run: |

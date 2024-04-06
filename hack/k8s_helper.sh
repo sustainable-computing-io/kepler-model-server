@@ -17,6 +17,7 @@
 # Copyright 2023 The Kepler Contributors
 #
 
+export KUBECONFIG="/tmp/kubeconfig"
 set -e
 
 rollout_ns_status() {
