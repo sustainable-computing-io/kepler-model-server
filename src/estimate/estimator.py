@@ -61,14 +61,14 @@ def handle_request(data):
     if output_type.name not in loaded_model:
         loaded_model[output_type.name] = dict()
     output_path = ""
-    request_trainer = True
+    request_trainer = False
     if power_request.trainer_name is not None:
         if output_type.name in loaded_model and power_request.energy_source in loaded_model[output_type.name]:
             current_trainer = loaded_model[output_type.name][power_request.energy_source].trainer_name
-            request_trainer = current_trainer == power_request.trainer_name
-            if not request_trainer:
+            request_trainer = current_trainer != power_request.trainer_name
+            if request_trainer:
                 print("try obtaining the requesting trainer {} (current: {})".format(power_request.trainer_name, current_trainer))
-    if power_request.energy_source not in loaded_model[output_type.name] or not request_trainer:
+    if power_request.energy_source not in loaded_model[output_type.name] or request_trainer:
         output_path = get_download_output_path(download_path, power_request.energy_source, output_type)
         if not os.path.exists(output_path):
             # try connecting to model server

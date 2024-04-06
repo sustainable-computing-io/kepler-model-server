@@ -9,6 +9,7 @@ images:
 
 patchesStrategicMerge:
 - ./patch/patch-model-server.yaml
+- ./patch/patch-server-only.yaml
 resources:
 - ../kepler
 - ../server

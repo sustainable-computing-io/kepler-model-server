@@ -1,4 +1,3 @@
-# TODO: change to official path when kepler-model-db#22 merged
 apiVersion: v1
 kind: ConfigMap
 metadata:

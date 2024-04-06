@@ -66,7 +66,9 @@ jobs:
         run: make build build-test push push-test
       - name: set up Kustomize
         run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          curl -o install_kustomize.sh https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh
+          chmod +x install_kustomize.sh
+          ./install_kustomize.sh 5.3.0
           chmod +x kustomize
           mv kustomize /usr/local/bin/
       - name: test deploying with only estimator
