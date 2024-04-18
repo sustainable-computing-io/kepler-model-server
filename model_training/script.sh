@@ -223,14 +223,6 @@ function _export() {
     fi
 }
 
-function export() {
-    _export $1 $2 $3 $4
-}
-
-function export_with_raw() {
-    _export $1 $2 $3 $4 "--include-raw true"
-}
-
 function cleanup() {
     clean_cpe_cr
     clean_deployment || true
@@ -270,6 +262,14 @@ function prepare_cluster() {
     deploy_kepler
     deploy_prom_dependency
     reload_prometheus
+}
+
+function export() {
+    _export $1 $2 $3 $4
+}
+
+function export_with_raw() {
+    _export $1 $2 $3 $4 "--include-raw true"
 }
 
 "$@"
