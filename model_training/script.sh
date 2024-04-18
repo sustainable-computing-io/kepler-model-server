@@ -246,8 +246,8 @@ clone_local_dev_cluster() {
 function cluster_up() {
     cd "$PROJECT_ROOT"
     clone_local_dev_cluster
-    export PROMETHEUS_ENABLE=true
-    export TEKTON_ENABLE=true
+    PROMETHEUS_ENABLE=true
+    TEKTON_ENABLE=true
     "$LOCAL_DEV_CLUSTER_DIR/main.sh up" 
 }
 
