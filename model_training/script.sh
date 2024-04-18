@@ -16,6 +16,8 @@ export DATAPATH=${DATAPATH-"$(pwd)/data"}
 export ENTRYPOINT_IMG=${ENTRYPOINT_IMG-"quay.io/sustainable_computing_io/kepler_model_server:v0.7"}
 export MODEL_PATH=$DATAPATH
 export KUBECONFIG="/tmp/kubeconfig"
+export PROMETHEUS_ENABLE=true
+export TEKTON_ENABLE=true
 
 # NOTE: assumes that the project root is one level up
 PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)
@@ -27,7 +29,7 @@ declare -r PROJECT_ROOT
 
 # NOTE: these settings can be overridden in the .env file
 declare -r LOCAL_DEV_CLUSTER_DIR="${LOCAL_DEV_CLUSTER_DIR:-"$PROJECT_ROOT/local-dev-cluster"}"
-declare -r LOCAL_DEV_CLUSTER_VERSION="${LOCAL_DEV_CLUSTER_VERSION:-v0.0.3}"
+declare -r LOCAL_DEV_CLUSTER_VERSION="${LOCAL_DEV_CLUSTER_VERSION:-v0.0.5}"
 
 mkdir -p $HOME/bin
 export PATH=$HOME/bin:$PATH
@@ -246,8 +248,6 @@ clone_local_dev_cluster() {
 function cluster_up() {
     cd "$PROJECT_ROOT"
     clone_local_dev_cluster
-    PROMETHEUS_ENABLE=true
-    TEKTON_ENABLE=true
     "$LOCAL_DEV_CLUSTER_DIR/main.sh" up 
 }
 
