@@ -4,8 +4,8 @@ set -e
 # Supported CLUSTER_PROVIDER are kind,microshift
 export CLUSTER_PROVIDER=${CLUSTER_PROVIDER:-kind}
 export IMAGE_TAG=${IMAGE_TAG:-latest}
-export KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-kind-for-training}
-export KIND_REGISTRY_NAME=${KIND_REGISTRY_NAME:-kind-registry-for-training}
+export KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-kind}
+export KIND_REGISTRY_NAME=${KIND_REGISTRY_NAME:-kind}
 export REGISTRY_PORT=${REGISTRY_PORT:-5101}
 export IMAGE_REPO=${IMAGE_REPO:-localhost:5101}
 export PROM_SERVER=${PROM_SERVER:-http://localhost:9090}
@@ -16,6 +16,18 @@ export DATAPATH=${DATAPATH-"$(pwd)/data"}
 export ENTRYPOINT_IMG=${ENTRYPOINT_IMG-"quay.io/sustainable_computing_io/kepler_model_server:v0.7"}
 export MODEL_PATH=$DATAPATH
 export KUBECONFIG="/tmp/kubeconfig"
+
+# NOTE: assumes that the project root is one level up
+PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)
+declare -r PROJECT_ROOT
+
+# NOTE: this allows common settings to be stored as `.env` file
+# shellcheck disable=SC1091
+[[ -f "$PROJECT_ROOT/.env" ]] && source "$PROJECT_ROOT/.env"
+
+# NOTE: these settings can be overridden in the .env file
+declare -r LOCAL_DEV_CLUSTER_DIR="${LOCAL_DEV_CLUSTER_DIR:-"$PROJECT_ROOT/local-dev-cluster"}"
+declare -r LOCAL_DEV_CLUSTER_VERSION="${LOCAL_DEV_CLUSTER_VERSION:-v0.0.3}"
 
 mkdir -p $HOME/bin
 export PATH=$HOME/bin:$PATH
@@ -153,13 +165,6 @@ function train_model(){
     fi
 }
 
-function prepare_cluster() {
-    cluster_up
-    deploy_kepler
-    deploy_prom_dependency
-    reload_prometheus
-}
-
 function collect() {
     collect_idle
     collect_data stressng cpe-operator-system 60
@@ -230,6 +235,41 @@ function cleanup() {
     clean_cpe_cr
     clean_deployment || true
     cluster_down
+}
+
+
+clone_local_dev_cluster() {
+	if [ -d "$LOCAL_DEV_CLUSTER_DIR" ]; then
+		echo "using local local-dev-cluster"
+		return 0
+	fi
+
+	echo "downloading local-dev-cluster"
+	git clone -b "$LOCAL_DEV_CLUSTER_VERSION" \
+		https://github.com/sustainable-computing-io/local-dev-cluster.git \
+		--depth=1 \
+		"$LOCAL_DEV_CLUSTER_DIR"
+}
+
+function cluster_up() {
+    cd "$PROJECT_ROOT"
+    clone_local_dev_cluster
+    export PROMETHEUS_ENABLE=true
+    export TEKTON_ENABLE=true
+    "$LOCAL_DEV_CLUSTER_DIR/main.sh" up
+}
+
+function cluster_down() {
+    cd "$PROJECT_ROOT"
+    clone_local_dev_cluster
+    "$LOCAL_DEV_CLUSTER_DIR/main.sh" down
+}
+
+function prepare_cluster() {
+    cluster_up
+    deploy_kepler
+    deploy_prom_dependency
+    reload_prometheus
 }
 
 "$@"

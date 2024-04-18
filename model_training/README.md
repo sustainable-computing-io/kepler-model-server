@@ -11,7 +11,6 @@
     ```bash
     git clone
     cd model_training
-    chmod +x script.sh
     ```
 ## 1. Prepare cluster
 
@@ -23,10 +22,11 @@ Run
 ./script.sh prepare_cluster
 ```
 The script will 
-1. create a kind cluster `kind-for-training` with registry at port `5101`.
+1. create a kind cluster `kind` with registry at port `5101`.
 2. deploy Prometheus.
 3. deploy Prometheus RBAC and node port to `30090` port on kind node which will be forwarded to `9090` port on the host.
 4. deploy service monitor for kepler and reload to Prometheus server
+5. deploy Tekton
 
 ### For managed cluster
 
