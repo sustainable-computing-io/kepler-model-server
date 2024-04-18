@@ -248,13 +248,13 @@ function cluster_up() {
     clone_local_dev_cluster
     PROMETHEUS_ENABLE=true
     TEKTON_ENABLE=true
-    "$LOCAL_DEV_CLUSTER_DIR/main.sh up" 
+    "$LOCAL_DEV_CLUSTER_DIR/main.sh" up 
 }
 
 function cluster_down() {
     cd "$PROJECT_ROOT"
     clone_local_dev_cluster
-    "$LOCAL_DEV_CLUSTER_DIR/main.sh down" 
+    "$LOCAL_DEV_CLUSTER_DIR/main.sh" down 
 }
 
 function prepare_cluster() {
