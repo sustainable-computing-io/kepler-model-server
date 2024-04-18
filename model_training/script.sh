@@ -1,13 +1,21 @@
 #!/bin/bash
 
 set -e
+# NOTE: assumes that the project root is one level up
+PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)
+declare -r PROJECT_ROOT
+
+# NOTE: this allows common settings to be stored as `.env` file
+# shellcheck disable=SC1091
+[[ -f "$PROJECT_ROOT/.env" ]] && source "$PROJECT_ROOT/.env"
+
+# NOTE: these settings can be overridden in the .env file
+declare -r LOCAL_DEV_CLUSTER_DIR="${LOCAL_DEV_CLUSTER_DIR:-"$PROJECT_ROOT/local-dev-cluster"}"
+declare -r LOCAL_DEV_CLUSTER_VERSION="${LOCAL_DEV_CLUSTER_VERSION:-v0.0.5}"
 # Supported CLUSTER_PROVIDER are kind,microshift
 export CLUSTER_PROVIDER=${CLUSTER_PROVIDER:-kind}
-export IMAGE_TAG=${IMAGE_TAG:-latest}
 export KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-kind-for-training}
 export KIND_REGISTRY_NAME=${KIND_REGISTRY_NAME:-kind-registry-for-training}
-export REGISTRY_PORT=${REGISTRY_PORT:-5101}
-export IMAGE_REPO=${IMAGE_REPO:-localhost:5101}
 export PROM_SERVER=${PROM_SERVER:-http://localhost:9090}
 export ENERGY_SOURCE=${ENERGY_SOURCE:-intel_rapl,acpi}
 export VERSION=${VERSION-v0.7}
@@ -15,6 +23,9 @@ export PIPELINE_PREFIX=${PIPELINE_PREFIX-"std_"}
 export DATAPATH=${DATAPATH-"$(pwd)/data"}
 export ENTRYPOINT_IMG=${ENTRYPOINT_IMG-"quay.io/sustainable_computing_io/kepler_model_server:v0.7"}
 export MODEL_PATH=$DATAPATH
+export KUBECONFIG="/tmp/kubeconfig"
+export PROMETHEUS_ENABLE=true
+export TEKTON_ENABLE=true
 
 mkdir -p $HOME/bin
 export PATH=$HOME/bin:$PATH
@@ -29,6 +40,19 @@ then
     chmod +x $HOME/bin/kubectl
 fi
 
+clone_local_dev_cluster() {
+	if [ -d "$LOCAL_DEV_CLUSTER_DIR" ]; then
+		echo "using local local-dev-cluster"
+		return 0
+	fi
+
+	echo "downloading local-dev-cluster"
+	git clone -b "$LOCAL_DEV_CLUSTER_VERSION" \
+		https://github.com/sustainable-computing-io/local-dev-cluster.git \
+		--depth=1 \
+		"$LOCAL_DEV_CLUSTER_DIR"
+}
+
 rollout_ns_status() {
 	local resources
 	resources=$(kubectl get deployments,statefulsets,daemonsets -n=$1 -o name)
@@ -38,16 +62,16 @@ rollout_ns_status() {
 }
 
 function cluster_up() {
-	echo "deploying ${CLUSTER_PROVIDER} cluster"
-    pushd custom-cluster
-    ./main.sh up
-    popd
+	cd "$PROJECT_ROOT"
+    clone_local_dev_cluster
+    "$LOCAL_DEV_CLUSTER_DIR/main.sh" up 
+    cd "$PROJECT_ROOT/model_training"
 }
 
 function cluster_down() {
-    pushd custom-cluster
-   	./main.sh down
-    popd
+	cd "$PROJECT_ROOT"
+    clone_local_dev_cluster
+    "$LOCAL_DEV_CLUSTER_DIR/main.sh" down 
 }
 
 function deploy_kepler() {
@@ -169,7 +193,16 @@ function prepare_cluster() {
     cluster_up
     deploy_kepler
     deploy_prom_dependency
+    watch_service 9090 "monitoring" prometheus-k8s &
     reload_prometheus
+}
+
+function watch_service() {
+	local port="$1"
+	local ns="$2"
+	local svn="$3"
+	shift 3
+	kubectl port-forward --address localhost -n "$ns" service/"$svn" "$port":"$port"
 }
 
 function collect() {
