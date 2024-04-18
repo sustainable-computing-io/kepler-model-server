@@ -5,7 +5,6 @@ set -e
 export CLUSTER_PROVIDER=${CLUSTER_PROVIDER:-kind}
 export IMAGE_TAG=${IMAGE_TAG:-latest}
 export KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-kind}
-export KIND_REGISTRY_NAME=${KIND_REGISTRY_NAME:-kind}
 export REGISTRY_PORT=${REGISTRY_PORT:-5101}
 export IMAGE_REPO=${IMAGE_REPO:-localhost:5101}
 export PROM_SERVER=${PROM_SERVER:-http://localhost:9090}
