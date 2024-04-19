@@ -104,17 +104,17 @@ Compatible version: python 3.8
 
 1. Fork `kepler-model-db`.
 
-1. Validate and make a copy by export command. Need to define `machine id`, `local path to forked kepler-model-db/models`, `author github account` and `benchmark type`.
+1. Validate and make a copy by export_models command. Need to define `machine id`, `local path to forked kepler-model-db/models`, `author github account` and `benchmark type`.
 
     Run
     ```
-    ./script.sh export <machine id> <path to kepler-model-db/models> <author github account> <benchmark type>
+    ./script.sh export_models <machine id> <path to kepler-model-db/models> <author github account> <benchmark type>
     ```
 
     If you also agree to share the raw data (preprocessed data and archived file of full pipeline), run
 
     ```
-    ./script.sh export_with_raw <machine id> <path to kepler-model-db/models> <author github account> <benchmark type>
+    ./script.sh export_models_with_raw <machine id> <path to kepler-model-db/models> <author github account> <benchmark type>
     ```
 
     - set `NATIVE="true"` to export natively.
