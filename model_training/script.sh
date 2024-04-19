@@ -230,11 +230,11 @@ function _export() {
     fi
 }
 
-function export() {
+function export_models() {
     _export $1 $2 $3 $4
 }
 
-function export_with_raw() {
+function export_models_with_raw() {
     _export $1 $2 $3 $4 "--include-raw true"
 }
 
