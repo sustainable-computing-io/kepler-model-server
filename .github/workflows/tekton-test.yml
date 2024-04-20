@@ -37,6 +37,8 @@ on:
 env:
   BASE_IMAGE: ${{ inputs.image_repo }}/kepler_model_server_base:${{ inputs.image_tag }}
   IMAGE: ${{ inputs.image_repo }}/kepler_model_server:${{ inputs.image_tag }}
+  KIND_CLUSTER_NAME: kind
+  KUBECONFIG: /tmp/kubeconfig
 
 jobs:
   tekton-test:
@@ -56,16 +58,17 @@ jobs:
       - name: Build image
         run: |
           docker build -t $IMAGE -f dockerfiles/Dockerfile .
-      - name: Prepare Cluster
-        working-directory: model_training
-        run: |
-          ./script.sh cluster_up
-          cp $HOME/bin/kubectl /usr/local/bin/kubectl
-          kubectl get po -A
+      - name: use Kepler action to deploy cluster
+        uses: sustainable-computing-io/kepler-action@main
+        with:
+          ebpfprovider: libbpf
+          cluster_provider: kind
+          prometheus_enable: true
+          tekton_enable: true
 
       - name: Load built image to cluster
         run: |
-          kind load docker-image $IMAGE --name=kind-for-training
+          kind load docker-image $IMAGE
 
       - name: Install Kepler
         working-directory: model_training
@@ -77,12 +80,6 @@ jobs:
           kubectl get $podname -n kepler -oyaml
           kubectl logs $podname -n kepler
           kubectl get $podname -n kepler
-
-      - name: Install Tekton
-        run: |
-          kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
-          ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines
-          ./hack/k8s_helper.sh rollout_ns_status tekton-pipelines-resolvers
 
       - name: Prepare PVC
         working-directory: model_training/tekton

@@ -147,3 +147,4 @@ tests/data/offline_trainer_output
 tests/data/plot_output
 model_training/*data*
 model_training/tekton/secret
+local-dev-cluster
