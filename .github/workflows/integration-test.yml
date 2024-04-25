@@ -43,7 +43,7 @@ jobs:
         with:
           runningBranch: kind
           cluster_provider: kind
-          local_dev_cluster_version: v0.0.3
+          local_dev_cluster_version: v0.0.7
       - name: load kepler image
         run: |
           docker pull ${{ env.KEPLER_IMAGE }}
