@@ -59,7 +59,7 @@ jobs:
         run: |
           docker build -t $IMAGE -f dockerfiles/Dockerfile .
       - name: use Kepler action to deploy cluster
-        uses: sustainable-computing-io/kepler-action@main
+        uses: sustainable-computing-io/kepler-action@v0.0.7
         with:
           ebpfprovider: libbpf
           cluster_provider: kind
