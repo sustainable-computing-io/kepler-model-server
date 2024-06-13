@@ -18,4 +18,6 @@ EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
 
+CMD ["gunicorn", "--bind", "0.0.0.0:8100", "src.server.model_server:app"]
+
 ENTRYPOINT ["python3.8", "cmd/main.py"]

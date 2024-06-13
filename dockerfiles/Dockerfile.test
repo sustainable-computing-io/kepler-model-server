@@ -24,4 +24,5 @@ EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
 
-CMD [ "python3.8", "-u", "src/server/model_server.py" ]
+#CMD [ "python3.8", "-u", "src/server/model_server.py" ]
+CMD ["gunicorn", "--bind", "0.0.0.0:8100", "src.server.model_server:app"]
