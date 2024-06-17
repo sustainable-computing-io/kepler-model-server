@@ -143,7 +143,7 @@ jobs:
             username: ${{ secrets.BOT_NAME }}
             password: ${{ secrets.BOT_TOKEN }} 
       - name: Build-push base image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: dockerfiles
           push: true
