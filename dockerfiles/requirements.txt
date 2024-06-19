@@ -14,3 +14,4 @@ py-cpuinfo==9.0.0
 seaborn==0.12.2
 psutil==5.9.8
 pyudev==0.24.1
+urllib3>=2.2.2 # not directly required, pinned by Snyk to avoid a vulnerability
