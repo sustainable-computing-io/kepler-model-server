@@ -20,6 +20,9 @@ build-test-nobase:
 build-test:
 	$(CTR_CMD) build -t $(TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test .
 
+build-test-gunicorn:
+	$(CTR_CMD) build -t $(TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test-gunicorn .
+
 push:
 	$(CTR_CMD) push $(IMAGE)
 

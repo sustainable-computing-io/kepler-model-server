@@ -1,0 +1,34 @@
+#FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:v0.7
+FROM python:3.8-slim
+
+WORKDIR /usr/local
+
+RUN mkdir -p /usr/local/src
+RUN mkdir -p /usr/local/resource
+
+COPY dockerfiles/requirements.txt dockerfiles/requirements.txt
+RUN pip install --no-cache-dir -r dockerfiles/requirements.txt
+
+COPY src/estimate src/estimate
+COPY src/server src/server
+COPY src/train src/train
+COPY src/util src/util
+COPY cmd cmd
+
+
+ENV PORT_MODEL_SERVER=8100
+ENV PORT_ONLINE_TRAINER=8101
+ENV PORT_OFFLINE_TRAINER=8102
+
+# port for Model Server
+EXPOSE ${PORT_MODEL_SERVER}
+# port for Online Trainer (TODO: reserved for event-based online training)
+EXPOSE ${PORT_ONLINE_TRAINER}
+# port for Offline Trainer
+EXPOSE ${PORT_OFFLINE_TRAINER}
+
+# CMD ["gunicorn", "--bind", "0.0.0.0:8100", "src.server.model_server:app"]
+
+# ENTRYPOINT ["python3.8", "cmd/main.py"]
+#CMD ["sh", "cmd/gunicorn.sh"]
+ENTRYPOINT ["python3.8", "cmd/main.py"]
