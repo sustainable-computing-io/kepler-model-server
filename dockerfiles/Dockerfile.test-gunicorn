@@ -5,23 +5,30 @@ WORKDIR /usr/local
 RUN mkdir -p /usr/local/src
 RUN mkdir -p /usr/local/resource
 
-RUN mkdir -p resource/profiles
+COPY dockerfiles/requirements.txt dockerfiles/requirements.txt
+RUN pip install --no-cache-dir -r dockerfiles/requirements.txt
+
 COPY src/estimate src/estimate
 COPY src/server src/server
 COPY src/train src/train
 COPY src/util src/util
+COPY cmd cmd
 
 RUN mkdir -p tests/data
 COPY tests/data/prom_output tests/data/prom_output 
 COPY tests/*.py tests/
 
-RUN mkdir -p /mnt/models
+ENV PORT_MODEL_SERVER=8105
+ENV PORT_ONLINE_TRAINER=8106
+ENV PORT_OFFLINE_TRAINER=8107
 
 # port for Model Server
-EXPOSE 8100
+EXPOSE ${PORT_MODEL_SERVER}
 # port for Online Trainer (TODO: reserved for event-based online training)
-EXPOSE 8101
+EXPOSE ${PORT_ONLINE_TRAINER}
 # port for Offline Trainer
-EXPOSE 8102
+EXPOSE ${PORT_OFFLINE_TRAINER}
 
-CMD [ "python3.8", "-u", "src/server/model_server.py" ]
+# ENTRYPOINT ["python3.8", "cmd/main.py"]
+#ENTRYPOINT [ "python3.8", "-u", "src/server/model_server.py" ]
+CMD ["sh", "cmd/gunicorn.sh"]
