@@ -5,6 +5,7 @@ IMAGE_VERSION := 0.7
 IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):v$(IMAGE_VERSION)
 LATEST_TAG_IMAGE := $(IMAGE_REGISTRY)/$(IMAGE_NAME):latest
 TEST_IMAGE := $(IMAGE)-test
+GUNICORN_TEST_IMAGE := $(TEST_IMAGE)-gunicorn
 
 CTR_CMD = docker
 
@@ -21,7 +22,7 @@ build-test:
 	$(CTR_CMD) build -t $(TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test .
 
 build-test-gunicorn:
-	$(CTR_CMD) build -t $(TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test-gunicorn .
+	$(CTR_CMD) build -t $(GUNICORN_TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test-gunicorn .
 
 push:
 	$(CTR_CMD) push $(IMAGE)
@@ -54,12 +55,19 @@ run-model-server:
 	$(CTR_CMD) run -d --platform linux/amd64 -e "MODEL_TOPURL=http://localhost:8110" -v ${MODEL_PATH}:/mnt/models -p 8100:8100 --name model-server $(TEST_IMAGE) /bin/bash -c "python3.8 tests/http_server.py & sleep 10 &&  python3.8 src/server/model_server.py"
 	while ! docker logs model-server | grep -q Serving; do   echo "waiting for model-server to serve";  sleep 5; done
 
+run-model-server-gunicorn-complete:
+	$(CTR_CMD) run -d --platform linux/amd64 -e "MODEL_TOPURL=http://localhost:8110" -v ${MODEL_PATH}:/mnt/models -p 8105:8105 -p 9109:9109 --name model-server-gunicorn-complete $(GUNICORN_TEST_IMAGE)
+
 run-estimator-client:
 	$(CTR_CMD) exec model-server /bin/bash -c "python3.8 -u ./tests/estimator_model_request_test.py"
 
 clean-model-server:
 	@$(CTR_CMD) stop model-server
 	@$(CTR_CMD) rm model-server
+
+clean-model-server-gunicorn-complete:
+	@$(CTR_CMD) stop model-server-gunicorn-complete
+	@$(CTR_CMD) rm model-server-gunicorn-complete
 
 test-model-server: run-model-server run-estimator-client clean-model-server
 
@@ -68,12 +76,20 @@ run-offline-trainer:
 	$(CTR_CMD) run -d --platform linux/amd64  -p 8102:8102 --name offline-trainer $(TEST_IMAGE) python3.8 src/train/offline_trainer.py
 	sleep 5
 
+run-offline-trainer-gunicorn:
+	$(CTR_CMD) run -d --platform linux/amd64  -p 9109:9109 --name offline-trainer-gunicorn $(GUNICORN_TEST_IMAGE)
+	sleep 5
+
 run-offline-trainer-client:
 	$(CTR_CMD) exec offline-trainer /bin/bash -c "python3.8 -u ./tests/offline_trainer_test.py"
 
 clean-offline-trainer:
 	@$(CTR_CMD) stop offline-trainer
 	@$(CTR_CMD) rm offline-trainer
+
+clean-offline-trainer-gunicorn:
+	@$(CTR_CMD) stop offline-trainer-gunicorn
+	@$(CTR_CMD) rm offline-trainer-gunicorn
 
 test-offline-trainer: run-offline-trainer run-offline-trainer-client clean-offline-trainer
 
