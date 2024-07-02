@@ -1,4 +1,4 @@
-FROM python:3.8-slim
+FROM python:3.13.0b2-slim
 
 WORKDIR /usr/local
 
