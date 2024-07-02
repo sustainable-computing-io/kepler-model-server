@@ -13,6 +13,7 @@ COPY src/server src/server
 COPY src/train src/train
 COPY src/util src/util
 COPY cmd cmd
+COPY config config
 
 RUN mkdir -p tests/data
 COPY tests/data/prom_output tests/data/prom_output 
@@ -20,7 +21,7 @@ COPY tests/*.py tests/
 
 ENV PORT_MODEL_SERVER=8105
 ENV PORT_ONLINE_TRAINER=8106
-ENV PORT_OFFLINE_TRAINER=8107
+ENV PORT_OFFLINE_TRAINER=9105
 
 # port for Model Server
 EXPOSE ${PORT_MODEL_SERVER}
@@ -29,6 +30,4 @@ EXPOSE ${PORT_ONLINE_TRAINER}
 # port for Offline Trainer
 EXPOSE ${PORT_OFFLINE_TRAINER}
 
-# ENTRYPOINT ["python3.8", "cmd/main.py"]
-#ENTRYPOINT [ "python3.8", "-u", "src/server/model_server.py" ]
 CMD ["sh", "cmd/gunicorn.sh"]
