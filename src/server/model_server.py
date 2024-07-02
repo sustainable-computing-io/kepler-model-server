@@ -5,8 +5,9 @@ import sys
 import codecs
 import shutil
 import requests
-src_path = os.path.join(os.path.dirname(__file__), '..')
-util_path = os.path.join(os.path.dirname(__file__), 'util')
+
+src_path = os.path.join(os.path.dirname(__file__), "..")
+util_path = os.path.join(os.path.dirname(__file__), "util")
 
 sys.path.append(src_path)
 sys.path.append(util_path)
@@ -18,10 +19,11 @@ from util.saver import WEIGHT_FILENAME
 from train import NodeTypeSpec, NodeTypeIndexCollection
 
 ###############################################
-# model request 
+# model request
 
-class ModelRequest():
-    def __init__(self, metrics, output_type, source='intel_rapl', node_type=-1, weight=False, trainer_name="", filter="", pipeline_name="", spec=None):
+
+class ModelRequest:
+    def __init__(self, metrics, output_type, source="intel_rapl", node_type=-1, weight=False, trainer_name="", filter="", pipeline_name="", spec=None):
         # target source of power metric to be predicted (e.g., intel_rapl, acpi)
         self.source = source
         # type of node to select a model learned from similar nodes (default: -1, applied universal model learned by all node_type (TODO))
@@ -43,17 +45,18 @@ class ModelRequest():
         if spec is not None:
             self.spec = NodeTypeSpec(**spec)
 
+
 ###########################################
 
 MODEL_SERVER_PORT = 8100
-MODEL_SERVER_PORT = getConfig('MODEL_SERVER_PORT', MODEL_SERVER_PORT)
+MODEL_SERVER_PORT = getConfig("MODEL_SERVER_PORT", MODEL_SERVER_PORT)
 MODEL_SERVER_PORT = int(MODEL_SERVER_PORT)
 
 # pipelineName and nodeCollection are global dict values set at initial state (load_init_pipeline)
 ## pipelineName: map of energy_source to target pipeline name
 pipelineName = dict()
 ## nodeCollection: map of pipeline_name to its node_collection, used for determining covering node_type of requesting node spec
-nodeCollection =   dict()
+nodeCollection = dict()
 
 """
 select_best_model:
@@ -65,11 +68,10 @@ select_best_model:
 7. for each model, check validity and load
 8. return the best model (lowest error)
 """
+
+
 def select_best_model(spec, valid_groupath, filters, energy_source, pipeline_name="", trainer_name="", node_type=any_node_type, weight=False):
-    model_names = [f for f in os.listdir(valid_groupath) if \
-                    f != CHECKPOINT_FOLDERNAME \
-                    and not os.path.isfile(os.path.join(valid_groupath,f)) \
-                    and (trainer_name == "" or trainer_name in f)]
+    model_names = [f for f in os.listdir(valid_groupath) if f != CHECKPOINT_FOLDERNAME and not os.path.isfile(os.path.join(valid_groupath, f)) and (trainer_name == "" or trainer_name in f)]
     if weight:
         model_names = [name for name in model_names if name.split("_")[0] in weight_support_trainers]
     # Load metadata of trainers
@@ -111,18 +113,20 @@ def select_best_model(spec, valid_groupath, filters, energy_source, pipeline_nam
             best_response = response
     return best_cadidate, best_response
 
+
 app = Flask(__name__)
 
+
 # get_model: return archive file or LR weight based on request (req)
-@app.route(MODEL_SERVER_MODEL_REQ_PATH, methods=['POST'])
+@app.route(MODEL_SERVER_MODEL_REQ_PATH, methods=["POST"])
 def get_model():
     model_request = request.get_json()
     print("get request /model: {}".format(model_request))
     req = ModelRequest(**model_request)
     energy_source = req.source
     # TODO: need revisit if get more than one rapl energy source
-    if energy_source is None or 'rapl' in energy_source:
-        energy_source = 'intel_rapl'
+    if energy_source is None or "rapl" in energy_source:
+        energy_source = "intel_rapl"
 
     # find valid feature groups from available metrics in request
     valid_fgs = get_valid_feature_groups(req.metrics)
@@ -145,11 +149,7 @@ def get_model():
         return make_response("cannot find model for {} at the moment".format(model_request), 400)
     if req.weight:
         try:
-            response = app.response_class(
-            response=json.dumps(best_response),
-            status=200,
-            mimetype='application/json'
-            )
+            response = app.response_class(response=json.dumps(best_response), status=200, mimetype="application/json")
             return response
         except ValueError as err:
             return make_response("get weight response error: {}".format(err), 400)
@@ -159,13 +159,14 @@ def get_model():
         except ValueError as err:
             return make_response("send archived model error: {}".format(err), 400)
 
+
 # get_available_models: return name list of best-candidate pipelines
-@app.route(MODEL_SERVER_MODEL_LIST_PATH, methods=['GET'])
+@app.route(MODEL_SERVER_MODEL_LIST_PATH, methods=["GET"])
 def get_available_models():
-    fg = request.args.get('fg')
-    ot = request.args.get('ot')
-    energy_source = request.args.get('source')
-    filter = request.args.get('filter')
+    fg = request.args.get("fg")
+    ot = request.args.get("ot")
+    energy_source = request.args.get("source")
+    filter = request.args.get("filter")
 
     try:
         if fg is None:
@@ -174,16 +175,16 @@ def get_available_models():
             valid_fgs = [FeatureGroup[fg]]
 
         if ot is None:
-            output_types = [ot for ot in ModelOutputType] 
+            output_types = [ot for ot in ModelOutputType]
         else:
             output_types = [ModelOutputType[ot]]
         # TODO: need revisit if get more than one rapl energy source
-        if energy_source is None or 'rapl' in energy_source:
-            energy_source = 'intel_rapl'
+        if energy_source is None or "rapl" in energy_source:
+            energy_source = "intel_rapl"
 
         if filter is None:
             filters = dict()
-        else: 
+        else:
             filters = parse_filters(filter)
 
         model_names = dict()
@@ -195,22 +196,19 @@ def get_available_models():
                     best_candidate, _ = select_best_model(None, valid_groupath, filters, energy_source)
                     if best_candidate is None:
                         continue
-                    model_names[output_type.name][fg.name] = best_candidate['model_name']
-        response = app.response_class(
-            response=json.dumps(model_names),
-            status=200,
-            mimetype='application/json'
-            )
+                    model_names[output_type.name][fg.name] = best_candidate["model_name"]
+        response = app.response_class(response=json.dumps(model_names), status=200, mimetype="application/json")
         return response
     except (ValueError, Exception) as err:
         return make_response("failed to get best model list: {}".format(err), 400)
+
 
 # upack_zip_files: unpack all model.zip files to model folder and copy model.json to model/weight.zip
 def unpack_zip_files(root_folder):
     # Walk through all folders and subfolders
     for folder, _, files in os.walk(root_folder):
         for file in files:
-            if file.endswith('.zip'):
+            if file.endswith(".zip"):
                 zip_file_path = os.path.join(folder, file)
                 extract_to = os.path.splitext(zip_file_path)[0]  # Extract to same location as the ZIP file
                 # Make sure the destination folder exists, if not, create it
@@ -220,6 +218,7 @@ def unpack_zip_files(root_folder):
                 weight_file = os.path.join(folder, file.replace(".zip", ".json"))
                 if os.path.exists(weight_file):
                     shutil.copy(weight_file, os.path.join(extract_to, WEIGHT_FILENAME + ".json"))
+
 
 # set_pipelines: set global pipeline variables, nodeCollection and pipelineName
 def set_pipelines():
@@ -233,6 +232,7 @@ def set_pipelines():
             if os.path.exists(os.path.join(pipeline_path, energy_source)):
                 pipelineName[energy_source] = pipeline_name
                 print("set pipeline {} for {}".format(pipeline_name, energy_source))
+
 
 # load_init_pipeline: load pipeline from URLs and set pipeline variables
 def load_init_pipeline():
@@ -254,7 +254,7 @@ def load_init_pipeline():
         try:
             filename = basename
             tmp_filepath = os.path.join(download_path, filename)
-            with codecs.open(tmp_filepath, 'wb') as f:
+            with codecs.open(tmp_filepath, "wb") as f:
                 f.write(response.content)
             shutil.unpack_archive(tmp_filepath, pipeline_path)
             unpack_zip_files(pipeline_path)
@@ -265,6 +265,11 @@ def load_init_pipeline():
         os.remove(tmp_filepath)
     set_pipelines()
 
-if __name__ == '__main__':
-   load_init_pipeline()
-   app.run(host="0.0.0.0", port=MODEL_SERVER_PORT)
+
+def run():
+    load_init_pipeline()
+    app.run(host="0.0.0.0", port=MODEL_SERVER_PORT)
+
+
+if __name__ == "__main__":
+    run()

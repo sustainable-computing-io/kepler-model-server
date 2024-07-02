@@ -5,16 +5,17 @@ import shutil
 import sys
 import pandas as pd
 
-fpath = os.path.join(os.path.dirname(__file__), 'model')
+fpath = os.path.join(os.path.dirname(__file__), "model")
 sys.path.append(fpath)
 
-util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
+util_path = os.path.join(os.path.dirname(__file__), "..", "util")
 sys.path.append(util_path)
 
 ###############################################
-# power request 
+# power request
 
-class PowerRequest():
+
+class PowerRequest:
     def __init__(self, metrics, values, output_type, source, system_features, system_values, trainer_name="", filter=""):
         self.trainer_name = trainer_name
         self.metrics = metrics
@@ -25,7 +26,8 @@ class PowerRequest():
         self.datapoint = pd.DataFrame(values, columns=metrics)
         data_point_size = len(self.datapoint)
         for i in range(len(system_features)):
-            self.datapoint[system_features[i]] = [system_values[i]]*data_point_size
+            self.datapoint[system_features[i]] = [system_values[i]] * data_point_size
+
 
 ###############################################
 # serve
@@ -42,20 +44,21 @@ from train_types import is_support_output_type
 
 loaded_model = dict()
 
+
 def handle_request(data):
     try:
-        power_request = json.loads(data, object_hook = lambda d : PowerRequest(**d))
+        power_request = json.loads(data, object_hook=lambda d: PowerRequest(**d))
     except Exception as e:
-        msg = 'fail to handle request: {}'.format(e)
+        msg = "fail to handle request: {}".format(e)
         return {"powers": dict(), "msg": msg}
 
     if not is_support_output_type(power_request.output_type):
         msg = "output type {} is not supported".format(power_request.output_type)
         return {"powers": dict(), "msg": msg}
-    
+
     output_type = ModelOutputType[power_request.output_type]
     # TODO: need revisit if get more than one rapl energy source
-    if power_request.energy_source is None or 'rapl' in power_request.energy_source:
+    if power_request.energy_source is None or "rapl" in power_request.energy_source:
         power_request.energy_source = "intel_rapl"
 
     if output_type.name not in loaded_model:
@@ -99,6 +102,7 @@ def handle_request(data):
             shutil.rmtree(output_path)
     return {"powers": powers, "msg": msg}
 
+
 class EstimatorServer:
     def __init__(self, socket_path):
         self.socket_path = socket_path
@@ -119,43 +123,46 @@ class EstimatorServer:
                 pass
 
     def accepted(self, connection):
-        data = b''
+        data = b""
         while True:
             shunk = connection.recv(1024).strip()
             data += shunk
-            if shunk is None or shunk.decode()[-1] == '}':
+            if shunk is None or shunk.decode()[-1] == "}":
                 break
         decoded_data = data.decode()
         y = handle_request(decoded_data)
         response = json.dumps(y)
         connection.send(response.encode())
 
+
 def clean_socket():
     print("clean socket")
     if os.path.exists(SERVE_SOCKET):
         os.unlink(SERVE_SOCKET)
 
+
 def sig_handler(signum, frame) -> None:
     clean_socket()
     sys.exit(1)
 
+
 import argparse
 
-if __name__ == '__main__':
+
+def run():
     set_env_from_model_config()
     clean_socket()
     signal.signal(signal.SIGTERM, sig_handler)
     try:
         parser = argparse.ArgumentParser()
-        parser.add_argument('-e', '--err',
-                            required=False,
-                            type=str,
-                            default='mae', 
-                            metavar="<error metric>",
-                            help="Error metric for determining the model with minimum error value" )
+        parser.add_argument("-e", "--err", required=False, type=str, default="mae", metavar="<error metric>", help="Error metric for determining the model with minimum error value")
         args = parser.parse_args()
-        DEFAULT_ERROR_KEYS = args.err.split(',')
+        DEFAULT_ERROR_KEYS = args.err.split(",")
         server = EstimatorServer(SERVE_SOCKET)
         server.start()
     finally:
         clean_socket()
+
+
+if __name__ == "__main__":
+    run()
