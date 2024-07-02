@@ -1,0 +1,99 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kepler-model-server"
+dynamic = ["version"]
+description = "kepler model server for serving kepler models"
+readme = "README.md"
+requires-python = ">= 3.8"
+license = "Apache-2.0"
+keywords = [
+  "kepler", "models", 
+  "model-server", "estimator"
+]
+
+authors = [
+  { name = "Sunyanan Choochotkaew", email = "sunyanan.choochotkaew1@ibm.com" },
+  { name = "Sunil Thaha", email = "sthaha@redhat.com" },
+]
+
+classifiers = [
+  "Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+]
+dependencies = [
+  "flask==2.1.2",
+  "Werkzeug==2.2.2",
+  "protobuf==3.19.4",
+  "pandas==1.4.4",
+  "numpy==1.22.4",
+  "prometheus-client==0.14.1",
+  "prometheus-api-client==0.5.1",
+  "joblib==1.2.0",
+  "pyyaml_env_tag==0.1",
+  "scipy==1.9.1",
+  "xgboost==2.0.1",
+  "scikit-learn==1.1.2",
+  "py-cpuinfo==9.0.0",
+  "seaborn==0.12.2",
+  "psutil==5.9.8",
+  "pyudev==0.24.1",
+]
+
+[project.scripts]
+model-server = "server.model_server:run"
+estimator = "estimate.estimator:run"
+
+[project.urls]
+Documentation = "https://github.com/sustainable-computing-io/kepler-model-server#readme"
+Issues = "https://github.com/sustainable-computing-io/kepler-model-server/issues"
+Source = "https://github.com/sustainable-computing-io/kepler-model-server"
+
+[tool.hatch.version]
+path = "src/__about__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = [
+	"src/server", 
+	"src/estimate",
+]
+
+[tool.hatch.envs.default]
+python = "3.8"
+extra-dependencies = [
+	"ipython",
+	"ipdb",
+]
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/kepler_model_server tests}"
+
+
+[tool.coverage.run]
+source_pkgs = ["server", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/server/__about__.py",
+]
+
+[tool.coverage.paths]
+server = ["src/server", "*/kepler-model-server/src"]
+tests = ["tests", "*/kepler-model-server/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.ruff]
+line-length = 320
