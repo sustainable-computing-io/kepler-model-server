@@ -59,6 +59,8 @@ path = "src/__about__.py"
 packages = [
 	"src/server", 
 	"src/estimate",
+	"src/util",
+	"src/train",
 ]
 
 [tool.hatch.envs.default]
