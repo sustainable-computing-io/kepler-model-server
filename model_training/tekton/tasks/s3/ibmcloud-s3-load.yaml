@@ -45,7 +45,7 @@ spec:
           secretKeyRef:
             name: $(params.COS_SECRET_NAME)
             key: bucketName
-      command: ["python3.8"]
+      command: ["python3.10"]
       args:
       - s3-loader.py
       - ibmcloud

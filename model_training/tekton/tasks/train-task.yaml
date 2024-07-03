@@ -43,7 +43,7 @@ spec:
   steps:
     - name: train-from-data
       image: $(params.MODEL_SERVER_IMAGE)
-      command: ["python3.8"]
+      command: ["python3.10"]
       env:
       - name: MODEL_PATH
         value: $(workspaces.mnt.path)/models
