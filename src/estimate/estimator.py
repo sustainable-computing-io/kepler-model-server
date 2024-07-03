@@ -1,8 +1,8 @@
 import json
 import os
 import shutil
-
 import sys
+
 import pandas as pd
 
 fpath = os.path.join(os.path.dirname(__file__), "model")
@@ -16,7 +16,9 @@ sys.path.append(util_path)
 
 
 class PowerRequest:
-    def __init__(self, metrics, values, output_type, source, system_features, system_values, trainer_name="", filter=""):
+    def __init__(
+        self, metrics, values, output_type, source, system_features, system_values, trainer_name="", filter=""
+    ):
         self.trainer_name = trainer_name
         self.metrics = metrics
         self.filter = filter
@@ -32,14 +34,15 @@ class PowerRequest:
 ###############################################
 # serve
 
-import sys
-import socket
 import signal
-from model_server_connector import ModelOutputType, make_request
+import socket
+import sys
+
 from archived_model import get_achived_model
-from model import load_downloaded_model
+from config import SERVE_SOCKET, download_path, set_env_from_model_config
 from loader import get_download_output_path
-from config import set_env_from_model_config, SERVE_SOCKET, download_path
+from model import load_downloaded_model
+from model_server_connector import ModelOutputType, make_request
 from train_types import is_support_output_type
 
 loaded_model = dict()
@@ -49,11 +52,11 @@ def handle_request(data):
     try:
         power_request = json.loads(data, object_hook=lambda d: PowerRequest(**d))
     except Exception as e:
-        msg = "fail to handle request: {}".format(e)
+        msg = f"fail to handle request: {e}"
         return {"powers": dict(), "msg": msg}
 
     if not is_support_output_type(power_request.output_type):
-        msg = "output type {} is not supported".format(power_request.output_type)
+        msg = f"output type {power_request.output_type} is not supported"
         return {"powers": dict(), "msg": msg}
 
     output_type = ModelOutputType[power_request.output_type]
@@ -70,7 +73,7 @@ def handle_request(data):
             current_trainer = loaded_model[output_type.name][power_request.energy_source].trainer_name
             request_trainer = current_trainer != power_request.trainer_name
             if request_trainer:
-                print("try obtaining the requesting trainer {} (current: {})".format(power_request.trainer_name, current_trainer))
+                print(f"try obtaining the requesting trainer {power_request.trainer_name} (current: {current_trainer})")
     if power_request.energy_source not in loaded_model[output_type.name] or request_trainer:
         output_path = get_download_output_path(download_path, power_request.energy_source, output_type)
         if not os.path.exists(output_path):
@@ -80,7 +83,7 @@ def handle_request(data):
                 # find from config
                 output_path = get_achived_model(power_request)
                 if output_path is None:
-                    msg = "failed to get model from request {}".format(data)
+                    msg = f"failed to get model from request {data}"
                     print(msg)
                     return {"powers": dict(), "msg": msg}
                 else:
@@ -90,14 +93,14 @@ def handle_request(data):
         loaded_item = load_downloaded_model(power_request.energy_source, output_type)
         if loaded_item is not None and loaded_item.estimator is not None:
             loaded_model[output_type.name][power_request.energy_source] = loaded_item
-            print("set model {0} for {2} ({1})".format(loaded_item.model_name, output_type.name, power_request.energy_source))
+            print(f"set model {loaded_item.model_name} for {power_request.energy_source} ({output_type.name})")
         # remove loaded model
         shutil.rmtree(output_path)
 
     model = loaded_model[output_type.name][power_request.energy_source]
     powers, msg = model.get_power(power_request.datapoint)
     if msg != "":
-        print("{} fail to predict, removed: {}".format(model.model_name, msg))
+        print(f"{model.model_name} fail to predict, removed: {msg}")
         if output_path != "" and os.path.exists(output_path):
             shutil.rmtree(output_path)
     return {"powers": powers, "msg": msg}
@@ -155,7 +158,15 @@ def run():
     signal.signal(signal.SIGTERM, sig_handler)
     try:
         parser = argparse.ArgumentParser()
-        parser.add_argument("-e", "--err", required=False, type=str, default="mae", metavar="<error metric>", help="Error metric for determining the model with minimum error value")
+        parser.add_argument(
+            "-e",
+            "--err",
+            required=False,
+            type=str,
+            default="mae",
+            metavar="<error metric>",
+            help="Error metric for determining the model with minimum error value",
+        )
         args = parser.parse_args()
         DEFAULT_ERROR_KEYS = args.err.split(",")
         server = EstimatorServer(SERVE_SOCKET)

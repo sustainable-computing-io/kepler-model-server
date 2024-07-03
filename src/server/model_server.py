@@ -1,10 +1,10 @@
-from flask import Flask, request, json, make_response, send_file
-
-import os
-import sys
 import codecs
+import os
 import shutil
+import sys
+
 import requests
+from flask import Flask, json, make_response, request, send_file
 
 src_path = os.path.join(os.path.dirname(__file__), "..")
 util_path = os.path.join(os.path.dirname(__file__), "util")
@@ -12,18 +12,57 @@ util_path = os.path.join(os.path.dirname(__file__), "util")
 sys.path.append(src_path)
 sys.path.append(util_path)
 
-from util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup, PowerSourceMap, weight_support_trainers
-from util.config import getConfig, model_toppath, ERROR_KEY, MODEL_SERVER_MODEL_REQ_PATH, MODEL_SERVER_MODEL_LIST_PATH, initial_pipeline_urls, download_path
-from util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME, get_pipeline_path, any_node_type, is_matched_type, get_largest_candidates
+from train import NodeTypeIndexCollection, NodeTypeSpec
+from util.config import (
+    ERROR_KEY,
+    MODEL_SERVER_MODEL_LIST_PATH,
+    MODEL_SERVER_MODEL_REQ_PATH,
+    download_path,
+    getConfig,
+    initial_pipeline_urls,
+    model_toppath,
+)
+from util.loader import (
+    CHECKPOINT_FOLDERNAME,
+    METADATA_FILENAME,
+    any_node_type,
+    get_archived_file,
+    get_largest_candidates,
+    get_model_group_path,
+    get_pipeline_path,
+    is_matched_type,
+    is_valid_model,
+    load_json,
+    load_weight,
+    parse_filters,
+)
 from util.saver import WEIGHT_FILENAME
-from train import NodeTypeSpec, NodeTypeIndexCollection
+from util.train_types import (
+    FeatureGroup,
+    FeatureGroups,
+    ModelOutputType,
+    PowerSourceMap,
+    get_valid_feature_groups,
+    weight_support_trainers,
+)
 
 ###############################################
 # model request
 
 
 class ModelRequest:
-    def __init__(self, metrics, output_type, source="intel_rapl", node_type=-1, weight=False, trainer_name="", filter="", pipeline_name="", spec=None):
+    def __init__(
+        self,
+        metrics,
+        output_type,
+        source="intel_rapl",
+        node_type=-1,
+        weight=False,
+        trainer_name="",
+        filter="",
+        pipeline_name="",
+        spec=None,
+    ):
         # target source of power metric to be predicted (e.g., intel_rapl, acpi)
         self.source = source
         # type of node to select a model learned from similar nodes (default: -1, applied universal model learned by all node_type (TODO))
@@ -70,8 +109,23 @@ select_best_model:
 """
 
 
-def select_best_model(spec, valid_groupath, filters, energy_source, pipeline_name="", trainer_name="", node_type=any_node_type, weight=False):
-    model_names = [f for f in os.listdir(valid_groupath) if f != CHECKPOINT_FOLDERNAME and not os.path.isfile(os.path.join(valid_groupath, f)) and (trainer_name == "" or trainer_name in f)]
+def select_best_model(
+    spec,
+    valid_groupath,
+    filters,
+    energy_source,
+    pipeline_name="",
+    trainer_name="",
+    node_type=any_node_type,
+    weight=False,
+):
+    model_names = [
+        f
+        for f in os.listdir(valid_groupath)
+        if f != CHECKPOINT_FOLDERNAME
+        and not os.path.isfile(os.path.join(valid_groupath, f))
+        and (trainer_name == "" or trainer_name in f)
+    ]
     if weight:
         model_names = [name for name in model_names if name.split("_")[0] in weight_support_trainers]
     # Load metadata of trainers
@@ -121,7 +175,7 @@ app = Flask(__name__)
 @app.route(MODEL_SERVER_MODEL_REQ_PATH, methods=["POST"])
 def get_model():
     model_request = request.get_json()
-    print("get request /model: {}".format(model_request))
+    print(f"get request /model: {model_request}")
     req = ModelRequest(**model_request)
     energy_source = req.source
     # TODO: need revisit if get more than one rapl energy source
@@ -137,27 +191,38 @@ def get_model():
     best_response = None
     # find best model comparing best candidate from each valid feature group complied with filtering conditions
     for fg in valid_fgs:
-        valid_groupath = get_model_group_path(model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source])
+        valid_groupath = get_model_group_path(
+            model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source]
+        )
         if os.path.exists(valid_groupath):
-            best_candidate, response = select_best_model(req.spec, valid_groupath, filters, energy_source, req.pipeline_name, req.trainer_name, req.node_type, req.weight)
+            best_candidate, response = select_best_model(
+                req.spec,
+                valid_groupath,
+                filters,
+                energy_source,
+                req.pipeline_name,
+                req.trainer_name,
+                req.node_type,
+                req.weight,
+            )
             if best_candidate is None:
                 continue
             if best_model is None or best_model[ERROR_KEY] > best_candidate[ERROR_KEY]:
                 best_model = best_candidate
                 best_response = response
     if best_model is None:
-        return make_response("cannot find model for {} at the moment".format(model_request), 400)
+        return make_response(f"cannot find model for {model_request} at the moment", 400)
     if req.weight:
         try:
             response = app.response_class(response=json.dumps(best_response), status=200, mimetype="application/json")
             return response
         except ValueError as err:
-            return make_response("get weight response error: {}".format(err), 400)
+            return make_response(f"get weight response error: {err}", 400)
     else:
         try:
             return send_file(best_response, as_attachment=True)
         except ValueError as err:
-            return make_response("send archived model error: {}".format(err), 400)
+            return make_response(f"send archived model error: {err}", 400)
 
 
 # get_available_models: return name list of best-candidate pipelines
@@ -191,7 +256,9 @@ def get_available_models():
         for output_type in output_types:
             model_names[output_type.name] = dict()
             for fg in valid_fgs:
-                valid_groupath = get_model_group_path(model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source])
+                valid_groupath = get_model_group_path(
+                    model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source]
+                )
                 if os.path.exists(valid_groupath):
                     best_candidate, _ = select_best_model(None, valid_groupath, filters, energy_source)
                     if best_candidate is None:
@@ -200,7 +267,7 @@ def get_available_models():
         response = app.response_class(response=json.dumps(model_names), status=200, mimetype="application/json")
         return response
     except (ValueError, Exception) as err:
-        return make_response("failed to get best model list: {}".format(err), 400)
+        return make_response(f"failed to get best model list: {err}", 400)
 
 
 # upack_zip_files: unpack all model.zip files to model folder and copy model.json to model/weight.zip
@@ -222,22 +289,26 @@ def unpack_zip_files(root_folder):
 
 # set_pipelines: set global pipeline variables, nodeCollection and pipelineName
 def set_pipelines():
-    pipeline_names = [f for f in os.listdir(model_toppath) if os.path.exists(os.path.join(model_toppath, f, METADATA_FILENAME + ".json"))]
+    pipeline_names = [
+        f
+        for f in os.listdir(model_toppath)
+        if os.path.exists(os.path.join(model_toppath, f, METADATA_FILENAME + ".json"))
+    ]
     for pipeline_name in pipeline_names:
         pipeline_path = get_pipeline_path(model_toppath, pipeline_name=pipeline_name)
         global nodeCollection
         nodeCollection[pipeline_name] = NodeTypeIndexCollection(pipeline_path)
-        print("initial pipeline is loaded to {}".format(pipeline_path))
+        print(f"initial pipeline is loaded to {pipeline_path}")
         for energy_source in PowerSourceMap.keys():
             if os.path.exists(os.path.join(pipeline_path, energy_source)):
                 pipelineName[energy_source] = pipeline_name
-                print("set pipeline {} for {}".format(pipeline_name, energy_source))
+                print(f"set pipeline {pipeline_name} for {energy_source}")
 
 
 # load_init_pipeline: load pipeline from URLs and set pipeline variables
 def load_init_pipeline():
     for initial_pipeline_url in initial_pipeline_urls:
-        print("try downloading archieved pipeline from URL: {}".format(initial_pipeline_url))
+        print(f"try downloading archieved pipeline from URL: {initial_pipeline_url}")
         response = requests.get(initial_pipeline_url)
         print(response)
         if response.status_code != 200:

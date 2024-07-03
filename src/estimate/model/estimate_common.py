@@ -11,18 +11,20 @@ cpu_info = cpuinfo.get_cpu_info()
 #     print("AVX instructions are not available.")
 #     keras_enabled = False
 
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-
 import os
 import sys
 
-util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+util_path = os.path.join(os.path.dirname(__file__), "..", "..", "util")
 sys.path.append(util_path)
 
-from loader import load_pkl, load_json
+from loader import load_json, load_pkl
+
 
 def is_component_model(model_file):
-    return '.json' in model_file
+    return ".json" in model_file
+
 
 def transform_and_predict(model, datapoint):
     msg = ""
@@ -36,31 +38,36 @@ def transform_and_predict(model, datapoint):
         y[y < 0] = 0
         y = y.tolist()
     except Exception as e:
-        msg = '{}\n'.format(e)
+        msg = f"{e}\n"
         y = []
     return y, msg
+
 
 def load_model_by_pickle(model_path, model_filename):
     return load_pkl(model_path, model_filename)
 
+
 def coeff_determination(y_true, y_pred):
     if not keras_enabled:
         return None
-    SS_res =  K.sum(K.square( y_true-y_pred )) 
-    SS_tot = K.sum(K.square( y_true - K.mean(y_true) ) ) 
-    return ( 1 - SS_res/(SS_tot + K.epsilon()) )
+    SS_res = K.sum(K.square(y_true - y_pred))
+    SS_tot = K.sum(K.square(y_true - K.mean(y_true)))
+    return 1 - SS_res / (SS_tot + K.epsilon())
+
 
 def load_model_by_keras(model_path, model_filename):
     model_file = os.path.join(model_path, model_filename)
     try:
-        model = keras.models.load_model(model_file, custom_objects={'coeff_determination': coeff_determination})
+        model = keras.models.load_model(model_file, custom_objects={"coeff_determination": coeff_determination})
     except Exception as e:
         print(e)
         return None
     return model
 
+
 def load_model_by_json(model_path, model_filename):
     return load_json(model_path, model_filename)
+
 
 # return mae, mse, mape
 def compute_error(predicted_power, actual_powers):
@@ -71,7 +78,9 @@ def compute_error(predicted_power, actual_powers):
     if len(actual_powers) == 0:
         mape = -1
     else:
-        non_zero_predicted_powers = np.array([predicted_power_values[i] for i in range(len(predicted_power_values)) if actual_power_values[i] > 0])
+        non_zero_predicted_powers = np.array(
+            [predicted_power_values[i] for i in range(len(predicted_power_values)) if actual_power_values[i] > 0]
+        )
         if len(non_zero_predicted_powers) == 0:
             mape = -1
         else:

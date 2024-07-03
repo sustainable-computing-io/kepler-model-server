@@ -1,24 +1,33 @@
 import os
 import sys
+
 import numpy as np
 import pandas as pd
 
-util_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'util')
+util_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "util")
 sys.path.append(util_path)
-estimate_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'estimate')
+estimate_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "estimate")
 sys.path.append(estimate_path)
 
-from isolator import Isolator, isolate_container
-from estimate import load_model, get_predicted_power_colname, get_predicted_background_power_colname, get_dynamic_power_colname, get_reconstructed_power_colname, get_label_power_colname, get_background_containers
+from estimate import (
+    get_background_containers,
+    get_dynamic_power_colname,
+    get_label_power_colname,
+    get_predicted_background_power_colname,
+    get_predicted_power_colname,
+    get_reconstructed_power_colname,
+    load_model,
+)
 from extractor import find_correlations
+from isolator import Isolator, isolate_container
 from preprocess import get_extracted_power_labels
-
 from util import PowerSourceMap
-from util.train_types import get_valid_feature_groups
-from util.prom_types import TIMESTAMP_COL, get_container_name_from_id
-from util.extract_types import container_level_index, container_id_colname, col_to_component
 from util.config import model_toppath
-from util.loader import list_all_abs_models, default_train_output_pipeline
+from util.extract_types import col_to_component, container_id_colname, container_level_index
+from util.loader import default_train_output_pipeline, list_all_abs_models
+from util.prom_types import TIMESTAMP_COL, get_container_name_from_id
+from util.train_types import get_valid_feature_groups
+
 
 def is_better(curr_min_err, err, curr_max_corr, corr, corr_threshold=0.7):
     if curr_min_err is None:
@@ -26,18 +35,21 @@ def is_better(curr_min_err, err, curr_max_corr, corr, corr_threshold=0.7):
     if corr >= corr_threshold:
         if err == curr_min_err:
             # decide by corr if equal err
-            return corr > curr_max_corr 
+            return corr > curr_max_corr
         return err < curr_min_err
     elif curr_max_corr < corr_threshold and corr >= curr_max_corr:
         # when better accuracy and better corr but less than threshold
         return err < curr_min_err
     return False
 
-def get_abs_models(workload_feature_cols, energy_source, toppath=model_toppath, pipeline_name=default_train_output_pipeline):
+
+def get_abs_models(
+    workload_feature_cols, energy_source, toppath=model_toppath, pipeline_name=default_train_output_pipeline
+):
     # from abs_model_path
     # find valid_feature_groups
     # list_model_names
-    # load each model 
+    # load each model
     abs_models = []
     valid_fgs = get_valid_feature_groups(workload_feature_cols)
     abs_models_map = list_all_abs_models(toppath, energy_source, valid_fgs, pipeline_name=pipeline_name)
@@ -50,6 +62,7 @@ def get_abs_models(workload_feature_cols, energy_source, toppath=model_toppath, 
             else:
                 print("Model is none: ", model_path)
     return abs_models
+
 
 # extracted_power_labels: sum of power labels over sorted timestamp for each energy_components
 # background_powers: sum of predicted background powers over sorted timestamp for each energy_components
@@ -68,65 +81,106 @@ def append_dyn_power(target_data, energy_components, extracted_power_labels, bac
     num[num < min_val] = min_val
     return appended_data
 
+
 def get_target_data_with_dyn_power(model, energy_components, extracted_power_labels, target_data, background_data):
     # predict background power from the rest usage (background container usage)
     sum_background_data = background_data.groupby([TIMESTAMP_COL]).sum()
-    _, sum_background_data_with_prediction = model.append_prediction(sum_background_data, predicted_col_func=get_predicted_background_power_colname)
+    _, sum_background_data_with_prediction = model.append_prediction(
+        sum_background_data, predicted_col_func=get_predicted_background_power_colname
+    )
     # sum over predicted value
-    background_power_colnames = [get_predicted_background_power_colname(energy_component) for energy_component in energy_components]
+    background_power_colnames = [
+        get_predicted_background_power_colname(energy_component) for energy_component in energy_components
+    ]
     background_powers = sum_background_data_with_prediction[background_power_colnames]
     # append_dyn_power
-    target_data_with_dyn_power = append_dyn_power(target_data, energy_components, extracted_power_labels, background_powers)
+    target_data_with_dyn_power = append_dyn_power(
+        target_data, energy_components, extracted_power_labels, background_powers
+    )
 
     return target_data_with_dyn_power, sum_background_data_with_prediction
 
+
 # traverse all abs_model with minimum mae for each energy_source
-def find_best_target_data_with_dyn_power(energy_source, energy_components, extracted_data, background_containers, label_cols, toppath=model_toppath, pipeline_name=default_train_output_pipeline):
-    workload_feature_cols = [col for col in extracted_data.columns if col not in label_cols and col not in container_level_index and 'ratio' not in col and 'node' not in col]
+def find_best_target_data_with_dyn_power(
+    energy_source,
+    energy_components,
+    extracted_data,
+    background_containers,
+    label_cols,
+    toppath=model_toppath,
+    pipeline_name=default_train_output_pipeline,
+):
+    workload_feature_cols = [
+        col
+        for col in extracted_data.columns
+        if col not in label_cols and col not in container_level_index and "ratio" not in col and "node" not in col
+    ]
     curr_min_err = None
-    curr_max_corr= None
+    curr_max_corr = None
     best_target_data_with_dyn_power = None
-    best_background_data_with_prediction  = None
+    best_background_data_with_prediction = None
     abs_models = get_abs_models(workload_feature_cols, energy_source, toppath=toppath, pipeline_name=pipeline_name)
     # get background power
-        # isolate target container usage
+    # isolate target container usage
     target_data, background_data = isolate_container(extracted_data, background_containers, label_cols)
     # get_extracted_power_labels
     extracted_power_labels = get_extracted_power_labels(extracted_data, energy_components, label_cols)
     for model in abs_models:
-       err = model.mae
-       # dynamic power = remove background power from label power
-       target_data_with_dyn_power, background_data_with_prediction = get_target_data_with_dyn_power(model, energy_components, extracted_power_labels, target_data, background_data)
-       # find correlation between dynamic power and target container usage
-       dyn_power_cols = [get_dynamic_power_colname(energy_component) for energy_component in energy_components]
-       corr_data = find_correlations(energy_source, target_data_with_dyn_power.groupby([TIMESTAMP_COL]).sum(), dyn_power_cols, workload_feature_cols).dropna()
-       try:
-           corr = corr_data.values.max()
-           if np.isnan(corr):
-               corr = 0
-       except:
-           corr = 0
-       # is_better
-       if is_better(curr_min_err, err, curr_max_corr, corr):
-           curr_min_err = err
-           curr_max_corr = corr
-           best_target_data_with_dyn_power = target_data_with_dyn_power
-           best_background_data_with_prediction = background_data_with_prediction
+        err = model.mae
+        # dynamic power = remove background power from label power
+        target_data_with_dyn_power, background_data_with_prediction = get_target_data_with_dyn_power(
+            model, energy_components, extracted_power_labels, target_data, background_data
+        )
+        # find correlation between dynamic power and target container usage
+        dyn_power_cols = [get_dynamic_power_colname(energy_component) for energy_component in energy_components]
+        corr_data = find_correlations(
+            energy_source,
+            target_data_with_dyn_power.groupby([TIMESTAMP_COL]).sum(),
+            dyn_power_cols,
+            workload_feature_cols,
+        ).dropna()
+        try:
+            corr = corr_data.values.max()
+            if np.isnan(corr):
+                corr = 0
+        except:
+            corr = 0
+        # is_better
+        if is_better(curr_min_err, err, curr_max_corr, corr):
+            curr_min_err = err
+            curr_max_corr = corr
+            best_target_data_with_dyn_power = target_data_with_dyn_power
+            best_background_data_with_prediction = background_data_with_prediction
     return best_target_data_with_dyn_power, best_background_data_with_prediction
+
 
 def get_background_container_from_target_hints(data, target_hints):
     container_names = pd.unique(data[container_id_colname].transform(get_container_name_from_id))
-    background_containers = [container_name for container_name in container_names if not any(hint in container_name for hint in target_hints)]
+    background_containers = [
+        container_name for container_name in container_names if not any(hint in container_name for hint in target_hints)
+    ]
     return background_containers
+
 
 def get_background_container_from_bg_hints(data, bg_hints):
     container_names = pd.unique(data[container_id_colname].transform(get_container_name_from_id))
-    background_containers = [container_name for container_name in container_names if any(hint in container_name for hint in bg_hints)]
+    background_containers = [
+        container_name for container_name in container_names if any(hint in container_name for hint in bg_hints)
+    ]
     return background_containers
+
 
 # TO-DO: suppport multiple node types
 class TrainIsolator(Isolator):
-    def __init__(self, idle_data=None, profiler=None, target_hints=[], bg_hints=[], abs_pipeline_name=default_train_output_pipeline):
+    def __init__(
+        self,
+        idle_data=None,
+        profiler=None,
+        target_hints=[],
+        bg_hints=[],
+        abs_pipeline_name=default_train_output_pipeline,
+    ):
         if profiler is not None and idle_data is not None:
             self.idle_data = idle_data
             self.profiles = profiler.process(self.idle_data)
@@ -148,7 +202,14 @@ class TrainIsolator(Isolator):
                 self.background_containers = get_background_container_from_target_hints(data, self.bg_hints)
         energy_components = PowerSourceMap[energy_source]
         label_cols = list(label_cols)
-        best_target_data_with_dyn_power, _ = find_best_target_data_with_dyn_power(energy_source, energy_components, data, self.background_containers, label_cols, pipeline_name=self.abs_pipeline_name)
+        best_target_data_with_dyn_power, _ = find_best_target_data_with_dyn_power(
+            energy_source,
+            energy_components,
+            data,
+            self.background_containers,
+            label_cols,
+            pipeline_name=self.abs_pipeline_name,
+        )
         if best_target_data_with_dyn_power is None:
             return None
         isolated_data = best_target_data_with_dyn_power.copy()
@@ -159,27 +220,37 @@ class TrainIsolator(Isolator):
             energy_component = col_to_component(label_col)
             dyn_power_colname = get_dynamic_power_colname(energy_component)
             component_label_colname = get_label_power_colname(energy_component)
-            isolated_data[label_col] = isolated_data[label_col]/isolated_data[component_label_colname]*isolated_data[dyn_power_colname]
+            isolated_data[label_col] = (
+                isolated_data[label_col] / isolated_data[component_label_colname] * isolated_data[dyn_power_colname]
+            )
             # fillna from the case that isolated_data[component_label_colname] = 0
             isolated_data[label_col] = isolated_data[label_col].astype(np.float64).fillna(0)
-        drop_cols = power_label_cols + [get_dynamic_power_colname(energy_component) for energy_component in energy_components]
+        drop_cols = power_label_cols + [
+            get_dynamic_power_colname(energy_component) for energy_component in energy_components
+        ]
         isolated_data = isolated_data.drop(columns=drop_cols).reset_index()
         if index_list[0] is not None:
             isolated_data = isolated_data.set_index(index_list)
         return isolated_data
-    
+
     def reconstruct(self, extracted_data, data_with_prediction, energy_source, label_cols):
         reconstructed_data = data_with_prediction.groupby([TIMESTAMP_COL]).sum()
         energy_components = PowerSourceMap[energy_source]
-        _, background_data_with_prediction = find_best_target_data_with_dyn_power(energy_source, energy_components, extracted_data, self.background_containers, label_cols)
-        background_power_colnames = [get_predicted_background_power_colname(energy_component) for energy_component in energy_components]
+        _, background_data_with_prediction = find_best_target_data_with_dyn_power(
+            energy_source, energy_components, extracted_data, self.background_containers, label_cols
+        )
+        background_power_colnames = [
+            get_predicted_background_power_colname(energy_component) for energy_component in energy_components
+        ]
         background_powers = background_data_with_prediction[background_power_colnames].groupby([TIMESTAMP_COL]).sum()
         reconstructed_data = reconstructed_data.join(background_powers)
         for energy_component in energy_components:
             predicted_colname = get_predicted_power_colname[energy_source]
             background_power_colname = get_predicted_background_power_colname(energy_component)
-            reconstructed_data[get_reconstructed_power_colname(energy_component)] = data_with_prediction[predicted_colname]  + background_data_with_prediction[background_power_colname]
+            reconstructed_data[get_reconstructed_power_colname(energy_component)] = (
+                data_with_prediction[predicted_colname] + background_data_with_prediction[background_power_colname]
+            )
         return reconstructed_data
-    
+
     def get_name(self):
         return "trainer"

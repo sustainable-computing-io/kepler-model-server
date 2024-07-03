@@ -10,16 +10,19 @@ def print_bounded_multiline_message(input_lines, maxlength=200):
             lines += [line]
 
     max_line_length = max(len(line) for line in lines)
-    border = '#' * (max_line_length + 4)
+    border = "#" * (max_line_length + 4)
     print(border)
-    
+
     for line in lines:
         formatted_line = f"# {line.ljust(max_line_length)} #"
         print(formatted_line)
-    
+
     print(border)
 
+
 from datetime import datetime
+
+
 def time_to_str(time):
     if isinstance(time, datetime):
         return time.strftime("%Y-%m-%d %H:%M:%S")

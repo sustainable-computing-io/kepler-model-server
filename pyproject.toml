@@ -96,4 +96,4 @@ exclude_lines = [
 ]
 
 [tool.ruff]
-line-length = 320
+line-length = 120

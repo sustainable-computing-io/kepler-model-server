@@ -1,19 +1,23 @@
+import datetime
 import os
 import sys
 
-import datetime
-
-util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
+util_path = os.path.join(os.path.dirname(__file__), "..", "..", "util")
 sys.path.append(util_path)
 
-from prom_types import PROM_SERVER, PROM_HEADERS, PROM_SSL_DISABLE, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, metric_prefix
-from prom_types import generate_dataframe_from_response
-
+from prom_types import (
+    PROM_HEADERS,
+    PROM_QUERY_INTERVAL,
+    PROM_QUERY_STEP,
+    PROM_SERVER,
+    PROM_SSL_DISABLE,
+    generate_dataframe_from_response,
+    metric_prefix,
+)
 from prometheus_api_client import PrometheusConnect
 
 UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
 
-import pandas as pd
 
 def _range_queries(prom, metric_list, start, end, step, params=None):
     response = dict()
@@ -21,7 +25,8 @@ def _range_queries(prom, metric_list, start, end, step, params=None):
         response[metric] = prom.custom_query_range(metric, start, end, step, params)
     return response
 
-class PrometheusClient():
+
+class PrometheusClient:
     def __init__(self):
         self.prom = PrometheusConnect(url=PROM_SERVER, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
         self.interval = int(PROM_QUERY_INTERVAL)
@@ -38,6 +43,6 @@ class PrometheusClient():
         for query_metric, prom_response in response_dict.items():
             self.latest_query_result[query_metric] = generate_dataframe_from_response(query_metric, prom_response)
         return response_dict
-        
+
     def snapshot_query_result(self):
         return {metric: data for metric, data in self.latest_query_result.items() if len(data) > 0}
