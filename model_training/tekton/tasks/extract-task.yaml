@@ -37,7 +37,7 @@ spec:
   steps:
     - name: extract
       image: $(params.MODEL_SERVER_IMAGE)
-      command: ["python3.8"]
+      command: ["python3.10"]
       args:
       - cmd/main.py
       - extract
