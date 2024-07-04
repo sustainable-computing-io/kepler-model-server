@@ -6,4 +6,4 @@ COPY . /usr/local
 
 RUN pip install boto3 ibm-cos-sdk
 
-ENTRYPOINT ["python3.10"]
+ENTRYPOINT ["python3.8"]

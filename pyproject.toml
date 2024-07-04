@@ -7,7 +7,7 @@ name = "kepler-model-server"
 dynamic = ["version"]
 description = "kepler model server for serving kepler models"
 readme = "README.md"
-requires-python = ">= 3.10"
+requires-python = ">= 3.8"
 license = "Apache-2.0"
 keywords = [
   "kepler", "models", 
@@ -22,7 +22,7 @@ authors = [
 classifiers = [
   "Programming Language :: Python",
 	"Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.8",
 ]
 dependencies = [
   "flask==2.1.2",
@@ -64,7 +64,7 @@ packages = [
 ]
 
 [tool.hatch.envs.default]
-python = "3.10"
+python = "3.8"
 extra-dependencies = [
 	"ipython",
 	"ipdb",
