@@ -100,7 +100,7 @@ jobs:
     - name: Replace value in file
       if: ${{ (needs.check-secret.outputs.available == 'true') && ((needs.check-base-exist.outputs.exists == 'false') || (env.base_change == 'true')) }} 
       run: |
-        sed -i "s|quay.io/sustainable_computing_io/kepler_model_server_base:latest|${{ env.base_image }}|" dockerfiles/Dockerfile
+        sed -i "s|quay.io/sustainable_computing_io/kepler_model_server_base:0.7-py3.10|${{ env.base_image }}|" dockerfiles/Dockerfile
     - name: Build-push image
       uses: docker/build-push-action@v6
       with:

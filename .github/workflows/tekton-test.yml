@@ -54,7 +54,7 @@ jobs:
       - name: Replace value in file if base changes
         if: ${{ (inputs.base_change == 'true') && (inputs.docker_secret == 'true') }} 
         run: |
-          sed -i "s|quay.io/sustainable_computing_io/kepler_model_server_base:latest|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile
+          sed -i "s|quay.io/sustainable_computing_io/kepler_model_server_base:0.7-py3.10|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile
       - name: Build image
         run: |
           docker build -t $IMAGE -f dockerfiles/Dockerfile .
