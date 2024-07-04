@@ -4,7 +4,7 @@ on:
       - main
 
 env:
-  TAG: "latest"
+  TAG: "v0.7.7"
 
 jobs:
   check-branch:
