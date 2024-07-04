@@ -31,7 +31,7 @@ env:
   BASE_IMAGE: ${{ inputs.image_repo }}/kepler_model_server_base:${{ inputs.image_tag }}
   IMAGE: localhost:5001/kepler_model_server:devel
   KEPLER_IMAGE: quay.io/sustainable_computing_io/kepler:${{ inputs.kepler_tag }}
-  DEFAULT_MODEL_SERVER_BASE_IMAGE: quay.io/sustainable_computing_io/kepler_model_server_base:v0.7
+  DEFAULT_MODEL_SERVER_BASE_IMAGE: quay.io/sustainable_computing_io/kepler_model_server_base:latest
 
 jobs:
   run-integration:

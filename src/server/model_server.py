@@ -19,7 +19,7 @@ from util.saver import WEIGHT_FILENAME
 from train import NodeTypeSpec, NodeTypeIndexCollection
 
 ###############################################
-# model request
+# model request #
 
 
 class ModelRequest:

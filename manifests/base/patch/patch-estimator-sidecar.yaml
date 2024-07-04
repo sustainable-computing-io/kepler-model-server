@@ -30,7 +30,7 @@ spec:
         name: kepler-exporter
       - image: kepler_model_server
         imagePullPolicy: IfNotPresent
-        command: [ "python3.8" ]
+        command: [ "python3.10" ]
         args: ["-u", "src/estimate/estimator.py" ]
         name: estimator
         volumeMounts:

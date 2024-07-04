@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:v0.7
+FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:latest
 
 WORKDIR /usr/local
 
@@ -18,4 +18,4 @@ EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
 
-ENTRYPOINT ["python3.8", "cmd/main.py"]
+ENTRYPOINT ["python3.10", "cmd/main.py"]
