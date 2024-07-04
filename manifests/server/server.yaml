@@ -44,7 +44,7 @@ spec:
           - name: mnt
             mountPath: /mnt
             readOnly: false
-        command: [ "python3.10" ]
+        command: [ "python3.8" ]
         args: ["-u", "src/server/model_server.py" ]
 ---
 kind: Service

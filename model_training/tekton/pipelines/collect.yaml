@@ -96,7 +96,7 @@ spec:
             - --benchmark=idle
             - -o=idle
             - --id=$(params.MACHINE_ID)
-            command: ["python3.10"]
+            command: ["python3.8"]
             env:
             - name: PROM_SERVER
               value: http://prometheus-k8s.monitoring.svc:9090
@@ -151,7 +151,7 @@ spec:
             - --id=$(params.MACHINE_ID)
             - --benchmark=stressng
             - -o=kepler_query
-            command: ["python3.10"]
+            command: ["python3.8"]
             env:
             - name: PROM_SERVER
               value: http://prometheus-k8s.monitoring.svc:9090
