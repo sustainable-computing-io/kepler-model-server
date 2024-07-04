@@ -45,6 +45,30 @@ jobs:
             fi
           fi
 
+  check-fmt:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install hatch
+
+    - name: hatch fmt
+      run: hatch fmt -f
+    - name: Check if files are formatted
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+            echo "The following files are not formatted:"
+            git status --porcelain
+            exit 1
+        fi
+
   check-change:
     runs-on: ubuntu-latest
 
@@ -141,7 +165,7 @@ jobs:
         with:
             registry: ${{ vars.IMAGE_REPO || 'docker.io/library' }}
             username: ${{ secrets.BOT_NAME }}
-            password: ${{ secrets.BOT_TOKEN }} 
+            password: ${{ secrets.BOT_TOKEN }}
       - name: Build-push base image
         uses: docker/build-push-action@v6
         with:

@@ -1,52 +1,57 @@
+import datetime
 import os
 import sys
-import datetime
+
 import pandas as pd
 
 UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
 
-cur_path = os.path.join(os.path.dirname(__file__), '.')
+cur_path = os.path.join(os.path.dirname(__file__), ".")
 sys.path.append(cur_path)
-src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
+src_path = os.path.join(os.path.dirname(__file__), "..", "src")
 sys.path.append(src_path)
 
-from util.prom_types import node_info_column, prom_responses_to_results, SOURCE_COL, energy_component_to_query
-from util.train_types import ModelOutputType, FeatureGroup, PowerSourceMap
-from util.loader import load_json, get_pipeline_path, default_node_type
+from util.loader import default_node_type, get_pipeline_path, load_json
+from util.prom_types import SOURCE_COL, energy_component_to_query, node_info_column, prom_responses_to_results
 from util.saver import assure_path, save_csv
+from util.train_types import FeatureGroup, ModelOutputType, PowerSourceMap
+
 
 def print_file_to_stdout(data_path, args):
     file_path = os.path.join(data_path, args.output)
     try:
-        with open(file_path, 'r') as file:
+        with open(file_path) as file:
             contents = file.read()
             print(contents)
     except FileNotFoundError:
         print(f"Error: Output '{file_path}' not found.")
-    except IOError:
+    except OSError:
         print(f"Error: Unable to read output '{file_path}'.")
+
 
 def extract_time(data_path, benchmark_filename):
     data = load_json(data_path, benchmark_filename)
     if benchmark_filename != "customBenchmark":
         start_str = data["metadata"]["creationTimestamp"]
-        start = datetime.datetime.strptime(start_str, '%Y-%m-%dT%H:%M:%SZ')
+        start = datetime.datetime.strptime(start_str, "%Y-%m-%dT%H:%M:%SZ")
         end_str = data["status"]["results"][-1]["repetitions"][-1]["pushedTime"].split(".")[0]
-        end = datetime.datetime.strptime(end_str, '%Y-%m-%d %H:%M:%S')
+        end = datetime.datetime.strptime(end_str, "%Y-%m-%d %H:%M:%S")
     else:
         start_str = data["startTimeUTC"]
-        start = datetime.datetime.strptime(start_str, '%Y-%m-%dT%H:%M:%SZ')
+        start = datetime.datetime.strptime(start_str, "%Y-%m-%dT%H:%M:%SZ")
         end_str = data["endTimeUTC"]
-        end = datetime.datetime.strptime(end_str, '%Y-%m-%dT%H:%M:%SZ')
+        end = datetime.datetime.strptime(end_str, "%Y-%m-%dT%H:%M:%SZ")
     print(UTC_OFFSET_TIMEDELTA)
-    return start-UTC_OFFSET_TIMEDELTA, end-UTC_OFFSET_TIMEDELTA
+    return start - UTC_OFFSET_TIMEDELTA, end - UTC_OFFSET_TIMEDELTA
+
 
 def save_query_results(data_path, output_filename, query_response):
     query_results = prom_responses_to_results(query_response)
-    save_path = os.path.join(data_path, "{}_csv".format(output_filename))
+    save_path = os.path.join(data_path, f"{output_filename}_csv")
     assure_path(save_path)
     for query, data in query_results.items():
         save_csv(save_path, query, data)
+
 
 def summary_validation(validate_df):
     if len(validate_df) == 0:
@@ -57,20 +62,20 @@ def summary_validation(validate_df):
         "cgroup": "kepler_container_cgroupfs_cpu_usage_us_total",
         # CPU instruction is mainly used for ratio.
         # reference:  https://github.com/sustainable-computing-io/kepler/blob/0b328cf7c79db9a11426fb80a1a922383e40197c/pkg/config/config.go#L92
-        "hwc": "kepler_container_cpu_instructions_total", 
+        "hwc": "kepler_container_cpu_instructions_total",
         "bpf": "kepler_container_bpf_cpu_time_ms_total",
     }
     metric_to_validate_power = {
         "intel_rapl": "kepler_node_package_joules_total",
-        "acpi": "kepler_node_platform_joules_total"
+        "acpi": "kepler_node_platform_joules_total",
     }
     for metric, query in metric_to_validate_pod.items():
-        target_df = validate_df[validate_df["query"]==query]
+        target_df = validate_df[validate_df["query"] == query]
         valid_df = target_df[target_df[">0"] > 0]
         if len(valid_df) == 0:
             # no data
             continue
-        availability = len(valid_df)/len(target_df)
+        availability = len(valid_df) / len(target_df)
         valid_datapoint = valid_df[">0"].sum()
         item = dict()
         item["usage_metric"] = metric
@@ -80,22 +85,23 @@ def summary_validation(validate_df):
     summary_df = pd.DataFrame(items)
     print(summary_df)
     for metric, query in metric_to_validate_pod.items():
-        target_df = validate_df[validate_df["query"]==query]
+        target_df = validate_df[validate_df["query"] == query]
         no_data_df = target_df[target_df["count"] == 0]
         zero_data_df = target_df[target_df[">0"] == 0]
         valid_df = target_df[target_df[">0"] > 0]
-        print("==== {} ====".format(metric))
+        print(f"==== {metric} ====")
         if len(no_data_df) > 0:
             print("{} pods: \tNo data for {}".format(len(no_data_df), pd.unique(no_data_df["scenarioID"])))
         if len(zero_data_df) > 0:
             print("{} pods: \tZero data for {}".format(len(zero_data_df), pd.unique(zero_data_df["scenarioID"])))
 
-        print("{} pods: \tValid\n".format(len(valid_df)))
+        print(f"{len(valid_df)} pods: \tValid\n")
         print("Valid data points:")
-        print( "Empty" if len(valid_df[">0"]) == 0 else valid_df.groupby(["scenarioID"]).sum()[[">0"]])
+        print("Empty" if len(valid_df[">0"]) == 0 else valid_df.groupby(["scenarioID"]).sum()[[">0"]])
     for metric, query in metric_to_validate_power.items():
-        target_df = validate_df[validate_df["query"]==query]
+        target_df = validate_df[validate_df["query"] == query]
         print("{} data: \t{}".format(metric, target_df[">0"].values))
+
 
 def get_validate_df(data_path, benchmark_filename, query_response):
     items = []
@@ -155,7 +161,7 @@ def get_validate_df(data_path, benchmark_filename, query_response):
                         item["total"] = 0
                         items += [item]
                         continue
-                    filtered_df = df[df["pod_name"]==podname]
+                    filtered_df = df[df["pod_name"] == podname]
                     # set validate item
                     item = dict()
                     item["pod"] = podname
@@ -191,7 +197,9 @@ def get_validate_df(data_path, benchmark_filename, query_response):
             item[">0"] = len(df[df[query] > 0])
             item["total"] = df[query].max()
             items += [item]
-    other_queries = [query for query in query_results.keys() if query not in container_queries and query not in energy_queries]
+    other_queries = [
+        query for query in query_results.keys() if query not in container_queries and query not in energy_queries
+    ]
     for query in other_queries:
         df = query_results[query]
         if len(df) == 0:
@@ -219,6 +227,7 @@ def get_validate_df(data_path, benchmark_filename, query_response):
         print(validate_df.groupby(["scenarioID", "query"]).sum()[["count", ">0"]])
     return validate_df
 
+
 def check_ot_fg(args, valid_fg):
     ot = None
     fg = None
@@ -233,16 +242,26 @@ def check_ot_fg(args, valid_fg):
         try:
             fg = FeatureGroup[args.feature_group]
             if args.feature_group not in valid_fg_name_list:
-                print("feature group: {} is not available in your data. please choose from the following list: {}".format(args.feature_group, valid_fg_name_list))
+                print(
+                    f"feature group: {args.feature_group} is not available in your data. please choose from the following list: {valid_fg_name_list}"
+                )
                 exit()
         except KeyError:
-            print("invalid feature group: {}. valid feature group are {}.".format((args.feature_group, [fg.name for fg in valid_fg])))
+            print(
+                "invalid feature group: {}. valid feature group are {}.".format(
+                    (args.feature_group, [fg.name for fg in valid_fg])
+                )
+            )
             exit()
     return ot, fg
 
+
 import sklearn
+
+
 def assert_train(trainer, data, energy_components):
     import pandas as pd
+
     node_types = pd.unique(data[node_info_column])
     for node_type in node_types:
         node_type_filtered_data = data[data[node_info_column] == node_type]
@@ -251,13 +270,33 @@ def assert_train(trainer, data, energy_components):
             try:
                 output = trainer.predict(node_type, component, X_values)
                 if output is not None:
-                    assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
+                    assert len(output) == len(
+                        X_values
+                    ), f"length of predicted values != features ({len(output)}!={len(X_values)})"
             except sklearn.exceptions.NotFittedError:
                 pass
 
-def get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_hints, abs_pipeline_name, replace_node_type=default_node_type):
+
+def get_isolator(
+    data_path,
+    isolator,
+    profile,
+    pipeline_name,
+    target_hints,
+    bg_hints,
+    abs_pipeline_name,
+    replace_node_type=default_node_type,
+):
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
-    from train import MinIdleIsolator, NoneIsolator, DefaultProfiler, ProfileBackgroundIsolator, TrainIsolator, generate_profiles
+    from train import (
+        DefaultProfiler,
+        MinIdleIsolator,
+        NoneIsolator,
+        ProfileBackgroundIsolator,
+        TrainIsolator,
+        generate_profiles,
+    )
+
     supported_isolator = {
         MinIdleIsolator().get_name(): MinIdleIsolator(),
         NoneIsolator().get_name(): NoneIsolator(),
@@ -280,37 +319,81 @@ def get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_h
         if idle_data is None:
             print("failed to read idle data")
             return None
-        profile_map = DefaultProfiler.process(idle_data, profile_top_path=pipeline_path, replace_node_type=replace_node_type)
+        profile_map = DefaultProfiler.process(
+            idle_data, profile_top_path=pipeline_path, replace_node_type=replace_node_type
+        )
         profiles = generate_profiles(profile_map)
-        profile_isolator =  ProfileBackgroundIsolator(profiles, idle_data)
+        profile_isolator = ProfileBackgroundIsolator(profiles, idle_data)
         supported_isolator[profile_isolator.get_name()] = profile_isolator
         if abs_pipeline_name != "":
-            trainer_isolator = TrainIsolator(idle_data=idle_data, profiler=DefaultProfiler, target_hints=target_hints, bg_hints=bg_hints, abs_pipeline_name=abs_pipeline_name)
+            trainer_isolator = TrainIsolator(
+                idle_data=idle_data,
+                profiler=DefaultProfiler,
+                target_hints=target_hints,
+                bg_hints=bg_hints,
+                abs_pipeline_name=abs_pipeline_name,
+            )
             supported_isolator[trainer_isolator.get_name()] = trainer_isolator
-    else:
-        if abs_pipeline_name != "":
-            trainer_isolator = TrainIsolator(target_hints=target_hints, bg_hints=bg_hints, abs_pipeline_name=abs_pipeline_name)
-            supported_isolator[trainer_isolator.get_name()] = trainer_isolator
+    elif abs_pipeline_name != "":
+        trainer_isolator = TrainIsolator(
+            target_hints=target_hints, bg_hints=bg_hints, abs_pipeline_name=abs_pipeline_name
+        )
+        supported_isolator[trainer_isolator.get_name()] = trainer_isolator
 
     if isolator not in supported_isolator:
-        print("isolator {} is not supported. supported isolator: {}".format(isolator, supported_isolator.keys()))
+        print(f"isolator {isolator} is not supported. supported isolator: {supported_isolator.keys()}")
         return None
     return supported_isolator[isolator]
 
+
 def get_extractor(extractor):
     from train import DefaultExtractor, SmoothExtractor
+
     supported_extractor = {
         DefaultExtractor().get_name(): DefaultExtractor(),
-        SmoothExtractor().get_name(): SmoothExtractor()
+        SmoothExtractor().get_name(): SmoothExtractor(),
     }
     if extractor not in supported_extractor:
-        print("extractor {} is not supported. supported extractor: {}".format(extractor, supported_extractor.keys()))
+        print(f"extractor {extractor} is not supported. supported extractor: {supported_extractor.keys()}")
         return None
     return supported_extractor[extractor]
 
-def get_pipeline(data_path, pipeline_name, extractor, profile, target_hints, bg_hints, abs_pipeline_name, isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups, replace_node_type=default_node_type):
+
+def get_pipeline(
+    data_path,
+    pipeline_name,
+    extractor,
+    profile,
+    target_hints,
+    bg_hints,
+    abs_pipeline_name,
+    isolator,
+    abs_trainer_names,
+    dyn_trainer_names,
+    energy_sources,
+    valid_feature_groups,
+    replace_node_type=default_node_type,
+):
     from train import NewPipeline
-    isolator = get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_hints, abs_pipeline_name, replace_node_type=replace_node_type)
+
+    isolator = get_isolator(
+        data_path,
+        isolator,
+        profile,
+        pipeline_name,
+        target_hints,
+        bg_hints,
+        abs_pipeline_name,
+        replace_node_type=replace_node_type,
+    )
     extractor = get_extractor(extractor)
-    pipeline = NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=energy_sources ,valid_feature_groups=valid_feature_groups)
+    pipeline = NewPipeline(
+        pipeline_name,
+        abs_trainer_names,
+        dyn_trainer_names,
+        extractor=extractor,
+        isolator=isolator,
+        target_energy_sources=energy_sources,
+        valid_feature_groups=valid_feature_groups,
+    )
     return pipeline
