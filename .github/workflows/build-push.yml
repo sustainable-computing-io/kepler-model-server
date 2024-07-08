@@ -92,7 +92,6 @@ jobs:
       if: ${{ (needs.check-secret.outputs.available == 'true') && ((needs.check-base-exist.outputs.exists == 'false') || (env.base_change == 'true')) }} 
       uses: docker/build-push-action@v6
       with:
-        context: dockerfiles
         platforms: linux/amd64
         push: true
         tags: ${{ env.base_image }}

@@ -2,9 +2,13 @@ FROM python:3.10-slim
 RUN pip install --no-cache-dir --upgrade pip
 
 COPY pyproject.toml .
+
 # NOTE: README.md and __about__.py are referenced in pyproject.toml
-# so that they are copied into the image for pip install to succeed
+# so they are copied into the image for pip install to succeed
 COPY README.md .
+
+RUN mkdir -p src
 COPY src/__about__.py src/
+
 RUN pip install --no-cache-dir . && \
 		pip cache purge

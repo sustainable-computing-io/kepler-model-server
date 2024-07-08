@@ -3,6 +3,7 @@ IMAGE_NAME := kepler_model_server
 IMAGE_VERSION := 0.7
 
 IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):v$(IMAGE_VERSION)
+BASE_IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME)_base:v$(IMAGE_VERSION)
 LATEST_TAG_IMAGE := $(IMAGE_REGISTRY)/$(IMAGE_NAME):latest
 TEST_IMAGE := $(IMAGE)-test
 
@@ -13,6 +14,9 @@ MODEL_PATH := ${PWD}/tests/models
 
 build:
 	$(CTR_CMD) build -t $(IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile .
+
+build-base:
+	$(CTR_CMD) build -t $(BASE_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.base .
 
 build-test-nobase:
 	$(CTR_CMD) build -t $(TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test-nobase .
