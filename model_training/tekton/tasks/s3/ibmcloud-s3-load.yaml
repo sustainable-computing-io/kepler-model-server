@@ -23,7 +23,7 @@ spec:
     optional: true
   steps:
     - name: load
-      image: quay.io/sustainability/kepler_model_server/s3:v0.7
+      image: quay.io/sustainability/kepler_model_server/s3:v0.7-py3.10
       env:
       - name: SERVICE_ENDPOINT
         valueFrom:
