@@ -38,7 +38,7 @@ dependencies = [
   "xgboost==2.0.1",
   "scikit-learn==1.1.2",
   "py-cpuinfo==9.0.0",
-  "seaborn==0.12.2",
+  "seaborn==0.13.2",
   "psutil==5.9.8",
   "pyudev==0.24.1",
 ]
