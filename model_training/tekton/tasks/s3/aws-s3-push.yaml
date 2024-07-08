@@ -42,9 +42,8 @@ spec:
           secretKeyRef:
             name: $(params.COS_SECRET_NAME)
             key: bucketName
-      command: ["python3.10"]
       args:
-      - s3-pusher.py
+      - s3-pusher
       - aws
       - --aws-access-key-id=$(ACCESS_KEY_ID)
       - --aws-secret-access-key=$(ACCESS_SECRET)

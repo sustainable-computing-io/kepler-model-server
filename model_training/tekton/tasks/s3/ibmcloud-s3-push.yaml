@@ -42,9 +42,8 @@ spec:
           secretKeyRef:
             name: $(params.COS_SECRET_NAME)
             key: bucketName
-      command: ["python3.10"]
       args:
-      - s3-pusher.py
+      - pusher
       - ibmcloud
       - --service-endpoint=$(SERVICE_ENDPOINT)
       - --api-key=$(API_KEY)
