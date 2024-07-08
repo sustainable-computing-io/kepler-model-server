@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "s3"
+dynamic = ["version"]
+description = ''
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+keywords = []
+authors = [
+  { name = "Sunyanan Choochotkaew", email = "sunyanan.choochotkaew1@ibm.com" },
+]
+classifiers = [
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+ "boto3",
+ "ibm-cos-sdk",
+]
+
+[project.urls]
+Documentation = "https://github.com/sustainable-computing-io/kepler-model-server#readme"
+Issues = "https://github.com/sustainable-computing-io/kepler-model-server/issues"
+Source = "https://github.com/sustainable-computing-io/kepler-model-server"
+
+[project.scripts]
+s3-loader = "s3.loader:run"
+s3-pusher = "s3.pusher:run"
+
+[tool.hatch.version]
+path = "src/s3/__about__.py"
+
+[tool.hatch.envs.default]
+python = "3.10"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/s3 tests}"
+
+[tool.coverage.run]
+source_pkgs = ["s3", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/s3/__about__.py",
+]
+
+[tool.coverage.paths]
+s3 = ["src/s3", "*/s3/src/s3"]
+tests = ["tests", "*/s3/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]

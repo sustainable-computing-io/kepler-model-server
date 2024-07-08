@@ -1,22 +1,26 @@
 ## get client
-# client = new_<provider>_client(args) 
-## upload all files in mnt path 
-# <provider>_upload(client, mnt_path) 
-
-model_dir="models"
-data_dir="data"
-machine_spec_dir="machine_spec"
-
+# client = new_<provider>_client(args)
+## upload all files in mnt path
+# <provider>_upload(client, mnt_path)
+import argparse
 import os
+from . import util
+
+model_dir = "models"
+data_dir = "data"
+machine_spec_dir = "machine_spec"
+
 
 def aws_list_keys(client, bucket_name, prefix):
     response = client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-    return [obj['Key'] for obj in response.get('Contents', [])]
+    return [obj["Key"] for obj in response.get("Contents", [])]
+
 
 def ibmcloud_list_keys(client, bucket_name, prefix):
     bucket_obj = client.Bucket(bucket_name)
     data_response = bucket_obj.objects.filter(Prefix=prefix)
     return [obj.key for obj in data_response]
+
 
 def get_bucket_file_map(client, bucket_name, machine_id, mnt_path, pipeline_name, list_func):
     bucket_file_map = dict()
@@ -39,6 +43,7 @@ def get_bucket_file_map(client, bucket_name, machine_id, mnt_path, pipeline_name
         bucket_file_map[key] = filepath
     return bucket_file_map
 
+
 def aws_download(client, bucket_name, machine_id, mnt_path, pipeline_name):
     print("AWS Download")
     bucket_file_map = get_bucket_file_map(client, bucket_name, machine_id=machine_id, mnt_path=mnt_path, pipeline_name=pipeline_name, list_func=aws_list_keys)
@@ -48,7 +53,8 @@ def aws_download(client, bucket_name, machine_id, mnt_path, pipeline_name):
         if not os.path.exists(dir):
             os.makedirs(dir)
         client.download_file(bucket_name, key, filepath)
-        
+
+
 def ibm_download(client, bucket_name, machine_id, mnt_path, pipeline_name):
     print("IBM Download")
     bucket_file_map = get_bucket_file_map(client, bucket_name, machine_id=machine_id, mnt_path=mnt_path, pipeline_name=pipeline_name, list_func=ibmcloud_list_keys)
@@ -58,17 +64,16 @@ def ibm_download(client, bucket_name, machine_id, mnt_path, pipeline_name):
         if not os.path.exists(dir):
             os.makedirs(dir)
         client.Bucket(bucket_name).download_file(key, filepath)
-        
+
+
 def add_common_args(subparser):
     subparser.add_argument("--bucket-name", help="Bucket name", required=True)
     subparser.add_argument("--mnt-path", help="Mount path", required=True)
     subparser.add_argument("--pipeline-name", help="Pipeline name")
     subparser.add_argument("--machine-id", help="Machine ID")
 
-import argparse
-import util
 
-if __name__ == "__main__":
+def run():
     parser = argparse.ArgumentParser(description="S3 Pusher")
     args = util.get_command(parser, add_common_args, ibm_download, aws_download)
     if hasattr(args, "new_client_func") and hasattr(args, "func"):
@@ -76,3 +81,7 @@ if __name__ == "__main__":
         args.func(client, args.bucket_name, args.machine_id, args.mnt_path, args.pipeline_name)
     else:
         parser.print_help()
+
+
+if __name__ == "__main__":
+    run()
