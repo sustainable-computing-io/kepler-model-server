@@ -62,15 +62,16 @@ OPTS="ESTIMATOR SERVER" make deploy
     For more test information, check [here](./tests/).
 
 ### with native python environment
-Compatible version: python 3.8
+Compatible version: `python 3.10`
 
-1. Prepare environment
+1. Install [`hatch`](https://hatch.pypa.io/latest/install/)
+2. Prepare environment
 
     ```bash
-    pip install -r ../dockerfiles/requirements.txt
+		hatch shell
     ```
 
-2. Run the test
+3. Run the test
 
     |Test case|Command|
     |---|---|

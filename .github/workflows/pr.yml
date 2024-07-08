@@ -60,7 +60,7 @@ jobs:
       with:
         filters: |
           base:
-            - 'dockerfiles/requirements.txt'
+            - 'pyproject.toml'
             - 'dockerfiles/Dockerfile.base'
             - '.github/workflows/build-push.yml'
           data:

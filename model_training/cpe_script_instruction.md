@@ -86,12 +86,13 @@ Training output will be in `/data` folder by default. The folder contains:
 - models in a pipeline heirachy 
 
 ### < native with python environment >
-Compatible version: python 3.8
+Compatible version: python 3.10
 
+- Install [`hatch`](https://hatch.pypa.io/latest/install/)
 - Prepare environment:
 
     ```bash
-    pip install -r ../dockerfiles/requirements.txt
+    hatch shell
     ```
 
 - Run
