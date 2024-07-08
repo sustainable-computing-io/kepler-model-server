@@ -52,6 +52,7 @@ jobs:
       base: ${{ steps.filter.outputs.base }}
       data: ${{ steps.filter.outputs.data }}
       modeling: ${{ steps.filter.outputs.modeling }}
+      s3: ${{ steps.filter.outputs.s3 }}
 
     steps:
     - uses: actions/checkout@v4
@@ -77,6 +78,8 @@ jobs:
             - 'hack/**'
             - '.github/workflows/collect-data-self-hosted.yml'
             - '.github/workflows/train-model.yml'
+          s3:
+            - 'model_training/s3/**'
 
   check-secret:
     runs-on: ubuntu-latest
@@ -142,6 +145,44 @@ jobs:
           push: false
           tags: ${{ vars.IMAGE_REPO || 'docker.io/library' }}/kepler_model_server_base:${{ needs.check-branch.outputs.tag }}
           file: dockerfiles/Dockerfile.base
+      - name: Record change
+        id: record
+        run: |
+          echo "change=true" >> "$GITHUB_OUTPUT"
+
+  s3-image:
+    if: ${{ needs.check-change.outputs.s3 == 'true' }}
+    needs: [check-change, check-branch]
+    runs-on: ubuntu-latest
+
+    outputs:
+      change: ${{ steps.record.outputs.change }}
+
+    env:
+      tag: ${{ needs.check-branch.outputs.tag }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build s3 image
+        uses: docker/build-push-action@v6
+        with:
+          push: false
+          load: true
+          tags: ${{ vars.IMAGE_REPO || 'docker.io/library' }}/kepler_model_server_s3:${{ needs.check-branch.outputs.tag }}
+          context: model_training/s3
+          file: model_training/s3/Dockerfile
+
+      - name: test s3 image
+        run: |
+          img=${{ vars.IMAGE_REPO || 'docker.io/library' }}/kepler_model_server_s3:${{ needs.check-branch.outputs.tag }}
+          docker run --rm $img s3-pusher --version
+          docker run --rm $img s3-loader --version
+
       - name: Record change
         id: record
         run: |
