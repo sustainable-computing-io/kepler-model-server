@@ -1,79 +1,84 @@
 # Kepler power model training with Tekton
+
 Previous step: [Prepare cluster](./README.md#1-prepare-cluster)
 
-<!-- TOC tocDepth:2..3 chapterDepth:2..6 -->
+<!--toc:start-->
 
-- [1. Prepare resource](#1-prepare-resource)
-- [2. Deploy Tekton tasks and pipelines](#2-deploy-tekton-tasks-and-pipelines)
-- [3. Run Tekton pipeline](#3-run-tekton-pipeline)
-- [Advanced Step: customize the pipelinerun](#advanced-step-customize-the-pipelinerun)
-    - [Single train run](#single-train-run)
-    - [Original complete run](#original-complete-run)
-
-<!-- /TOC -->
+- [Kepler power model training with Tekton](#kepler-power-model-training-with-tekton)
+  - [1. Prepare resource](#1-prepare-resource)
+  - [2. Deploy Tekton tasks and pipelines](#2-deploy-tekton-tasks-and-pipelines)
+  - [3. Quick test](#3-quick-test)
+  - [4. Run Tekton pipeline](#4-run-tekton-pipeline)
+  - [Advanced Step: customize the pipelinerun](#advanced-step-customize-the-pipelinerun) - [Single train run](#single-train-run) - [Original complete run](#original-complete-run)
+  <!--toc:end-->
 
 ## 1. Prepare resource
+
 1. Install Tekton
 
-    ```bash
-    kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
-    ```
+   ```bash
+   kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+   ```
 
-    > official guideline: https://tekton.dev/docs/installation/pipelines/
+   > official guideline: <https://tekton.dev/docs/installation/pipelines/>
 
 2. Deploy PersistentVolumeClaim `task-pvc` for workspace
-    
-    For simple hostpath,
-    ```
-    kubectl apply -f pvc/hostpath.yaml
-    ```
 
-    > The query, preprocess data, and models will be mounted to the hostpath: `/mnt`
+   For simple hostpath,
+
+   ```bash
+   kubectl apply -f pvc/hostpath.yaml
+   ```
+
+   > The query, preprocess data, and models will be mounted to the hostpath: `/mnt`
 
 3. Update secret for S3 bucket (optional)
 
-    3.1. Set required environment variables and deploy secret for S3 regarding the provider
+   3.1. Set required environment variables and deploy secret for S3 regarding the provider
 
-    For IBM Cloud:
-    ```yaml
-    apiVersion: v1
-    kind: Secret
-    metadata:
-        name: ibm-cos-secret
-    type: Opaque
-    stringData:
-        accessKeyID: ${AWS_ACCESS_KEY_ID}
-        accessSecret: ${AWS_SECRET_ACCESS_KEY}
-        regionName: ${AWS_REGION}
-        bucketName: kepler-power-model
-    ```
+   For IBM Cloud:
 
-    For AWS:
-    ```yaml
-    apiVersion: v1
-    kind: Secret
-    metadata:
-        name: aws-cos-secret
-    type: Opaque
-    stringData:
-        serviceEndpoint: ${IBMCLOUD_SERVICE_ENDPOINT}
-        apiKey: ${IBMCLOUD_API_KEY}
-        serviceInstanceID: ${IBMCLOUD_SERVICE_INSTANCE_ID}
-        bucketName: kepler-power-model
-    ```
+   ```yaml
+   apiVersion: v1
+   kind: Secret
+   metadata:
+     name: ibm-cos-secret
+   type: Opaque
+   stringData:
+     serviceEndpoint: ${IBMCLOUD_SERVICE_ENDPOINT}
+     apiKey: ${IBMCLOUD_API_KEY}
+     serviceInstanceID: ${IBMCLOUD_SERVICE_INSTANCE_ID}
+     bucketName: kepler-power-model
+   ```
 
-    3.2. Uncomment COS-related varaiable values in `examples/single-train/default.yaml`
+   For AWS:
+
+   ```yaml
+   apiVersion: v1
+   kind: Secret
+   metadata:
+     name: aws-cos-secret
+   type: Opaque
+   stringData:
+     accessKeyID: ${AWS_ACCESS_KEY_ID}
+     accessSecret: ${AWS_SECRET_ACCESS_KEY}
+     regionName: ${AWS_REGION}
+     bucketName: kepler-power-model
+   ```
+
+   3.2. Uncomment COS-related variable values in `examples/single-train/default.yaml`
 
 ## 2. Deploy Tekton tasks and pipelines
 
-```
+```bash
 kubectl apply -f tasks
 kubectl apply -f tasks/s3
 kubectl apply -f pipelines
 ```
 
 ## 3. Quick test
-```
+
+```bash
 kubectl apply -f examples/single-train/abs-power.yaml
 ```
 
@@ -82,32 +87,35 @@ kubectl apply -f examples/single-train/abs-power.yaml
 The minimum required pipelinerun for default power model of Kepler on VM is as below:
 ![](../../fig/tekton-kepler-default.png)
 
-```
+```bash
 kubectl apply -f examples/single-train/default.yaml
 ```
-> If the secret is not deployed and not specified, the s3-push step will be skipped. 
+
+> If the secret is not deployed and not specified, the s3-push step will be skipped.
 
 ## Advanced Step: customize the pipelinerun
 
 The defined tasks can be reused for the various training runs based on two availble pipelines: single-train and complete-train as follows.
 
 ### Single train run
+
 A single flow to apply a set of trainers to specific feature group and energy source.
 
 ![](../../fig/tekton-single-train.png)
 
-check [single-train](./pipelines/single-train.yaml) pipeline.
-> If the secret is not deployed and not specified, the s3-push step will be skipped. 
+Check [single-train](./pipelines/single-train.yaml) pipeline.
+
+> If the secret is not deployed and not specified, the s3-push step will be skipped.
 
 Example for AbsPower model:
-    
-```
+
+```bash
 kubectl apply -f examples/single-train/abs-power.yaml
 ```
 
 Example of DynPower model:
 
-```
+```bash
 kubectl apply -f examples/single-train/dyn-power.yaml
 ```
 
@@ -134,14 +142,16 @@ ISOLATOR|isolator class (none, min, profile, or trainer)<br> For trainer isolato
 TRAINERS|list of trainer classes (use comma as delimiter)
 
 ### Original complete run
+
 Apply a set of trainers to all available feature groups and energy sources
 
 ![](../../fig/tekton-complete-train.png)
 
-check [complete-train](./pipelines/complete-train.yaml) pipeline.
-> If the secret is not deployed and not specified, the s3-push step will be skipped. 
+Check [complete-train](./pipelines/complete-train.yaml) pipeline.
 
-```
+> If the secret is not deployed and not specified, the s3-push step will be skipped.
+
+```bash
 kubectl apply -f examples/complete-pipelinerun.yaml
 ```
 
