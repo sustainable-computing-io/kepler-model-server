@@ -23,7 +23,7 @@ spec:
     optional: true
   steps:
     - name: load
-      image: quay.io/sustainability/kepler_model_server/s3:v0.7-py3.10
+      image: quay.io/sustainable_computing_io/kepler_model_server/s3:latest
       env:
       - name: ACCESS_KEY_ID
         valueFrom:

@@ -173,13 +173,12 @@ jobs:
         with:
           push: false
           load: true
-          tags: ${{ vars.IMAGE_REPO || 'docker.io/library' }}/kepler_model_server_s3:${{ needs.check-branch.outputs.tag }}
+          tags: ${{ vars.IMAGE_REPO || 'docker.io/library' }}/kepler_model_server/s3:${{ needs.check-branch.outputs.tag }}
           context: model_training/s3
           file: model_training/s3/Dockerfile
-
-      - name: test s3 image
+      - name: Test s3 image
         run: |
-          img=${{ vars.IMAGE_REPO || 'docker.io/library' }}/kepler_model_server_s3:${{ needs.check-branch.outputs.tag }}
+          img=${{ vars.IMAGE_REPO || 'docker.io/library' }}/kepler_model_server/s3:${{ needs.check-branch.outputs.tag }}
           docker run --rm $img s3-pusher --version
           docker run --rm $img s3-loader --version
 
