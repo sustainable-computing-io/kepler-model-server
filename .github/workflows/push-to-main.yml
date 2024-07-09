@@ -53,12 +53,15 @@ jobs:
             - 'model_training/**'
             - 'hack/**'
             - '.github/workflows/train-model.yml'
+          s3:
+            - 'model_training/s3/**'
 
   build-push:
     needs: [check-change, check-branch]
     uses: ./.github/workflows/build-push.yml
     with:
       base_change: ${{ needs.check-change.outputs.base }}
+      s3_change: ${{ needs.check-change.outputs.s3 }}
       image_repo: ${{ vars.IMAGE_REPO }}
       image_tag: ${{ needs.check-branch.outputs.tag }}
       push: true
