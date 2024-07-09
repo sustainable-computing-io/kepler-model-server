@@ -44,7 +44,6 @@ spec:
             key: bucketName
       command: ["s3-pusher"]
       args:
-      - s3-pusher
       - aws
       - --aws-access-key-id=$(ACCESS_KEY_ID)
       - --aws-secret-access-key=$(ACCESS_SECRET)
