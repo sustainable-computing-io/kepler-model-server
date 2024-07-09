@@ -37,6 +37,7 @@ jobs:
     outputs:
       base: ${{ steps.filter.outputs.base }}
       modeling: ${{ steps.filter.outputs.modeling }}
+      s3: ${{ steps.filter.outputs.s3 }}
 
     steps:
     - uses: actions/checkout@v4

@@ -42,6 +42,7 @@ spec:
           secretKeyRef:
             name: $(params.COS_SECRET_NAME)
             key: bucketName
+      command: ["s3-pusher"]
       args:
       - s3-pusher
       - aws

@@ -45,8 +45,8 @@ spec:
           secretKeyRef:
             name: $(params.COS_SECRET_NAME)
             key: bucketName
+      command: ["s3-loader"]
       args:
-      - s3-loader
       - aws
       - --aws-access-key-id=$(ACCESS_KEY_ID)
       - --aws-secret-access-key=$(ACCESS_SECRET)
