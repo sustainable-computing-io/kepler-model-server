@@ -7,18 +7,21 @@ spec:
   template:
     spec:
       containers:
-      - name: kepler-exporter
-        image: localhost:5001/kepler_model_server:devel-test
-        imagePullPolicy: IfNotPresent
-        command: [ "/bin/sh" ]
-        args: ["-c", "python3.10 -u tests/weight_model_request_test.py && echo Done && sleep infinity"]
-        volumeMounts:
-        - name: cfm
-          mountPath: /etc/kepler/kepler.config
-          readOnly: true
-        - mountPath: /tmp
-          name: tmp
+        - name: kepler-exporter
+          image: localhost:5001/kepler_model_server:devel-test
+          imagePullPolicy: IfNotPresent
+          command: [/bin/sh]
+          args:
+            [
+              -c,
+              python3.10 -u tests/weight_model_request_test.py && echo Done && sleep infinity,
+            ]
+          volumeMounts:
+            - name: cfm
+              mountPath: /etc/kepler/kepler.config
+              readOnly: true
+            - mountPath: /tmp
+              name: tmp
       volumes:
-      - emptyDir: {}
-        name: tmp
-
+        - emptyDir: {}
+          name: tmp

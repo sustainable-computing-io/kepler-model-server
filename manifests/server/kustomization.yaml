@@ -1,29 +1,29 @@
 resources:
-- server.yaml
+  - server.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 vars:
-- fieldref:
-    fieldPath: metadata.namespace
-  name: MODEL_SERVER_NAMESPACE
-  objref:
-    group: apps
-    kind: Deployment
-    name: kepler-model-server
-    version: v1
-- fieldref:
-    fieldPath: spec.template.spec.containers[0].ports[0].containerPort
-  name: MODEL_SERVER_PORT
-  objref:
-    group: apps
-    kind: Deployment
-    name: kepler-model-server
-    version: v1
+  - fieldref:
+      fieldpath: metadata.namespace }
+    name: MODEL_SERVER_NAMESPACE
+    objref:
+      group: apps
+      kind: Deployment
+      name: kepler-model-server
+      version: v1
+  - fieldref:
+      fieldpath: spec.template.spec.containers[0].ports[0].containerPort
+    name: MODEL_SERVER_PORT
+    objref:
+      group: apps
+      kind: Deployment
+      name: kepler-model-server
+      version: v1
 
 configurations:
-- kustomizeconfig.yaml
+  - kustomizeconfig.yaml
 images:
-- name: kepler_model_server
-  newName: quay.io/sustainable_computing_io/kepler_model_server
-  newTag: latest
+  - name: kepler_model_server
+    newName: quay.io/sustainable_computing_io/kepler_model_server
+    newTag: latest

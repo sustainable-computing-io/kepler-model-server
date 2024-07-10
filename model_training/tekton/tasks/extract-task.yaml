@@ -11,41 +11,41 @@ metadata:
   name: extract-from-metric
 spec:
   params:
-  - name: MODEL_SERVER_IMAGE
-    description: Specify model server image
-    default: quay.io/sustainable_computing_io/kepler_model_server:latest
-  - name: PIPELINE_NAME
-    description: Specify pipeline name (output prefix/folder)
-    default: default
-  - name: OUTPUT_TYPE
-    description: Specify target output type (check https://sustainable-computing.io/kepler_model_server/pipeline/#power-isolation)
-  - name: ENERGY_SOURCE
-    description: Specify target energy source (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
-    default: intel_rapl
-  - name: FEATURE_GROUP
-    description: Specify target feature group (check https://sustainable-computing.io/kepler_model_server/pipeline/#feature-group)
-    default: BPFOnly
-  - name: EXTRACTOR
-    description: Specify extractor class (default or smooth)
-    default: default
-  - name: THIRDPARTY_METRICS
-    description: Specify list of third party metric to export (required only for ThirdParty feature group)
-    default: ""
+    - name: MODEL_SERVER_IMAGE
+      description: Specify model server image
+      default: quay.io/sustainable_computing_io/kepler_model_server:latest
+    - name: PIPELINE_NAME
+      description: Specify pipeline name (output prefix/folder)
+      default: default
+    - name: OUTPUT_TYPE
+      description: Specify target output type (check https://sustainable-computing.io/kepler_model_server/pipeline/#power-isolation)
+    - name: ENERGY_SOURCE
+      description: Specify target energy source (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
+      default: intel_rapl
+    - name: FEATURE_GROUP
+      description: Specify target feature group (check https://sustainable-computing.io/kepler_model_server/pipeline/#feature-group)
+      default: BPFOnly
+    - name: EXTRACTOR
+      description: Specify extractor class (default or smooth)
+      default: default
+    - name: THIRDPARTY_METRICS
+      description: Specify list of third party metric to export (required only for ThirdParty feature group)
+      default: ""
   workspaces:
-  - name: mnt
-    optional: true
+    - name: mnt
+      optional: true
   steps:
     - name: extract
       image: $(params.MODEL_SERVER_IMAGE)
-      command: ["python3.10"]
+      command: [python3.10]
       args:
-      - cmd/main.py
-      - extract
-      - --data-path=$(workspaces.mnt.path)/data
-      - --input=kepler_query
-      - --output=$(params.PIPELINE_NAME)_$(params.ENERGY_SOURCE)_$(params.FEATURE_GROUP)_data
-      - --extractor=$(params.EXTRACTOR)
-      - --feature-group=$(params.FEATURE_GROUP)
-      - --energy-source=$(params.ENERGY_SOURCE)
-      - --output-type=$(params.OUTPUT_TYPE)
-      - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
+        - cmd/main.py
+        - extract
+        - --data-path=$(workspaces.mnt.path)/data
+        - --input=kepler_query
+        - --output=$(params.PIPELINE_NAME)_$(params.ENERGY_SOURCE)_$(params.FEATURE_GROUP)_data
+        - --extractor=$(params.EXTRACTOR)
+        - --feature-group=$(params.FEATURE_GROUP)
+        - --energy-source=$(params.ENERGY_SOURCE)
+        - --output-type=$(params.OUTPUT_TYPE)
+        - --thirdparty-metrics=$(params.THIRDPARTY_METRICS)

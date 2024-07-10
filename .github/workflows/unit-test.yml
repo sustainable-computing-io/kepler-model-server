@@ -1,17 +1,17 @@
 name: Unit Test
 
-on:
+on: # yamllint disable-line rule:truthy
   workflow_call:
     secrets:
       docker_username:
-        description: 'Docker username'
+        description: Docker username
         required: false
       docker_password:
-        description: 'Docker password'
+        description: Docker password
         required: false
     inputs:
       base_change:
-        description: 'Change flag on base image'
+        description: Change flag on base image
         required: true
         type: string
 
@@ -26,7 +26,7 @@ jobs:
         if: ${{ inputs.base_change != 'true' }}
         run: make build-test
       - name: Build test without base image
-        if: ${{ inputs.base_change == 'true' }} 
+        if: ${{ inputs.base_change == 'true' }}
         run: make build-test-nobase
       - name: Test pipeline # need to run first to build the models
         run: make test-pipeline

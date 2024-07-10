@@ -6,19 +6,19 @@
 
 name: Workflow on Push/PR
 
-on:
+on: # yamllint disable-line rule:truthy
   pull_request:
     paths-ignore:
-      - 'fig/**'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '.vscode/**'
-      - 'LICENSE'
-      - '.gitignore'
-      - '*.md'
-      - '**/*.md'
+      - fig/**
+      - .github/ISSUE_TEMPLATE/**
+      - .vscode/**
+      - LICENSE
+      - .gitignore
+      - "*.md"
+      - "**/*.md"
 
 env:
-  TAG: "v0.7.7"
+  TAG: v0.7.7
 
 jobs:
   check-branch:
@@ -28,13 +28,13 @@ jobs:
       tag: ${{ steps.image-tag.outputs.tag }}
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Find Image Tag
-      id: image-tag
-      env:
-        BRANCH: ${{ github.ref_name }}
-        COMMIT: ${{ github.sha }}
-      run: |
+      - uses: actions/checkout@v4
+      - name: Find Image Tag
+        id: image-tag
+        env:
+          BRANCH: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+        run: |
           if [ "${{ github.event_name }}" == 'pull_request' ]; then
             echo "tag=pr-${{ github.event.number }}" >> "$GITHUB_OUTPUT"
           else
@@ -55,31 +55,31 @@ jobs:
       s3: ${{ steps.filter.outputs.s3 }}
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: dorny/paths-filter@v3
-      id: filter
-      with:
-        filters: |
-          base:
-            - 'pyproject.toml'
-            - 'dockerfiles/Dockerfile.base'
-            - '.github/workflows/build-push.yml'
-          data:
-            - 'src/util/prom_types.py'
-            - 'src/util/train_types.py'
-            - 'src/train/prom/**'
-            - 'model_training/tekton/tasks/stressng-task.yaml'
-            - 'model_training/tekton/pipelines/collect.yaml'
-            - 'hack/**'
-            - '.github/workflows/collect-data-self-hosted.yml'
-          modeling:
-            - 'src/**'
-            - 'model_training/**'
-            - 'hack/**'
-            - '.github/workflows/collect-data-self-hosted.yml'
-            - '.github/workflows/train-model.yml'
-          s3:
-            - 'model_training/s3/**'
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            base:
+              - 'pyproject.toml'
+              - 'dockerfiles/Dockerfile.base'
+              - '.github/workflows/build-push.yml'
+            data:
+              - 'src/util/prom_types.py'
+              - 'src/util/train_types.py'
+              - 'src/train/prom/**'
+              - 'model_training/tekton/tasks/stressng-task.yaml'
+              - 'model_training/tekton/pipelines/collect.yaml'
+              - 'hack/**'
+              - '.github/workflows/collect-data-self-hosted.yml'
+            modeling:
+              - 'src/**'
+              - 'model_training/**'
+              - 'hack/**'
+              - '.github/workflows/collect-data-self-hosted.yml'
+              - '.github/workflows/train-model.yml'
+            s3:
+              - 'model_training/s3/**'
 
   check-secret:
     runs-on: ubuntu-latest
@@ -106,14 +106,18 @@ jobs:
       exists: ${{ steps.check-base-exist.outputs.exists }}
 
     steps:
-    - name: Check if Docker base image exists
-      id: check-base-exist
-      run: |
-        if docker pull ${{ env.BASE_IMAGE }}; then
-              echo "exists=true" >> "$GITHUB_OUTPUT"
-        else
-              echo "exists=false" >> "$GITHUB_OUTPUT"
-        fi
+      - name: Check if Docker base image exists
+        id: check-base-exist
+        run: |
+          if docker pull ${{ env.BASE_IMAGE }}; then
+                echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+                echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  yamllint:
+    needs: [check-change]
+    uses: ./.github/workflows/yamllint.yml
 
   unit-test:
     needs: [check-change]

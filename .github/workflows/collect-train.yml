@@ -1,5 +1,5 @@
 # manually run on collect needed
-on:
+on: # yamllint disable-line rule:truthy
   workflow_dispatch:
 
 jobs:
@@ -11,7 +11,7 @@ jobs:
       max-parallel: 1
     with:
       instance_type: ${{ matrix.instance_type }}
-      ami_id: 'ami-0e4d0bb9670ea8db0'
+      ami_id: ami-0e4d0bb9670ea8db0
       github_repo: ${{ github.repository }}
       model_server_image: ${{ vars.IMAGE_REPO }}/kepler_model_server:v0.7
     secrets:
@@ -20,7 +20,7 @@ jobs:
       aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       security_group_id: ${{ secrets.AWS_SECURITY_GROUP_ID }}
       aws_region: ${{ secrets.AWS_REGION }}
-      
+
   train-model:
     needs: [collect-data]
     strategy:
@@ -30,7 +30,7 @@ jobs:
     with:
       pipeline_name: std_v0.7
       instance_type: ${{ matrix.instance_type }}
-      ami_id: 'ami-0e4d0bb9670ea8db0'
+      ami_id: ami-0e4d0bb9670ea8db0
       github_repo: ${{ github.repository }}
       model_server_image: ${{ vars.IMAGE_REPO }}/kepler_model_server:v0.7
       trainers: LogisticRegressionTrainer,ExponentialRegressionTrainer,SGDRegressorTrainer,GradientBoostingRegressorTrainer,XgboostFitTrainer

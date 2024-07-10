@@ -15,11 +15,11 @@ spec:
           image: sunyanan/parsec:v3.0
           imagePullPolicy: Always
           command:
-          - parsecmgmt 
+          - parsecmgmt
           - -a
           - run
           - -p
-          - {{ .package }} 
+          - {{ .package }}
           - -i
           - {{ .input }}
         restartPolicy: Never
@@ -28,14 +28,14 @@ spec:
   interval: 10
   iterationSpec:
     iterations:
-    - name: input
-      values:
-      - "native"
-    - name: package
-      values:
-      - "bodytrack"
-      - "canneal"
-      - "raytrace"
-      - "ferret"
+      - name: input
+        values:
+          - native
+      - name: package
+        values:
+          - bodytrack
+          - canneal
+          - raytrace
+          - ferret
     sequential: true
     minimize: true
