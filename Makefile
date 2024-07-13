@@ -5,7 +5,8 @@ IMAGE_VERSION := 0.7
 IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):v$(IMAGE_VERSION)
 LATEST_TAG_IMAGE := $(IMAGE_REGISTRY)/$(IMAGE_NAME):latest
 TEST_IMAGE := $(IMAGE)-test
-GUNICORN_TEST_IMAGE := $(TEST_IMAGE)-gunicorn
+MODEL_SERVER_TEST_IMAGE := $(TEST_IMAGE)-model-server
+OFFLINE_TRAINER_TEST_IMAGE := $(TEST_IMAGE)-offline-trainer
 
 CTR_CMD = docker
 
@@ -21,8 +22,11 @@ build-test-nobase:
 build-test:
 	$(CTR_CMD) build -t $(TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test .
 
-build-test-gunicorn:
-	$(CTR_CMD) build -t $(GUNICORN_TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test-gunicorn .
+build-test-model-server:
+	$(CTR_CMD) build -t $(MODEL_SERVER_TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test-model-server .
+
+build-test-offline-trainer:
+	$(CTR_CMD) build -t $(OFFLINE_TRAINER_TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test-offline-trainer .
 
 push:
 	$(CTR_CMD) push $(IMAGE)
@@ -60,9 +64,9 @@ run-model-server-prod:
 	--platform linux/amd64 \
 	-e "MODEL_TOPURL=http://localhost:8110" \
 	-v ${MODEL_PATH}:/mnt/models \
-	-p 9100:9100 -p 8105:8105 \
+	-p 8105:8105 \
 	--name model-server-prod \
-	$(GUNICORN_TEST_IMAGE)
+	$(MODEL_SERVER_TEST_IMAGE)
 
 run-estimator-client:
 	$(CTR_CMD) exec model-server /bin/bash -c "python3.8 -u ./tests/estimator_model_request_test.py"
@@ -75,21 +79,55 @@ clean-model-server-prod:
 	@$(CTR_CMD) stop model-server-prod
 	@$(CTR_CMD) rm model-server-prod
 
-test-model-server: run-model-server run-estimator-client clean-model-server
+test-model-server: 
+	@if [ "$(ENV)" = "prod" ]; then \
+		run-model-server-prod run-estimator-client clean-model-server-prod
+	else \
+		run-model-server run-estimator-client clean-model-server
+	fi
 
 # test offline trainer
 run-offline-trainer:
-	$(CTR_CMD) run -d --platform linux/amd64  -p 8102:8102 --name offline-trainer $(TEST_IMAGE) python3.8 src/train/offline_trainer.py
+	$(CTR_CMD) run -d --platform linux/amd64 \
+	-p 8102:8102 \ 
+	--name offline-trainer \ 
+	$(TEST_IMAGE) \ 
+	python3.8 src/train/offline_trainer.py
 	sleep 5
 
 run-offline-trainer-client:
-	$(CTR_CMD) exec offline-trainer /bin/bash -c "python3.8 -u ./tests/offline_trainer_test.py"
+	$(CTR_CMD) exec offline-trainer \
+	/bin/bash -c \
+	"python3.8 -u ./tests/offline_trainer_test.py"
+
+
+run-offline-trainer-client-prod:
+	$(CTR_CMD) exec offline-trainer-prod \
+	/bin/bash -c \
+	"python3.8 -u ./tests/offline_trainer_test.py"
+
+run-offline-trainer-prod:
+	$(CTR_CMD) run -d \
+	--platform linux/amd64 \
+	-p 8107:8107 \
+	--name offline-trainer-prod \
+	$(OFFLINE_TRAINER_TEST_IMAGE)
+	sleep 5
 
 clean-offline-trainer:
 	@$(CTR_CMD) stop offline-trainer
 	@$(CTR_CMD) rm offline-trainer
 
-test-offline-trainer: run-offline-trainer run-offline-trainer-client clean-offline-trainer
+clean-offline-trainer-prod:
+	@$(CTR_CMD) stop offline-trainer-prod
+	@$(CTR_CMD) rm offline-trainer-prod
+
+test-offline-trainer: 
+	@if [ "$(ENV)" = "prod" ]; then \
+		run-offline-trainer-prod run-offline-trainer-client-prod clean-offline-trainer-prod
+	else \
+		run-offline-trainer run-offline-trainer-client clean-offline-trainer
+	fi
 
 test: build-test test-pipeline test-estimator test-model-server test-offline-trainer
 

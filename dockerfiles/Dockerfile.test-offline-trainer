@@ -19,15 +19,8 @@ RUN mkdir -p tests/data
 COPY tests/data/prom_output tests/data/prom_output 
 COPY tests/*.py tests/
 
-ENV PORT_MODEL_SERVER=8105
-ENV PORT_ONLINE_TRAINER=8106
-ENV PORT_OFFLINE_TRAINER=9105
+ENV GUNICORN_PORT=8107
 
-# port for Model Server
-EXPOSE ${PORT_MODEL_SERVER}
-# port for Online Trainer (TODO: reserved for event-based online training)
-EXPOSE ${PORT_ONLINE_TRAINER}
-# port for Offline Trainer
-EXPOSE ${PORT_OFFLINE_TRAINER}
+EXPOSE ${GUNICORN_PORT}
 
-CMD ["sh", "cmd/gunicorn.sh"]
+CMD ["gunicorn", "--config", "config/gunicorn_config.py", "src.train.offline_trainer:app"]
