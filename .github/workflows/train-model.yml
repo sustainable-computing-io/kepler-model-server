@@ -116,7 +116,7 @@ jobs:
               sudo pip3 install awscli
 
       - name: use Kepler action to deploy cluster
-        uses: sustainable-computing-io/kepler-action@v0.0.7
+        uses: sustainable-computing-io/kepler-action@v0.0.8
         with:
           ebpfprovider: libbpf
           cluster_provider: kind
