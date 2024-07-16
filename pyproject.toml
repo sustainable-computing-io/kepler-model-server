@@ -37,7 +37,7 @@ dependencies = [
   "pyudev==0.24.3",
   "pyyaml_env_tag==0.1",
   "scikit-learn==1.5.1",
-  "scipy==1.9.1",
+  "scipy==1.14.0",
   "seaborn==0.13.2",
   "Werkzeug==2.2.2",
   "xgboost==2.1.0",
