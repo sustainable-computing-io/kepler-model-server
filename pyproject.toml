@@ -31,7 +31,7 @@ dependencies = [
   "pandas==1.4.4",
   "prometheus-api-client==0.5.5",
   "prometheus-client==0.20.0",
-  "protobuf==3.19.4",
+  "protobuf==5.27.2",
   "psutil==6.0.0",
   "py-cpuinfo==9.0.0",
   "pyudev==0.24.3",
