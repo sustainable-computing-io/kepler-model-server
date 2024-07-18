@@ -681,8 +681,11 @@ def plot(args):
                 feature_cols = FeatureGroups[fg]
                 scaler = MaxAbsScaler()
                 data[feature_cols] = best_restult[[TIMESTAMP_COL] + feature_cols].groupby([TIMESTAMP_COL]).sum().sort_index()
+                # plot raw feature data to confirm min-max value
+                ts_plot(data, feature_cols, "Features {}".format(fg) , output_folder, "{}_{}".format(data_filename, fg), labels=None, subtitles=None, ylabel=None)
                 data[feature_cols] = scaler.fit_transform(data[feature_cols])
                 feature_power_plot(data, model_id, ot.name, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, "{}_{}_corr".format(data_filename, model_id))
+
     elif args.target_data == "error":
         from estimate import default_predicted_col_func
         from sklearn.preprocessing import MaxAbsScaler
