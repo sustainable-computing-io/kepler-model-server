@@ -3,8 +3,16 @@ python src/train/ec2_pipeline.py
 
 This program trains a pipeline called `ec2` from the collected data on AWS COS which is collected by kepler-model-training-playbook or by collect-data job on github workflow.
 
-required step:
+before run:
 - set AWS secret environments (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION)
+
+after run:
+example of plot command:
+DATAPATH=/path/to/models python cmd/main.py plot --target-data estimate --input /path/to/data/i3.metal/kepler_query.json --pipeline-name ec2 --energy-source intel_rapl --model-name LinearRegressionTrainer_4 --output-type AbsPower --output i3metal-ec2 --feature-group BPFOnly
+DATAPATH=/path/to/models python cmd/main.py plot --target-data estimate --input /path/to/data/i3.metal/kepler_query.json --pipeline-name ec2 --energy-source intel_rapl --model-name LogarithmicRegressionTrainer_4 --output-type AbsPower --output i3metal-ec2 --feature-group BPFOnly
+
+example of export command:
+DATAPATH=/path/to/models python cmd/main.py export --pipeline-name ec2 -o /path/to/kepler-model-db/models --publisher sunya-ch --zip=true --collect-date "July 2024"
 """
 
 import os
@@ -29,6 +37,8 @@ from extractor import DefaultExtractor
 from isolator import MinIdleIsolator
 from prom_types import node_info_column, prom_responses_to_results, get_valid_feature_group_from_queries
 from train_types import default_trainer_names, PowerSourceMap
+from saver import save_json
+from config import model_toppath
 
 node_profiles = ["m5zn.metal", "c5d.metal", "i3en.metal", "m7i.metal-24xl", "i3.metal"]
 node_image = "ami-0e4d0bb9670ea8db0"
@@ -46,6 +56,8 @@ unknown = -1
 def read_response_in_json(key):
     print(key)
     response = s3.get_object(Bucket=bucket_name, Key=key)
+    last_modified_str = response['LastModified']
+    print("{} last modified time: {}".format(key, last_modified_str))
     return json.loads(response['Body'].read().decode('utf-8'))
 
 class Ec2PipelineRun():
@@ -56,13 +68,22 @@ class Ec2PipelineRun():
 
     def process(self):
         for profile in node_profiles:
+            # load data from COS
             machine_id = "-".join([profile, node_image])
             kepler_query_key = os.path.join("/", machine_id, "data", "kepler_query.json")
-            spec_key = os.path.join("/", machine_id, "data", "machine_spec", machine_id + ".json")
+            machine_spec_filename =  machine_id + ".json"
+            spec_key = os.path.join("/", machine_id, "data", "machine_spec", machine_spec_filename)
             query_response = read_response_in_json(kepler_query_key)
             spec_json = read_response_in_json(spec_key)
+
+            # save raw data from response in local path models/../data/<instance profile>
+            profile_datapath = os.path.join(model_toppath, "..", "data", profile)
+            os.makedirs(profile_datapath, exist_ok=True)
+            save_json(path=profile_datapath, name="kepler_query.json", data=query_response)
+            save_json(path=profile_datapath, name=machine_spec_filename, data=spec_json)
+
+            # process pipeline
             spec = NodeTypeSpec(**spec_json['attrs'])
-            spec.attrs[NodeAttribute.PROCESSOR] = profile
             spec.attrs[NodeAttribute.MEMORY] = unknown
             spec.attrs[NodeAttribute.FREQ] = unknown
             node_type = self.pipeline.node_collection.index_train_machine(machine_id, spec)

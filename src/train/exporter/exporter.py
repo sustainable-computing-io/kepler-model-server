@@ -61,7 +61,7 @@ def export(data_path, pipeline_path, db_path, publisher, collect_date, inputs):
         best_model_collections[export_item.node_type].compare_new_item(export_item)
     
     # generate pipeline page
-    workload_content = workload_content = get_workload_content(data_path, inputs)
+    workload_content = get_workload_content(data_path, inputs)
     generate_pipeline_page(local_version_path, pipeline_metadata, workload_content)
     # generate error report page
     generate_report_results(local_export_path, best_model_collections, node_type_index_json, remote_version_path)
