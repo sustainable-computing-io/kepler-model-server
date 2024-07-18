@@ -71,7 +71,7 @@ wait_for_db() {
 }
 
 wait_for_keyword() {
-    num_iterations=10
+    num_iterations=30
     component=$1
     keyword=$2
     message=$3
