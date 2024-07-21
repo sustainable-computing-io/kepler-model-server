@@ -1,6 +1,6 @@
 # NOTE: Dockerfile for generating quay.io/kepler_model_server/s3 images
 
-FROM python:3.10-slim
+FROM python:3.13.0b3-slim
 
 WORKDIR /usr/local
 
