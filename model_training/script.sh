@@ -3,14 +3,18 @@
 set -eu -o pipefail
 
 # NOTE: assumes that the project root is one level up
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-declare -r PROJECT_ROOT
+# NOTE: these settings can be overridden in the .env file
+# shellcheck disable=SC1091
 
+PROJECT_ROOT="$(git rev-parse --show-toplevel)"
+
+declare -r PROJECT_ROOT
 declare -r TMP_DIR="$PROJECT_ROOT/tmp"
 declare -r LOCAL_DEV_CLUSTER_DIR=${LOCAL_DEV_CLUSTER_DIR:-"$TMP_DIR/local-dev-cluster"}
+declare -r LOCAL_DEV_CLUSTER_VERSION=${LOCAL_DEV_CLUSTER_VERSION:-"main"}
+
 declare -r DEPOYMENT_DIR=${DEPOYMENT_DIR:-"$PROJECT_ROOT/model_training/deployment"}
 declare -r CPE_BENCHMARK_DIR=${CPE_BENCHMARK_DIR:-"$PROJECT_ROOT/model_training/cpe_benchmark"}
-declare -r LOCAL_DEV_CLUSTER_VERSION=${LOCAL_DEV_CLUSTER_VERSION:-"main"}
 
 declare KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-"kind-for-training"}
 declare KIND_REGISTRY_NAME=${KIND_REGISTRY_NAME:-"kind-registry-for-training"}
@@ -27,6 +31,8 @@ declare PROMETHEUS_ENABLE=${PROMETHEUS_ENABLE:-"true"}
 declare TEKTON_ENABLE=${TEKTON_ENABLE:-"true"}
 
 declare NATIVE=${NATIVE:-"true"}
+
+declare KUBECONFIG=${KUBECONFIG:-"/tmp/kubeconfig"}
 
 clone_local_dev_cluster() {
   [[ -d "$LOCAL_DEV_CLUSTER_DIR" ]] && {
