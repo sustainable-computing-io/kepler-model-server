@@ -11,11 +11,11 @@ import codecs
 
 version = 0.7
 
-FILTER_ITEM_DELIMIT = ';'
-VALUE_DELIMIT = ':'
-ARRAY_DELIMIT = ','
+FILTER_ITEM_DELIMIT = ";"
+VALUE_DELIMIT = ":"
+ARRAY_DELIMIT = ","
 
-CHECKPOINT_FOLDERNAME = 'checkpoint'
+CHECKPOINT_FOLDERNAME = "checkpoint"
 PREPROCESS_FOLDERNAME = "preprocessed_data"
 
 ##########################################################################
@@ -23,14 +23,14 @@ PREPROCESS_FOLDERNAME = "preprocessed_data"
 
 ## default_train_output_pipeline: a default pipeline name which is output from the training pipeline
 default_train_output_pipeline = "std_v{}".format(version)
-default_pipelines = {
-    "intel_rapl": "ec2",
-    "acpi": "specpower"
-}
+default_pipelines = {"intel_rapl": "ec2", "acpi": "specpower"}
 base_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v{}".format(version)
+
+
 def get_pipeline_url(model_topurl, pipeline_name):
     file_ext = ".zip"
     return os.path.join(model_topurl, pipeline_name + file_ext)
+
 
 def assure_pipeline_name(pipeline_name, energy_source, nodeCollection):
     if pipeline_name == "":
@@ -38,12 +38,15 @@ def assure_pipeline_name(pipeline_name, energy_source, nodeCollection):
         if pipeline_name not in nodeCollection and default_train_output_pipeline in nodeCollection:
             pipeline_name = default_train_output_pipeline
     return pipeline_name
+
+
 ##########################################################################
 
 default_trainer_name = "GradientBoostingRegressorTrainer"
 default_node_type = 0
 any_node_type = -1
 default_feature_group = FeatureGroup.BPFOnly
+
 
 def load_json(path, name):
     if ".json" not in name:
@@ -56,6 +59,7 @@ def load_json(path, name):
     except Exception as err:
         return None
     
+
 def load_pkl(path, name):
     if ".pkl" not in name:
         name = name + ".pkl"
@@ -67,6 +71,7 @@ def load_pkl(path, name):
         print("fail to load pkl {}: {}".format(filepath, err))
         return None
    
+
 def load_remote_pkl(url_path):
     if ".pkl" not in url_path:
         url_path = url_path + ".pkl"
@@ -77,24 +82,31 @@ def load_remote_pkl(url_path):
     except:
         return None
     
+
 def load_machine_spec(data_path, machine_id):
     machine_spec_path = os.path.join(data_path, MACHINE_SPEC_PATH)
     return load_json(machine_spec_path, machine_id)
     
+
 def load_node_type_index(pipeline_path):
     return load_json(pipeline_path, NODE_TYPE_INDEX_FILENAME)
+
 
 def load_metadata(model_path):
     return load_json(model_path, METADATA_FILENAME)
 
+
 def load_train_args(pipeline_path):
     return load_json(pipeline_path, TRAIN_ARGS_FILENAME)
+
 
 def load_scaler(model_path):
     return load_pkl(model_path, SCALER_FILENAME)
 
+
 def load_weight(model_path):
     return load_json(model_path, WEIGHT_FILENAME)
+
 
 def load_profile(profile_path, source):
     profile_filename = os.path.join(profile_path, source + ".json")
@@ -107,16 +119,18 @@ def load_profile(profile_path, source):
             profile = json.load(f)
     return profile
 
+
 def load_csv(path, name):
     csv_file = name + ".csv"
     file_path = os.path.join(path, csv_file)
     try:
         data = pd.read_csv(file_path)
-        data = data.apply(pd.to_numeric, errors='ignore')
+        data = data.apply(pd.to_numeric, errors="ignore")
         return data
     except:
         # print('cannot load {}'.format(file_path))
         return None
+
 
 def parse_filters(filter):
     filter_list = filter.split(FILTER_ITEM_DELIMIT)
@@ -126,22 +140,23 @@ def parse_filters(filter):
         if len(splits) != 2:
             continue
         key = splits[0]
-        if key == 'features':
+        if key == "features":
             value = splits[1].split(ARRAY_DELIMIT)
         else:
             value = splits[1]
         filters[key] = value
     return filters 
 
+
 def is_valid_model(metadata, filters):
     for attrb, val in filters.items():
         if not hasattr(metadata, attrb) or getattr(metadata, attrb) is None:
-            print('{} has no {}'.format(metadata['model_name'], attrb))
+            print("{} has no {}".format(metadata["model_name"], attrb))
             return False
         else:
             cmp_val = getattr(metadata, attrb)
             val = float(val)
-            if attrb == 'abs_max_corr': # higher is better
+            if attrb == "abs_max_corr":  # higher is better
                 valid = cmp_val >= val
             else: # lower is better
                 valid = cmp_val <= val
@@ -149,11 +164,14 @@ def is_valid_model(metadata, filters):
                 return False
     return True
 
+
 def get_model_name(trainer_name, node_type):
     return "{}_{}".format(trainer_name, node_type)
 
+
 def get_node_type_from_name(model_name):
     return int(model_name.split("_")[-1])
+
 
 def is_matched_type(nodeCollection, spec, pipeline_name, model_name, node_type, energy_source):
     model_node_type = get_node_type_from_name(model_name)
@@ -168,6 +186,7 @@ def is_matched_type(nodeCollection, spec, pipeline_name, model_name, node_type, 
         if pipeline_name not in nodeCollection or nodeCollection[pipeline_name].node_type_index[model_node_type].cover(spec):
             return True
     return False
+
 
 def get_largest_candidates(model_names, pipeline_name, nodeCollection, energy_source):
     pipeline_name = assure_pipeline_name(pipeline_name, energy_source, nodeCollection)
@@ -188,8 +207,10 @@ def get_largest_candidates(model_names, pipeline_name, nodeCollection, energy_so
             max_cores = cores
     return candidates[max_cores] if max_cores > 0 else None
 
+
 def get_pipeline_path(model_toppath, pipeline_name):
     return os.path.join(model_toppath, pipeline_name)
+
 
 def get_model_group_path(model_toppath, output_type, feature_group, energy_source, pipeline_name, assure=True):
     pipeline_path = get_pipeline_path(model_toppath, pipeline_name)
@@ -203,12 +224,15 @@ def get_model_group_path(model_toppath, output_type, feature_group, energy_sourc
         assure_path(feature_path)
     return feature_path
 
+
 def get_save_path(group_path, trainer_name, node_type):
     return os.path.join(group_path, get_model_name(trainer_name, node_type))
 
+
 def get_archived_file(group_path, model_name):
     save_path = os.path.join(group_path, model_name)
-    return save_path + '.zip'
+    return save_path + ".zip"
+
 
 def download_and_save(url, filepath):
     try:
@@ -219,21 +243,24 @@ def download_and_save(url, filepath):
     if response.status_code != 200:
         print("Failed to load {} to {}: {}".format(url, filepath, response.status_code))
         return None
-    with codecs.open(filepath, 'wb') as f:
+    with codecs.open(filepath, "wb") as f:
         f.write(response.content)
     print("Successfully load {} to {}".format(url, filepath))
     return filepath
 
+
 def list_model_names(group_path):
     if not os.path.exists(group_path):
         return []
-    model_names = [f.split('.')[0] for f in os.listdir(group_path) if '.zip' in f]
+    model_names = [f.split(".")[0] for f in os.listdir(group_path) if ".zip" in f]
     return model_names
+
 
 def list_pipelines(model_toppath, energy_source, model_type):
     pipeline_metadata_filename = _pipeline_model_metadata_filename(energy_source, model_type)
     pipeline_names = [f for f in os.listdir(model_toppath) if os.path.exists(os.path.join(model_toppath, f, pipeline_metadata_filename + ".csv"))]
     return pipeline_names
+
 
 def list_all_abs_models(model_toppath, energy_source, valid_fgs, pipeline_name):
     abs_models_map = dict()
@@ -243,6 +270,7 @@ def list_all_abs_models(model_toppath, energy_source, valid_fgs, pipeline_name):
         abs_models_map[group_path] = model_names
     return abs_models_map
 
+
 def list_all_dyn_models(model_toppath, energy_source, valid_fgs, pipeline_name):
     dyn_models_map = dict()
     for fg in valid_fgs:
@@ -250,6 +278,7 @@ def list_all_dyn_models(model_toppath, energy_source, valid_fgs, pipeline_name):
         model_names = list_model_names(group_path)
         dyn_models_map[group_path] = model_names
     return dyn_models_map
+
 
 def _get_metadata_df(group_path):
     metadata_items = []
@@ -262,13 +291,15 @@ def _get_metadata_df(group_path):
                 metadata_items += [metadata]
     return pd.DataFrame(metadata_items)
 
+
 def get_metadata_df(model_toppath, model_type, fg, energy_source, pipeline_name):
     group_path = get_model_group_path(model_toppath, output_type=ModelOutputType[model_type], feature_group=FeatureGroup[fg], energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
     metadata_df = _get_metadata_df(group_path)
     if len(metadata_df) > 0:
-        metadata_df[['trainer', 'node_type']] = metadata_df['model_name'].str.split('_', 1, expand=True)
-        metadata_df['node_type'] = metadata_df['node_type'].astype(int)
+        metadata_df[["trainer", "node_type"]] = metadata_df["model_name"].str.split("_", n=1, expand=True)
+        metadata_df["node_type"] = metadata_df["node_type"].astype(int)
     return metadata_df, group_path
+
 
 def get_all_metadata(model_toppath, pipeline_name, clean_empty=False):
     all_metadata = dict()
@@ -291,13 +322,16 @@ def get_all_metadata(model_toppath, pipeline_name, clean_empty=False):
 
     return all_metadata
        
+
 def load_pipeline_metadata(pipeline_path, energy_source, model_type):
     pipeline_metadata_filename = _pipeline_model_metadata_filename(energy_source, model_type)
     return load_csv(pipeline_path, pipeline_metadata_filename)
 
+
 def get_download_output_path(download_path, energy_source, output_type):
     energy_source_path = assure_path(os.path.join(download_path, energy_source))
     return os.path.join(energy_source_path, output_type.name)
+
 
 def get_url(output_type, feature_group, energy_source, trainer_name=default_trainer_name, node_type=default_node_type, model_topurl=base_model_url, pipeline_name=None, model_name=None, weight=False):
     if pipeline_name is None:
@@ -310,14 +344,17 @@ def get_url(output_type, feature_group, energy_source, trainer_name=default_trai
         file_ext = ".json" 
     return os.path.join(group_path, model_name + file_ext)
 
+
 def class_to_json(class_obj):
     return json.loads(json.dumps(class_obj.__dict__))
+
 
 def get_version_path(output_path, assure=True):
     version_path = os.path.join(output_path, "v{}".format(version))
     if assure:
         return assure_path(version_path)
     return version_path
+
 
 def get_export_path(output_path, pipeline_name, assure=True):
     version_path = get_version_path(output_path)
@@ -326,11 +363,13 @@ def get_export_path(output_path, pipeline_name, assure=True):
         return assure_path(export_path)
     return export_path
 
+
 def get_preprocess_folder(pipeline_path, assure=True):
     preprocess_folder = os.path.join(pipeline_path, PREPROCESS_FOLDERNAME)
     if assure:
         return assure_path(preprocess_folder)
     return preprocess_folder
+
 
 def get_general_filename(prefix, energy_source, fg, ot, extractor, isolator=None):
     fg_suffix = "" if fg is None else "_" + fg.name
@@ -339,3 +378,4 @@ def get_general_filename(prefix, energy_source, fg, ot, extractor, isolator=None
     if ot.name == ModelOutputType.AbsPower.name:
         return "{}_abs_{}_{}{}".format(prefix, extractor, energy_source, fg_suffix)
     return None
+

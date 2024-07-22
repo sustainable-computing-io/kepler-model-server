@@ -1,20 +1,13 @@
-import os
-import sys
 import pandas as pd
 import numpy as np
 from abc import ABCMeta, abstractmethod
 
-util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
-sys.path.append(util_path)
+from util.train_types import FeatureGroups, FeatureGroup, SYSTEM_FEATURES
+from util.prom_types import TIMESTAMP_COL, SOURCE_COL, get_energy_unit, usage_ratio_query, node_info_query, energy_component_to_query, feature_to_query, pkg_id_column, container_id_cols, node_info_column
+from util.loader import default_node_type
+from util.extract_types import container_id_colname, ratio_to_col, component_to_col, get_unit_vals, accelerator_type_colname
+from train.extractor.preprocess import drop_zero_column, find_correlations
 
-from train_types import FeatureGroups, FeatureGroup, SYSTEM_FEATURES
-from prom_types import TIMESTAMP_COL, SOURCE_COL, get_energy_unit, \
-    usage_ratio_query,node_info_query, \
-        energy_component_to_query, feature_to_query, \
-            pkg_id_column, container_id_cols, node_info_column
-from loader import default_node_type
-from extract_types import container_id_colname, ratio_to_col, component_to_col, get_unit_vals, accelerator_type_colname
-from preprocess import drop_zero_column, find_correlations
 
 # append ratio for each unit
 def append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_columns):
@@ -31,7 +24,7 @@ def append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_colum
         if is_aggr:
             ratio_df = ratio_df.groupby([TIMESTAMP_COL, pkg_id_column]).sum()[usage_ratio_query]
         else:
-            ratio_df[container_id_colname] = ratio_df[container_id_cols].apply(lambda x: '/'.join(x), axis=1)
+            ratio_df[container_id_colname] = ratio_df[container_id_cols].apply(lambda x: "/".join(x), axis=1)
             ratio_df = ratio_df.groupby([TIMESTAMP_COL, pkg_id_column, container_id_colname]).sum()[usage_ratio_query]   
     ratio_colnames = []
     for unit_val in unit_vals:
@@ -43,11 +36,12 @@ def append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_colum
             feature_power_data = feature_power_data.join(target_ratio_df).dropna()
             feature_power_data = feature_power_data.rename(columns={usage_ratio_query: ratio_colname})
         ratio_colnames +=[ratio_colname]
-    tmp_total_col = 'total_ratio'
+    tmp_total_col = "total_ratio"
     feature_power_data[tmp_total_col] = feature_power_data[ratio_colnames].sum(axis=1)
     for ratio_colname in ratio_colnames:
         feature_power_data[ratio_colname] /= feature_power_data[tmp_total_col]
     return feature_power_data.drop(columns=[tmp_total_col])
+
 
 class Extractor(metaclass=ABCMeta):
     # extractor abstract:
@@ -65,12 +59,13 @@ class Extractor(metaclass=ABCMeta):
     def get_name(self):
         return NotImplemented
 
+
 # extract data from query 
 # for node-level
 # return DataFrame (index=timestamp, column=[features][power columns][node_type]), power_columns
 
-class DefaultExtractor(Extractor):
 
+class DefaultExtractor(Extractor):
     def get_name(self):
         return "default"
 
@@ -103,8 +98,8 @@ class DefaultExtractor(Extractor):
         is_aggr = node_level and aggr
         if is_aggr:
             # sum stat of all containers
-            sum_feature = feature_power_data.groupby([TIMESTAMP_COL]).sum()[workload_features]
-            mean_power = feature_power_data.groupby([TIMESTAMP_COL]).mean()[power_columns]
+            sum_feature = feature_power_data.groupby([TIMESTAMP_COL])[workload_features].sum()
+            mean_power = feature_power_data.groupby([TIMESTAMP_COL])[power_columns].mean()
             feature_power_data = sum_feature.join(mean_power)
         else:
             feature_power_data = feature_power_data.groupby([TIMESTAMP_COL, container_id_colname]).sum()
@@ -148,7 +143,7 @@ class DefaultExtractor(Extractor):
             
             if all(col in aggr_query_data.columns for col in container_id_cols):
                 aggr_query_data.rename(columns={query: feature}, inplace=True)
-                aggr_query_data[container_id_colname] = aggr_query_data[container_id_cols].apply(lambda x: '/'.join([str(xi) for xi in x]), axis=1)
+                aggr_query_data[container_id_colname] = aggr_query_data[container_id_cols].apply(lambda x: "/".join([str(xi) for xi in x]), axis=1)
                 # separate for each container_id
                 container_id_list = pd.unique(aggr_query_data[container_id_colname])
 
@@ -222,7 +217,7 @@ class DefaultExtractor(Extractor):
             unit_col = get_energy_unit(component) # such as package
             query = energy_component_to_query(component)
             if query not in query_results:
-                print(query, 'not in', query_results)
+                print(query, "not in", query_results)
                 return None
             aggr_query_data = query_results[query].copy()
             # filter source

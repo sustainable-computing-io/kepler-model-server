@@ -11,14 +11,15 @@ COPY pyproject.toml .
 # so that they are copied into the image for pip install to succeed
 COPY README.md .
 COPY src/__about__.py src/
-RUN pip install --no-cache-dir . && \
-		pip cache purge
 
 
 COPY src/estimate src/estimate
 COPY src/server src/server
 COPY src/train src/train
 COPY src/util src/util
+
+RUN pip install --no-cache-dir . && \
+		pip cache purge
 
 RUN mkdir -p tests/data
 COPY tests/data/prom_output tests/data/prom_output 

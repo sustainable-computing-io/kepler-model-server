@@ -1,17 +1,10 @@
-import os
-import sys
 import numpy as np
 import pandas as pd
 
-util_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'util')
-sys.path.append(util_path)
-estimate_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'estimate')
-sys.path.append(estimate_path)
-
-from isolator import Isolator, isolate_container
+from .isolator import Isolator, isolate_container
 from estimate import load_model, get_predicted_power_colname, get_predicted_background_power_colname, get_dynamic_power_colname, get_reconstructed_power_colname, get_label_power_colname, get_background_containers
-from extractor import find_correlations
-from preprocess import get_extracted_power_labels
+from ..extractor.extractor import find_correlations
+from ..extractor.preprocess import get_extracted_power_labels
 
 from util import PowerSourceMap
 from util.train_types import get_valid_feature_groups
@@ -19,6 +12,7 @@ from util.prom_types import TIMESTAMP_COL, get_container_name_from_id
 from util.extract_types import container_level_index, container_id_colname, col_to_component
 from util.config import model_toppath
 from util.loader import list_all_abs_models, default_train_output_pipeline
+
 
 def is_better(curr_min_err, err, curr_max_corr, corr, corr_threshold=0.7):
     if curr_min_err is None:
@@ -32,6 +26,7 @@ def is_better(curr_min_err, err, curr_max_corr, corr, corr_threshold=0.7):
         # when better accuracy and better corr but less than threshold
         return err < curr_min_err
     return False
+
 
 def get_abs_models(workload_feature_cols, energy_source, toppath=model_toppath, pipeline_name=default_train_output_pipeline):
     # from abs_model_path
@@ -51,6 +46,7 @@ def get_abs_models(workload_feature_cols, energy_source, toppath=model_toppath, 
                 print("Model is none: ", model_path)
     return abs_models
 
+
 # extracted_power_labels: sum of power labels over sorted timestamp for each energy_components
 # background_powers: sum of predicted background powers over sorted timestamp for each energy_components
 def append_dyn_power(target_data, energy_components, extracted_power_labels, background_powers, min_val=0):
@@ -68,6 +64,7 @@ def append_dyn_power(target_data, energy_components, extracted_power_labels, bac
     num[num < min_val] = min_val
     return appended_data
 
+
 def get_target_data_with_dyn_power(model, energy_components, extracted_power_labels, target_data, background_data):
     # predict background power from the rest usage (background container usage)
     sum_background_data = background_data.groupby([TIMESTAMP_COL]).sum()
@@ -80,9 +77,10 @@ def get_target_data_with_dyn_power(model, energy_components, extracted_power_lab
 
     return target_data_with_dyn_power, sum_background_data_with_prediction
 
+
 # traverse all abs_model with minimum mae for each energy_source
 def find_best_target_data_with_dyn_power(energy_source, energy_components, extracted_data, background_containers, label_cols, toppath=model_toppath, pipeline_name=default_train_output_pipeline):
-    workload_feature_cols = [col for col in extracted_data.columns if col not in label_cols and col not in container_level_index and 'ratio' not in col and 'node' not in col]
+    workload_feature_cols = [col for col in extracted_data.columns if col not in label_cols and col not in container_level_index and "ratio" not in col and "node" not in col]
     curr_min_err = None
     curr_max_corr= None
     best_target_data_with_dyn_power = None
@@ -114,15 +112,18 @@ def find_best_target_data_with_dyn_power(energy_source, energy_components, extra
            best_background_data_with_prediction = background_data_with_prediction
     return best_target_data_with_dyn_power, best_background_data_with_prediction
 
+
 def get_background_container_from_target_hints(data, target_hints):
     container_names = pd.unique(data[container_id_colname].transform(get_container_name_from_id))
     background_containers = [container_name for container_name in container_names if not any(hint in container_name for hint in target_hints)]
     return background_containers
 
+
 def get_background_container_from_bg_hints(data, bg_hints):
     container_names = pd.unique(data[container_id_colname].transform(get_container_name_from_id))
     background_containers = [container_name for container_name in container_names if any(hint in container_name for hint in bg_hints)]
     return background_containers
+
 
 # TO-DO: suppport multiple node types
 class TrainIsolator(Isolator):
@@ -183,3 +184,4 @@ class TrainIsolator(Isolator):
     
     def get_name(self):
         return "trainer"
+

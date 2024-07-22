@@ -1,22 +1,14 @@
-import os
-import sys
-
 import datetime
 
-util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
-sys.path.append(util_path)
-
-cur_path = os.path.join(os.path.dirname(__file__))
-sys.path.append(cur_path)
-
-from validator import get_validated_export_items, BestModelCollection
-from loader import load_metadata, load_node_type_index, get_version_path, get_export_path
-from saver import save_pipeline_metadata, save_node_type_index
-from format import time_to_str
-from writer import generate_pipeline_page, generate_report_results, generate_pipeline_readme, append_version_readme, get_workload_content
-from config import ERROR_KEY
+from util.loader import load_metadata, load_node_type_index, get_version_path, get_export_path
+from util.saver import save_pipeline_metadata, save_node_type_index
+from util.format import time_to_str
+from util.config import ERROR_KEY
+from .validator import get_validated_export_items, BestModelCollection
+from .writer import generate_pipeline_page, generate_report_results, generate_pipeline_readme, append_version_readme, get_workload_content
 
 repo_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models"
+
 
 def export(data_path, pipeline_path, db_path, publisher, collect_date, inputs):
     # load pipeline metadata
@@ -71,3 +63,4 @@ def export(data_path, pipeline_path, db_path, publisher, collect_date, inputs):
     append_version_readme(local_version_path, pipeline_metadata)
 
     return local_export_path
+

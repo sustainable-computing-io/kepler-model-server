@@ -1,11 +1,6 @@
-import os
-import sys
-
-#################################################################
-# import internal src 
-src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
-sys.path.append(src_path)
-#################################################################
+# import ipdb
+#
+# ipdb.set_trace()
 
 from train import NewPipeline, NodeTypeSpec
 from util import get_valid_feature_group_from_queries, PowerSourceMap
@@ -17,14 +12,9 @@ from isolator_test import test_isolators
 from trainer_test import test_trainer_names, assert_train
 
 # fake spec value
-spec_values =   {
-                    "processor": "test",
-                    "cores": 1,
-                    "chips": 1,
-                    "memory_gb": -1,
-                    "cpu_freq_mhz": -1
-                }
+spec_values = {"processor": "test", "cores": 1, "chips": 1, "memory_gb": -1, "cpu_freq_mhz": -1}
 spec = NodeTypeSpec(**spec_values)
+
 
 def assert_pipeline(pipeline, query_results, feature_group, energy_source, energy_components):
     success, abs_data, dyn_data = pipeline.process(query_results, energy_components, energy_source, feature_group=feature_group.name, replace_node_type=default_node_type)
@@ -36,7 +26,18 @@ def assert_pipeline(pipeline, query_results, feature_group, energy_source, energ
             else:
                 assert_train(trainer, dyn_data, energy_components)
 
-def process(save_pipeline_name=default_train_output_pipeline, prom_save_path=prom_output_path, prom_save_name=prom_output_filename, abs_trainer_names=test_trainer_names, dyn_trainer_names=test_trainer_names, extractors=test_extractors, isolators=test_isolators, target_energy_sources=[test_energy_source], valid_feature_groups=None):
+
+def process(
+    save_pipeline_name=default_train_output_pipeline,
+    prom_save_path=prom_output_path,
+    prom_save_name=prom_output_filename,
+    abs_trainer_names=test_trainer_names,
+    dyn_trainer_names=test_trainer_names,
+    extractors=test_extractors,
+    isolators=test_isolators,
+    target_energy_sources=[test_energy_source],
+    valid_feature_groups=None,
+):
     query_results = get_query_results(save_path=prom_save_path, save_name=prom_save_name)
     if valid_feature_groups is None:
         valid_feature_groups = get_valid_feature_group_from_queries(query_results.keys()) 
@@ -56,5 +57,6 @@ def process(save_pipeline_name=default_train_output_pipeline, prom_save_path=pro
             # save pipeline
             pipeline.archive_pipeline()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     process(target_energy_sources=PowerSourceMap.keys())

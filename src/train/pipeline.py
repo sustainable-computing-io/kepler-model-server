@@ -3,26 +3,17 @@ import sys
 import threading
 import pandas as pd
 
-cur_path = os.path.join(os.path.dirname(__file__), '.')
-sys.path.append(cur_path)
-util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
-sys.path.append(util_path)
-extractor_path = os.path.join(os.path.dirname(__file__), 'extractor')
-sys.path.append(extractor_path)
-isolator_path = os.path.join(os.path.dirname(__file__), 'isolator')
-sys.path.append(isolator_path)
+from train.profiler.node_type_index import NodeTypeIndexCollection
+from train.extractor.extractor import DefaultExtractor
+from train.isolator.isolator import MinIdleIsolator
 
-from profiler.node_type_index import NodeTypeIndexCollection
-from extractor import DefaultExtractor
-from isolator import MinIdleIsolator
+from util.train_types import PowerSourceMap, FeatureGroups, ModelOutputType
+from util.prom_types import node_info_column
+from util.config import model_toppath, ERROR_KEY
+from util.loader import get_all_metadata, get_pipeline_path, get_metadata_df, get_archived_file
+from util.saver import save_pipeline_metadata
 
-from train_types import PowerSourceMap, FeatureGroups, ModelOutputType
-from prom_types import node_info_column
-from config import model_toppath, ERROR_KEY
-from loader import get_all_metadata, get_pipeline_path, get_metadata_df, get_archived_file
-from saver import save_pipeline_metadata
-
-from format import print_bounded_multiline_message, time_to_str
+from util.format import print_bounded_multiline_message, time_to_str
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
@@ -30,17 +21,21 @@ from concurrent.futures import wait
 import shutil
 import datetime
 
+
 def load_class(module_name, class_name):
-    path = os.path.join(os.path.dirname(__file__), '{}/{}'.format(module_name, class_name))
+    path = os.path.join(os.path.dirname(__file__), "{}/{}".format(module_name, class_name))
     sys.path.append(path)
     import importlib
-    module_path = importlib.import_module('train.{}.{}.main'.format(module_name, class_name))
+
+    module_path = importlib.import_module("train.{}.{}.main".format(module_name, class_name))
     return getattr(module_path, class_name)
+
 
 def run_train(trainer, data, power_labels, pipeline_lock):
     trainer.process(data, power_labels, pipeline_lock=pipeline_lock)
 
-class Pipeline():
+
+class Pipeline:
     def __init__(self, name, trainers, extractor, isolator):
         self.extractor = extractor
         self.isolator = isolator
@@ -130,7 +125,7 @@ class Pipeline():
                 elif dyn_data is not None:
                     future = executor.submit(run_train, trainer, dyn_data, power_labels, pipeline_lock=self.lock)
                     futures += [future]
-            self.print_log('Waiting for {} trainers to complete...'.format(len(futures)))
+            self.print_log("Waiting for {} trainers to complete...".format(len(futures)))
             wait(futures)
             # Handle exceptions if any
             for future in futures:
@@ -138,8 +133,7 @@ class Pipeline():
                     # Handle the exception here
                     print(f"Exception occurred: {future.exception()}")
                     
-            self.print_log('{}/{} trainers are trained from {} to {}'.format(len(futures), len(self.trainers), feature_group, energy_source))
-            
+            self.print_log("{}/{} trainers are trained from {} to {}".format(len(futures), len(self.trainers), feature_group, energy_source))
 
     def process(self, input_query_results, energy_components, energy_source, feature_group, aggr=True, replace_node_type=None):
         self.print_log("{} start processing.".format(feature_group))
@@ -194,7 +188,7 @@ class Pipeline():
                 "    Input data size: {}".format(len(abs_data)),
                 "    Model Trainers: {}".format(abs_trainer_names),
                 "    Output: {}".format(abs_group_path),
-                " "
+                " ",
             ]
             for node_type in node_types:
                 filtered_data = abs_metadata_df[abs_metadata_df[node_info_column]==node_type]
@@ -224,7 +218,8 @@ class Pipeline():
         archived_file = get_archived_file(model_toppath, self.name) 
         self.print_log("archive pipeline :" + archived_file)
         self.print_log("save_path :" + save_path)
-        shutil.make_archive(save_path, 'zip', save_path)
+        shutil.make_archive(save_path, "zip", save_path)
+
 
 def initial_trainers(trainer_names, node_level, pipeline_name, target_energy_sources, valid_feature_groups):
     trainers = []
@@ -242,9 +237,9 @@ def initial_trainers(trainer_names, node_level, pipeline_name, target_energy_sou
                 trainers += [trainer]
     return trainers
 
+
 def NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=DefaultExtractor(), isolator=MinIdleIsolator(), target_energy_sources=PowerSourceMap.keys(), valid_feature_groups=FeatureGroups.keys()):
     abs_trainers = initial_trainers(abs_trainer_names, node_level=True, pipeline_name=pipeline_name, target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
     dyn_trainers = initial_trainers(dyn_trainer_names, node_level=False, pipeline_name=pipeline_name, target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
     trainers = abs_trainers + dyn_trainers
     return Pipeline(pipeline_name, trainers, extractor, isolator)
-    
