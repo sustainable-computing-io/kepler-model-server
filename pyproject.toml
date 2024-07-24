@@ -45,8 +45,9 @@ dependencies = [
 ]
 
 [project.scripts]
-model-server = "server.model_server:run"
-estimator = "estimate.estimator:run"
+model-server = "kepler_model.server.model_server:run"
+estimator = "kepler_model.estimate.estimator:run"
+kepler-model = "kepler_model.cmd.main:run"
 
 [project.urls]
 Documentation = "https://github.com/sustainable-computing-io/kepler-model-server#readme"
@@ -54,7 +55,7 @@ Issues = "https://github.com/sustainable-computing-io/kepler-model-server/issues
 Source = "https://github.com/sustainable-computing-io/kepler-model-server"
 
 [tool.hatch.version]
-path = "src/__about__.py"
+path = "src/kepler_model/__about__.py"
 
 [tool.hatch.envs.default]
 python = "3.10"
