@@ -266,8 +266,8 @@ def get_metadata_df(model_toppath, model_type, fg, energy_source, pipeline_name)
     group_path = get_model_group_path(model_toppath, output_type=ModelOutputType[model_type], feature_group=FeatureGroup[fg], energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
     metadata_df = _get_metadata_df(group_path)
     if len(metadata_df) > 0:
-        metadata_df[['trainer', 'node_type']] = metadata_df['model_name'].str.split('_', 1, expand=True)
-        metadata_df['node_type'] = metadata_df['node_type'].astype(int)
+        metadata_df[["trainer", "node_type"]] = metadata_df["model_name"].str.split("_", n=1, expand=True)
+        metadata_df["node_type"] = metadata_df["node_type"].astype(int)
     return metadata_df, group_path
 
 def get_all_metadata(model_toppath, pipeline_name, clean_empty=False):
@@ -326,11 +326,13 @@ def get_export_path(output_path, pipeline_name, assure=True):
         return assure_path(export_path)
     return export_path
 
+
 def get_preprocess_folder(pipeline_path, assure=True):
     preprocess_folder = os.path.join(pipeline_path, PREPROCESS_FOLDERNAME)
     if assure:
         return assure_path(preprocess_folder)
     return preprocess_folder
+
 
 def get_general_filename(prefix, energy_source, fg, ot, extractor, isolator=None):
     fg_suffix = "" if fg is None else "_" + fg.name
@@ -339,3 +341,4 @@ def get_general_filename(prefix, energy_source, fg, ot, extractor, isolator=None
     if ot.name == ModelOutputType.AbsPower.name:
         return "{}_abs_{}_{}{}".format(prefix, extractor, energy_source, fg_suffix)
     return None
+

@@ -43,9 +43,10 @@ def get_extracted_power_labels(extracted_data, energy_components, label_cols):
         extracted_power_labels[component_label_col] = extracted_power_labels[target_cols].sum(axis=1)
     return extracted_power_labels
 
+
 def find_correlations(energy_source, feature_power_data, power_columns, workload_features):
-    power_data = feature_power_data[power_columns].reset_index().groupby([TIMESTAMP_COL]).mean()
-    feature_data = feature_power_data[workload_features].reset_index().groupby([TIMESTAMP_COL]).sum()
+    power_data = feature_power_data.reset_index().groupby([TIMESTAMP_COL])[power_columns].mean()
+    feature_data = feature_power_data.reset_index().groupby([TIMESTAMP_COL])[workload_features].sum()
     energy_components = PowerSourceMap[energy_source]
     target_cols = [col for col in power_columns if col_to_component(col) == energy_components[0]]
     process_power_data = power_data.copy()
