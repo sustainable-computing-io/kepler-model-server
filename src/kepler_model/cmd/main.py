@@ -950,7 +950,3 @@ def run():
                 print('{0} not exists. For docker run, {0} must be mount, add -v "$(pwd)":{0}. For native run, set DATAPATH'.format(data_path))
                 exit()
         getattr(sys.modules[__name__], args.command)(args)
-
-
-if __name__ == "__main__":
-    run()
