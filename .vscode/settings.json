@@ -1,5 +1,6 @@
 {
-    "python.analysis.extraPaths": [
-        "./src/util"
-    ]
+  "python.analysis.extraPaths": ["./src/util"],
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/tasks": "file:///Users/dave/dev/kepler-model-server/model_training/tekton/tasks/extract-task.yaml"
+  }
 }

@@ -1,10 +1,10 @@
 namespace: kepler
 
 patchesStrategicMerge:
-- ./patch/patch-model-server.yaml
-- ./patch/patch-openshift.yaml
+  - ./patch/patch-model-server.yaml
+  - ./patch/patch-openshift.yaml
 
 resources:
-- ../kepler
-- ../server
-- ./openshift/scc.yaml
+  - ../kepler
+  - ../server
+  - ./openshift/scc.yaml

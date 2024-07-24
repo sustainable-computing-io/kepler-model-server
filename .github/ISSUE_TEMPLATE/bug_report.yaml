@@ -1,6 +1,6 @@
 name: Bug Report
 description: Report a bug encountered while deploying and operating components on Kepler model server
-labels: kind/bug
+labels: [kind/bug]
 body:
   - type: textarea
     id: problem
@@ -36,9 +36,9 @@ body:
     attributes:
       label: Kepler image tag
       value: |
-          <details>
+        <details>
 
-          </details>
+        </details>
     validations:
       required: true
 
@@ -64,9 +64,9 @@ body:
     attributes:
       label: Kepler model server image tag if deployed
       value: |
-          <details>
+        <details>
 
-          </details>
+        </details>
     validations:
       required: false
 
@@ -75,9 +75,9 @@ body:
     attributes:
       label: Kepler estimator image tag if deployed
       value: |
-          <details>
+        <details>
 
-          </details>
+        </details>
     validations:
       required: false
 
@@ -86,9 +86,9 @@ body:
     attributes:
       label: Kepler online trainer image tag if deployed
       value: |
-          <details>
+        <details>
 
-          </details>
+        </details>
     validations:
       required: false
 
@@ -97,9 +97,9 @@ body:
     attributes:
       label: Kepler offline trainer image tag if deployed
       value: |
-          <details>
+        <details>
 
-          </details>
+        </details>
     validations:
       required: false
 
@@ -108,12 +108,12 @@ body:
     attributes:
       label: Kepler profiler image tag if deployed
       value: |
-          <details>
+        <details>
 
-          </details>
+        </details>
     validations:
       required: false
-      
+
   - type: textarea
     id: kubeVersion
     attributes:
@@ -151,15 +151,15 @@ body:
         $ KEPLER_NAMESPACE=kepler
 
         # provide kepler configmap
-        $ kubectl get configmap kepler-cfm -n ${KEPLER_NAMESPACE} 
+        $ kubectl get configmap kepler-cfm -n ${KEPLER_NAMESPACE}
         # paste output here
 
-        # provide kepler model server configmap if Kepler Model Server is deployed 
-        $ kubectl get configmap kepler-model-server-cfm -n ${KEPLER_NAMESPACE} 
+        # provide kepler model server configmap if Kepler Model Server is deployed
+        $ kubectl get configmap kepler-model-server-cfm -n ${KEPLER_NAMESPACE}
         # paste output here
 
         # provide kepler deployment description
-        $ kubectl describe deployment kepler-exporter -n ${KEPLER_NAMESPACE} 
+        $ kubectl describe deployment kepler-exporter -n ${KEPLER_NAMESPACE}
         ```
 
         For standalone:

@@ -4,7 +4,7 @@ metadata:
   name: kepler-cfm
   namespace: system
 data:
-  KEPLER_LOG_LEVEL: '4'
+  KEPLER_LOG_LEVEL: "4"
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -15,6 +15,6 @@ spec:
   template:
     spec:
       containers:
-      - name: kepler-exporter
-        imagePullPolicy: IfNotPresent
-        image: quay.io/sustainable_computing_io/kepler:release-0.7.7
+        - name: kepler-exporter
+          imagePullPolicy: IfNotPresent
+          image: quay.io/sustainable_computing_io/kepler:release-0.7.7

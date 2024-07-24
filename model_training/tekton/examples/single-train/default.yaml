@@ -6,17 +6,17 @@ metadata:
   name: default
 spec:
   timeouts:
-    pipeline: "6h"
-    tasks: "5h50m"
+    pipeline: 6h
+    tasks: 5h50m
   workspaces:
-  - name: mnt
-    persistentVolumeClaim:
-      claimName: task-pvc
+    - name: mnt
+      persistentVolumeClaim:
+        claimName: task-pvc
   params:
-  - name: PIPELINE_NAME
-    value: AbsPowerTrainPipelineExample
-  - name: OUTPUT_TYPE
-    value: AbsPower
+    - name: PIPELINE_NAME
+      value: AbsPowerTrainPipelineExample
+    - name: OUTPUT_TYPE
+      value: AbsPower
   ## Uncomment the following lines for IBM Cloud COS
   # - name: COS_PROVIDER
   #   value: ibmcloud

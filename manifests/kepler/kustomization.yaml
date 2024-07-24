@@ -4,4 +4,4 @@ resources:
   - github.com/sustainable-computing-io/kepler/manifests/k8s/config/base
 
 patchesStrategicMerge:
-- ./patch/patch-ci.yaml
+  - ./patch/patch-ci.yaml

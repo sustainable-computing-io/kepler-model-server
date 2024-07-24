@@ -10,11 +10,11 @@ metadata:
   namespace: monitoring
 spec:
   ports:
-  - name: web
-    port: 9090
-    protocol: TCP
-    targetPort: web
-    nodePort: 30090
+    - name: web
+      port: 9090
+      protocol: TCP
+      targetPort: web
+      nodePort: 30090
   selector:
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/instance: k8s

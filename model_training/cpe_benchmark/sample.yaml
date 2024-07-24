@@ -23,11 +23,11 @@ spec:
   repetition: 1
   iterationSpec:
     iterations:
-    - name: thread
-      values:
-      - "4"
+      - name: thread
+        values:
+          - "4"
     configurations:
-    - name: image
-      values:
-      - "quay.io/sustainability/cpe-operator/coremark:ubi"
+      - name: image
+        values:
+          - quay.io/sustainability/cpe-operator/coremark:ubi
     sequential: true

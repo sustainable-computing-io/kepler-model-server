@@ -9,47 +9,47 @@ metadata:
   name: ibmcloud-s3-push
 spec:
   params:
-  - name: COS_SECRET_NAME
-    description: Specify cos secret name
-    default: ""
-  - name: MACHINE_ID
-    description: Specify machine id to group model result in bucket
-    default: ""
+    - name: COS_SECRET_NAME
+      description: Specify cos secret name
+      default: ""
+    - name: MACHINE_ID
+      description: Specify machine id to group model result in bucket
+      default: ""
   workspaces:
-  - name: mnt
-    optional: true
+    - name: mnt
+      optional: true
   steps:
     - name: push
       image: quay.io/sustainable_computing_io/kepler_model_server/s3:latest
       env:
-      - name: SERVICE_ENDPOINT
-        valueFrom:
-          secretKeyRef:
-            name: $(params.COS_SECRET_NAME)
-            key: serviceEndpoint
-      - name: API_KEY
-        valueFrom:
-          secretKeyRef:
-            name: $(params.COS_SECRET_NAME)
-            key: apiKey
-      - name: SERVICE_INSTANCE_ID
-        valueFrom:
-          secretKeyRef:
-            name: $(params.COS_SECRET_NAME)
-            key: serviceInstanceID
-      - name: BUCKET_NAME
-        valueFrom:
-          secretKeyRef:
-            name: $(params.COS_SECRET_NAME)
-            key: bucketName
-      command: ["s3-pusher"]
+        - name: SERVICE_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: $(params.COS_SECRET_NAME)
+              key: serviceEndpoint
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: $(params.COS_SECRET_NAME)
+              key: apiKey
+        - name: SERVICE_INSTANCE_ID
+          valueFrom:
+            secretKeyRef:
+              name: $(params.COS_SECRET_NAME)
+              key: serviceInstanceID
+        - name: BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              name: $(params.COS_SECRET_NAME)
+              key: bucketName
+      command: [s3-pusher]
       args:
-      - ibmcloud
-      - --service-endpoint=$(SERVICE_ENDPOINT)
-      - --api-key=$(API_KEY)
-      - --service-instance-id=$(SERVICE_INSTANCE_ID)
-      - --bucket-name=$(BUCKET_NAME)
-      - --mnt-path=$(workspaces.mnt.path)
-      - --query-data=kepler_query
-      - --idle-data=idle
-      - --machine-id=$(params.MACHINE_ID)
+        - ibmcloud
+        - --service-endpoint=$(SERVICE_ENDPOINT)
+        - --api-key=$(API_KEY)
+        - --service-instance-id=$(SERVICE_INSTANCE_ID)
+        - --bucket-name=$(BUCKET_NAME)
+        - --mnt-path=$(workspaces.mnt.path)
+        - --query-data=kepler_query
+        - --idle-data=idle
+        - --machine-id=$(params.MACHINE_ID)

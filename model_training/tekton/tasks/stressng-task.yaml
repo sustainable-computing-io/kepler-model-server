@@ -11,177 +11,178 @@ metadata:
   name: run-stressng
 spec:
   params:
-  - name: arguments
-    description: Define array of argument for CPU frequency and stressng workload (STRESS_LOAD;STRESS_EXTRA_PARAM_KEYS;STRESS_EXTRA_PARAM_VALS)
-    type: array
-  - name: TIMEOUT
-    description: Timeout to run the load
-    default: 20
-  - name: INTERVAL
-    description: Interval between each run
-    default: 5
-  - name: CPU_FREQUENCY_ENABLED
-    description: Enable/Disable CPU Frequency Steps
-    default: true
+    - name: arguments
+      description: Define array of argument for CPU frequency and stressng workload (STRESS_LOAD;STRESS_EXTRA_PARAM_KEYS;STRESS_EXTRA_PARAM_VALS)
+      type: array
+    - name: TIMEOUT
+      description: Timeout to run the load
+      default: 20
+    - name: INTERVAL
+      description: Interval between each run
+      default: 5
+    - name: CPU_FREQUENCY_ENABLED
+      description: Enable/Disable CPU Frequency Steps
+      default: true
   results:
-  - name: stress-end-time
-    description: The time recorded after running the workload
+    - name: stress-end-time
+      description: The time recorded after running the workload
   volumes:
-  - name: system-cpu
-    hostPath:
-      path: /sys/devices/system/cpu/cpufreq
-      type: Directory
+    - name: system-cpu
+      hostPath:
+        path: /sys/devices/system/cpu/cpufreq
+        type: Directory
   steps:
     - name: run-stressng
       image: quay.io/sustainability/stress-ng:0.16.02
       volumeMounts:
-      - mountPath: /sys/devices/system/cpu/cpufreq
-        name: system-cpu
-        readOnly: false
-      args: ["$(params.arguments[*])"]
+        - mountPath: /sys/devices/system/cpu/cpufreq
+          name: system-cpu
+          readOnly: false
+      args:
+        - $(params.arguments[*])
       securityContext:
         privileged: true
       script: |
-            #!/usr/bin/env bash
+        #!/usr/bin/env bash
 
-            get_cpuidx(){
-                IFS=' '
-                NUMA_NUM=$(lscpu|grep "NUMA node(s)"|awk '{print $3}')
+        get_cpuidx(){
+            IFS=' '
+            NUMA_NUM=$(lscpu|grep "NUMA node(s)"|awk '{print $3}')
 
-                # Different processes can be executed, so that to do CPU pinning properly we store the cpu index to be use in a file
-                # If the files does not exist, we populate the file with the CPU index
-                lscpu | grep "NUMA node"| tail -n +$NUMA_NUM  | while read -r line; do
-                    cpus=$(echo $line | awk '{print $4}' | sed 's/,.*//g' | sed 's/-/ /g')
-                    for i in $(seq $cpus); do
-                    echo $i >> cpu-idx
-                    done
+            # Different processes can be executed, so that to do CPU pinning properly we store the cpu index to be use in a file
+            # If the files does not exist, we populate the file with the CPU index
+            lscpu | grep "NUMA node"| tail -n +$NUMA_NUM  | while read -r line; do
+                cpus=$(echo $line | awk '{print $4}' | sed 's/,.*//g' | sed 's/-/ /g')
+                for i in $(seq $cpus); do
+                echo $i >> cpu-idx
                 done
-                lscpu | grep "NUMA node"| tail -n +$NUMA_NUM  | while read -r line; do
-                    cpus=$(echo $line | awk '{print $4}' | sed 's/.*,//g' | sed 's/-/ /g') # the difference here is regex of the ","
-                    for i in $(seq $cpus); do
-                    echo $i >> cpu-idx
-                    done
+            done
+            lscpu | grep "NUMA node"| tail -n +$NUMA_NUM  | while read -r line; do
+                cpus=$(echo $line | awk '{print $4}' | sed 's/.*,//g' | sed 's/-/ /g') # the difference here is regex of the ","
+                for i in $(seq $cpus); do
+                echo $i >> cpu-idx
                 done
-            }
+            done
+        }
 
-            run() {
-                CPU_FREQUENCY=$1
-                STRESS_INSTANCE_NUM=$2
-                STRESS_ARGS=$3
+        run() {
+            CPU_FREQUENCY=$1
+            STRESS_INSTANCE_NUM=$2
+            STRESS_ARGS=$3
 
-                echo "ARGUMENTS="$STRESS_ARGS
-                IFS=";"
-                read -a arguments <<< "$STRESS_ARGS"
-                STRESS_LOAD=${arguments[0]}
-                STRESS_EXTRA_PARAM_KEYS=${arguments[1]}
-                STRESS_EXTRA_PARAM_VALS=${arguments[2]}
-                echo Load=$STRESS_LOAD
-                echo ExtraKey=$STRESS_EXTRA_PARAM_KEYS
-                echo ExtraVal=$STRESS_EXTRA_PARAM_VALS
+            echo "ARGUMENTS="$STRESS_ARGS
+            IFS=";"
+            read -a arguments <<< "$STRESS_ARGS"
+            STRESS_LOAD=${arguments[0]}
+            STRESS_EXTRA_PARAM_KEYS=${arguments[1]}
+            STRESS_EXTRA_PARAM_VALS=${arguments[2]}
+            echo Load=$STRESS_LOAD
+            echo ExtraKey=$STRESS_EXTRA_PARAM_KEYS
+            echo ExtraVal=$STRESS_EXTRA_PARAM_VALS
 
-                get_cpuidx
+            get_cpuidx
 
-                # Store the CPU max freq to revert it back if changed
-                if [[ "$CPU_FREQUENCY" != "none" ]] ; then
-                    mount -o remount,rw  /sys/devices/system/cpu/cpufreq
-                    cat "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" > max_freq
-                fi
-
-                IFS=$'\n'
-                for i in $(seq 1 $STRESS_INSTANCE_NUM); do
-                    CPU=$(cat cpu-idx | tail -n 1)
-                    cat cpu-idx | head -n -1  > tmp-cpu && rm -f cpu-idx && mv tmp-cpu cpu-idx
-                    if [[ "$CPU_FREQUENCY" != "none" ]] ; then
-                      echo "set CPU frequency"
-                      echo $CPU_FREQUENCY | tee /sys/devices/system/cpu/cpufreq/policy${CPU}/scaling_max_freq
-                    fi
-
-                    if [[ "$STRESS_LOAD" == "sleep" ]] ; then
-                        echo "SLEEP $(params.TIMEOUT)"
-                        sleep $(params.TIMEOUT) &
-                    else
-                        if [[ "$STRESS_EXTRA_PARAM_KEYS" != "none" ]] ; then
-                        echo /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --$STRESS_EXTRA_PARAM_KEYS "$STRESS_EXTRA_PARAM_VALS" --timeout $(params.TIMEOUT) --aggressive --metrics-brief
-                        /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --$STRESS_EXTRA_PARAM_KEYS "$STRESS_EXTRA_PARAM_VALS" --timeout $(params.TIMEOUT) --aggressive --metrics-brief &        
-                        else
-                        echo /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --timeout $(params.TIMEOUT) --aggressive --metrics-brief
-                        /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --timeout $(params.TIMEOUT) --aggressive --metrics-brief &    
-                        fi
-                    fi
-                done
-                
-                wait
-
-                # Revert the CPU freq back to max
-                if [[ "$CPU_FREQUENCY" != "none" ]] ; then
-                    FREQ=$(cat max_freq)
-                    echo "reverse CPU frequency"
-                    echo $FREQ | tee /sys/devices/system/cpu/cpufreq/policy${CPU}/scaling_max_freq
-                fi
-                echo "finished"
-                sleep $(params.INTERVAL)
-            }
-
-            run_freq() {
-                freq=$1
-                argument=$2
-                TOTAL_CPUS=$3
-                OVERCOMMIT=$4
-
-                echo "CPU_FREQUENCY="$freq
-                # small start
-                for i in 1 2 4 8; do
-                    if [ "$i" -gt "$TOTAL_CPUS" ]; then
-                        break
-                    fi
-                    echo STRESS_INSTANCE_NUM=$i
-                    run $freq $i $argument
-                done 
-                for i in $(seq 16 8 $OVERCOMMIT); do
-                    echo STRESS_INSTANCE_NUM=$i
-                    run $freq $i $argument
-                done
-            }
+            # Store the CPU max freq to revert it back if changed
+            if [[ "$CPU_FREQUENCY" != "none" ]] ; then
+                mount -o remount,rw  /sys/devices/system/cpu/cpufreq
+                cat "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" > max_freq
+            fi
 
             IFS=$'\n'
+            for i in $(seq 1 $STRESS_INSTANCE_NUM); do
+                CPU=$(cat cpu-idx | tail -n 1)
+                cat cpu-idx | head -n -1  > tmp-cpu && rm -f cpu-idx && mv tmp-cpu cpu-idx
+                if [[ "$CPU_FREQUENCY" != "none" ]] ; then
+                  echo "set CPU frequency"
+                  echo $CPU_FREQUENCY | tee /sys/devices/system/cpu/cpufreq/policy${CPU}/scaling_max_freq
+                fi
 
-            CPU_FREQUENCY_STEP=800000
-            MIN_FREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq)
-            MAX_FREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq)
-            START_FREQ=$((MIN_FREQ + CPU_FREQUENCY_STEP))
-
-            TOTAL_CPUS=$(lscpu|grep "CPU(s):"|head -n 1|awk '{print $2}')
-            OVERCOMMIT=$((TOTAL_CPUS + 8))
-            
-            if [ -f "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" ] && [ "$CPU_FREQUENCY_ENABLED" = true ]; then
-              FREQ_COUNT=$(((MAX_FREQ-START_FREQ)/CPU_FREQUENCY_STEP+1))
-            else
-              FREQ_COUNT=1
-            fi
-            
-            INSTANCE_COUNT=$(((OVERCOMMIT-16)/8+1+4))
-            TIMEOUT=$(params.TIMEOUT)
-            INTERVAL=$(params.INTERVAL)
-            TIME_PER_LOOP=$((TIMEOUT + INTERVAL))
-            ESTIMATE_SEC=$(( 8 * FREQ_COUNT * INSTANCE_COUNT * TIME_PER_LOOP ))
-            echo "FREQ_COUNT=$FREQ_COUNT"
-            echo "INSTANCE_COUNT=$INSTANCE_COUNT"
-            echo "TIME_PER_LOOP=$TIME_PER_LOOP"
-            echo "Estimation Time (s): $ESTIMATE_SEC"
-
-            for argument in "$@"; do
-                if [ -f "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" ] && [ "$CPU_FREQUENCY_ENABLED" = true ]; then
-                  echo "Frequency range: $START_FREQ $CPU_FREQUENCY_STEP $MAX_FREQ"
-                  for freq in $(seq $START_FREQ $CPU_FREQUENCY_STEP $MAX_FREQ); do
-                    run_freq $freq $argument $TOTAL_CPUS $OVERCOMMIT
-                  done
+                if [[ "$STRESS_LOAD" == "sleep" ]] ; then
+                    echo "SLEEP $(params.TIMEOUT)"
+                    sleep $(params.TIMEOUT) &
                 else
-                  echo "No frequency info"
-                  run_freq "none" $argument $TOTAL_CPUS $OVERCOMMIT
+                    if [[ "$STRESS_EXTRA_PARAM_KEYS" != "none" ]] ; then
+                    echo /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --$STRESS_EXTRA_PARAM_KEYS "$STRESS_EXTRA_PARAM_VALS" --timeout $(params.TIMEOUT) --aggressive --metrics-brief
+                    /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --$STRESS_EXTRA_PARAM_KEYS "$STRESS_EXTRA_PARAM_VALS" --timeout $(params.TIMEOUT) --aggressive --metrics-brief &
+                    else
+                    echo /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --timeout $(params.TIMEOUT) --aggressive --metrics-brief
+                    /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --timeout $(params.TIMEOUT) --aggressive --metrics-brief &
+                    fi
                 fi
             done
+
+            wait
+
+            # Revert the CPU freq back to max
+            if [[ "$CPU_FREQUENCY" != "none" ]] ; then
+                FREQ=$(cat max_freq)
+                echo "reverse CPU frequency"
+                echo $FREQ | tee /sys/devices/system/cpu/cpufreq/policy${CPU}/scaling_max_freq
+            fi
+            echo "finished"
+            sleep $(params.INTERVAL)
+        }
+
+        run_freq() {
+            freq=$1
+            argument=$2
+            TOTAL_CPUS=$3
+            OVERCOMMIT=$4
+
+            echo "CPU_FREQUENCY="$freq
+            # small start
+            for i in 1 2 4 8; do
+                if [ "$i" -gt "$TOTAL_CPUS" ]; then
+                    break
+                fi
+                echo STRESS_INSTANCE_NUM=$i
+                run $freq $i $argument
+            done
+            for i in $(seq 16 8 $OVERCOMMIT); do
+                echo STRESS_INSTANCE_NUM=$i
+                run $freq $i $argument
+            done
+        }
+
+        IFS=$'\n'
+
+        CPU_FREQUENCY_STEP=800000
+        MIN_FREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq)
+        MAX_FREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq)
+        START_FREQ=$((MIN_FREQ + CPU_FREQUENCY_STEP))
+
+        TOTAL_CPUS=$(lscpu|grep "CPU(s):"|head -n 1|awk '{print $2}')
+        OVERCOMMIT=$((TOTAL_CPUS + 8))
+
+        if [ -f "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" ] && [ "$CPU_FREQUENCY_ENABLED" = true ]; then
+          FREQ_COUNT=$(((MAX_FREQ-START_FREQ)/CPU_FREQUENCY_STEP+1))
+        else
+          FREQ_COUNT=1
+        fi
+
+        INSTANCE_COUNT=$(((OVERCOMMIT-16)/8+1+4))
+        TIMEOUT=$(params.TIMEOUT)
+        INTERVAL=$(params.INTERVAL)
+        TIME_PER_LOOP=$((TIMEOUT + INTERVAL))
+        ESTIMATE_SEC=$(( 8 * FREQ_COUNT * INSTANCE_COUNT * TIME_PER_LOOP ))
+        echo "FREQ_COUNT=$FREQ_COUNT"
+        echo "INSTANCE_COUNT=$INSTANCE_COUNT"
+        echo "TIME_PER_LOOP=$TIME_PER_LOOP"
+        echo "Estimation Time (s): $ESTIMATE_SEC"
+
+        for argument in "$@"; do
+            if [ -f "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" ] && [ "$CPU_FREQUENCY_ENABLED" = true ]; then
+              echo "Frequency range: $START_FREQ $CPU_FREQUENCY_STEP $MAX_FREQ"
+              for freq in $(seq $START_FREQ $CPU_FREQUENCY_STEP $MAX_FREQ); do
+                run_freq $freq $argument $TOTAL_CPUS $OVERCOMMIT
+              done
+            else
+              echo "No frequency info"
+              run_freq "none" $argument $TOTAL_CPUS $OVERCOMMIT
+            fi
+        done
     - name: record-end-time
       image: bash:5.2
       script: |
-          #!/usr/bin/env bash
-          echo -n $(date +%Y-%m-%dT%H:%M:%SZ) > $(results.stress-end-time.path)
+        #!/usr/bin/env bash
+        echo -n $(date +%Y-%m-%dT%H:%M:%SZ) > $(results.stress-end-time.path)

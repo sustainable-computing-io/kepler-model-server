@@ -1,6 +1,6 @@
 name: Enhancement Tracking Issue
 description: Provide supporting details for a feature in development
-labels: kind/feature
+labels: [kind/feature]
 body:
   - type: textarea
     id: feature

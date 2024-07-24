@@ -1,6 +1,6 @@
 name: Documentation Issue
 description: Provide supporting details for documentation issue
-labels: kind/documentation
+labels: [kind/documentation]
 body:
   - type: textarea
     id: document

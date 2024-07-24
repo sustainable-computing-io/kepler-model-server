@@ -4,16 +4,16 @@ metadata:
   name: example-abs-train-pipeline
 spec:
   timeouts:
-    pipeline: "6h"
-    tasks: "5h50m"
+    pipeline: 6h
+    tasks: 5h50m
   workspaces:
-  - name: mnt
-    persistentVolumeClaim:
-      claimName: task-pvc
+    - name: mnt
+      persistentVolumeClaim:
+        claimName: task-pvc
   params:
-  - name: PIPELINE_NAME
-    value: AbsPowerTrainPipelineExample
-  - name: OUTPUT_TYPE
-    value: AbsPower
+    - name: PIPELINE_NAME
+      value: AbsPowerTrainPipelineExample
+    - name: OUTPUT_TYPE
+      value: AbsPower
   pipelineRef:
     name: single-train-pipeline
