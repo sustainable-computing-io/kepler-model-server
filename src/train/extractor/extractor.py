@@ -103,8 +103,8 @@ class DefaultExtractor(Extractor):
         is_aggr = node_level and aggr
         if is_aggr:
             # sum stat of all containers
-            sum_feature = feature_power_data.groupby([TIMESTAMP_COL]).sum()[workload_features]
-            mean_power = feature_power_data.groupby([TIMESTAMP_COL]).mean()[power_columns]
+            sum_feature = feature_power_data.groupby([TIMESTAMP_COL])[workload_features].sum()
+            mean_power = feature_power_data.groupby([TIMESTAMP_COL])[power_columns].mean()
             feature_power_data = sum_feature.join(mean_power)
         else:
             feature_power_data = feature_power_data.groupby([TIMESTAMP_COL, container_id_colname]).sum()

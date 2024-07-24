@@ -76,7 +76,7 @@ def squeeze_data(container_level_data, label_cols):
         groupped_sum_data[ratio_col] /= groupped_sum_data['sum_ratio']
     groupped_sum_data = groupped_sum_data.drop(columns=['sum_ratio'])
     # use mean value for node-level information
-    groupped_mean_data = container_level_data.groupby([TIMESTAMP_COL]).mean()[node_level_columns]  
+    groupped_mean_data = container_level_data.groupby([TIMESTAMP_COL])[node_level_columns].mean()
     squeeze_data = groupped_sum_data.join(groupped_mean_data)
     squeeze_data[container_id_colname] = all_container_key
     return squeeze_data.reset_index()

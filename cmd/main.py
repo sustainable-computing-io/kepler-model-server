@@ -545,7 +545,7 @@ def estimate(args):
                     for energy_component, _ in predicted_power_map.items():
                         predicted_power_colname = default_predicted_col_func(energy_component)
                         label_power_columns = [col for col in power_labels if energy_component in col and col != predicted_power_colname]
-                        sum_power_label = data.groupby([TIMESTAMP_COL]).mean()[label_power_columns].sum(axis=1).sort_index()
+                        sum_power_label = data.groupby([TIMESTAMP_COL])[label_power_columns].mean().sum(axis=1).sort_index()
                         sum_predicted_power = data_with_prediction.groupby([TIMESTAMP_COL]).sum().sort_index()[predicted_power_colname]
                         mae, mse, mape = compute_error(sum_power_label, sum_predicted_power)
                         summary_item = dict()
@@ -668,7 +668,7 @@ def plot(args):
                 subtitles += [energy_component]
                 predicted_power_colname = default_predicted_col_func(energy_component)
                 label_power_columns = [col for col in power_labels if energy_component in col and col != predicted_power_colname]
-                data[energy_component] = best_restult.groupby([TIMESTAMP_COL]).mean()[label_power_columns].sum(axis=1).sort_index()
+                data[energy_component] = best_restult.groupby([TIMESTAMP_COL])[label_power_columns].mean().sum(axis=1).sort_index()
                 data[predicted_power_colname] = best_restult.groupby([TIMESTAMP_COL]).sum().sort_index()[predicted_power_colname]
                 cols += [[energy_component, predicted_power_colname]]
                 actual_power_cols += [energy_component]

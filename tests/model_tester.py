@@ -106,7 +106,7 @@ def process(train_dataset_name, test_dataset_name, target_path):
                             label_power_columns = [col for col in power_columns if energy_component in col]
                             # sum label value for all unit
                             # mean to squeeze value of power back
-                            sum_power_label = predicted_data.groupby([TIMESTAMP_COL]).mean()[label_power_columns].sum(axis=1).sort_index()
+                            sum_power_label = predicted_data.groupby([TIMESTAMP_COL])[label_power_columns].mean().sum(axis=1).sort_index()
                             # append predicted value to data_with_prediction
                             
                             # TO-DO: use predict_and_sort in train_isolator.py
