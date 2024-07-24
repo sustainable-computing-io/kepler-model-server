@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "kepler-model-server"
+name = "kepler_model"
 dynamic = ["version"]
 description = "kepler model server for serving kepler models"
 readme = "README.md"
@@ -55,14 +55,6 @@ Source = "https://github.com/sustainable-computing-io/kepler-model-server"
 
 [tool.hatch.version]
 path = "src/__about__.py"
-
-[tool.hatch.build.targets.wheel]
-packages = [
-	"src/server", 
-	"src/estimate",
-	"src/util",
-	"src/train",
-]
 
 [tool.hatch.envs.default]
 python = "3.10"
