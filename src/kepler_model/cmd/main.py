@@ -9,26 +9,21 @@ default_output_filename = "output"
 
 data_path = os.getenv("DATAPATH", data_path)
 
-cur_path = os.path.join(os.path.dirname(__file__), '.')
-sys.path.append(cur_path)
-src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
-sys.path.append(src_path)
+from kepler_model.util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_QUERY_START_TIME, PROM_QUERY_END_TIME, PROM_HEADERS, PROM_SSL_DISABLE, PROM_THIRDPARTY_METRICS
+from kepler_model.util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics, node_info_column
+from kepler_model.util.extract_types import get_expected_power_columns
+from kepler_model.util.train_types import ModelOutputType, FeatureGroups, is_single_source_feature_group, all_feature_groups, default_trainers
+from kepler_model.util.loader import default_train_output_pipeline, load_json, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_preprocess_folder, get_general_filename, load_machine_spec
+from kepler_model.util.saver import save_json, save_csv, save_train_args, _pipeline_model_metadata_filename, _power_curve_filename
+from kepler_model.util.config import ERROR_KEY, model_toppath
+from kepler_model.util import get_valid_feature_group_from_queries, PowerSourceMap
+from kepler_model.train.prom.prom_query import _range_queries
+from kepler_model.train.exporter import exporter
+from kepler_model.train import load_class
+from kepler_model.train.profiler.node_type_index import NodeTypeIndexCollection, NodeTypeSpec, generate_spec
 
-from util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_QUERY_START_TIME, PROM_QUERY_END_TIME, PROM_HEADERS, PROM_SSL_DISABLE, PROM_THIRDPARTY_METRICS
-from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics, node_info_column
-from util.extract_types import get_expected_power_columns
-from util.train_types import ModelOutputType, FeatureGroups, is_single_source_feature_group, all_feature_groups, default_trainers
-from util.loader import default_train_output_pipeline, load_json, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_preprocess_folder, get_general_filename, load_machine_spec
-from util.saver import save_json, save_csv, save_train_args, _pipeline_model_metadata_filename, _power_curve_filename
-from util.config import ERROR_KEY, model_toppath
-from util import get_valid_feature_group_from_queries, PowerSourceMap
-from train.prom.prom_query import _range_queries
-from train.exporter import exporter
-from train import load_class
-from train.profiler.node_type_index import NodeTypeIndexCollection, NodeTypeSpec, generate_spec
-
-from cmd_plot import ts_plot, feature_power_plot, summary_plot, metadata_plot, power_curve_plot
-from cmd_util import extract_time, save_query_results, get_validate_df, summary_validation, get_extractor, check_ot_fg, get_pipeline, assert_train, get_isolator, UTC_OFFSET_TIMEDELTA
+from .cmd_plot import ts_plot, feature_power_plot, summary_plot, metadata_plot, power_curve_plot
+from .cmd_util import extract_time, save_query_results, get_validate_df, summary_validation, get_extractor, check_ot_fg, get_pipeline, assert_train, get_isolator, UTC_OFFSET_TIMEDELTA
 
 import threading
 
@@ -55,6 +50,7 @@ arguments:
 - --id : specify machine ID
 """
 
+
 def query(args):
     if not args.id:
         args.id = "unknown"
@@ -62,12 +58,13 @@ def query(args):
     machine_id = args.id
     generate_spec(data_path, machine_id)
     from prometheus_api_client import PrometheusConnect
+
     prom = PrometheusConnect(url=args.server, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
     start = None
     end = None
     if args.input:
         benchmark_filename = args.input
-        filepath = os.path.join(data_path, benchmark_filename+".json")
+        filepath = os.path.join(data_path, benchmark_filename + ".json")
         if os.path.isfile(filepath):
             print("Query from {}.".format(benchmark_filename))
             start, end = extract_time(data_path, benchmark_filename)
@@ -80,8 +77,8 @@ def query(args):
         if args.start_time != "" and args.end_time != "":
             # by [start time, end time]
             print("Query from start_time {} to end_time {}.".format(args.start_time, args.end_time))
-            start = datetime.datetime.strptime(args.start_time, '%Y-%m-%dT%H:%M:%SZ')
-            end = datetime.datetime.strptime(args.end_time , '%Y-%m-%dT%H:%M:%SZ')
+            start = datetime.datetime.strptime(args.start_time, "%Y-%m-%dT%H:%M:%SZ")
+            end = datetime.datetime.strptime(args.end_time, "%Y-%m-%dT%H:%M:%SZ")
         else:
             # by interval
             print("Query last {} interval.".format(args.interval))
@@ -92,8 +89,8 @@ def query(args):
         item["startTimeUTC"] = start.strftime("%Y-%m-%dT%H:%M:%SZ")
         item["endTimeUTC"] = end.strftime("%Y-%m-%dT%H:%M:%SZ")
         save_json(path=data_path, name=benchmark_filename, data=item)
-        start = datetime.datetime.strptime(item["startTimeUTC"], '%Y-%m-%dT%H:%M:%SZ') - UTC_OFFSET_TIMEDELTA
-        end = datetime.datetime.strptime(item["endTimeUTC"], '%Y-%m-%dT%H:%M:%SZ') - UTC_OFFSET_TIMEDELTA
+        start = datetime.datetime.strptime(item["startTimeUTC"], "%Y-%m-%dT%H:%M:%SZ") - UTC_OFFSET_TIMEDELTA
+        end = datetime.datetime.strptime(item["endTimeUTC"], "%Y-%m-%dT%H:%M:%SZ") - UTC_OFFSET_TIMEDELTA
 
     available_metrics = prom.all_metrics()
 
@@ -115,6 +112,7 @@ def query(args):
     summary_validation(validate_df)
     save_csv(path=data_path, name=args.output + "_validate_result", data=validate_df)
 
+
 """
 validate
 
@@ -127,6 +125,7 @@ arguments:
                 Otherwise, the validated result will be an accumulated of all containers.
 """
 
+
 def validate(args):
     response_filename = args.input
     response = load_json(data_path, response_filename)
@@ -134,6 +133,7 @@ def validate(args):
     summary_validation(validate_df)
     if args.output:
         save_csv(path=data_path, name=args.output, data=validate_df)
+
 
 """
 extract
@@ -152,6 +152,7 @@ arguments:
 - --thirdparty-metrics : specify list of third party metric to export (required only for ThirdParty feature group)
 """
 
+
 def extract(args):
     extractor = get_extractor(args.extractor)
     # single input
@@ -163,24 +164,25 @@ def extract(args):
         update_thirdparty_metrics(args.thirdparty_metrics)
     elif PROM_THIRDPARTY_METRICS != [""]:
         update_thirdparty_metrics(PROM_THIRDPARTY_METRICS)
-    valid_fg = get_valid_feature_group_from_queries([query for query in query_results.keys() if len(query_results[query]) > 1 ])
+    valid_fg = get_valid_feature_group_from_queries([query for query in query_results.keys() if len(query_results[query]) > 1])
     ot, fg = check_ot_fg(args, valid_fg)
     if fg is None or ot is None:
         print("feature group {} or model output type {} is wrong. (valid feature group: {})".format(args.feature_group, args.output_type, valid_fg))
         exit()
 
     energy_components = PowerSourceMap[args.energy_source]
-    node_level=False
+    node_level = False
     if ot == ModelOutputType.AbsPower:
-        node_level=True
+        node_level = True
     feature_power_data, power_cols, _, _ = extractor.extract(query_results, energy_components, args.feature_group, args.energy_source, node_level=node_level)
     if args.output:
         save_csv(data_path, "extracted_" + args.output, feature_power_data)
         query = feature_to_query(FeatureGroups[fg][0])
         raw_data = query_results[query][[TIMESTAMP_COL, query]].groupby([TIMESTAMP_COL]).sum()
-        save_csv(data_path, "extracted_" + args.output[0:-4]+"_raw.csv", raw_data)
+        save_csv(data_path, "extracted_" + args.output[0:-4] + "_raw.csv", raw_data)
         print("extract {} train data to {}".format(args.output_type, "extracted_" + args.output))
     return feature_power_data, power_cols
+
 
 """
 isolate
@@ -211,6 +213,7 @@ arguments:
     * If both are defined, target-hints will be considered first.
 """
 
+
 def isolate(args):
     extracted_data, power_labels = extract(args)
     if extracted_data is None or power_labels is None:
@@ -221,6 +224,7 @@ def isolate(args):
     if args.output:
         save_csv(data_path, "isolated_" + args.output, isolated_data)
         print("isolate train data to {}".format("isolated_" + args.output))
+
 
 """
 isolate_from_data
@@ -243,6 +247,7 @@ arguments:
     * If both are defined, target-hints will be considered first.
 """
 
+
 def isolate_from_data(args):
     energy_components = PowerSourceMap[args.energy_source]
     extracted_data = load_csv(data_path, "extracted_" + args.input)
@@ -252,6 +257,7 @@ def isolate_from_data(args):
     isolated_data = isolator.isolate(extracted_data, label_cols=power_columns, energy_source=args.energy_source)
     if args.output:
         save_csv(data_path, "isolated_" + args.output, isolated_data)
+
 
 """
 train_from_data
@@ -269,8 +275,8 @@ arguments:
 - --thirdparty-metrics : specify list of third party metric to export (required only for ThirdParty feature group)
 """
 
-def train_from_data(args):
 
+def train_from_data(args):
     # Inject thirdparty_metrics to FeatureGroup
     if args.thirdparty_metrics != "":
         update_thirdparty_metrics(args.thirdparty_metrics)
@@ -283,9 +289,9 @@ def train_from_data(args):
         exit()
 
     energy_components = PowerSourceMap[args.energy_source]
-    node_level=False
+    node_level = False
     if ot == ModelOutputType.AbsPower:
-        node_level=True
+        node_level = True
 
     data = load_csv(data_path, args.input)
     power_columns = get_expected_power_columns(energy_components=energy_components)
@@ -309,7 +315,7 @@ def train_from_data(args):
     if node_type is None:
         print("Machine ID has not defined by --id or machine spec is not available, do not auto-replace node_type")
 
-    trainers =  args.trainers.split(",")
+    trainers = args.trainers.split(",")
     metadata_list = []
     for trainer in trainers:
         trainer_class = load_class("trainer", trainer)
@@ -325,7 +331,8 @@ def train_from_data(args):
     if node_collection is not None:
         print("Save node index")
         node_collection.save()
-    
+
+
 """
 train
 
@@ -350,9 +357,11 @@ arguments:
 - --id : specify machine ID 
 """
 
+
 def train(args):
     import warnings
     from sklearn.exceptions import ConvergenceWarning
+
     warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
     if not args.input:
@@ -377,7 +386,7 @@ def train(args):
         response = load_json(data_path, input)
         query_results = prom_responses_to_results(response)
 
-        valid_fg = get_valid_feature_group_from_queries([query for query in query_results.keys() if len(query_results[query]) > 1 ])
+        valid_fg = get_valid_feature_group_from_queries([query for query in query_results.keys() if len(query_results[query]) > 1])
         print("valid feature group: ", valid_fg)
         if valid_feature_groups is None:
             valid_feature_groups = valid_fg
@@ -392,7 +401,7 @@ def train(args):
 
     abs_trainer_names = args.abs_trainers.split(",")
     dyn_trainer_names = args.dyn_trainers.split(",")
-    
+
     node_type=None
     pipeline=None
     if args.id:
@@ -407,7 +416,7 @@ def train(args):
 
     if node_type is None:
         print("Machine ID has not defined by --id or machine spec is not available, do not auto-replace node_type")
-    
+
     if pipeline is None:
         print("cannot get pipeline")
         exit()
@@ -428,7 +437,6 @@ def train(args):
                 save_csv(data_saved_path, get_general_filename("preprocess", energy_source, feature_group, ModelOutputType.AbsPower, args.extractor), abs_data)
             if dyn_data is not None:
                 save_csv(data_saved_path, get_general_filename("preprocess", energy_source, feature_group, ModelOutputType.DynPower, args.extractor, args.isolator), dyn_data)
-
 
         print("=========== Train {} Summary ============".format(energy_source))
         # save args
@@ -453,6 +461,7 @@ def train(args):
 
     warnings.resetwarnings()
 
+
 """
 estimate
 
@@ -471,6 +480,7 @@ arguments:
     - --bg-hints : specify background process keywords to remove from DynPower model training
     * If both are defined, target-hints will be considered first.
 """
+
 
 def estimate(args):
     if not args.input:
@@ -493,7 +503,7 @@ def estimate(args):
         query_results = prom_responses_to_results(response)
         input_query_results_list += [query_results]
 
-    valid_fg = get_valid_feature_group_from_queries([query for query in query_results.keys() if len(query_results[query]) > 1 ])
+    valid_fg = get_valid_feature_group_from_queries([query for query in query_results.keys() if len(query_results[query]) > 1])
     ot, fg = check_ot_fg(args, valid_fg)
     if fg is not None:
         valid_fg = [fg]
@@ -522,7 +532,7 @@ def estimate(args):
             if pipeline is None:
                 print("cannot get pipeline {}.".format(pipeline_name))
                 continue
-            for fg in  valid_fg:
+            for fg in valid_fg:
                 print(" Feature Group: ", fg)
                 abs_data, dyn_data, power_labels = pipeline.prepare_data_from_input_list(input_query_results_list, energy_components, energy_source, fg.name)
                 if energy_source not in power_labels_map:
@@ -577,10 +587,11 @@ def estimate(args):
                 os.mkdir(output_folder)
             # save model
             import shutil
+
             best_model = "{}_model".format(energy_source)
             if not args.id:
                 # not only for export
-                shutil.make_archive(os.path.join(output_folder, best_model), 'zip', best_model_path)
+                shutil.make_archive(os.path.join(output_folder, best_model), "zip", best_model_path)
                 # save result
                 estimation_result = "{}_estimation_result".format(energy_source)
                 save_csv(output_folder, estimation_result, best_result)
@@ -588,6 +599,7 @@ def estimate(args):
             path_splits = best_model_path.split("/")
             best_model_id_map[energy_source] = "{} using {}".format(path_splits[-1], path_splits[-2])
     return best_result_map, power_labels_map, best_model_id_map, pd.DataFrame(summary_items)
+
 
 """
 plot
@@ -607,6 +619,7 @@ arguments:
 - --isolator : specify isolator to get preprocessed data of DynPower model linked to the input data
 - --pipeline_name : specify pipeline name
 """
+
 
 def plot(args):
     pipeline_name = default_train_output_pipeline if not args.pipeline_name else args.pipeline_name
@@ -683,13 +696,14 @@ def plot(args):
                 scaler = MaxAbsScaler()
                 data[feature_cols] = best_restult[[TIMESTAMP_COL] + feature_cols].groupby([TIMESTAMP_COL]).sum().sort_index()
                 # plot raw feature data to confirm min-max value
-                ts_plot(data, feature_cols, "Features {}".format(fg) , output_folder, "{}_{}".format(data_filename, fg), labels=None, subtitles=None, ylabel=None)
+                ts_plot(data, feature_cols, "Features {}".format(fg), output_folder, "{}_{}".format(data_filename, fg), labels=None, subtitles=None, ylabel=None)
                 data[feature_cols] = scaler.fit_transform(data[feature_cols])
                 feature_power_plot(data, model_id, ot.name, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, "{}_{}_corr".format(data_filename, model_id))
 
     elif args.target_data == "error":
         from estimate import default_predicted_col_func
         from sklearn.preprocessing import MaxAbsScaler
+
         _, _, _, summary_df = estimate(args)
         for energy_source in energy_sources:
             data_filename = get_general_filename(args.target_data, energy_source, fg, ot, args.extractor, args.isolator)
@@ -704,6 +718,7 @@ def plot(args):
             data_filename = _power_curve_filename(energy_source, ot.name)
             model_metadata_df = load_pipeline_metadata(args.input, energy_source, ot.name)
             power_curve_plot(args, data_path, energy_source, output_folder, data_filename)
+
 
 """
 export
@@ -722,8 +737,8 @@ arguments:
 - --zip : specify whether to zip pipeline 
 """
 
-def export(args):
 
+def export(args):
     if not args.pipeline_name:
         print("need to specify pipeline name via -p or --pipeline-name")
         exit()
@@ -770,7 +785,9 @@ def export(args):
             plot(args)
     if args.zip:
         import shutil
-        shutil.make_archive(local_export_path, 'zip', local_export_path)
+
+        shutil.make_archive(local_export_path, "zip", local_export_path)
+
 
 """
 plot_scenario
@@ -781,6 +798,7 @@ arguments:
 - --benchmark : specify CPE benchmark resource in json file
 - Please refer to `plot` function for the rest arguments.
 """
+
 
 def plot_scenario(args):
     if not args.benchmark:
@@ -821,7 +839,7 @@ def plot_scenario(args):
     query_results = prom_responses_to_results(response)
     for query, data in query_results.items():
         if "pod_name" in data.columns:
-            query_results[query]  = data[data["pod_name"].isin(target_pods)]
+            query_results[query] = data[data["pod_name"].isin(target_pods)]
 
     valid_fg = [fg_key for fg_key in FeatureGroups.keys()]
     ot, fg = check_ot_fg(args, valid_fg)
@@ -857,8 +875,11 @@ def plot_scenario(args):
                 data_filename = get_general_filename(args.target_data, energy_source, None, ot, args.extractor, args.isolator) + "_" + args.scenario
                 ts_plot(power_data, power_cols, "Power source: {} ({})".format(energy_source, args.scenario), output_folder, data_filename, ylabel="Power (W)")
 
-if __name__ == "__main__":
+
+def run():
     # Create an ArgumentParser object
+    global data_path
+
     parser = argparse.ArgumentParser(description="Kepler model server entrypoint")
     parser.add_argument("command", type=str, help="The command to execute.")
 
@@ -875,7 +896,7 @@ if __name__ == "__main__":
     parser.add_argument("--end-time", type=str, help="Specify query end time.", default=PROM_QUERY_END_TIME)
     parser.add_argument("--step", type=str, help="Specify query step.", default=PROM_QUERY_STEP)
     parser.add_argument("--metric-prefix", type=str, help="Specify metrix prefix to filter.", default=KEPLER_METRIC_PREFIX)
-    parser.add_argument("-tm", "--thirdparty-metrics", nargs='+', help="Specify the thirdparty metrics that are not included by Kepler", default="")
+    parser.add_argument("-tm", "--thirdparty-metrics", nargs="+", help="Specify the thirdparty metrics that are not included by Kepler", default="")
     parser.add_argument("--to-csv", type=bool, help="To save converted query response to csv format", default=False)
 
     # Train arguments
@@ -926,8 +947,10 @@ if __name__ == "__main__":
                 os.makedirs(data_path)
                 print("create new folder for data: {}".format(data_path))
             else:
-                print("{0} not exists. For docker run, {0} must be mount, add -v \"$(pwd)\":{0}. For native run, set DATAPATH".format(data_path))
+                print('{0} not exists. For docker run, {0} must be mount, add -v "$(pwd)":{0}. For native run, set DATAPATH'.format(data_path))
                 exit()
         getattr(sys.modules[__name__], args.command)(args)
 
 
+if __name__ == "__main__":
+    run()
