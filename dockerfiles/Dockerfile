@@ -4,12 +4,9 @@ WORKDIR /usr/local
 
 RUN mkdir -p /usr/local/src
 RUN mkdir -p /usr/local/resource
-
-COPY src/estimate src/estimate
-COPY src/server src/server
-COPY src/train src/train
-COPY src/util src/util
-COPY cmd cmd
+COPY src/ src/
+COPY pyproject.toml ./
+pip install --no-cache-dir .
 
 # port for Model Server
 EXPOSE 8100
@@ -18,4 +15,4 @@ EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
 
-ENTRYPOINT ["python3.10", "cmd/main.py"]
+ENTRYPOINT ["kepler-model-server"]
