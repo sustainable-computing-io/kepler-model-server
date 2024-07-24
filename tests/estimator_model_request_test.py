@@ -36,12 +36,12 @@ sys.path.append(prom_path)
 sys.path.append(estimate_path)
 
 from http_server import http_file_server
-from train_types import FeatureGroups, FeatureGroup, ModelOutputType
-from loader import get_download_output_path, default_train_output_pipeline
-from estimate.estimator import handle_request, loaded_model, PowerRequest
-from estimate.model_server_connector import list_all_models
-from estimate.archived_model import get_achived_model, reset_failed_list
-from config import get_init_model_url, set_env_from_model_config, get_url, download_path
+from kepler_model.util.train_types import FeatureGroups, FeatureGroup, ModelOutputType
+from kepler_model.loader import get_download_output_path, default_train_output_pipeline
+from kepler_model.estimate.estimator import handle_request, loaded_model, PowerRequest
+from kepler_model.estimate.model_server_connector import list_all_models
+from kepler_model.estimate.archived_model import get_achived_model, reset_failed_list
+from kepler_model.config import get_init_model_url, set_env_from_model_config, get_url, download_path
 from extractor_test import test_energy_source
 
 from estimator_power_request_test import generate_request

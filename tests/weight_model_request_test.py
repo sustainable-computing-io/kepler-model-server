@@ -21,10 +21,10 @@ sys.path.append(train_path)
 sys.path.append(prom_path)
 sys.path.append(estimate_path)
 
-from train_types import FeatureGroups, FeatureGroup, ModelOutputType
-from loader import get_download_output_path
-from estimate.model_server_connector import list_all_models
-from config import get_model_server_req_endpoint, download_path
+from kepler_model.util.train_types import FeatureGroups, FeatureGroup, ModelOutputType
+from kepler_model.loader import get_download_output_path
+from kepler_model.estimate.model_server_connector import list_all_models
+from kepler_model.config import get_model_server_req_endpoint, download_path
 from extractor_test import test_energy_source
 from estimator_power_request_test import generate_request
 

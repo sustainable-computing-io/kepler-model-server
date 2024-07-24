@@ -8,8 +8,7 @@ sys.path.append(src_path)
 #################################################################
 
 from pipeline_test import process
-
-from util import FeatureGroup
+from kepler_model.util import FeatureGroup
 
 trainer_names = [ 'GradientBoostingRegressorTrainer', 'SGDRegressorTrainer', 'XgboostFitTrainer' ]
 valid_feature_groups = [ FeatureGroup.BPFOnly ]

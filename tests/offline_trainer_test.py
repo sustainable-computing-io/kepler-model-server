@@ -22,14 +22,14 @@ src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 #################################################################
 
-from train.offline_trainer import TrainAttribute, TrainRequest, serve_port
+from kepler_model.train.offline_trainer import TrainAttribute, TrainRequest, serve_port
 
 
-from model_server_test import TMP_FILE
+from .model_server_test import TMP_FILE
 from prom_test import get_prom_response
 from extractor_test import test_energy_source
-from util.loader import list_all_abs_models, list_all_dyn_models, class_to_json
-from util.prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
+from kepler_model.util.loader import list_all_abs_models, list_all_dyn_models, class_to_json
+from kepler_model.util.prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
 
 offline_trainer_output_path = os.path.join(os.path.dirname(__file__), 'data', 'offline_trainer_output')
 

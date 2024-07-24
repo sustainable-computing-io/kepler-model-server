@@ -13,7 +13,7 @@ src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 #################################################################
 
-from util.config import model_toppath
+from kepler_model.util.config import model_toppath
 
 os.chdir(model_toppath)
 

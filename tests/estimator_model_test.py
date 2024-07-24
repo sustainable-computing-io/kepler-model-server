@@ -13,11 +13,11 @@ src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 #################################################################
 
-from estimate import load_model, default_predicted_col_func, compute_error
-from train.trainer import model_toppath
-from util.loader import get_model_group_path, default_train_output_pipeline
-from util import FeatureGroup, ModelOutputType, list_model_names
-from util.prom_types import TIMESTAMP_COL
+from kepler_model.estimate import load_model, default_predicted_col_func, compute_error
+from kepler_model.train.trainer import model_toppath
+from kepler_model.util.loader import get_model_group_path, default_train_output_pipeline
+from kepler_model.util import FeatureGroup, ModelOutputType, list_model_names
+from kepler_model.util.prom_types import TIMESTAMP_COL
 
 from isolator_test import test_isolators, get_isolate_results, isolator_output_path
 from extractor_test import test_extractors, get_extract_results, test_energy_source, get_expected_power_columns, extractor_output_path

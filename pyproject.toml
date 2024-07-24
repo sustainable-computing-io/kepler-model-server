@@ -62,6 +62,10 @@ python = "3.10"
 extra-dependencies = [
 	"ipython",
 	"ipdb",
+  "coverage[toml]>=6.5",
+  "pytest",
+  "ipython",
+  "ipdb",
 ]
 
 [tool.hatch.envs.types]
@@ -93,3 +97,8 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = 320
+
+[tool.pytest.ini_options]
+markers = [
+	"focus",  # used in development to mark focused tests
+]

@@ -11,12 +11,12 @@ sys.path.append(train_path)
 sys.path.append(profile_path)
 import json
 
-from train import DefaultExtractor, node_info_column, component_to_col, FeatureGroups, FeatureGroup
-from train import load_class
+from kepler_model.train import DefaultExtractor, node_info_column, component_to_col, FeatureGroups, FeatureGroup
+from kepler_model.train import load_class
 from profiler import response_to_result
 
-from train.trainer.XGBoostTrainer.main import XGBoostRegressionStandalonePipeline
-from train_types import XGBoostRegressionTrainType
+from kepler_model.train.trainer.XGBoostTrainer.main import XGBoostRegressionStandalonePipeline
+from kepler_model.util.train_types import XGBoostRegressionTrainType
 
 from prom_test import prom_output_path
 

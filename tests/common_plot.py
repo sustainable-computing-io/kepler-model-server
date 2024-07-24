@@ -15,14 +15,14 @@ src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 #################################################################
 
-from util import assure_path, FeatureGroups, FeatureGroup, PowerSourceMap
-from util.prom_types import TIMESTAMP_COL
-from util.extract_types import col_to_component
+from kepler_model.util import assure_path, FeatureGroups, FeatureGroup, PowerSourceMap
+from kepler_model.util.prom_types import TIMESTAMP_COL
+from kepler_model.util.extract_types import col_to_component
 
 from sklearn.preprocessing import MaxAbsScaler
 
-from train.extractor.preprocess import get_extracted_power_labels
-from estimate import get_label_power_colname
+from kepler_model.train.extractor.preprocess import get_extracted_power_labels
+from kepler_model.estimate import get_label_power_colname
 
 plot_output_path = os.path.join(os.path.dirname(__file__), 'data', 'plot_output')
 assure_path(plot_output_path)

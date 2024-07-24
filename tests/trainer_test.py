@@ -1,23 +1,16 @@
 # trainer_test.py
 
 import os
-import sys
 
 import sklearn
 
-#################################################################
-# import internal src 
-src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
-sys.path.append(src_path)
-#################################################################
+from kepler_model.train import load_class
+from kepler_model.util import PowerSourceMap
+from kepler_model.util.loader import default_train_output_pipeline
+from kepler_model.util.train_types import default_trainer_names
 
-from train import load_class
-from util import PowerSourceMap
-from util.loader import default_train_output_pipeline
-from util.train_types import default_trainer_names
-
-from isolator_test import test_isolators, get_isolate_results
-from extractor_test import test_extractors, get_extract_results, test_energy_source, get_expected_power_columns, node_info_column
+from .isolator_test import test_isolators, get_isolate_results
+from .extractor_test import test_extractors, get_extract_results, test_energy_source, get_expected_power_columns, node_info_column
 
 import pandas as pd
 import threading
@@ -78,8 +71,7 @@ def process_all(extractors=test_extractors, isolators=test_isolators, trainer_na
     return abs_train_df, dyn_train_df
 
 
-        
-if __name__ == '__main__':
+def test_trainer_process():
     focus_columns = ['model_name', 'mae']
     abs_train_df, dyn_train_df = process_all()
     print("Node-level train results:")

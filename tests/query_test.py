@@ -10,9 +10,9 @@ sys.path.append(util_path)
 sys.path.append(prom_path)
 
 from prom.prom_query import PrometheusClient, PROM_QUERY_INTERVAL, POD_STAT_QUERY, NODE_STAT_QUERY
-from util.config import getConfig
+from kepler_model.util.config import getConfig
 
-from train.train_types import FeatureGroups
+from kepler_model.train.train_types import FeatureGroups
 
 SAMPLING_INTERVAL = PROM_QUERY_INTERVAL
 SAMPLING_INTERVAL = getConfig('SAMPLING_INTERVAL', SAMPLING_INTERVAL)
