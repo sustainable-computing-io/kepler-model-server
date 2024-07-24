@@ -28,7 +28,7 @@ def print_file_to_stdout(data_path, args):
 
 def extract_time(data_path, benchmark_filename):
     data = load_json(data_path, benchmark_filename)
-    if benchmark_filename != "customBenchmark":
+    if "metadata" in data:
         start_str = data["metadata"]["creationTimestamp"]
         start = datetime.datetime.strptime(start_str, '%Y-%m-%dT%H:%M:%SZ')
         end_str = data["status"]["results"][-1]["repetitions"][-1]["pushedTime"].split(".")[0]

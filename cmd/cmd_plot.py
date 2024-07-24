@@ -155,7 +155,10 @@ def metadata_plot(args, energy_source, metadata_df, output_folder, name):
     plt.close()
 
 def power_curve_plot(args, data_path, energy_source, output_folder, name):
-    model_toppath = data_path
+    if 'MODEL_PATH' in os.environ:
+        model_toppath = os.environ['MODEL_PATH']
+    else:
+        model_toppath = data_path
     pipeline_name = args.pipeline_name
     pipeline_path = os.path.join(model_toppath, pipeline_name)
     node_collection = NodeTypeIndexCollection(pipeline_path)

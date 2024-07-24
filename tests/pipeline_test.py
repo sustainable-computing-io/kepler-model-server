@@ -21,8 +21,8 @@ spec_values =   {
                     "processor": "test",
                     "cores": 1,
                     "chips": 1,
-                    "memory_gb": -1,
-                    "cpu_freq_mhz": -1
+                    "memory": -1,
+                    "frequency": -1
                 }
 spec = NodeTypeSpec(**spec_values)
 

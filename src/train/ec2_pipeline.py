@@ -12,7 +12,7 @@ DATAPATH=/path/to/models python cmd/main.py plot --target-data estimate --input 
 DATAPATH=/path/to/models python cmd/main.py plot --target-data estimate --input /path/to/data/i3.metal/kepler_query.json --pipeline-name ec2 --energy-source intel_rapl --model-name LogarithmicRegressionTrainer_4 --output-type AbsPower --output i3metal-ec2 --feature-group BPFOnly
 
 example of export command:
-DATAPATH=/path/to/models python cmd/main.py export --pipeline-name ec2 -o /path/to/kepler-model-db/models --publisher sunya-ch --zip=true --collect-date "July 2024"
+DATAPATH=/path/to/models python cmd/main.py export --pipeline-name ec2-0.7.11 -o /path/to/kepler-model-db/models --publisher sunya-ch --zip=true --collect-date "July 2024"
 """
 
 import os
@@ -40,10 +40,13 @@ from train_types import default_trainer_names, PowerSourceMap
 from saver import save_json
 from config import model_toppath
 
-node_profiles = ["m5zn.metal", "c5d.metal", "i3en.metal", "m7i.metal-24xl", "i3.metal"]
+data_path = os.path.join(model_toppath, "..", "data")
+
+node_profiles = ["m5.metal", "i3.metal", "c5.metal",  "r5.metal", "m5zn.metal", "m7i.metal-24xl"]
 node_image = "ami-0e4d0bb9670ea8db0"
 
 import boto3
+last_modified = None
 
 aws_access_key_id = os.environ["AWS_ACCESS_KEY_ID"]
 aws_secret_access_key = os.environ["AWS_SECRET_ACCESS_KEY"]
@@ -56,8 +59,9 @@ unknown = -1
 def read_response_in_json(key):
     print(key)
     response = s3.get_object(Bucket=bucket_name, Key=key)
-    last_modified_str = response['LastModified']
-    print("{} last modified time: {}".format(key, last_modified_str))
+    global last_modified
+    last_modified = response['LastModified']
+    print("{} last modified time: {}".format(key, last_modified))
     return json.loads(response['Body'].read().decode('utf-8'))
 
 class Ec2PipelineRun():
@@ -77,15 +81,15 @@ class Ec2PipelineRun():
             spec_json = read_response_in_json(spec_key)
 
             # save raw data from response in local path models/../data/<instance profile>
-            profile_datapath = os.path.join(model_toppath, "..", "data", profile)
+            profile_datapath = os.path.join(data_path, profile)
             os.makedirs(profile_datapath, exist_ok=True)
             save_json(path=profile_datapath, name="kepler_query.json", data=query_response)
-            save_json(path=profile_datapath, name=machine_spec_filename, data=spec_json)
+            machine_spec_path = os.path.join(profile_datapath, "machine_spec")
+            save_json(path=machine_spec_path, name=machine_spec_filename, data=spec_json)
 
             # process pipeline
-            spec = NodeTypeSpec(**spec_json['attrs'])
-            spec.attrs[NodeAttribute.MEMORY] = unknown
-            spec.attrs[NodeAttribute.FREQ] = unknown
+            spec = NodeTypeSpec()
+            spec.load(spec_json)
             node_type = self.pipeline.node_collection.index_train_machine(machine_id, spec)
             query_results = prom_responses_to_results(query_response)
             query_results[node_info_column] = node_type
@@ -101,8 +105,14 @@ class Ec2PipelineRun():
         self.pipeline.archive_pipeline()
 
 if __name__ == "__main__":
-    pipeline_name = "ec2"
+    pipeline_name = "ec2-0.7.11"
     pipelinerun = Ec2PipelineRun(name=pipeline_name)
     pipelinerun.process()
     pipelinerun.save_metadata()
     pipelinerun.archive_pipeline()
+    print("Collection time:", last_modified)
+    item = dict()
+    item["startTimeUTC"] = last_modified.strftime("%Y-%m-%dT%H:%M:%SZ")
+    item["endTimeUTC"] = last_modified.strftime("%Y-%m-%dT%H:%M:%SZ")
+    print(item)
+    save_json(path=data_path, name=pipeline_name, data=item)
