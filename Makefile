@@ -37,7 +37,8 @@ test-pipeline:
 	mkdir -p ${MODEL_PATH}
 	$(CTR_CMD) run --platform linux/amd64 \
 		-v ${MODEL_PATH}:/mnt/models -i \
-		$(TEST_IMAGE) -v -s ./tests/pipeline_test.py
+		$(TEST_IMAGE) \
+		hatch run test -v -s ./tests/pipeline_test.py
 
 # test collector --> estimator
 run-estimator:

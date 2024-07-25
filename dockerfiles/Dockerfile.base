@@ -7,8 +7,9 @@ COPY pyproject.toml .
 # so they are copied into the image for pip install to succeed
 COPY README.md .
 
-RUN mkdir -p src
-COPY src/__about__.py src/
+RUN mkdir -p src/kepler_model
+COPY src/kepler_model/__init__.py src/kepler_model/
+COPY src/kepler_model/__about__.py src/kepler_model/
 
 RUN pip install --no-cache-dir . && \
 		pip cache purge
