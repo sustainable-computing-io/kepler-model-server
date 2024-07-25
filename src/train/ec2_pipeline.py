@@ -8,8 +8,8 @@ before run:
 
 after run:
 example of plot command:
-DATAPATH=/path/to/models python cmd/main.py plot --target-data estimate --input /path/to/data/i3.metal/kepler_query.json --pipeline-name ec2 --energy-source intel_rapl --model-name LinearRegressionTrainer_4 --output-type AbsPower --output i3metal-ec2 --feature-group BPFOnly
-DATAPATH=/path/to/models python cmd/main.py plot --target-data estimate --input /path/to/data/i3.metal/kepler_query.json --pipeline-name ec2 --energy-source intel_rapl --model-name LogarithmicRegressionTrainer_4 --output-type AbsPower --output i3metal-ec2 --feature-group BPFOnly
+DATAPATH=/path/to/models python cmd/main.py plot --target-data estimate --input /path/to/data/i3.metal/kepler_query.json --pipeline-name ec2 --energy-source rapl-sysfs --model-name LinearRegressionTrainer_4 --output-type AbsPower --output i3metal-ec2 --feature-group BPFOnly
+DATAPATH=/path/to/models python cmd/main.py plot --target-data estimate --input /path/to/data/i3.metal/kepler_query.json --pipeline-name ec2 --energy-source rapl-sysfs --model-name LogarithmicRegressionTrainer_4 --output-type AbsPower --output i3metal-ec2 --feature-group BPFOnly
 
 example of export command:
 DATAPATH=/path/to/models python cmd/main.py export --pipeline-name ec2 -o /path/to/kepler-model-db/models --publisher sunya-ch --zip=true --collect-date "July 2024"
@@ -62,7 +62,7 @@ def read_response_in_json(key):
 
 class Ec2PipelineRun():
     def __init__(self, name, abs_trainer_names=default_trainer_names, dyn_trainer_names=default_trainer_names, isolator=MinIdleIsolator()):
-        self.energy_source = "intel_rapl"
+        self.energy_source = "rapl-sysfs"
         self.energy_components = PowerSourceMap[self.energy_source]
         self.pipeline = NewPipeline(name, abs_trainer_names=abs_trainer_names, dyn_trainer_names=dyn_trainer_names, extractor=DefaultExtractor(), isolator=isolator, target_energy_sources=[self.energy_source])
 

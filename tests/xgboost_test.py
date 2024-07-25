@@ -22,7 +22,7 @@ from prom_test import prom_output_path
 
 energy_components = ["package", "core", "uncore", "dram"]
 feature_group = FeatureGroup.BPFIRQ.name
-energy_source = "intel_rapl"
+energy_source = "rapl-sysfs"
 
 prom_response_file = os.path.join(os.path.dirname(__file__), 'data', 'prom_output', 'prom_response.json')
 

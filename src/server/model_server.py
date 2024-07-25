@@ -23,8 +23,8 @@ from train import NodeTypeSpec, NodeTypeIndexCollection
 
 
 class ModelRequest:
-    def __init__(self, metrics, output_type, source="intel_rapl", node_type=-1, weight=False, trainer_name="", filter="", pipeline_name="", spec=None):
-        # target source of power metric to be predicted (e.g., intel_rapl, acpi)
+    def __init__(self, metrics, output_type, source="rapl-sysfs", node_type=-1, weight=False, trainer_name="", filter="", pipeline_name="", spec=None):
+        # target source of power metric to be predicted (e.g., rapl-sysfs, acpi)
         self.source = source
         # type of node to select a model learned from similar nodes (default: -1, applied universal model learned by all node_type (TODO))
         self.node_type = node_type
@@ -126,7 +126,7 @@ def get_model():
     energy_source = req.source
     # TODO: need revisit if get more than one rapl energy source
     if energy_source is None or "rapl" in energy_source:
-        energy_source = "intel_rapl"
+        energy_source = "rapl-sysfs"
 
     # find valid feature groups from available metrics in request
     valid_fgs = get_valid_feature_groups(req.metrics)
@@ -180,7 +180,7 @@ def get_available_models():
             output_types = [ModelOutputType[ot]]
         # TODO: need revisit if get more than one rapl energy source
         if energy_source is None or "rapl" in energy_source:
-            energy_source = "intel_rapl"
+            energy_source = "rapl-sysfs"
 
         if filter is None:
             filters = dict()

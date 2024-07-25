@@ -59,7 +59,7 @@ def handle_request(data):
     output_type = ModelOutputType[power_request.output_type]
     # TODO: need revisit if get more than one rapl energy source
     if power_request.energy_source is None or "rapl" in power_request.energy_source:
-        power_request.energy_source = "intel_rapl"
+        power_request.energy_source = "rapl-sysfs"
 
     if output_type.name not in loaded_model:
         loaded_model[output_type.name] = dict()

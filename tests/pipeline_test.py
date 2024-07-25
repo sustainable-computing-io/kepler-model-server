@@ -26,6 +26,8 @@ spec_values =   {
                 }
 spec = NodeTypeSpec(**spec_values)
 
+test_energy_sources = ["acpi", "rapl-sysfs"]
+
 def assert_pipeline(pipeline, query_results, feature_group, energy_source, energy_components):
     success, abs_data, dyn_data = pipeline.process(query_results, energy_components, energy_source, feature_group=feature_group.name, replace_node_type=default_node_type)
     assert success, "failed to process pipeline {}".format(pipeline.name) 
@@ -57,4 +59,4 @@ def process(save_pipeline_name=default_train_output_pipeline, prom_save_path=pro
             pipeline.archive_pipeline()
 
 if __name__ == '__main__':
-    process(target_energy_sources=PowerSourceMap.keys())
+    process(target_energy_sources=test_energy_sources)

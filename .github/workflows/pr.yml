@@ -18,7 +18,7 @@ on:
       - '**/*.md'
 
 env:
-  TAG: "v0.7.7"
+  TAG: "v0.7.11"
 
 jobs:
   check-branch:
@@ -207,7 +207,7 @@ jobs:
       docker_secret: ${{ needs.check-secret.outputs.docker-secret }}
       image_repo: ${{ vars.IMAGE_REPO || 'docker.io/library' }}
       image_tag: ${{ needs.check-branch.outputs.tag }}
-      kepler_tag: release-0.7.7
+      kepler_tag: release-0.7.11
       additional_opts: " TEST"
 
   integration-test-with-exporter:
@@ -219,7 +219,7 @@ jobs:
       docker_secret: ${{ needs.check-secret.outputs.docker-secret }}
       image_repo: ${{ vars.IMAGE_REPO || 'docker.io/library' }}
       image_tag: ${{ needs.check-branch.outputs.tag }}
-      kepler_tag: release-0.7.7
+      kepler_tag: release-0.7.11
       additional_opts: ""
 
   integration-test-with-exporter-and-db:
@@ -231,7 +231,7 @@ jobs:
       docker_secret: ${{ needs.check-secret.outputs.docker-secret }}
       image_repo: ${{ vars.IMAGE_REPO || 'docker.io/library' }}
       image_tag: ${{ needs.check-branch.outputs.tag }}
-      kepler_tag: release-0.7.7
+      kepler_tag: release-0.7.11
       additional_opts: " DB"
 
   verify_model_training_script:

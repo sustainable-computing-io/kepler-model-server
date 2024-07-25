@@ -24,7 +24,7 @@ PREPROCESS_FOLDERNAME = "preprocessed_data"
 ## default_train_output_pipeline: a default pipeline name which is output from the training pipeline
 default_train_output_pipeline = "std_v{}".format(version)
 default_pipelines = {
-    "intel_rapl": "ec2",
+    "rapl-sysfs": "ec2",
     "acpi": "specpower"
 }
 base_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v{}".format(version)

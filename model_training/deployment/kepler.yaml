@@ -190,8 +190,7 @@ spec:
     spec:
       containers:
       - args:
-        - /usr/bin/kepler -v=1 -kernel-source-dir=/usr/share/kepler/kernel_sources
-          -redfish-cred-file-path=/etc/redfish/redfish.csv
+        - /usr/bin/kepler -v=1 -redfish-cred-file-path=/etc/redfish/redfish.csv
         command:
         - /bin/sh
         - -c
@@ -204,7 +203,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: quay.io/sustainable_computing_io/kepler:release-0.7.7
+        image: quay.io/sustainable_computing_io/kepler:release-0.7.11
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 5
