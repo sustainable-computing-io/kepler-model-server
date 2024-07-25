@@ -115,7 +115,7 @@ spec:
             command: ["python3.10"]
             env:
             - name: PROM_SERVER
-              value: http://prometheus-k8s.monitoring.svc:9090
+              value: http://localhost:9090
           - name: record-start-time
             image: bash:5.2
             script: |
