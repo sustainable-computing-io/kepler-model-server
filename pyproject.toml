@@ -60,12 +60,24 @@ path = "src/kepler_model/__about__.py"
 [tool.hatch.envs.default]
 python = "3.10"
 extra-dependencies = [
-	"ipython",
-	"ipdb",
   "coverage[toml]>=6.5",
-  "pytest",
-  "ipython",
+	"ipdb",
+	"ipython",
   "ipdb",
+  "ipython",
+  "pytest",
+]
+
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests}"
+test-cov = "coverage run -m pytest {args:tests}"
+cov-report = [
+  "- coverage combine",
+  "coverage report",
+]
+cov = [
+  "test-cov",
+  "cov-report",
 ]
 
 [tool.hatch.envs.types]
@@ -77,16 +89,16 @@ check = "mypy --install-types --non-interactive {args:src/kepler_model_server te
 
 
 [tool.coverage.run]
-source_pkgs = ["server", "tests"]
+source_pkgs = ["kepler_model", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/server/__about__.py",
+  "src/kepler_model/__about__.py",
 ]
 
 [tool.coverage.paths]
-server = ["src/server", "*/kepler-model-server/src"]
-tests = ["tests", "*/kepler-model-server/tests"]
+validator = ["src/kepler_model", "*/kepler_model/src/kepler_model"]
+tests = ["tests", "*/kepler_model/tests"]
 
 [tool.coverage.report]
 exclude_lines = [

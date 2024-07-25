@@ -35,7 +35,9 @@ exec-test:
 
 test-pipeline:
 	mkdir -p ${MODEL_PATH}
-	$(CTR_CMD) run --platform linux/amd64 -v ${MODEL_PATH}:/mnt/models -i $(TEST_IMAGE) /bin/bash -c "python3.10 -u ./tests/pipeline_test.py"
+	$(CTR_CMD) run --platform linux/amd64 \
+		-v ${MODEL_PATH}:/mnt/models -i \
+		$(TEST_IMAGE) -v -s ./tests/pipeline_test.py
 
 # test collector --> estimator
 run-estimator:
