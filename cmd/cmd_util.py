@@ -61,7 +61,7 @@ def summary_validation(validate_df):
         "bpf": "kepler_container_bpf_cpu_time_ms_total",
     }
     metric_to_validate_power = {
-        "intel_rapl": "kepler_node_package_joules_total",
+        "rapl-sysfs": "kepler_node_package_joules_total",
         "acpi": "kepler_node_platform_joules_total"
     }
     for metric, query in metric_to_validate_pod.items():
@@ -101,6 +101,7 @@ def get_validate_df(data_path, benchmark_filename, query_response):
     items = []
     query_results = prom_responses_to_results(query_response)
     container_queries = [query for query in query_results.keys() if "container" in query]
+    print("Container Queries: ", container_queries)
     status_data = load_json(data_path, benchmark_filename)
     if status_data is None or status_data.get("status", None) == None:
         # select all with keyword
@@ -166,6 +167,7 @@ def get_validate_df(data_path, benchmark_filename, query_response):
                     item["total"] = filtered_df[query].max()
                     items += [item]
     energy_queries = [query for query in query_results.keys() if "_joules" in query]
+    print("Energy Queries: ", container_queries)
     for energy_source, energy_components in PowerSourceMap.items():
         for component in energy_components:
             query = energy_component_to_query(component)
@@ -217,6 +219,8 @@ def get_validate_df(data_path, benchmark_filename, query_response):
     validate_df = pd.DataFrame(items)
     if not validate_df.empty:
         print(validate_df.groupby(["scenarioID", "query"]).sum()[["count", ">0"]])
+    else:
+        print("Validate dataframe is empty.")
     return validate_df
 
 def check_ot_fg(args, valid_fg):

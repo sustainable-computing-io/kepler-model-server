@@ -17,7 +17,7 @@ Previous step: [Prepare cluster](./README.md#1-prepare-cluster)
 1. Install Tekton
 
    ```bash
-   kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+   kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/0.54.1/release.yaml
    ```
 
    > official guideline: <https://tekton.dev/docs/installation/pipelines/>

@@ -65,7 +65,9 @@ wait_for_server() {
 
 wait_for_db() {
     kubectl get po model-db -n kepler
-    kubectl wait -n kepler --for=jsonpath='{.status.phase}'=Running pod/model-db --timeout 5m
+    kubectl wait -n kepler --for=jsonpath='{.status.phase}'=Running pod/model-db --timeout 5m || true
+    kubectl describe po model-db -n kepler
+    kubectl wait -n kepler --for=jsonpath='{.status.phase}'=Running pod/model-db --timeout 1m
     wait_for_keyword db "Http File Serve Serving" "model-db is not serving"
     get_db_log
 }

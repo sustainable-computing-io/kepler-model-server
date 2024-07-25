@@ -24,7 +24,7 @@ def get_model_request_json(metrics, output_type, node_type, weight, trainer_name
 
 TMP_FILE = 'download.zip'
 
-def make_request(metrics, output_type, node_type=-1, weight=False, trainer_name="", energy_source='intel_rapl'):
+def make_request(metrics, output_type, node_type=-1, weight=False, trainer_name="", energy_source='rapl-sysfs'):
     model_request = get_model_request_json(metrics, output_type, node_type, weight, trainer_name, energy_source)
     response = requests.post('http://localhost:{}/model'.format(MODEL_SERVER_PORT), json=model_request)
     assert response.status_code == 200, response.text

@@ -92,11 +92,14 @@ class Profiler():
             #
             # profile = load_profile(source) 
              #######################
+            found = False
             profile = dict()
             if node_types is None:
                 node_types = [replace_node_type]
             for node_type in node_types:
-                power_data= self.extractor.get_power_data(query_results, energy_components, source)
+                power_data = self.extractor.get_power_data(query_results, energy_components, source)
+                if power_data is None:
+                    break
                 if node_info_data is not None:
                     power_data = power_data.join(node_info_data)
                 else:
@@ -126,9 +129,11 @@ class Profiler():
                         if max_watt > profile[component][node_type_key][max_watt_key]:
                             profile[component][node_type_key][max_watt_key] = max_watt
                     # print("update:", component, node_type_key, min_watt_key, profile[component][node_type_key][min_watt_key])
-            if save:
-                save_profile(profile_path, source, profile)
-            result[source] = profile 
+                    found = True
+            if found:
+                if save:
+                    save_profile(profile_path, source, profile)
+                result[source] = profile
         return result
 
 class Profile:

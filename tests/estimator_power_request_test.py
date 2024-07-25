@@ -12,6 +12,7 @@ from config import SERVE_SOCKET
 from extractor_test import test_energy_source
 
 trainer_names = ['SGDRegressorTrainer']
+test_energy_sources = ["acpi", "rapl-sysfs"]
 
 def generate_request(train_name, n=1, metrics=WORKLOAD_FEATURES, system_features=SYSTEM_FEATURES, output_type=ModelOutputType.DynPower.name, energy_source=test_energy_source):
     request_json = dict() 
@@ -57,5 +58,5 @@ class Client:
 
 if __name__ == '__main__':
     client = Client(SERVE_SOCKET)
-    for energy_source in PowerSourceMap.keys():
+    for energy_source in test_energy_sources:
         process(energy_source)

@@ -154,7 +154,7 @@ jobs:
             - name: MACHINE_ID
               value: test
             - name: ENERGY_SOURCE
-              value: intel_rapl
+              value: trained_power_model
             - name: FEATURE_GROUP
               value: BPFOnly
             - name: TRAINERS
@@ -190,6 +190,8 @@ jobs:
               value: ${{ inputs.trainers }}
             - name: DYN_TRAINERS
               value: ${{ inputs.trainers }}
+            - name: ENERGY_SOURCE
+              value: trained_power_model
             pipelineRef:
               name: complete-retrain-pipeline
           EOF

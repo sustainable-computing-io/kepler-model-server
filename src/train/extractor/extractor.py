@@ -227,6 +227,8 @@ class DefaultExtractor(Extractor):
             aggr_query_data = query_results[query].copy()
             # filter source
             aggr_query_data = aggr_query_data[aggr_query_data[SOURCE_COL] == source]
+            if len(aggr_query_data) == 0:
+                return None
             if unit_col is not None:
                 if usage_ratio_query not in query_results:
                     # sum over mode (idle, dynamic) and unit col
@@ -269,6 +271,8 @@ class DefaultExtractor(Extractor):
                 df /= time_diff_values
                 df = df.mask(df.lt(0)).ffill().fillna(0).convert_dtypes()
                 power_data_list += [df]
+        if len(power_data_list) == 0:
+            return None
         power_data = pd.concat(power_data_list, axis=1).dropna()
         return power_data
 

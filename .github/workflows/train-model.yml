@@ -45,7 +45,7 @@ on:
         description: 'Target energy source'
         required: false
         type: string
-        default: intel_rapl
+        default: rapl-sysfs
       feature_group:
         description: 'Target feature group'
         required: false

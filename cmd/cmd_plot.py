@@ -206,7 +206,7 @@ def _plot_models(models, cpu_ms_max, energy_source, output_folder, name, max_plo
     main_feature_col = BPF_FEATURES[0]
     predicted_col = {
         "acpi": "default_platform_power",
-        "intel_rapl": "default_package_power"
+        "rapl-sysfs": "default_package_power"
     }
 
     num_bins = len(cpu_ms_max)//cpu_time_bin_num + 1
