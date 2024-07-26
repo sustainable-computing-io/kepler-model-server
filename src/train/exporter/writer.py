@@ -225,9 +225,8 @@ def generate_pipeline_readme(pipeline_name, local_export_path, node_type_index_j
         for energy_source in PowerSourceMap.keys():
             data_filename = _power_curve_filename(energy_source, ot.name)
             png_filename = data_filename + ".png"
-            if os.path.exists(os.path.join(local_export_path, png_filename)):
-                markdown_content += "## {} ({})\n".format(energy_source, ot.name)
-                markdown_content += "![]({})\n".format(png_filename)
+            markdown_content += "## {} ({})\n".format(energy_source, ot.name)
+            markdown_content += "![]({})\n".format(png_filename)
 
     write_markdown(markdown_filepath, markdown_content)
     return markdown_filepath
