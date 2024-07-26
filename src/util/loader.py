@@ -9,7 +9,8 @@ from urllib.request import urlopen
 import requests
 import codecs
 
-version = 0.7
+major_version = "0.7"
+version = "0.7.11"
 
 FILTER_ITEM_DELIMIT = ';'
 VALUE_DELIMIT = ':'
@@ -24,10 +25,10 @@ PREPROCESS_FOLDERNAME = "preprocessed_data"
 ## default_train_output_pipeline: a default pipeline name which is output from the training pipeline
 default_train_output_pipeline = "std_v{}".format(version)
 default_pipelines = {
-    "rapl-sysfs": "ec2-0.7.11",
+    "rapl-sysfs": "ec2-{}".format(version),
     "acpi": "specpower"
 }
-base_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v{}".format(version)
+base_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v{}".format(major_version)
 def get_pipeline_url(model_topurl, pipeline_name):
     file_ext = ".zip"
     return os.path.join(model_topurl, pipeline_name + file_ext)

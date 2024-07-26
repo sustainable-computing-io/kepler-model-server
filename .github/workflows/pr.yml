@@ -196,7 +196,7 @@ jobs:
       docker_secret: ${{ needs.check-secret.outputs.docker-secret }}
       image_repo: ${{ vars.IMAGE_REPO || 'docker.io/library' }}
       image_tag: ${{ needs.check-branch.outputs.tag }}
-      pipeline_name: std_v0.7
+      pipeline_name: std_v0.7.11
 
   integration-test-internal-only:
     needs: [check-secret, check-branch, check-change, base-image]

@@ -1,6 +1,6 @@
 data:
   MODEL_CONFIG: |
     NODE_COMPONENTS_ESTIMATOR=true
-    NODE_COMPONENTS_INIT_URL=http://model-db.kepler.svc.cluster.local:8110/std_v0.7/intel_rapl/AbsPower/BPFOnly/GradientBoostingRegressorTrainer_0.zip
+    NODE_COMPONENTS_INIT_URL=http://model-db.kepler.svc.cluster.local:8110/std_v0.7.11/rapl-sysfs/AbsPower/BPFOnly/GradientBoostingRegressorTrainer_0.zip
     NODE_TOTAL_ESTIMATOR=true
-    NODE_TOTAL_INIT_URL=http://model-db.kepler.svc.cluster.local:8110/std_v0.7/acpi/AbsPower/BPFOnly/GradientBoostingRegressorTrainer_0.zip
+    NODE_TOTAL_INIT_URL=http://model-db.kepler.svc.cluster.local:8110/std_v0.7.11/acpi/AbsPower/BPFOnly/GradientBoostingRegressorTrainer_0.zip

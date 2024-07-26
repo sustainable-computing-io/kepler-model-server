@@ -21,7 +21,7 @@ file_server_port = 8110
 os.environ['MODEL_SERVER_URL'] = 'http://localhost:8100'
 model_topurl = 'http://localhost:{}'.format(file_server_port)
 os.environ['MODEL_TOPURL'] = model_topurl
-os.environ['INITIAL_PIPELINE_URL'] = os.path.join(model_topurl, "std_v0.7")
+os.environ['INITIAL_PIPELINE_URL'] = os.path.join(model_topurl, "std_v0.7.11")
 
 server_path = os.path.join(os.path.dirname(__file__), '../src')
 util_path = os.path.join(os.path.dirname(__file__), '../src/util')
