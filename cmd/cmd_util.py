@@ -103,7 +103,8 @@ def get_validate_df(data_path, benchmark_filename, query_response):
     container_queries = [query for query in query_results.keys() if "container" in query]
     print("Container Queries: ", container_queries)
     status_data = load_json(data_path, benchmark_filename)
-    if status_data is None or status_data.get("status", None) == None:
+    filter_by_benchmark = False
+    if status_data is None or "status" not in status_data:
         # select all with keyword
         for query in container_queries:
             df = query_results[query]
@@ -120,7 +121,11 @@ def get_validate_df(data_path, benchmark_filename, query_response):
                 continue
             filtered_df = df.copy()
             if "pod_name" in df.columns:
-                filtered_df = filtered_df[filtered_df["pod_name"].str.contains(benchmark_filename)]
+                # check if we can use inputted benchmark to filtered stressing pods
+                podname_filtered = filtered_df[filtered_df["pod_name"].str.contains(benchmark_filename)]
+                if len(podname_filtered) > 0:
+                    filter_by_benchmark = True
+                    filtered_df = podname_filtered
             # set validate item
             item = dict()
             item["pod"] = benchmark_filename
@@ -131,6 +136,7 @@ def get_validate_df(data_path, benchmark_filename, query_response):
             item["total"] = filtered_df[query].max()
             items += [item]
     else:
+        filtered_by_benchmark = True
         cpe_results = status_data["status"]["results"]
         for result in cpe_results:
             scenarioID = result["scenarioID"]
@@ -217,6 +223,11 @@ def get_validate_df(data_path, benchmark_filename, query_response):
         item["total"] = df[query].max()
         items += [item]
     validate_df = pd.DataFrame(items)
+
+    if filter_by_benchmark:
+        print("===========================================\n Use benchmark name to filter pod results: \n\n", benchmark_filename)
+    else:
+        print("============================================\n Present results from all pods: \n\n")
     if not validate_df.empty:
         print(validate_df.groupby(["scenarioID", "query"]).sum()[["count", ">0"]])
     else:
