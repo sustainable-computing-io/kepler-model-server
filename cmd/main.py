@@ -394,6 +394,7 @@ def train(args):
     dyn_trainer_names = args.dyn_trainers.split(",")
     
     node_type=None
+    pipeline=None
     if args.id:
         machine_id = args.id
         pipeline = get_pipeline(data_path, pipeline_name, args.extractor, args.profile, args.target_hints, args.bg_hints, args.abs_pipeline_name, args.isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups)
@@ -749,9 +750,15 @@ def export(args):
         inputs = args.input.split(",")
 
     pipeline_name = args.pipeline_name
-    pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
+    if 'MODEL_PATH' not in os.environ:
+        os.environ['MODEL_PATH'] = data_path
+    pipeline_path = get_pipeline_path(os.environ['MODEL_PATH'], pipeline_name=pipeline_name)
 
     local_export_path = exporter.export(data_path, pipeline_path, output_path, publisher=args.publisher, collect_date=collect_date, inputs=inputs)
+
+    if local_export_path is None:
+        print("failed to export")
+        exit()
 
     args.input = local_export_path
     args.output = local_export_path

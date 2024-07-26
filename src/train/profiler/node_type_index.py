@@ -2,7 +2,7 @@
 #p
 # Usage:
 #   index_collection = NodeTypeIndexCollection(pipeline_path)
-#   node_type = index_collection.index_train_machine(processor, cores, chips, cache_kb, memory_gb, cpu_freq_mhz, power_mgt, minmax_watt)
+#   node_type = index_collection.index_train_machine(machine_id, new_spec)
 #   index_collection.save()
 
 import sys
@@ -68,8 +68,8 @@ def generate_spec(data_path, machine_id):
         "processor": processor,
         "cores": cores,
         "chips": chips,
-        "memory_gb": memory_gb,
-        "cpu_freq_mhz": cpu_freq_mhz,
+        "memory": memory_gb,
+        "frequency": cpu_freq_mhz,
         "threads_per_core": threads_per_core
     }
     spec = NodeTypeSpec(**spec_values)
@@ -102,8 +102,8 @@ class NodeTypeSpec():
         self.attrs[NodeAttribute.PROCESSOR] = kwargs.get('processor', no_data)
         self.attrs[NodeAttribute.CORES] = kwargs.get('cores', no_data)
         self.attrs[NodeAttribute.CHIPS] = kwargs.get('chips', no_data)
-        self.attrs[NodeAttribute.MEMORY] = kwargs.get('memory_gb', no_data)
-        self.attrs[NodeAttribute.FREQ] = kwargs.get('cpu_freq_mhz', no_data)
+        self.attrs[NodeAttribute.MEMORY] = kwargs.get('memory', no_data)
+        self.attrs[NodeAttribute.FREQ] = kwargs.get('frequency', no_data)
         self.members = []
         
     def load(self, json_obj):
