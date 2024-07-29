@@ -4,28 +4,29 @@ import argparse
 import datetime
 import pandas as pd
 
-data_path = "/data"
-default_output_filename = "output"
 
-data_path = os.getenv("DATAPATH", data_path)
-
-from kepler_model.util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_QUERY_START_TIME, PROM_QUERY_END_TIME, PROM_HEADERS, PROM_SSL_DISABLE, PROM_THIRDPARTY_METRICS
-from kepler_model.util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics, node_info_column
-from kepler_model.util.extract_types import get_expected_power_columns
-from kepler_model.util.train_types import ModelOutputType, FeatureGroups, is_single_source_feature_group, all_feature_groups, default_trainers
-from kepler_model.util.loader import default_train_output_pipeline, load_json, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_preprocess_folder, get_general_filename, load_machine_spec
-from kepler_model.util.saver import save_json, save_csv, save_train_args, _pipeline_model_metadata_filename, _power_curve_filename
-from kepler_model.util.config import ERROR_KEY, model_toppath
-from kepler_model.util import get_valid_feature_group_from_queries, PowerSourceMap
-from kepler_model.train.prom.prom_query import _range_queries
-from kepler_model.train.exporter import exporter
 from kepler_model.train import load_class
+from kepler_model.train.exporter import exporter
 from kepler_model.train.profiler.node_type_index import NodeTypeIndexCollection, NodeTypeSpec, generate_spec
+from kepler_model.train.prom.prom_query import _range_queries
+from kepler_model.util.config import ERROR_KEY, model_toppath
+from kepler_model.util.extract_types import get_expected_power_columns
+from kepler_model.util.loader import default_train_output_pipeline, load_json, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_preprocess_folder, get_general_filename, load_machine_spec
+from kepler_model.util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_QUERY_START_TIME, PROM_QUERY_END_TIME, PROM_HEADERS, PROM_SSL_DISABLE, PROM_THIRDPARTY_METRICS
+from kepler_model.util.prom_types import get_valid_feature_group_from_queries
+from kepler_model.util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics, node_info_column
+from kepler_model.util.saver import save_json, save_csv, save_train_args, _pipeline_model_metadata_filename, _power_curve_filename
+from kepler_model.util.train_types import ModelOutputType, FeatureGroups, is_single_source_feature_group, all_feature_groups, default_trainers, PowerSourceMap
 
 from .cmd_plot import ts_plot, feature_power_plot, summary_plot, metadata_plot, power_curve_plot
 from .cmd_util import extract_time, save_query_results, get_validate_df, summary_validation, get_extractor, check_ot_fg, get_pipeline, assert_train, get_isolator, UTC_OFFSET_TIMEDELTA
 
 import threading
+
+data_path = "/data"
+default_output_filename = "output"
+
+data_path = os.getenv("DATAPATH", data_path)
 
 """
 query
@@ -402,8 +403,8 @@ def train(args):
     abs_trainer_names = args.abs_trainers.split(",")
     dyn_trainer_names = args.dyn_trainers.split(",")
 
-    node_type=None
-    pipeline=None
+    node_type = None
+    pipeline = None
     if args.id:
         machine_id = args.id
         pipeline = get_pipeline(data_path, pipeline_name, args.extractor, args.profile, args.target_hints, args.bg_hints, args.abs_pipeline_name, args.isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups)
@@ -765,9 +766,9 @@ def export(args):
         inputs = args.input.split(",")
 
     pipeline_name = args.pipeline_name
-    if 'MODEL_PATH' not in os.environ:
-        os.environ['MODEL_PATH'] = data_path
-    pipeline_path = get_pipeline_path(os.environ['MODEL_PATH'], pipeline_name=pipeline_name)
+    if "MODEL_PATH" not in os.environ:
+        os.environ["MODEL_PATH"] = data_path
+    pipeline_path = get_pipeline_path(os.environ["MODEL_PATH"], pipeline_name=pipeline_name)
 
     local_export_path = exporter.export(data_path, pipeline_path, output_path, publisher=args.publisher, collect_date=collect_date, inputs=inputs)
 
