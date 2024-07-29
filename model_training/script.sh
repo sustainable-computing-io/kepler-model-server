@@ -1,280 +1,325 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -eu -o pipefail
+
 # NOTE: assumes that the project root is one level up
-PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)
+PROJECT_ROOT="$(git rev-parse --show-toplevel)"
 declare -r PROJECT_ROOT
 
-# NOTE: this allows common settings to be stored as `.env` file
-# shellcheck disable=SC1091
-[[ -f "$PROJECT_ROOT/.env" ]] && source "$PROJECT_ROOT/.env"
+declare -r TMP_DIR="$PROJECT_ROOT/tmp"
+declare -r LOCAL_DEV_CLUSTER_DIR=${LOCAL_DEV_CLUSTER_DIR:-"$TMP_DIR/local-dev-cluster"}
+declare -r DEPOYMENT_DIR=${DEPOYMENT_DIR:-"$PROJECT_ROOT/model_training/deployment"}
+declare -r CPE_BENCHMARK_DIR=${CPE_BENCHMARK_DIR:-"$PROJECT_ROOT/model_training/cpe_benchmark"}
+declare -r LOCAL_DEV_CLUSTER_VERSION=${LOCAL_DEV_CLUSTER_VERSION:-"main"}
 
-# NOTE: these settings can be overridden in the .env file
-declare -r LOCAL_DEV_CLUSTER_DIR="${LOCAL_DEV_CLUSTER_DIR:-"$PROJECT_ROOT/local-dev-cluster"}"
-declare -r LOCAL_DEV_CLUSTER_VERSION="${LOCAL_DEV_CLUSTER_VERSION:-v0.0.5}"
-# Supported CLUSTER_PROVIDER are kind,microshift
-export CLUSTER_PROVIDER=${CLUSTER_PROVIDER:-kind}
-export KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-kind-for-training}
-export KIND_REGISTRY_NAME=${KIND_REGISTRY_NAME:-kind-registry-for-training}
-export PROM_SERVER=${PROM_SERVER:-http://localhost:9090}
-export ENERGY_SOURCE=${ENERGY_SOURCE:-rapl-sysfs,acpi}
-export VERSION=${VERSION-v0.7}
-export PIPELINE_PREFIX=${PIPELINE_PREFIX-"std_"}
-export DATAPATH=${DATAPATH-"$(pwd)/data"}
-export ENTRYPOINT_IMG=${ENTRYPOINT_IMG-"quay.io/sustainable_computing_io/kepler_model_server:v0.7"}
-export MODEL_PATH=$DATAPATH
-export KUBECONFIG="/tmp/kubeconfig"
-export PROMETHEUS_ENABLE=true
-export TEKTON_ENABLE=true
+declare KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-"kind-for-training"}
+declare KIND_REGISTRY_NAME=${KIND_REGISTRY_NAME:-"kind-registry-for-training"}
 
-mkdir -p $HOME/bin
-export PATH=$HOME/bin:$PATH
+declare PROM_SERVER=${PROM_SERVER:-"http://localhost:9090"}
+declare ENERGY_SOURCE=${ENERGY_SOURCE:-"intel_rapl,acpi"}
 
-mkdir -p data
-mkdir -p data/cpe-local-log
+declare VERSION=${VERSION:-"latest"}
+declare PIPELINE_PREFIX=${PIPELINE_PREFIX:-"std_"}
 
-if ! [ -x $HOME/bin/kubectl ]
-then
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" --insecure
-    cp kubectl $HOME/bin/kubectl
-    chmod +x $HOME/bin/kubectl
-fi
+declare DATAPATH=${DATAPATH:-"$(pwd)/data"}
+declare ENTRYPOINT_IMG=${ENTRYPOINT_IMG:-"quay.io/sustainable_computing_io/kepler_model_server:$VERSION"}
+declare PROMETHEUS_ENABLE=${PROMETHEUS_ENABLE:-"true"}
+declare TEKTON_ENABLE=${TEKTON_ENABLE:-"true"}
+
+declare NATIVE=${NATIVE:-"true"}
 
 clone_local_dev_cluster() {
-	if [ -d "$LOCAL_DEV_CLUSTER_DIR" ]; then
-		echo "using local local-dev-cluster"
-		return 0
-	fi
+  [[ -d "$LOCAL_DEV_CLUSTER_DIR" ]] && {
+    echo "using local local-dev-cluster"
+    return 0
+  }
 
-	echo "downloading local-dev-cluster"
-	git clone -b "$LOCAL_DEV_CLUSTER_VERSION" \
-		https://github.com/sustainable-computing-io/local-dev-cluster.git \
-		--depth=1 \
-		"$LOCAL_DEV_CLUSTER_DIR"
+  echo "downloading local-dev-cluster"
+  git clone -b "$LOCAL_DEV_CLUSTER_VERSION" \
+    https://github.com/sustainable-computing-io/local-dev-cluster.git \
+    --depth=1 \
+    "$LOCAL_DEV_CLUSTER_DIR"
+  return $?
 }
 
 rollout_ns_status() {
-	local resources
-	resources=$(kubectl get deployments,statefulsets,daemonsets -n=$1 -o name)
-	for res in $resources; do
-		kubectl rollout status $res --namespace $1 --timeout=10m || die "failed to check status of ${res} inside namespace ${1}"
-	done
+  local ns="$1"
+  shift 1
+  local resources=""
+  resources=$(kubectl get deployments,statefulsets,daemonsets -n="$ns" -o name)
+  for res in $resources; do
+    kubectl rollout status "$res" --namespace "$ns" --timeout=10m || {
+      echo "failed to check status of $res inside namespace $ns"
+      return 1
+    }
+  done
+  return 0
 }
 
-function cluster_up() {
-	cd "$PROJECT_ROOT"
-    clone_local_dev_cluster
-    "$LOCAL_DEV_CLUSTER_DIR/main.sh" up 
-    cd "$PROJECT_ROOT/model_training"
+cluster_up() {
+  clone_local_dev_cluster
+  cd "$LOCAL_DEV_CLUSTER_DIR"
+  "$LOCAL_DEV_CLUSTER_DIR/main.sh" up
+  cd "$PROJECT_ROOT/model_training"
 }
 
-function cluster_down() {
-	cd "$PROJECT_ROOT"
-    clone_local_dev_cluster
-    "$LOCAL_DEV_CLUSTER_DIR/main.sh" down 
+cluster_down() {
+  cd "$LOCAL_DEV_CLUSTER_DIR"
+  "$LOCAL_DEV_CLUSTER_DIR/main.sh" down
 }
 
-function deploy_kepler() {
-    kubectl apply -f ./deployment/kepler.yaml
-    rollout_ns_status kepler
+deploy_kepler() {
+  kubectl apply -f "$DEPOYMENT_DIR"/kepler.yaml
+  rollout_ns_status kepler
 }
 
-function clean_deployment() {
-    kubectl delete -f ./deployment
+clean_deployment() {
+  kubectl delete -f "$DEPOYMENT_DIR"
 }
 
-function clean_cpe_cr() {
-    kubectl delete -f ./benchmark || true 
-    kubectl delete -f ../../utils/yaml/cpe-benchmark-operator.yaml || true
+clean_cpe_cr() {
+  kubectl delete -f "$CPE_BENCHMARK_DIR" || true
+  kubectl delete -f "$DEPOYMENT_DIR"/cpe-operator.yaml || true
 }
 
-function deploy_cpe_operator() {
-    docker exec --privileged "${KIND_CLUSTER_NAME}"-control-plane mkdir -p /cpe-local-log
-    docker exec --privileged "${KIND_CLUSTER_NAME}"-control-plane chmod 777 /cpe-local-log
-    kubectl create -f ./deployment/cpe-operator.yaml
-    timeout 60s bash -c 'until kubectl get crd benchmarkoperators.cpe.cogadvisor.io 2>/dev/null; do sleep 1; done'
-    rollout_ns_status cpe-operator-system
+deploy_cpe_operator() {
+  docker exec --privileged "$KIND_CLUSTER_NAME"-control-plane mkdir -p /cpe-local-log
+  docker exec --privileged "$KIND_CLUSTER_NAME"-control-plane chmod 777 /cpe-local-log
+  kubectl create -f "$DEPOYMENT_DIR"/cpe-operator.yaml
+  timeout 60s bash -c 'until kubectl get crd benchmarkoperators.cpe.cogadvisor.io 2>/dev/null; do sleep 1; done'
+  rollout_ns_status cpe-operator-system
 }
 
-function reload_prometheus() {
-    sleep 5
-    curl -X POST localhost:9090/-/reload
+reload_prometheus() {
+  sleep 5
+  curl -X POST localhost:9090/-/reload
 }
 
-function expect_num() {
-    BENCHMARK=$1
-    BENCHMARK_NS=$2
-    kubectl get benchmark ${BENCHMARK} -n ${BENCHMARK_NS} -oyaml > tmp.yaml
-    BENCHMARK_FILE=tmp.yaml
-    num=$(cat ${BENCHMARK_FILE}|yq ".spec.repetition")
-    if [ -z $num ]; then
-        num=1
-    fi
+expect_num() {
+  local benchmark="$1"
+  local benchmark_ns="$2"
+  shift 2
+  kubectl get benchmark "$benchmark" -n "$benchmark_ns" -oyaml >tmp.yaml
+  local benchmark_file="tmp.yaml"
+  num=$(yq ".spec.repetition" <"$benchmark_file")
+  [[ -z "$num" ]] && num=1
 
-    for v in $(cat ${BENCHMARK_FILE}|yq eval ".spec.iterationSpec.iterations[].values | length")
-    do
-        ((num *= v))
-    done
-    rm tmp.yaml
-    echo $num
+  for v in $(yq eval ".spec.iterationSpec.iterations[].values | length" <"$benchmark_file"); do
+    ((num *= v))
+  done
+  rm "tmp.yaml"
+  echo "$num"
 }
 
-function wait_for_benchmark() {
-    BENCHMARK=$1
-    BENCHMARK_NS=$2
-    SLEEP_TIME=$3
-    EXPECT_NUM=$(expect_num ${BENCHMARK} ${BENCHMARK_NS})
-    jobCompleted=$(kubectl get benchmark ${BENCHMARK} -n ${BENCHMARK_NS} -ojson|jq -r .status.jobCompleted)
-    echo "Wait for ${EXPECT_NUM} ${BENCHMARK} jobs to be completed, sleep ${SLEEP_TIME}s"
-    while [ "$jobCompleted" != "${EXPECT_NUM}/${EXPECT_NUM}" ] ; 
-    do  
-        sleep ${SLEEP_TIME}
-        echo "Wait for ${BENCHMARK} to be completed... $jobCompleted, sleep ${SLEEP_TIME}s"
-        jobCompleted=$(kubectl get benchmark ${BENCHMARK} -n ${BENCHMARK_NS} -ojson|jq -r .status.jobCompleted)
-    done
-    echo "Benchmark job completed"
+wait_for_benchmark() {
+  local benchmark="$1"
+  local benchmark_ns="$2"
+  local sleep_time="$3"
+  local expect_num=""
+  local jobCompleted=""
+
+  expect_num=$(expect_num "$benchmark" "$benchmark_ns")
+  jobCompleted=$(kubectl get benchmark "$benchmark" -n "$benchmark_ns" -ojson | jq -r .status.jobCompleted)
+  echo "Wait for $expect_num  $benchmark jobs to be completed, sleep $sleep_time"
+
+  while [ "$jobCompleted" != "$expect_num/$expect_num" ]; do
+    sleep "$sleep_time"
+    echo "Wait for $benchmark to be completed... $jobCompleted, sleep $sleep_time"
+    jobCompleted=$(kubectl get benchmark "$benchmark" -n "$benchmark_ns" -ojson | jq -r .status.jobCompleted)
+  done
+  echo "Benchmark job completed"
 }
 
-function save_benchmark() {
-    BENCHMARK=$1
-    BENCHMARK_NS=$2
-    kubectl get benchmark $BENCHMARK -n ${BENCHMARK_NS} -ojson > $DATAPATH/${BENCHMARK}.json
+save_benchmark() {
+  local benchmark="$1"
+  local benchmark_ns="$2"
+  shift 2
+  kubectl get benchmark "$benchmark" -n "$benchmark_ns" -ojson >"$DATAPATH/$benchmark.json"
 }
 
-function collect_idle() {
-    ARGS="-o idle --interval 1000"
-    if [ -z "$NATIVE" ]; then
-        docker run --rm -v $DATAPATH:/data --network=host ${ENTRYPOINT_IMG} query ${ARGS}
-    else
-        python ../cmd/main.py query ${ARGS}|| true
-    fi
+collect_idle() {
+  local args=(
+    "-o" "idle"
+    "--interval" "1000"
+  )
+  if ! "$NATIVE"; then
+    docker run --rm -v "$DATAPATH":/data --network=host "$ENTRYPOINT_IMG" query "${args[@]}"
+  else
+    python ../cmd/main.py query "${args[@]}" || true
+  fi
 }
 
-function collect_data() {
-    BENCHMARK=$1
-    BENCHMARK_NS=$2
-    SLEEP_TIME=$3
-    if [ "$BENCHMARK" != "customBenchmark" ]; then
-        kubectl apply -f cpe_benchmark/${BENCHMARK}.yaml
-        wait_for_benchmark ${BENCHMARK} ${BENCHMARK_NS} ${SLEEP_TIME}
-        save_benchmark ${BENCHMARK} ${BENCHMARK_NS}
-        kubectl delete -f cpe_benchmark/${BENCHMARK}.yaml
-    fi
-    ARGS="-i ${BENCHMARK} -o ${BENCHMARK}_kepler_query -s ${PROM_SERVER}"
-    if [ -z "$NATIVE" ]; then
-        docker run --rm -v $DATAPATH:/data --network=host ${ENTRYPOINT_IMG} query ${ARGS}|| true
-    else
-        python ../cmd/main.py query ${ARGS}|| true
-    fi
+collect_data() {
+  local benchmark="$1"
+  local benchmark_ns="$2"
+  local sleep_time="$3"
+  shift 3
+  [[ "$benchmark" != "customBenchmark" ]] && {
+    kubectl apply -f "$CPE_BENCHMARK_DIR"/"$benchmark".yaml
+    wait_for_benchmark "$benchmark" "$benchmark_ns" "$sleep_time"
+    save_benchmark "$benchmark" "$benchmark_ns"
+    kubectl delete -f "$CPE_BENCHMARK_DIR"/"$benchmark".yaml
+  }
+  local args=(
+    "-i" "$benchmark"
+    "-o" "${benchmark}_kepler_query"
+    "-s" "$PROM_SERVER"
+  )
+  if ! "$NATIVE"; then
+    docker run --rm -v "$DATAPATH":/data --network=host "$ENTRYPOINT_IMG" query "${args[@]}" || true
+  else
+    python ../cmd/main.py query "${args[@]}" || true
+  fi
 }
 
-function deploy_prom_dependency(){
-    kubectl apply -f deployment/prom-kepler-rbac.yaml
-    kubectl apply -f deployment/prom-np.yaml
+deploy_prom_dependency() {
+  kubectl apply -f "$DEPOYMENT_DIR"/prom-kepler-rbac.yaml
+  kubectl apply -f "$DEPOYMENT_DIR"/prom-np.yaml
 }
 
-function train_model(){
-    QUERY_RESPONSE=$1
-    PIPELINE_NAME=${PIPELINE_PREFIX}$2
-    echo "input=$QUERY_RESPONSE"
-    echo "pipeline=$PIPELINE_NAME"
-    echo $DATAPATH
-    ARGS="-i ${QUERY_RESPONSE} -p ${PIPELINE_NAME} --energy-source ${ENERGY_SOURCE}"
-    if [ -z "$NATIVE" ]; then
-        echo "Train with docker"
-        docker run --rm -v $DATAPATH:/data ${ENTRYPOINT_IMG} train ${ARGS}|| true
-    else
-        echo "Train natively"
-        python ../cmd/main.py train ${ARGS}|| true
-    fi
+train_model() {
+  local query_response="$1"
+  local pipeline_name="${PIPELINE_PREFIX}$2"
+  echo "input=$query_response"
+  echo "pipeline=$pipeline_name"
+  local args=(
+    "-i" "$query_response"
+    "-p" "$pipeline_name"
+    "--energy-source" "$ENERGY_SOURCE"
+  )
+  if ! "$NATIVE"; then
+    echo "Train with docker"
+    docker run --rm -v "$DATAPATH":/data "$ENTRYPOINT_IMG" train "${args[@]}" || true
+  else
+    echo "Train natively"
+    python ../cmd/main.py train "${args[@]}" || true
+  fi
 }
 
-function prepare_cluster() {
-    cluster_up
-    deploy_kepler
-    deploy_prom_dependency
-    watch_service 9090 "monitoring" prometheus-k8s &
-    reload_prometheus
+prepare_cluster() {
+  cluster_up
+  deploy_kepler
+  deploy_prom_dependency
+  watch_service 9090 "monitoring" prometheus-k8s &
+  reload_prometheus
 }
 
-function watch_service() {
-	local port="$1"
-	local ns="$2"
-	local svn="$3"
-	shift 3
-	kubectl port-forward --address localhost -n "$ns" service/"$svn" "$port":"$port"
+watch_service() {
+  local port="$1"
+  local ns="$2"
+  local svn="$3"
+  shift 3
+  kubectl port-forward --address localhost -n "$ns" service/"$svn" "$port":"$port"
 }
 
-function collect() {
-    collect_idle
-    collect_data stressng cpe-operator-system 60
+collect() {
+  collect_idle
+  collect_data stressng cpe-operator-system 60
 }
 
-function custom_collect() {
-    collect_data customBenchmark
+custom_collect() {
+  collect_data customBenchmark
 }
 
-function quick_collect() {
-    collect_data sample cpe-operator-system 10
+quick_collect() {
+  collect_data sample cpe-operator-system 10
 }
 
-function train() {
-    train_model stressng_kepler_query ${VERSION}_stressng
+train() {
+  train_model stressng_kepler_query "${VERSION}_stressng"
 }
 
-function quick_train() {
-    train_model sample_kepler_query ${VERSION}_sample
+quick_train() {
+  train_model sample_kepler_query "${VERSION}_sample"
 }
 
-function custom_train() {
-    train_model customBenchmark_kepler_query ${VERSION}_customBenchmark
+custom_train() {
+  train_model customBenchmark_kepler_query "${VERSION}_customBenchmark"
 }
 
-function validate() {
-    BENCHMARK=$1
-    ARGS="-i ${BENCHMARK}_kepler_query --benchmark ${BENCHMARK}"
-    if [ -z "$NATIVE" ]; then
-        docker run --rm -v $DATAPATH:/data ${ENTRYPOINT_IMG} validate ${ARGS}
-    else
-        python ../cmd/main.py validate ${ARGS}|| true
-    fi
+validate() {
+  local benchmark="$1"
+  local args=(
+    "-i" "${benchmark}_kepler_query"
+    "--benchmark" "$benchmark"
+  )
+  if ! "$NATIVE"; then
+    docker run --rm -v "$DATAPATH":/data "$ENTRYPOINT_IMG" validate "${args[@]}"
+  else
+    python ../cmd/main.py validate "${args[@]}" || true
+  fi
 }
 
-function _export() {
-    ID=$1
-    OUTPUT=$2
-    PUBLISHER=$3
-    MAIN_COLLECT_INPUT=$4
-    INCLUDE_RAW=$5
+_export() {
+  [[ $# -lt 4 ]] && {
+    echo "need arguements: [machine_id] [path_to_models] [publisher] [benchmark_name]"
+    return 1
+  }
+  local id="$1"
+  local output="$2"
+  local publisher="$3"
+  local main_collect_input="$4"
+  local include_raw="$5"
+  shift 5
 
-    if [ $# -lt 4 ]; then
-        echo "need arguements: [machine_id] [path_to_models] [publisher] [benchmark_name]"
-        exit 2
-    fi
+  local pipeline_name="${PIPELINE_PREFIX}${VERSION}_${main_collect_input}"
+  local validate_input="${main_collect_input}_kepler_query"
 
-    PIPELINE_NAME=${PIPELINE_PREFIX}${VERSION}_${MAIN_COLLECT_INPUT}
-    VALIDATE_INPUT="${MAIN_COLLECT_INPUT}_kepler_query"
-    ARGS="--id ${ID} -p ${PIPELINE_NAME}  -i ${VALIDATE_INPUT} --benchmark ${MAIN_COLLECT_INPUT} --version ${VERSION} --publisher ${PUBLISHER} ${INCLUDE_RAW}"
-    echo "${ARGS}"
-    if [ -z "$NATIVE" ]; then
-        docker run --rm -v $DATAPATH:/data -v ${OUTPUT}:/models ${ENTRYPOINT_IMG} export ${ARGS} -o /models 
-    else
-        python ../cmd/main.py export ${ARGS} -o ${OUTPUT}
-    fi
+  local args=(
+    "--id" "$id"
+    "-p" "$pipeline_name"
+    "-i" "$validate_input"
+    "--benchmark" "$main_collect_input"
+    "--version" "$VERSION"
+    "--publisher" "$publisher"
+    "$include_raw"
+  )
+  echo "${args[@]}"
+  if ! "$NATIVE"; then
+    docker run --rm -v "$DATAPATH":/data -v "$output":/models "$ENTRYPOINT_IMG" export "${args[@]}" -o /models
+  else
+    python ../cmd/main.py export "${args[@]}" -o "$output"
+  fi
+  return 0
 }
 
-function export_models() {
-    _export $1 $2 $3 $4
+export_models() {
+  local id="$1"
+  local path_to_models="$2"
+  local publisher="$3"
+  local benchmark_name="$4"
+  shift 4
+  _export "$id" "$path_to_models" "$publisher" "$benchmark_name" || return 1
+  return 0
 }
 
-function export_models_with_raw() {
-    _export $1 $2 $3 $4 "--include-raw true"
+export_models_with_raw() {
+  local id="$1"
+  local path_to_models="$2"
+  local publisher="$3"
+  local benchmark_name="$4"
+  shift 4
+  _export "$id" "$path_to_models" "$publisher" "$benchmark_name" "--include-raw true" || return 1
+  return 0
 }
 
-function cleanup() {
-    clean_cpe_cr
-    clean_deployment || true
-    cluster_down
+cleanup() {
+  clean_cpe_cr
+  clean_deployment || true
+  cluster_down
 }
 
-"$@"
+main() {
+  local op="$1"
+  shift 1
+  mkdir -p "$DATAPATH"
+  export MODEL_PATH=$DATAPATH
+  export DATAPATH
+  export PROMETHEUS_ENABLE
+  export TEKTON_ENABLE
+  export KIND_CLUSTER_NAME
+  $op "$@"
+
+}
+
+main "$@"
