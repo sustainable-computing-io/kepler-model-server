@@ -8,7 +8,7 @@
 # import external src
 import os
 
-from kepler_model.train import load_class
+from kepler_model.train.pipeline import load_class
 from kepler_model.train import DefaultExtractor, SmoothExtractor
 from kepler_model.util.extract_types import component_to_col
 from kepler_model.util.prom_types import node_info_column
@@ -18,6 +18,7 @@ from kepler_model.util import assure_path, get_valid_feature_group_from_queries
 from kepler_model.util import save_csv, load_csv
 
 from .prom_test import get_query_results
+
 
 data_path = os.path.join(os.path.dirname(__file__), "data")
 assure_path(data_path)

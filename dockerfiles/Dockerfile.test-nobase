@@ -16,6 +16,11 @@ RUN mkdir -p tests/data
 COPY tests/data/prom_output tests/data/prom_output
 COPY tests/*.py tests/
 
+
+# NOTE: pip install all dependencies in pyproject.toml as system packages 
+RUN pip install --no-cache-dir . && \
+		pip cache purge
+
 RUN python -m pip install hatch
 RUN hatch env create
 

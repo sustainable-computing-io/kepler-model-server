@@ -8,6 +8,7 @@ LATEST_TAG_IMAGE := $(IMAGE_REGISTRY)/$(IMAGE_NAME):latest
 TEST_IMAGE := $(IMAGE)-test
 
 CTR_CMD = docker
+PYTHON = python3.10
 
 DOCKERFILES_PATH := ./dockerfiles
 MODEL_PATH := ${PWD}/tests/models
@@ -42,10 +43,10 @@ test-pipeline:
 
 # test collector --> estimator
 run-estimator:
-	$(CTR_CMD) run -d --platform linux/amd64 -e "MODEL_TOPURL=http://localhost:8110" -v ${MODEL_PATH}:/mnt/models -p 8100:8100 --name estimator $(TEST_IMAGE) /bin/bash -c "python3.10 tests/http_server.py & sleep 5 && python3.10 src/estimate/estimator.py"
+	$(CTR_CMD) run -d --platform linux/amd64 -e "MODEL_TOPURL=http://localhost:8110" -v ${MODEL_PATH}:/mnt/models -p 8100:8100 --name estimator $(TEST_IMAGE) /bin/bash -c "$(PYTHON) tests/http_server.py & sleep 5 && $(PYTHON) src/estimate/estimator.py"
 
 run-collector-client:
-	$(CTR_CMD) exec estimator /bin/bash -c "while [ ! -S "/tmp/estimator.sock" ]; do sleep 1; done; python3.10 -u ./tests/estimator_power_request_test.py"
+	$(CTR_CMD) exec estimator /bin/bash -c "while [ ! -S "/tmp/estimator.sock" ]; do sleep 1; done; $(PYTHON) -u ./tests/estimator_power_request_test.py"
 
 clean-estimator:
 	$(CTR_CMD) stop estimator
@@ -55,25 +56,36 @@ test-estimator: run-estimator run-collector-client clean-estimator
 
 # test estimator --> model-server
 run-model-server:
-	$(CTR_CMD) run -d --platform linux/amd64 -e "MODEL_TOPURL=http://localhost:8110" -v ${MODEL_PATH}:/mnt/models -p 8100:8100 --name model-server $(TEST_IMAGE) /bin/bash -c "python3.10 tests/http_server.py & sleep 10 &&  python3.10 src/server/model_server.py"
-	while ! docker logs model-server | grep -q Serving; do   echo "waiting for model-server to serve";  sleep 5; done
+	$(CTR_CMD) run --rm -v -d --platform linux/amd64 \
+		-e "MODEL_TOPURL=http://localhost:8110" \
+		-v ${MODEL_PATH}:/mnt/models \
+		-p 8100:8100 --name model-server \
+		$(TEST_IMAGE) \
+		/bin/bash -c "$(PYTHON) tests/http_server.py & sleep 10 && $(PYTHON) src/kepler_model/server/model_server.py"
+	while ! docker logs model-server | grep -q Serving; do \
+		echo " ... waiting for model-server to serve";  sleep 5;  \
+	done
 
 run-estimator-client:
-	$(CTR_CMD) exec model-server /bin/bash -c "python3.10 -u ./tests/estimator_model_request_test.py"
+	$(CTR_CMD) exec model-server \
+		/bin/bash -c "$(PYTHON) -u ./tests/estimator_model_request_test.py"
+	echo "Done ..."
 
 clean-model-server:
 	@$(CTR_CMD) stop model-server
-	@$(CTR_CMD) rm model-server
+	@$(CTR_CMD) rm -v model-server
 
-test-model-server: run-model-server run-estimator-client clean-model-server
+test-model-server: run-model-server \
+	run-estimator-client \
+	clean-model-server
 
 # test offline trainer
 run-offline-trainer:
-	$(CTR_CMD) run -d --platform linux/amd64  -p 8102:8102 --name offline-trainer $(TEST_IMAGE) python3.10 src/train/offline_trainer.py
+	$(CTR_CMD) run -d --platform linux/amd64  -p 8102:8102 --name offline-trainer $(TEST_IMAGE) $(PYTHON) src/train/offline_trainer.py
 	sleep 5
 
 run-offline-trainer-client:
-	$(CTR_CMD) exec offline-trainer /bin/bash -c "python3.10 -u ./tests/offline_trainer_test.py"
+	$(CTR_CMD) exec offline-trainer /bin/bash -c "$(PYTHON) -u ./tests/offline_trainer_test.py"
 
 clean-offline-trainer:
 	@$(CTR_CMD) stop offline-trainer
