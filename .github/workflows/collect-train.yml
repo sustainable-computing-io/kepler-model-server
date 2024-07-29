@@ -28,7 +28,7 @@ jobs:
         instance_type: [i3.metal]
     uses: ./.github/workflows/train-model.yml
     with:
-      pipeline_name: std_v0.7
+      pipeline_name: std_v0.7.11
       instance_type: ${{ matrix.instance_type }}
       ami_id: 'ami-0e4d0bb9670ea8db0'
       github_repo: ${{ github.repository }}
