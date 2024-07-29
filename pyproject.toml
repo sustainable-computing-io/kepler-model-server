@@ -48,6 +48,7 @@ dependencies = [
 model-server = "kepler_model.server.model_server:run"
 estimator = "kepler_model.estimate.estimator:run"
 kepler-model = "kepler_model.cmd.main:run"
+offline-trainer = "kepler_model.train.offline_trainer:run"
 
 [project.urls]
 Documentation = "https://github.com/sustainable-computing-io/kepler-model-server#readme"
@@ -87,7 +88,6 @@ extra-dependencies = [
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/kepler_model_server tests}"
 
-
 [tool.coverage.run]
 source_pkgs = ["kepler_model", "tests"]
 branch = true
@@ -97,7 +97,7 @@ omit = [
 ]
 
 [tool.coverage.paths]
-validator = ["src/kepler_model", "*/kepler_model/src/kepler_model"]
+kepler_model = ["src/kepler_model", "*/kepler_model/src/kepler_model"]
 tests = ["tests", "*/kepler_model/tests"]
 
 [tool.coverage.report]

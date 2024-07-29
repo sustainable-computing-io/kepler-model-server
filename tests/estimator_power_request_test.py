@@ -1,9 +1,9 @@
 import socket
 import json
 
-from kepler_model.util.train_types import WORKLOAD_FEATURES, SYSTEM_FEATURES, ModelOutputType, CATEGORICAL_LABEL_TO_VOCAB, PowerSourceMap
+from kepler_model.util.train_types import WORKLOAD_FEATURES, SYSTEM_FEATURES, ModelOutputType, CATEGORICAL_LABEL_TO_VOCAB
 from kepler_model.util.config import SERVE_SOCKET
-from extractor_test import test_energy_source
+from tests.extractor_test import test_energy_source
 
 trainer_names = ["SGDRegressorTrainer"]
 test_energy_sources = ["acpi", "rapl-sysfs"]
@@ -54,11 +54,7 @@ class Client:
         return decoded_data
 
 
-def run():
+def test_estimator_power_request():
     client = Client(SERVE_SOCKET)
     for energy_source in test_energy_sources:
         process(client, energy_source)
-
-
-if __name__ == "__main__":
-    run()

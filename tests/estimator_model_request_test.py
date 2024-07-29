@@ -22,10 +22,10 @@ from kepler_model.util.config import get_init_model_url, set_env_from_model_conf
 from kepler_model.estimate.estimator import handle_request, loaded_model, PowerRequest
 from kepler_model.estimate.model_server_connector import list_all_models
 from kepler_model.estimate.archived_model import get_achived_model, reset_failed_list
-from extractor_test import test_energy_source
+from tests.extractor_test import test_energy_source
 
-from estimator_power_request_test import generate_request
-from http_server import http_file_server
+from tests.estimator_power_request_test import generate_request
+from tests.http_server import http_file_server
 
 file_server_port = 8110
 # set environment
@@ -35,7 +35,7 @@ os.environ["MODEL_TOPURL"] = model_topurl
 os.environ["INITIAL_PIPELINE_URL"] = os.path.join(model_topurl, "std_v0.7.11")
 
 
-def run():
+def test_model_request():
     http_file_server(file_server_port)
     energy_source = test_energy_source
     # test getting model from server
@@ -122,7 +122,3 @@ def run():
     data = json.dumps(request_json)
     output = handle_request(data)
     assert len(output["powers"]) > 0, "cannot get power {}\n {}".format(output["msg"], request_json)
-
-
-if __name__ == "__main__":
-    run()

@@ -1,30 +1,22 @@
 import requests
-
 import os
-import sys
 import shutil
 import json
 
 import codecs
 
-src_path = os.path.join(os.path.dirname(__file__), "../src")
-server_path = os.path.join(os.path.dirname(__file__), "../src/server")
-util_path = os.path.join(os.path.dirname(__file__), "../src/util")
-
-sys.path.append(src_path)
-sys.path.append(util_path)
-sys.path.append(server_path)
-
 from kepler_model.util.train_types import FeatureGroup, FeatureGroups, ModelOutputType
 from kepler_model.server.model_server import MODEL_SERVER_PORT
-from kepler_model.config import download_path
+from kepler_model.util.config import download_path
+
+TMP_FILE = "tmp.zip"
 
 
 def get_model_request_json(metrics, output_type, node_type, weight, trainer_name, energy_source):
     return {"metrics": metrics, "output_type": output_type.name, "node_type": node_type, "weight": weight, "trainer_name": trainer_name, "source": energy_source}
 
 
-def make_request(metrics, output_type, node_type=-1, weight=False, trainer_name="", energy_source='rapl-sysfs'):
+def make_request(metrics, output_type, node_type=-1, weight=False, trainer_name="", energy_source="rapl-sysfs"):
     model_request = get_model_request_json(metrics, output_type, node_type, weight, trainer_name, energy_source)
     response = requests.post("http://localhost:{}/model".format(MODEL_SERVER_PORT), json=model_request)
     assert response.status_code == 200, response.text
@@ -83,4 +75,3 @@ if __name__ == "__main__":
     make_request(metrics, output_type, trainer_name=trainer_name, node_type=1, weight=True)
     # with acpi source
     make_request(metrics, output_type, energy_source="acpi", trainer_name=trainer_name, node_type=1, weight=True)
-

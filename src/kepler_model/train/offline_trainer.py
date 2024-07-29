@@ -1,4 +1,4 @@
-# offline trainer 
+# offline trainer
 # input: response, pipeline attributes
 # output: model output
 
@@ -8,36 +8,22 @@
 # client (test):
 #   python tests/offline_trainer_test.py <src_json_file> <save_path>
 
-import os
-import sys
 import importlib
 
-util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
-sys.path.append(util_path)
-model_path = os.path.join(os.path.dirname(__file__), '..', 'estimate', 'model')
-sys.path.append(model_path)
-cur_path = os.path.join(os.path.dirname(__file__), '.')
-sys.path.append(cur_path)
-prom_path = os.path.join(os.path.dirname(__file__), 'prom')
-sys.path.append(prom_path)
-extractor_path = os.path.join(os.path.dirname(__file__), 'extractor')
-sys.path.append(extractor_path)
-isolator_path = os.path.join(os.path.dirname(__file__), 'isolator')
-sys.path.append(isolator_path)
-
-from config import model_toppath
-from loader import get_pipeline_path, default_pipelines
-from train_types import PowerSourceMap
-from prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
-from profiler.profiler import Profiler, generate_profiles
-from extractor import DefaultExtractor
-from isolator import ProfileBackgroundIsolator
-from train_isolator import TrainIsolator
-from pipeline import NewPipeline
+from kepler_model.util.config import model_toppath
+from kepler_model.util.loader import get_pipeline_path, default_pipelines
+from kepler_model.util.train_types import PowerSourceMap
+from kepler_model.util.prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
+from kepler_model.train.profiler.profiler import Profiler, generate_profiles
+from kepler_model.train.extractor.extractor import DefaultExtractor
+from kepler_model.train.isolator.isolator import ProfileBackgroundIsolator
+from kepler_model.train.isolator.train_isolator import TrainIsolator
+from kepler_model.train.pipeline import NewPipeline
 
 import shutil
 
 from flask import Flask, request, make_response, send_file
+
 serve_port = 8102
 
 """
@@ -56,7 +42,8 @@ TrainResponse
 zip file of pipeline folder or error message
 """
 
-class TrainAttribute():
+
+class TrainAttribute:
     def __init__(self, abs_trainers, dyn_trainers, idle_prom_response, isolator, isolator_args):
         self.abs_trainers = abs_trainers
         self.dyn_trainers = dyn_trainers
@@ -64,7 +51,8 @@ class TrainAttribute():
         self.isolator = isolator
         self.isolator_args = isolator_args
 
-class TrainRequest():
+
+class TrainRequest:
     def __init__(self, name, energy_source, trainer, prom_response):
         self.name = name
         self.energy_source = energy_source
@@ -79,16 +67,16 @@ class TrainRequest():
         if isolator_key == ProfileBackgroundIsolator.__name__:
             isolator = ProfileBackgroundIsolator(profiles, idle_data)
         elif isolator_key == TrainIsolator.__name__:
-            if 'abs_pipeline_name' not in isolator_args:
+            if "abs_pipeline_name" not in isolator_args:
                 # use default pipeline for absolute model training in isolation
-                isolator_args['abs_pipeline_name'] = default_pipelines[self.energy_source]
-            isolator = TrainIsolator(idle_data, profiler=profiler, abs_pipeline_name=isolator_args['abs_pipeline_name'])
+                isolator_args["abs_pipeline_name"] = default_pipelines[self.energy_source]
+            isolator = TrainIsolator(idle_data, profiler=profiler, abs_pipeline_name=isolator_args["abs_pipeline_name"])
         else:
-            module_path = importlib.import_module('isolator')
+            module_path = importlib.import_module("isolator")
             # default init, no args
-            isolator =  getattr(module_path, isolator_key)()
-        return isolator  
-    
+            isolator = getattr(module_path, isolator_key)()
+        return isolator
+
     def init_pipeline(self):
         profiler = Profiler(extractor=DefaultExtractor())
         # TODO: if idle_data is None use profile from registry
@@ -98,7 +86,7 @@ class TrainRequest():
         isolator = self.init_isolator(profiler, profiles, idle_data)
         valid_feature_groups = get_valid_feature_group_from_queries(idle_data.keys())
         self.pipeline = NewPipeline(self.name, self.trainer.abs_trainers, self.trainer.dyn_trainers, extractor=DefaultExtractor(), isolator=isolator, target_energy_sources=[self.energy_source], valid_feature_groups=valid_feature_groups)
-    
+
     def get_model(self):
         self.init_pipeline()
         energy_components = PowerSourceMap[self.energy_source]
@@ -106,21 +94,23 @@ class TrainRequest():
         data = prom_responses_to_results(self.prom_response)
         valid_feature_groups = get_valid_feature_group_from_queries(data.keys())
         for feature_group in valid_feature_groups:
-            self.pipeline.process(data, energy_components , self.energy_source, feature_group.name)
+            self.pipeline.process(data, energy_components, self.energy_source, feature_group.name)
         # return model
-        pipeline_path = get_pipeline_path(model_toppath=model_toppath ,pipeline_name=self.name)
+        pipeline_path = get_pipeline_path(model_toppath=model_toppath, pipeline_name=self.name)
         self.pipeline.save_metadata()
         try:
-            shutil.make_archive(pipeline_path, 'zip', pipeline_path)
-            return pipeline_path + '.zip'
+            shutil.make_archive(pipeline_path, "zip", pipeline_path)
+            return pipeline_path + ".zip"
         except Exception as e:
             print(e)
             return None
 
+
 app = Flask(__name__)
 
+
 # return archive file or error
-@app.route('/train', methods=['POST'])
+@app.route("/train", methods=["POST"])
 def train():
     train_request = request.get_json()
     req = TrainRequest(**train_request)
@@ -134,5 +124,6 @@ def train():
         except ValueError as err:
             return make_response("Send trained model error: {}".format(err), 400)
 
-if __name__ == '__main__':
-   app.run(host="0.0.0.0", port=serve_port)
+
+def run():
+    app.run(host="0.0.0.0", port=serve_port)

@@ -1,6 +1,9 @@
 # Include base requirements
 FROM python:3.10-slim
 
+RUN python -m pip install hatch && \
+		pip cache purge
+
 WORKDIR /usr/local
 RUN mkdir -p /usr/local/src \
 		/usr/local/resource/profiles
@@ -11,17 +14,15 @@ COPY pyproject.toml .
 # so that they are copied into the image for pip install to succeed
 COPY README.md .
 COPY src/ src/
+RUN pip install --no-cache-dir . && \
+		pip cache purge
 
 RUN mkdir -p tests/data
 COPY tests/data/prom_output tests/data/prom_output
 COPY tests/*.py tests/
 
-
 # NOTE: pip install all dependencies in pyproject.toml as system packages 
-RUN pip install --no-cache-dir . && \
-		pip cache purge
 
-RUN python -m pip install hatch
 RUN hatch env create
 
 # port for Model Server

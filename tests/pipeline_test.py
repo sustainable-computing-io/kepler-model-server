@@ -2,10 +2,10 @@ from kepler_model.train import NewPipeline, NodeTypeSpec
 from kepler_model.util import get_valid_feature_group_from_queries, PowerSourceMap
 from kepler_model.util.loader import default_train_output_pipeline, default_node_type
 
-from .prom_test import get_query_results, prom_output_path, prom_output_filename
-from .extractor_test import test_extractors, test_energy_source
-from .isolator_test import test_isolators
-from .trainer_test import test_trainer_names, assert_train
+from tests.prom_test import get_query_results, prom_output_path, prom_output_filename
+from tests.extractor_test import test_extractors, test_energy_source
+from tests.isolator_test import test_isolators
+from tests.trainer_test import test_trainer_names, assert_train
 
 # fake spec value
 spec_values = {"processor": "test", "cores": 1, "chips": 1, "memory": -1, "frequency": -1}
