@@ -166,6 +166,8 @@ jobs:
               persistentVolumeClaim:
                 claimName: task-pvc
             params:
+            - name: ENERGY_SOURCE
+              value: ${{ inputs.energy_source }}
             - name: MODEL_SERVER_IMAGE
               value: ${{ inputs.model_server_image }}
             - name: PIPELINE_NAME
