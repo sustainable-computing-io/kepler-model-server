@@ -315,7 +315,7 @@ def class_to_json(class_obj):
     return json.loads(json.dumps(class_obj.__dict__))
 
 def get_version_path(output_path, assure=True):
-    version_path = os.path.join(output_path, "v{}".format(version))
+    version_path = os.path.join(output_path, "v{}".format(major_version))
     if assure:
         return assure_path(version_path)
     return version_path

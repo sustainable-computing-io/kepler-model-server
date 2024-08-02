@@ -120,7 +120,7 @@ class SpecPipelineRun():
 
 if __name__ == "__main__":
     spec_db_url = "http://localhost:8080"
-    pipeline_name = "specpower"
+    pipeline_name = "specpower-0.7.11"
     pipelinerun = SpecPipelineRun(name=pipeline_name)
     _, abs_data, dyn_data = pipelinerun.process(spec_db_url)
     pipelinerun.save_metadata()
