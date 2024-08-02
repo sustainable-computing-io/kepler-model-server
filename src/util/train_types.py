@@ -15,12 +15,11 @@ from typing import List
 SYSTEM_FEATURES = ["node_info", "cpu_scaling_frequency_hertz"]
 
 COUNTER_FEAUTRES = ["cache_miss", "cpu_cycles", "cpu_instructions"]
-CGROUP_FEATURES = ["cgroupfs_cpu_usage_us", "cgroupfs_memory_usage_bytes", "cgroupfs_system_cpu_usage_us", "cgroupfs_user_cpu_usage_us"]
 BPF_FEATURES = ["bpf_cpu_time_ms", "bpf_page_cache_hit"]
 IRQ_FEATURES = ["bpf_block_irq", "bpf_net_rx_irq", "bpf_net_tx_irq"]
 ACCELERATE_FEATURES = ['accelerator_intel_qat']
-WORKLOAD_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES + IRQ_FEATURES + ACCELERATE_FEATURES
-BASIC_FEATURES = COUNTER_FEAUTRES + CGROUP_FEATURES + BPF_FEATURES 
+WORKLOAD_FEATURES = COUNTER_FEAUTRES + BPF_FEATURES + IRQ_FEATURES + ACCELERATE_FEATURES
+BASIC_FEATURES = COUNTER_FEAUTRES + BPF_FEATURES
 
 PowerSourceMap = {
     "rapl-sysfs": ["package", "core", "uncore", "dram"],
@@ -51,14 +50,13 @@ class FeatureGroup(enum.Enum):
     Full = 1
     WorkloadOnly = 2
     CounterOnly = 3
-    CgroupOnly = 4
-    BPFOnly = 5
-    IRQOnly = 6
-    CounterIRQCombined = 7
-    Basic = 8
-    BPFIRQ = 9
-    AcceleratorOnly = 10
-    ThirdParty = 11
+    BPFOnly = 4
+    IRQOnly = 5
+    CounterIRQCombined = 6
+    Basic = 7
+    BPFIRQ = 8
+    AcceleratorOnly = 9
+    ThirdParty = 10
     Unknown = 99
 
 class EnergyComponentLabelGroup(enum.Enum):
@@ -83,7 +81,6 @@ FeatureGroups = {
     FeatureGroup.Full: deep_sort(WORKLOAD_FEATURES + SYSTEM_FEATURES),
     FeatureGroup.WorkloadOnly: deep_sort(WORKLOAD_FEATURES),
     FeatureGroup.CounterOnly: deep_sort(COUNTER_FEAUTRES),
-    FeatureGroup.CgroupOnly: deep_sort(CGROUP_FEATURES),
     FeatureGroup.BPFOnly: deep_sort(BPF_FEATURES),
     FeatureGroup.BPFIRQ: deep_sort(BPF_FEATURES + IRQ_FEATURES),
     FeatureGroup.CounterIRQCombined: deep_sort(COUNTER_FEAUTRES + IRQ_FEATURES),
@@ -91,7 +88,7 @@ FeatureGroups = {
     FeatureGroup.AcceleratorOnly: deep_sort(ACCELERATE_FEATURES),
 }
 
-SingleSourceFeatures = [FeatureGroup.CounterOnly.name, FeatureGroup.CgroupOnly.name, FeatureGroup.BPFOnly.name, FeatureGroup.BPFIRQ.name]
+SingleSourceFeatures = [FeatureGroup.CounterOnly.name, FeatureGroup.BPFOnly.name, FeatureGroup.BPFIRQ.name]
 
 def is_single_source_feature_group(fg):
     return fg.name in SingleSourceFeatures
@@ -100,7 +97,6 @@ default_main_feature_map = {
     FeatureGroup.Full: "cpu_instructions",
     FeatureGroup.WorkloadOnly: "cpu_instructions",
     FeatureGroup.CounterOnly: "cpu_instructions",
-    FeatureGroup.CgroupOnly: "cgroupfs_cpu_usage_us",
     FeatureGroup.BPFOnly: "bpf_cpu_time_ms",
     FeatureGroup.BPFIRQ: "bpf_cpu_time_ms",
     FeatureGroup.CounterIRQCombined: "cpu_instructions",
@@ -111,7 +107,6 @@ default_dram_feature_map = {
     FeatureGroup.Full: "cache_miss",
     FeatureGroup.WorkloadOnly: "cache_miss",
     FeatureGroup.CounterOnly: "cache_miss",
-    FeatureGroup.CgroupOnly: "cgroupfs_memory_usage_bytes",
     FeatureGroup.BPFOnly: "bpf_page_cache_hit",
     FeatureGroup.BPFIRQ: "bpf_page_cache_hit",
     FeatureGroup.CounterIRQCombined: "cache_miss",
