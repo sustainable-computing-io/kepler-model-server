@@ -1,5 +1,5 @@
 # Include base requirements
-FROM python:3.10-slim
+FROM python:3.13.0rc1-slim
 
 WORKDIR /usr/local
 RUN mkdir -p /usr/local/src \
