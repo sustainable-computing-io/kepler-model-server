@@ -1,12 +1,13 @@
 FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:latest
 
-WORKDIR /usr/local
+WORKDIR /kepler_model
 
 RUN mkdir -p /usr/local/src
 RUN mkdir -p /usr/local/resource
+COPY cmd/ cmd/
 COPY src/ src/
 COPY pyproject.toml ./
-pip install --no-cache-dir .
+RUN pip install --no-cache-dir .
 
 # port for Model Server
 EXPOSE 8100

@@ -1,21 +1,12 @@
 FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:latest
 
-WORKDIR /usr/local
+WORKDIR /kepler_model
 
-RUN mkdir -p /usr/local/src
-RUN mkdir -p /usr/local/resource
-
-RUN mkdir -p resource/profiles
-COPY src/estimate src/estimate
-COPY src/server src/server
-COPY src/train src/train
-COPY src/util src/util
-
-RUN mkdir -p tests/data
-COPY tests/data/prom_output tests/data/prom_output 
-COPY tests/*.py tests/
-
-RUN mkdir -p /mnt/models
+COPY pyproject.toml .
+COPY README.md .
+COPY src/ .
+COPY tests/ .
+COPY cmd/ .
 
 # port for Model Server
 EXPOSE 8100
