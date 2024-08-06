@@ -39,7 +39,7 @@ test-pipeline:
 	$(CTR_CMD) run --rm --platform linux/amd64 \
 		-v ${MODEL_PATH}:/mnt/models -i \
 		$(TEST_IMAGE) \
-		hatch run test -v -s ./tests/pipeline_test.py
+		hatch run test -vvv -s ./tests/pipeline_test.py
 
 # test collector --> estimator
 run-estimator:
@@ -53,7 +53,7 @@ run-estimator:
 
 run-collector-client:
 	$(CTR_CMD) exec estimator /bin/bash -c \
-		"while [ ! -S "/tmp/estimator.sock" ]; do sleep 1; done; hatch test -v -s ./tests/estimator_power_request_test.py"
+		"while [ ! -S "/tmp/estimator.sock" ]; do sleep 1; done; hatch test -vvv -s ./tests/estimator_power_request_test.py"
 
 clean-estimator:
 	$(CTR_CMD) stop estimator
@@ -73,7 +73,7 @@ run-model-server:
 
 run-estimator-client:
 	$(CTR_CMD) exec model-server \
-		hatch run test -v -s ./tests/estimator_model_request_test.py
+		hatch run test -vvv -s ./tests/estimator_model_request_test.py
 
 clean-model-server:
 	@$(CTR_CMD) stop model-server
@@ -94,7 +94,7 @@ run-offline-trainer:
 
 run-offline-trainer-client:
 	$(CTR_CMD) exec offline-trainer \
-		hatch run test -v -s ./tests/offline_trainer_test.py
+		hatch run test -vvv -s ./tests/offline_trainer_test.py
 
 clean-offline-trainer:
 	@$(CTR_CMD) stop offline-trainer
