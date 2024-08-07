@@ -1,5 +1,4 @@
-# FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:latest
-FROM quay.io/sthaha/kms_3_10_base:v0.7
+FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:latest
 
 WORKDIR /kepler_model
 
