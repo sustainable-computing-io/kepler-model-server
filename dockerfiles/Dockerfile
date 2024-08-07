@@ -1,9 +1,10 @@
-FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:latest
+# FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:latest
+FROM quay.io/sthaha/kms_3_10_base:v0.7
 
 WORKDIR /kepler_model
 
-COPY cmd/ cmd/
-COPY src/ src/
+COPY cmd/ .
+COPY src/ .
 COPY pyproject.toml .
 COPY README.md .
 RUN pip install --no-cache-dir .
