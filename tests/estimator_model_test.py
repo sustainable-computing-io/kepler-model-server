@@ -11,8 +11,8 @@ from kepler_model.util.loader import get_model_group_path, default_train_output_
 from kepler_model.util import FeatureGroup, ModelOutputType, list_model_names
 from kepler_model.util.prom_types import TIMESTAMP_COL
 
-from isolator_test import test_isolators, get_isolate_results, isolator_output_path
-from extractor_test import test_extractors, get_extract_results, test_energy_source, get_expected_power_columns, extractor_output_path
+from tests.isolator_test import test_isolators, get_isolate_results, isolator_output_path
+from tests.extractor_test import test_extractors, get_extract_results, test_energy_source, get_expected_power_columns, extractor_output_path
 
 
 # extract_result, power_columns, corr, features = extractor.extract(query_results, energy_components, feature_group, energy_source, node_level)
@@ -94,4 +94,3 @@ if __name__ == "__main__":
     print(abs_train_df.set_index(["energy_source", "component", "extractor"])[focus_columns].sort_values(by=["mae"], ascending=True))
     print("Container-level test results:")
     print(dyn_train_df.set_index(["energy_source", "component", "extractor", "isolator"])[focus_columns].sort_values(by=["mae"], ascending=True))
-

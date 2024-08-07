@@ -275,7 +275,7 @@ def assert_train(trainer, data, energy_components):
 
 def get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_hints, abs_pipeline_name, replace_node_type=default_node_type):
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
-    from train import MinIdleIsolator, NoneIsolator, DefaultProfiler, ProfileBackgroundIsolator, TrainIsolator, generate_profiles
+    from kepler_model.train import MinIdleIsolator, NoneIsolator, DefaultProfiler, ProfileBackgroundIsolator, TrainIsolator, generate_profiles
 
     supported_isolator = {
         MinIdleIsolator().get_name(): MinIdleIsolator(),
@@ -318,7 +318,7 @@ def get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_h
 
 
 def get_extractor(extractor):
-    from train import DefaultExtractor, SmoothExtractor
+    from kepler_model.train import DefaultExtractor, SmoothExtractor
 
     supported_extractor = {DefaultExtractor().get_name(): DefaultExtractor(), SmoothExtractor().get_name(): SmoothExtractor()}
     if extractor not in supported_extractor:
@@ -328,10 +328,9 @@ def get_extractor(extractor):
 
 
 def get_pipeline(data_path, pipeline_name, extractor, profile, target_hints, bg_hints, abs_pipeline_name, isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups, replace_node_type=default_node_type):
-    from train import NewPipeline
+    from kepler_model.train import NewPipeline
 
     isolator = get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_hints, abs_pipeline_name, replace_node_type=replace_node_type)
     extractor = get_extractor(extractor)
     pipeline = NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=energy_sources, valid_feature_groups=valid_feature_groups)
     return pipeline
-

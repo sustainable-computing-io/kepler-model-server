@@ -204,7 +204,7 @@ def _load_all_models(model_toppath, output_type, name, node_types, energy_source
 
 
 def _plot_models(models, cpu_ms_max, energy_source, output_folder, name, max_plot=15, cpu_time_bin_num=10, sample_num=20):
-    from util.train_types import BPF_FEATURES
+    from kepler_model.util.train_types import BPF_FEATURES
     import numpy as np
     import pandas as pd
     import seaborn as sns

@@ -488,7 +488,7 @@ def estimate(args):
         print("must give input filename (query response) via --input for estimation.")
         exit()
 
-    from estimate import load_model, default_predicted_col_func, compute_error
+    from kepler_model.estimate import load_model, default_predicted_col_func, compute_error
 
     # Inject thirdparty_metrics to FeatureGroup
     if args.thirdparty_metrics != "":
@@ -664,7 +664,7 @@ def plot(args):
                     data_filename = get_general_filename(args.target_data, energy_source, None, ot, args.extractor, args.isolator)
                     ts_plot(power_data, power_cols, "Power source: {}".format(energy_source), output_folder, data_filename, ylabel="Power (W)")
     elif args.target_data == "estimate":
-        from estimate import default_predicted_col_func
+        from kepler_model.estimate import default_predicted_col_func
         from sklearn.preprocessing import MaxAbsScaler
 
         best_result_map, power_labels_map, best_model_id_map, summary_df = estimate(args)
@@ -702,7 +702,7 @@ def plot(args):
                 feature_power_plot(data, model_id, ot.name, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, "{}_{}_corr".format(data_filename, model_id))
 
     elif args.target_data == "error":
-        from estimate import default_predicted_col_func
+        from kepler_model.estimate import default_predicted_col_func
         from sklearn.preprocessing import MaxAbsScaler
 
         _, _, _, summary_df = estimate(args)
@@ -862,7 +862,7 @@ def plot_scenario(args):
             if data_filename is None:
                 print("cannot get preprocessed data for ", ot.name)
                 return
-            from train import DefaultExtractor
+            from kepler_model.train import DefaultExtractor
 
             extractor = DefaultExtractor()
             data, power_cols, _, _ = extractor.extract(query_results, energy_components, fg.name, args.energy_source, node_level=True)
