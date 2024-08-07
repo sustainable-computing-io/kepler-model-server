@@ -6,8 +6,8 @@
 #
 #########################
 
-import os
-import sys
+import  os
+import  sys
 
 server_path = os.path.join(os.path.dirname(__file__), '../src')
 util_path = os.path.join(os.path.dirname(__file__), '../src/util')
@@ -21,19 +21,19 @@ sys.path.append(train_path)
 sys.path.append(prom_path)
 sys.path.append(estimate_path)
 
-from train_types import FeatureGroups, FeatureGroup, ModelOutputType
-from loader import get_download_output_path
-from estimate.model_server_connector import list_all_models
-from config import get_model_server_req_endpoint, download_path
-from extractor_test import test_energy_source
-from estimator_power_request_test import generate_request
+from train_types import  FeatureGroups, FeatureGroup, ModelOutputType
+from loader import  get_download_output_path
+from estimate.model_server_connector import  list_all_models
+from config import  get_model_server_req_endpoint, download_path
+from extractor_test import  test_energy_source
+from estimator_power_request_test import  generate_request
 
 os.environ['MODEL_SERVER_URL'] = 'http://localhost:8100'
 
-import json
-import time
+import  json
+import  time
 
-import requests
+import  requests
 
 weight_available_trainers = ["SGDRegressorTrainer"]
 

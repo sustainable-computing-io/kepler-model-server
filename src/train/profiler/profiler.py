@@ -13,23 +13,23 @@
 ##   {component: {node_type: {min_watt: ,max_watt: } }}
 ############################################################
 
-import sys
-import os
-from urllib.request import urlopen
-import joblib
+import  sys
+import  os
+from urllib.request import  urlopen
+import  joblib
 
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
-from train_types import PowerSourceMap, FeatureGroups
-from train_types import  PowerSourceMap
-from prom_types import node_info_column, node_info_query, generate_dataframe_from_response
-from extract_types import component_to_col
-from saver import save_profile
-from loader import load_profile, default_node_type
+from train_types import  PowerSourceMap, FeatureGroups
+from train_types import   PowerSourceMap
+from prom_types import  node_info_column, node_info_query, generate_dataframe_from_response
+from extract_types import  component_to_col
+from saver import  save_profile
+from loader import  load_profile, default_node_type
 
-import pandas as pd
-import json
+import  pandas as pd
+import  json
 
 min_watt_key = "min_watt"
 max_watt_key = "max_watt"

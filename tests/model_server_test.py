@@ -1,11 +1,11 @@
-import requests
+import  requests
 
-import os
-import sys
-import shutil
-import json
+import  os
+import  sys
+import  shutil
+import  json
 
-import codecs
+import  codecs
 
 src_path = os.path.join(os.path.dirname(__file__), '../src')
 server_path = os.path.join(os.path.dirname(__file__), '../src/server')
@@ -15,9 +15,9 @@ sys.path.append(src_path)
 sys.path.append(util_path)
 sys.path.append(server_path)
 
-from train_types import FeatureGroup, FeatureGroups, ModelOutputType
-from model_server import MODEL_SERVER_PORT
-from config import download_path
+from train_types import  FeatureGroup, FeatureGroups, ModelOutputType
+from model_server import  MODEL_SERVER_PORT
+from config import  download_path
 
 def get_model_request_json(metrics, output_type, node_type, weight, trainer_name, energy_source):
     return {"metrics": metrics, "output_type": output_type.name, "node_type": node_type, "weight": weight, "trainer_name": trainer_name, "source": energy_source}

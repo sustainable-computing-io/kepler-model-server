@@ -1,21 +1,21 @@
-import requests
-import enum
-import os
-import sys
-import shutil
-import json
-import codecs
+import  requests
+import  enum
+import  os
+import  sys
+import  shutil
+import  json
+import  codecs
 
 util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
 
-from config import is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint, download_path
-from loader import get_download_output_path
-from train_types import ModelOutputType
+from config import  is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint, download_path
+from loader import  get_download_output_path
+from train_types import  ModelOutputType
 
 # discover_spec: determine node spec in json format (refer to NodeTypeSpec)
 def discover_spec():
-    import psutil
+    import  psutil
     # TODO: reuse node_type_index/generate_spec with loosen selection
     cores = psutil.cpu_count(logical=True)
     spec = {

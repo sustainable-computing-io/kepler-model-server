@@ -10,5 +10,6 @@ COPY README.md .
 RUN mkdir -p src
 COPY src/__about__.py src/
 
+
 RUN pip install --no-cache-dir . && \
 		pip cache purge

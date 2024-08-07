@@ -8,9 +8,9 @@
 # client (test):
 #   python tests/offline_trainer_test.py <src_json_file> <save_path>
 
-import os
-import sys
-import importlib
+import  os
+import  sys
+import  importlib
 
 util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
@@ -25,19 +25,19 @@ sys.path.append(extractor_path)
 isolator_path = os.path.join(os.path.dirname(__file__), 'isolator')
 sys.path.append(isolator_path)
 
-from config import model_toppath
-from loader import get_pipeline_path, default_pipelines
-from train_types import PowerSourceMap
-from prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
-from profiler.profiler import Profiler, generate_profiles
-from extractor import DefaultExtractor
-from isolator import ProfileBackgroundIsolator
-from train_isolator import TrainIsolator
-from pipeline import NewPipeline
+from config import  model_toppath
+from loader import  get_pipeline_path, default_pipelines
+from train_types import  PowerSourceMap
+from prom_types import  get_valid_feature_group_from_queries, prom_responses_to_results
+from profiler.profiler import  Profiler, generate_profiles
+from extractor import  DefaultExtractor
+from isolator import  ProfileBackgroundIsolator
+from train_isolator import  TrainIsolator
+from pipeline import  NewPipeline
 
-import shutil
+import  shutil
 
-from flask import Flask, request, make_response, send_file
+from flask import  Flask, request, make_response, send_file
 serve_port = 8102
 
 """

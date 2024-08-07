@@ -1,6 +1,6 @@
-import os
-import sys
-import logging
+import  os
+import  sys
+import  logging
 
 fpath = os.path.join(os.path.dirname(__file__), 'model')
 sys.path.append(fpath)
@@ -8,9 +8,9 @@ sys.path.append(fpath)
 util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
 sys.path.append(util_path)
 
-from model_server_connector import unpack, ModelOutputType
-from config import get_init_model_url
-from loader import load_metadata
+from model_server_connector import  unpack, ModelOutputType
+from config import  get_init_model_url
+from loader import  load_metadata
 
 failed_list = []
 
@@ -18,7 +18,7 @@ FILTER_ITEM_DELIMIT = ';'
 VALUE_DELIMIT = ':'
 ARRAY_DELIMIT = ','
 
-import requests
+import  requests
 
 def parse_filters(filter):
     filter_list = filter.split(FILTER_ITEM_DELIMIT)

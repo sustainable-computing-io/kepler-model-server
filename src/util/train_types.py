@@ -8,9 +8,9 @@
 ##
 ###########################################################
 
-import enum
-import random
-from typing import List
+import  enum
+import  random
+from typing import  List
 
 SYSTEM_FEATURES = ["node_info", "cpu_scaling_frequency_hertz"]
 

@@ -24,4 +24,5 @@ EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
 
+
 CMD [ "python3.10", "-u", "src/server/model_server.py" ]

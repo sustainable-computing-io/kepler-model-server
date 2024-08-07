@@ -1,8 +1,8 @@
-import os
-import sys
-import argparse
-import datetime
-import pandas as pd
+import  os
+import  sys
+import  argparse
+import  datetime
+import  pandas as pd
 
 data_path = "/data"
 default_output_filename = "output"
@@ -14,23 +14,23 @@ sys.path.append(cur_path)
 src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 
-from util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_QUERY_START_TIME, PROM_QUERY_END_TIME, PROM_HEADERS, PROM_SSL_DISABLE, PROM_THIRDPARTY_METRICS
-from util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics, node_info_column
-from util.extract_types import get_expected_power_columns
-from util.train_types import ModelOutputType, FeatureGroups, is_single_source_feature_group, all_feature_groups, default_trainers
-from util.loader import default_train_output_pipeline, load_json, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_preprocess_folder, get_general_filename, load_machine_spec
-from util.saver import save_json, save_csv, save_train_args, _pipeline_model_metadata_filename, _power_curve_filename
-from util.config import ERROR_KEY, model_toppath
-from util import get_valid_feature_group_from_queries, PowerSourceMap
-from train.prom.prom_query import _range_queries
-from train.exporter import exporter
-from train import load_class
-from train.profiler.node_type_index import NodeTypeIndexCollection, NodeTypeSpec, generate_spec
+from util.prom_types import  PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_QUERY_START_TIME, PROM_QUERY_END_TIME, PROM_HEADERS, PROM_SSL_DISABLE, PROM_THIRDPARTY_METRICS
+from util.prom_types import  metric_prefix as KEPLER_METRIC_PREFIX, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics, node_info_column
+from util.extract_types import  get_expected_power_columns
+from util.train_types import  ModelOutputType, FeatureGroups, is_single_source_feature_group, all_feature_groups, default_trainers
+from util.loader import  default_train_output_pipeline, load_json, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_preprocess_folder, get_general_filename, load_machine_spec
+from util.saver import  save_json, save_csv, save_train_args, _pipeline_model_metadata_filename, _power_curve_filename
+from util.config import  ERROR_KEY, model_toppath
+from util import  get_valid_feature_group_from_queries, PowerSourceMap
+from train.prom.prom_query import  _range_queries
+from train.exporter import  exporter
+from train import  load_class
+from train.profiler.node_type_index import  NodeTypeIndexCollection, NodeTypeSpec, generate_spec
 
-from cmd_plot import ts_plot, feature_power_plot, summary_plot, metadata_plot, power_curve_plot
-from cmd_util import extract_time, save_query_results, get_validate_df, summary_validation, get_extractor, check_ot_fg, get_pipeline, assert_train, get_isolator, UTC_OFFSET_TIMEDELTA
+from cmd_plot import  ts_plot, feature_power_plot, summary_plot, metadata_plot, power_curve_plot
+from cmd_util import  extract_time, save_query_results, get_validate_df, summary_validation, get_extractor, check_ot_fg, get_pipeline, assert_train, get_isolator, UTC_OFFSET_TIMEDELTA
 
-import threading
+import  threading
 
 """
 query
@@ -61,7 +61,7 @@ def query(args):
         print("Machine ID has not defined by --id, use `unknown`")
     machine_id = args.id
     generate_spec(data_path, machine_id)
-    from prometheus_api_client import PrometheusConnect
+    from prometheus_api_client import  PrometheusConnect
     prom = PrometheusConnect(url=args.server, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
     start = None
     end = None
@@ -351,8 +351,8 @@ arguments:
 """
 
 def train(args):
-    import warnings
-    from sklearn.exceptions import ConvergenceWarning
+    import  warnings
+    from sklearn.exceptions import  ConvergenceWarning
     warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
     if not args.input:
@@ -477,7 +477,7 @@ def estimate(args):
         print("must give input filename (query response) via --input for estimation.")
         exit()
 
-    from estimate import load_model, default_predicted_col_func, compute_error
+    from estimate import  load_model, default_predicted_col_func, compute_error
 
     # Inject thirdparty_metrics to FeatureGroup
     if args.thirdparty_metrics != "":
@@ -576,7 +576,7 @@ def estimate(args):
             if not os.path.exists(output_folder):
                 os.mkdir(output_folder)
             # save model
-            import shutil
+            import  shutil
             best_model = "{}_model".format(energy_source)
             if not args.id:
                 # not only for export
@@ -650,8 +650,8 @@ def plot(args):
                     data_filename = get_general_filename(args.target_data, energy_source, None, ot, args.extractor, args.isolator)
                     ts_plot(power_data, power_cols, "Power source: {}".format(energy_source), output_folder, data_filename, ylabel="Power (W)")
     elif args.target_data == "estimate":
-        from estimate import default_predicted_col_func
-        from sklearn.preprocessing import MaxAbsScaler
+        from estimate import  default_predicted_col_func
+        from sklearn.preprocessing import  MaxAbsScaler
 
         best_result_map, power_labels_map, best_model_id_map, summary_df = estimate(args)
         print(summary_df)
@@ -688,8 +688,8 @@ def plot(args):
                 feature_power_plot(data, model_id, ot.name, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, "{}_{}_corr".format(data_filename, model_id))
 
     elif args.target_data == "error":
-        from estimate import default_predicted_col_func
-        from sklearn.preprocessing import MaxAbsScaler
+        from estimate import  default_predicted_col_func
+        from sklearn.preprocessing import  MaxAbsScaler
         _, _, _, summary_df = estimate(args)
         for energy_source in energy_sources:
             data_filename = get_general_filename(args.target_data, energy_source, fg, ot, args.extractor, args.isolator)
@@ -769,7 +769,7 @@ def export(args):
             args.output_type = ot.name
             plot(args)
     if args.zip:
-        import shutil
+        import  shutil
         shutil.make_archive(local_export_path, 'zip', local_export_path)
 
 """
@@ -843,7 +843,7 @@ def plot_scenario(args):
             if data_filename is None:
                 print("cannot get preprocessed data for ", ot.name)
                 return
-            from train import DefaultExtractor
+            from train import  DefaultExtractor
 
             extractor = DefaultExtractor()
             data, power_cols, _, _ = extractor.extract(query_results, energy_components, fg.name, args.energy_source, node_level=True)

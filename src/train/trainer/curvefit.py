@@ -1,17 +1,17 @@
-from sklearn.metrics import mean_absolute_error
-from sklearn.exceptions import NotFittedError
-import numpy as np
-from scipy.optimize import curve_fit
-import os
-import sys
+from sklearn.metrics import  mean_absolute_error
+from sklearn.exceptions import  NotFittedError
+import  numpy as np
+from scipy.optimize import  curve_fit
+import  os
+import  sys
 
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
-from util import save_pkl, load_pkl
-from util.train_types import main_feature, FeatureGroup
+from util import  save_pkl, load_pkl
+from util.train_types import  main_feature, FeatureGroup
 
-from . import Trainer
+from . import  Trainer
 
 model_class = "curvefit"
 
@@ -69,7 +69,7 @@ class CurveFitTrainer(Trainer):
             model.fit(X_values, y_values)
         except Exception as err:
             print("Train error", err)
-            import traceback
+            import  traceback
             traceback.print_exc()
         
     def save_checkpoint(self, model, filepath):

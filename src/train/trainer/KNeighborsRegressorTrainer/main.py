@@ -1,11 +1,11 @@
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neighbors import  KNeighborsRegressor
 
-import os
-import sys
+import  os
+import  sys
 trainer_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(trainer_path)
 
-from trainer.scikit import ScikitTrainer
+from trainer.scikit import  ScikitTrainer
 
 model_class = "scikit"
 

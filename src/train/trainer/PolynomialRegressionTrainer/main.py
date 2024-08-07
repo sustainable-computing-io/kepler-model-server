@@ -1,13 +1,13 @@
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
-from urllib.request import urlopen
+from sklearn.linear_model import  LinearRegression
+from sklearn.preprocessing import  PolynomialFeatures
+from urllib.request import  urlopen
 
-import os
-import sys
+import  os
+import  sys
 trainer_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(trainer_path)
 
-from trainer.scikit import ScikitTrainer
+from trainer.scikit import  ScikitTrainer
 
 poly_scaler_filename = "poly_scaler.pkl"
 

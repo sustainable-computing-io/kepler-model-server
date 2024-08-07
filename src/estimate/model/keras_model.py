@@ -1,5 +1,5 @@
-import os
-import sys
+import  os
+import  sys
 
 src_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(src_path)
@@ -7,8 +7,8 @@ sys.path.append(src_path)
 cur_path = os.path.join(os.path.dirname(__file__), '.')
 sys.path.append(cur_path)
 
-from model_server_connector import ModelOutputType
-from estimate_common import load_model_by_pickle, load_model_by_keras, load_model_by_json, transform_and_predict, is_component_model
+from model_server_connector import  ModelOutputType
+from estimate_common import  load_model_by_pickle, load_model_by_keras, load_model_by_json, transform_and_predict, is_component_model
 
 class KerasModelEstimator():
     def __init__(self, model_path, model_name, output_type, model_file, features, fe_files, component_init=False):

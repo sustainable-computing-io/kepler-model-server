@@ -1,19 +1,19 @@
-# import external src
-import http.server
-import socketserver
-import atexit
-import threading
+# import  external src
+import  http.server
+import  socketserver
+import  atexit
+import  threading
 
-import os
-import sys
+import  os
+import  sys
 
 #################################################################
-# import internal src 
+# import  internal src 
 src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 #################################################################
 
-from util.config import model_toppath
+from util.config import  model_toppath
 
 os.chdir(model_toppath)
 

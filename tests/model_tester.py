@@ -1,12 +1,12 @@
 # deprecated
-import pandas as pd
+import  pandas as pd
 
-import os
-import sys
-import json
+import  os
+import  sys
+import  json
 
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-from prom_test import get_query_results
+from sklearn.metrics import  mean_squared_error, mean_absolute_error
+from prom_test import  get_query_results
 
 src_path = os.path.join(os.path.dirname(__file__), '../src')
 train_path = os.path.join(os.path.dirname(__file__), '../src/train')
@@ -21,15 +21,15 @@ sys.path.append(util_path)
 # model_tester.py
 # to get the test result across different train/test data set
 
-from train import DefaultExtractor
-from profile import profile_process, get_min_max_watt
-from train_types import ModelOutputType, PowerSourceMap
-from train.isolator.train_isolator import get_background_containers, isolate_container
-from offline_trainer_test import get_pipeline_name, isolators, offline_trainer_output_path
-from estimator.load import load_model
-from loader import default_node_type
+from train import  DefaultExtractor
+from profile import  profile_process, get_min_max_watt
+from train_types import  ModelOutputType, PowerSourceMap
+from train.isolator.train_isolator import  get_background_containers, isolate_container
+from offline_trainer_test import  get_pipeline_name, isolators, offline_trainer_output_path
+from estimator.load import  load_model
+from loader import  default_node_type
 
-from prom_types import prom_responses_to_results, TIMESTAMP_COL
+from prom_types import  prom_responses_to_results, TIMESTAMP_COL
 
 extractor = DefaultExtractor()
  

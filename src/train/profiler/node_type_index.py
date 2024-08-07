@@ -5,18 +5,18 @@
 #   node_type = index_collection.index_train_machine(machine_id, new_spec)
 #   index_collection.save()
 
-import sys
-import os
+import  sys
+import  os
 
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
-from saver import save_node_type_index, save_machine_spec
-from loader import load_node_type_index
+from saver import  save_node_type_index, save_machine_spec
+from loader import  load_node_type_index
 
-import enum
+import  enum
 
-import re
+import  re
 def rename(name):
     name = name.replace("(R)", "")
     name = name.replace("(r)", "")
@@ -39,11 +39,11 @@ def format_vendor(vendor):
     return vendor.split()[0].replace("-","_").replace(",","").replace("'","").lower()
 
 GB = 1024*1024*1024
-import psutil
-import cpuinfo
-import subprocess
+import  psutil
+import  cpuinfo
+import  subprocess
 
-import pyudev
+import  pyudev
 
 def generate_spec(data_path, machine_id):
     processor = ""

@@ -1,9 +1,9 @@
-import json
-import os
-import shutil
+import  json
+import  os
+import  shutil
 
-import sys
-import pandas as pd
+import  sys
+import  pandas as pd
 
 fpath = os.path.join(os.path.dirname(__file__), "model")
 sys.path.append(fpath)
@@ -32,15 +32,15 @@ class PowerRequest:
 ###############################################
 # serve
 
-import sys
-import socket
-import signal
-from model_server_connector import ModelOutputType, make_request
-from archived_model import get_achived_model
-from model import load_downloaded_model
-from loader import get_download_output_path
-from config import set_env_from_model_config, SERVE_SOCKET, download_path
-from train_types import is_support_output_type
+import  sys
+import  socket
+import  signal
+from model_server_connector import  ModelOutputType, make_request
+from archived_model import  get_achived_model
+from model import  load_downloaded_model
+from loader import  get_download_output_path
+from config import  set_env_from_model_config, SERVE_SOCKET, download_path
+from train_types import  is_support_output_type
 
 loaded_model = dict()
 
@@ -146,7 +146,7 @@ def sig_handler(signum, frame) -> None:
     sys.exit(1)
 
 
-import argparse
+import  argparse
 
 
 def run():

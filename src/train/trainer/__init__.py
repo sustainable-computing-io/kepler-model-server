@@ -1,20 +1,20 @@
-import shutil
+import  shutil
 
-from abc import ABCMeta, abstractmethod
+from abc import  ABCMeta, abstractmethod
 
-import os
-import sys
+import  os
+import  sys
 
 util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
 sys.path.append(util_path)
 
-from util import assure_path, ModelOutputType, FeatureGroups, FeatureGroup,save_json, save_metadata, load_metadata, save_scaler, save_weight
+from util import  assure_path, ModelOutputType, FeatureGroups, FeatureGroup,save_json, save_metadata, load_metadata, save_scaler, save_weight
 
-from util.prom_types import  node_info_column
-from util.train_types import main_feature
-from util.extract_types import component_to_col, get_unit_vals, ratio_to_col
-from util.loader import get_model_group_path, get_save_path, get_model_name, get_archived_file, CHECKPOINT_FOLDERNAME, load_scaler
-from util.config import model_toppath
+from util.prom_types import   node_info_column
+from util.train_types import  main_feature
+from util.extract_types import  component_to_col, get_unit_vals, ratio_to_col
+from util.loader import  get_model_group_path, get_save_path, get_model_name, get_archived_file, CHECKPOINT_FOLDERNAME, load_scaler
+from util.config import  model_toppath
 
 def get_assured_checkpoint_path(group_path, assure=True):
     checkpoint_path = os.path.join(group_path, CHECKPOINT_FOLDERNAME)
@@ -22,9 +22,9 @@ def get_assured_checkpoint_path(group_path, assure=True):
         assure_path(checkpoint_path)
     return checkpoint_path
 
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MaxAbsScaler
+import  pandas as pd
+from sklearn.model_selection import  train_test_split
+from sklearn.preprocessing import  MaxAbsScaler
 
 def normalize_and_split(X_values, y_values, scaler, test_size=0.1):
     features = scaler.transform(X_values)

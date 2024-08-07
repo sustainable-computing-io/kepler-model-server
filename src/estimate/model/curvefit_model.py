@@ -1,22 +1,22 @@
-import os
-import sys
+import  os
+import  sys
 cur_path = os.path.join(os.path.dirname(__file__), '.')
 sys.path.append(cur_path)
 
-from estimate_common import transform_and_predict, load_model_by_pickle, load_model_by_json, is_component_model
-from util.train_types import main_feature, get_valid_feature_groups
+from estimate_common import  transform_and_predict, load_model_by_pickle, load_model_by_json, is_component_model
+from util.train_types import  main_feature, get_valid_feature_groups
 
-import os
-import sys
+import  os
+import  sys
 src_path = os.path.join(os.path.dirname(__file__), '..', '..')
 sys.path.append(src_path)
 
 train_path = os.path.join(os.path.dirname(__file__), '..', '..', 'train')
 sys.path.append(train_path)
 
-from util import ModelOutputType
+from util import  ModelOutputType
 
-import collections.abc
+import  collections.abc
 
 class CurveFitModelEstimator():
     def __init__(self, model_path, model_name, output_type, model_file, features, fe_files, component_init=False, feature_group=None):

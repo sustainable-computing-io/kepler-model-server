@@ -8,15 +8,15 @@ required step:
     docker run -it -p 8080:80 quay.io/sustainability/kepler_spec_power_db:v0.7
 """
 
-import requests
-from io import StringIO
-import os
-import sys
-import pandas as pd
-import json
-import datetime
+import  requests
+from io import  StringIO
+import  os
+import  sys
+import  pandas as pd
+import  json
+import  datetime
 
-from profiler.node_type_index import NodeTypeSpec
+from profiler.node_type_index import  NodeTypeSpec
 
 cur_path = os.path.join(os.path.dirname(__file__), '.')
 sys.path.append(cur_path)
@@ -29,13 +29,13 @@ sys.path.append(isolator_path)
 profiler_path = os.path.join(os.path.dirname(__file__), 'profiler')
 sys.path.append(profiler_path)
 
-from pipeline import NewPipeline
-from extractor import DefaultExtractor
-from isolator import MinIdleIsolator
-from format import time_to_str
-from prom_types import node_info_column, TIMESTAMP_COL
-from extract_types import component_to_col
-from train_types import FeatureGroup, default_trainer_names, BPF_FEATURES, PowerSourceMap
+from pipeline import  NewPipeline
+from extractor import  DefaultExtractor
+from isolator import  MinIdleIsolator
+from format import  time_to_str
+from prom_types import  node_info_column, TIMESTAMP_COL
+from extract_types import  component_to_col
+from train_types import  FeatureGroup, default_trainer_names, BPF_FEATURES, PowerSourceMap
 
 platform_energy_source = "acpi"
 acpi_component = PowerSourceMap[platform_energy_source][0]

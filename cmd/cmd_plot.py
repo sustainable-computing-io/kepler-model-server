@@ -1,25 +1,25 @@
-import os
-import sys
+import  os
+import  sys
 
 cur_path = os.path.join(os.path.dirname(__file__), '.')
 sys.path.append(cur_path)
 src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 
-from util.prom_types import TIMESTAMP_COL
-from util import PowerSourceMap
+from util.prom_types import  TIMESTAMP_COL
+from util import  PowerSourceMap
 
-from util.train_types import FeatureGroup, ModelOutputType, weight_support_trainers
-from util.loader import load_metadata, load_scaler, get_model_group_path
-from train.profiler.node_type_index import NodeTypeIndexCollection
-from estimate import load_model
+from util.train_types import  FeatureGroup, ModelOutputType, weight_support_trainers
+from util.loader import  load_metadata, load_scaler, get_model_group_path
+from train.profiler.node_type_index import  NodeTypeIndexCollection
+from estimate import  load_model
 markers = ['o', 's', '^', 'v', '<', '>', 'p', 'P', '*', 'x', '+', '|', '_']
 
 def ts_plot(data, cols, title, output_folder, name, labels=None, subtitles=None, ylabel=None):
     plot_height = 3
     plot_width = 10
-    import matplotlib.pyplot as plt
-    import seaborn as sns
+    import  matplotlib.pyplot as plt
+    import  seaborn as sns
     sns.set(font_scale=1.2)
     fig, axes = plt.subplots(len(cols), 1, figsize=(plot_width, len(cols)*plot_height))
     for i in range(0, len(cols)):
@@ -47,8 +47,8 @@ def feature_power_plot(data, model_id, output_type, energy_source, feature_cols,
     plot_height = 5
     plot_width = 5
 
-    import matplotlib.pyplot as plt
-    import seaborn as sns
+    import  matplotlib.pyplot as plt
+    import  seaborn as sns
     sns.set(font_scale=1.2)
     row_num = len(feature_cols)
     col_num = len(actual_power_cols)
@@ -89,8 +89,8 @@ def summary_plot(args, energy_source, summary_df, output_folder, name):
     plot_height = 3
     plot_width = 20
 
-    import matplotlib.pyplot as plt
-    import seaborn as sns
+    import  matplotlib.pyplot as plt
+    import  seaborn as sns
     sns.set(font_scale=1.2)
 
     energy_components = PowerSourceMap[energy_source]
@@ -125,8 +125,8 @@ def metadata_plot(args, energy_source, metadata_df, output_folder, name):
     plot_height = 5
     plot_width = 20
 
-    import matplotlib.pyplot as plt
-    import seaborn as sns
+    import  matplotlib.pyplot as plt
+    import  seaborn as sns
     sns.set(font_scale=1.2)
 
     energy_components = PowerSourceMap[energy_source]
@@ -198,13 +198,13 @@ def _load_all_models(model_toppath, output_type, name, node_types, energy_source
     return models_dict, metadata_dict, cpu_ms_max_dict
 
 def _plot_models(models, cpu_ms_max, energy_source, output_folder, name, max_plot=15, cpu_time_bin_num=10, sample_num=20):
-    from util.train_types import BPF_FEATURES
-    import numpy as np
-    import pandas as pd
-    import seaborn as sns
+    from util.train_types import  BPF_FEATURES
+    import  numpy as np
+    import  pandas as pd
+    import  seaborn as sns
     sns.set_palette("Paired")
 
-    import matplotlib.pyplot as plt
+    import  matplotlib.pyplot as plt
 
     main_feature_col = BPF_FEATURES[0]
     predicted_col = {

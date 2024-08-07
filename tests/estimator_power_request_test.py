@@ -1,15 +1,15 @@
-import socket
-import json
+import  socket
+import  json
 
-import os
-import sys
+import  os
+import  sys
 
 util_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'util')
 sys.path.append(util_path)
 
-from train_types import WORKLOAD_FEATURES, SYSTEM_FEATURES, ModelOutputType, CATEGORICAL_LABEL_TO_VOCAB, PowerSourceMap
-from config import SERVE_SOCKET
-from extractor_test import test_energy_source
+from train_types import  WORKLOAD_FEATURES, SYSTEM_FEATURES, ModelOutputType, CATEGORICAL_LABEL_TO_VOCAB, PowerSourceMap
+from config import  SERVE_SOCKET
+from extractor_test import  test_energy_source
 
 trainer_names = ['SGDRegressorTrainer']
 test_energy_sources = ["acpi", "rapl-sysfs"]

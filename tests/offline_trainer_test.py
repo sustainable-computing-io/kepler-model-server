@@ -8,28 +8,28 @@
 # test offline trainer
 #
 
-import requests
+import  requests
 
-import os
-import sys
-import shutil
-import json
-import codecs
+import  os
+import  sys
+import  shutil
+import  json
+import  codecs
 
 #################################################################
-# import internal src 
+# import  internal src 
 src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 #################################################################
 
-from train.offline_trainer import TrainAttribute, TrainRequest, serve_port
+from train.offline_trainer import  TrainAttribute, TrainRequest, serve_port
 
 
-from model_server_test import TMP_FILE
-from prom_test import get_prom_response
-from extractor_test import test_energy_source
-from util.loader import list_all_abs_models, list_all_dyn_models, class_to_json
-from util.prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
+from model_server_test import  TMP_FILE
+from prom_test import  get_prom_response
+from extractor_test import  test_energy_source
+from util.loader import  list_all_abs_models, list_all_dyn_models, class_to_json
+from util.prom_types import  get_valid_feature_group_from_queries, prom_responses_to_results
 
 offline_trainer_output_path = os.path.join(os.path.dirname(__file__), 'data', 'offline_trainer_output')
 
@@ -57,7 +57,7 @@ def get_target_path(save_path, energy_source, feature_group):
         os.mkdir(feature_path)
     return feature_path
 
-import json
+import  json
 
 def make_request(pipeline_name, idle_prom_response, isolator, isolator_args, prom_response,  energy_source, save_path):
     trainer = TrainAttribute(abs_trainer_names, dyn_trainer_names, idle_prom_response, isolator, isolator_args)

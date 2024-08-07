@@ -1,20 +1,20 @@
-import os
-import sys
+import  os
+import  sys
 
 #################################################################
-# import internal src 
+# import  internal src 
 src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
 sys.path.append(src_path)
 #################################################################
 
-from train import NewPipeline, NodeTypeSpec
-from util import get_valid_feature_group_from_queries, PowerSourceMap
-from util.loader import default_train_output_pipeline, default_node_type
+from train import  NewPipeline, NodeTypeSpec
+from util import  get_valid_feature_group_from_queries, PowerSourceMap
+from util.loader import  default_train_output_pipeline, default_node_type
 
-from prom_test import get_query_results, prom_output_path, prom_output_filename
-from extractor_test import test_extractors, test_energy_source
-from isolator_test import test_isolators
-from trainer_test import test_trainer_names, assert_train
+from prom_test import  get_query_results, prom_output_path, prom_output_filename
+from extractor_test import  test_extractors, test_energy_source
+from isolator_test import  test_isolators
+from trainer_test import  test_trainer_names, assert_train
 
 # fake spec value
 spec_values =   {

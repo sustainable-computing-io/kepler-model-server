@@ -5,25 +5,25 @@
 # save response to prom_output_path/prom_output_filename.json
 #
 # To use output:
-# from prom_test import get_prom_output
+# from prom_test import  get_prom_output
 # response = get_prom_response()
 # or
 # query_result = get_query_results()
 
 
-# import external src
-import os
-import sys
+# import  external src
+import  os
+import  sys
 
 #################################################################
-# import internal src 
+# import  internal src 
 src_path = os.path.join(os.path.dirname(__file__), '../src')
 sys.path.append(src_path)
 #################################################################
 
-from train.prom import PrometheusClient
-from util import save_json, load_json
-from util.prom_types import prom_responses_to_results
+from train.prom import  PrometheusClient
+from util import  save_json, load_json
+from util.prom_types import  prom_responses_to_results
 
 prom_output_path = os.path.join(os.path.dirname(__file__), 'data', 'prom_output')
 prom_output_filename = "prom_response"
