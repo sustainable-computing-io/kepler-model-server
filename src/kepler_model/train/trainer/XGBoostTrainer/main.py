@@ -1,34 +1,25 @@
 import datetime
 import json
 import os
-import sys
 from typing import List, Optional, Tuple, Dict, Any
 import pandas as pd
-import copy
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, mean_absolute_percentage_error
 from sklearn.model_selection import train_test_split, RepeatedKFold, cross_val_score
 import numpy as np
 import xgboost as xgb
 
-train_path = os.path.join(os.path.dirname(__file__), '../../')
-prom_path = os.path.join(os.path.dirname(__file__), '../../../prom')
-util_path = os.path.join(os.path.dirname(__file__), "../../../util")
-sys.path.append(train_path)
-sys.path.append(prom_path)
-sys.path.append(util_path)
 
-from train_types import FeatureGroup, FeatureGroups, EnergyComponentLabelGroups, EnergyComponentLabelGroup, XGBoostMissingModelXOrModelDescException, XGBoostModelFeatureOrLabelIncompatabilityException, XGBoostRegressionTrainType
-from extractor.extractor import DefaultExtractor
+from kepler_model.util.train_types import FeatureGroup, FeatureGroups, EnergyComponentLabelGroups, EnergyComponentLabelGroup, XGBoostMissingModelXOrModelDescException, XGBoostModelFeatureOrLabelIncompatabilityException, XGBoostRegressionTrainType
+from kepler_model.train.extractor.extractor import DefaultExtractor
 
 
 # Currently Cgroup Metrics are not exported
-class XGBoostRegressionStandalonePipeline():
-
+class XGBoostRegressionStandalonePipeline:
     def __init__(self, train_type: XGBoostRegressionTrainType, save_location: str, node_level: bool) -> None:
         self.model = None
         self.train_type = train_type
-        self.model_class = 'xgboost'
-        self.energy_source = 'rapl-sysfs'
+        self.model_class = "xgboost"
+        self.energy_source = "rapl-sysfs"
         self.feature_group = FeatureGroup.BPFIRQ
         self.save_location = save_location
         self.energy_components_labels = EnergyComponentLabelGroups[EnergyComponentLabelGroup.PackageEnergyComponentOnly]
@@ -48,7 +39,6 @@ class XGBoostRegressionStandalonePipeline():
     def initialize_relevant_models(self) -> None:
         # Generate models and store in dict
         self.model = XGBoostRegressionModelGenerationPipeline(self.features, self.model_labels, self.save_location, self.model_name)
-        
 
     def _generate_clean_model_training_data(self, extracted_data: pd.DataFrame) -> pd.DataFrame:
         # Merge Package data columns
@@ -65,7 +55,6 @@ class XGBoostRegressionStandalonePipeline():
         cloned_extracted_data[self.model_labels[0]] = package_power_dataset[self.model_labels[0]]
         # Return cloned_extracted_data
         return cloned_extracted_data
-
 
     def train(self, prom_client=None, refined_results=None) -> None:
         results = dict()
@@ -86,9 +75,9 @@ class XGBoostRegressionStandalonePipeline():
             self.model.train(self.train_type, clean_df)
         else:
             raise Exception("extractor failed")
- 
+
     # Accepts JSON Input with feature and corresponding prediction
-    def predict(self, features_and_predictions: List[Dict[str,float]]) -> Tuple[List[float], Dict[Any, Any]]:
+    def predict(self, features_and_predictions: List[Dict[str, float]]) -> Tuple[List[float], Dict[Any, Any]]:
         # features Convert to List[List[float]]
         list_of_predictions = []
         for prediction in features_and_predictions:
@@ -97,10 +86,10 @@ class XGBoostRegressionStandalonePipeline():
                 feature_values.append(prediction[feature])
             list_of_predictions.append(feature_values)
         return self.model.predict(list_of_predictions)
-        
+
 
 # XGBoost (Gradient Boosting Regressor) Base Model Generation
-class XGBoostRegressionModelGenerationPipeline():
+class XGBoostRegressionModelGenerationPipeline:
     """A class used to handle XGBoost Regression Model Incremental Training. This class currently only handles numerical features.
 
     ...
@@ -129,15 +118,13 @@ class XGBoostRegressionModelGenerationPipeline():
         # allow save_location to be modified
         self.save_location = save_location
         self.model_name = model_name
-        self.model_filename = model_name + '.model'
-        self.model_desc = 'model_desc.json'
-
+        self.model_filename = model_name + ".model"
+        self.model_desc = "model_desc.json"
 
     @staticmethod
     def _generate_base_model() -> xgb.XGBRegressor:
         # n_estimators, max_depth, eta (learning rate)
         return xgb.XGBRegressor(n_estimators=1000, learning_rate=0.1)
-
 
     def _generate_model_data_filepath(self) -> str:
         return os.path.join(self.save_location, self.model_name + "_package")
@@ -150,15 +137,13 @@ class XGBoostRegressionModelGenerationPipeline():
         filename_path = self._generate_model_data_filepath()
         return os.path.exists(os.path.join(filename_path, self.model_filename))
 
-
     def model_json_data_exists(self) -> bool:
         filename_path = self._generate_model_data_filepath()
         return os.path.exists(os.path.join(filename_path, self.model_desc))
 
-
     def retrieve_all_model_data(self) -> Tuple[Optional[xgb.XGBRegressor], Optional[Dict[Any, Any]]]:
         # Note that when generating base model, it does not need to contain default hyperparameters if it will just be
-        # used for prediction 
+        # used for prediction
         # Returns model and model_desc
         filename_path = self._generate_model_data_filepath()
         new_model = self._generate_base_model()
@@ -166,13 +151,12 @@ class XGBoostRegressionModelGenerationPipeline():
             raise XGBoostMissingModelXOrModelDescException(missing_model=self.model_exists(), missing_model_desc=self.model_json_data_exists())
         if self.model_exists() and self.model_json_data_exists():
             new_model.load_model(os.path.join(filename_path, self.model_filename))
-            with open(os.path.join(filename_path, self.model_desc), 'r') as f:
+            with open(os.path.join(filename_path, self.model_desc), "r") as f:
                 json_data = json.load(f)
-            if json_data['feature_names'] != self.feature_names or json_data['label_names'] != self.label_names:
-                raise XGBoostModelFeatureOrLabelIncompatabilityException(json_data['feature_names'], json_data['label_names'], self.feature_names, self.label_names)
-            return new_model, json_data        
+            if json_data["feature_names"] != self.feature_names or json_data["label_names"] != self.label_names:
+                raise XGBoostModelFeatureOrLabelIncompatabilityException(json_data["feature_names"], json_data["label_names"], self.feature_names, self.label_names)
+            return new_model, json_data
         return None, None
-
 
     def _save_model(self, model: xgb.XGBRegressor, model_desc: Dict[Any, Any]) -> None:
         filename_path = self._generate_model_data_filepath()
@@ -189,7 +173,6 @@ class XGBoostRegressionModelGenerationPipeline():
         with open(os.path.join(filename_path, self.model_desc), "w") as f:
             json.dump(model_desc, f)
 
-
     def _clone_and_clean_model_data(self, model_data: pd.DataFrame) -> pd.DataFrame:
         # Create df with relevant feature names and label names
         new_df = pd.DataFrame()
@@ -200,7 +183,6 @@ class XGBoostRegressionModelGenerationPipeline():
         print(new_df.columns.tolist())
         new_df.dropna(inplace=True)
         return new_df
-        
 
     def train(self, train_type: XGBoostRegressionTrainType, model_data: pd.DataFrame) -> None:
         # train_type must contain feature_names columns and label_names columns
@@ -216,10 +198,10 @@ class XGBoostRegressionModelGenerationPipeline():
             self.__perform_kfold_train(all_model_data_exists, cleaned_model_data)
 
     def __perform_train_test_split(self, all_model_data_exists: bool, ready_model_data: pd.DataFrame) -> None:
-        # Generate new model 
+        # Generate new model
         new_model = self._generate_base_model()
-        X = ready_model_data.loc[:,self.feature_names].values
-        y = ready_model_data.loc[:,self.label_names].values
+        X = ready_model_data.loc[:, self.feature_names].values
+        y = ready_model_data.loc[:, self.label_names].values
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=10)
         if all_model_data_exists:
@@ -231,7 +213,7 @@ class XGBoostRegressionModelGenerationPipeline():
             new_model.fit(X_train, y_train)
         # Evaluate Results and store in model_desc.json
         y_predictions = new_model.predict(X_test)
-        
+
         results = [value for value in y_predictions]
 
         rmse_res = mean_squared_error(y_test, results, squared=False)
@@ -260,12 +242,11 @@ class XGBoostRegressionModelGenerationPipeline():
         # Save Model and model_desc.json
         self._save_model(new_model, model_data)
 
-
     def __perform_kfold_train(self, all_model_data_exists: bool, ready_model_data: pd.DataFrame) -> None:
-        # Generate new model 
+        # Generate new model
         new_model = self._generate_base_model()
-        X = ready_model_data.loc[:,self.feature_names].values
-        y = ready_model_data.loc[:,self.label_names].values
+        X = ready_model_data.loc[:, self.feature_names].values
+        y = ready_model_data.loc[:, self.label_names].values
 
         # In the future, contemplate including RepeatedKFold
         kFoldCV = RepeatedKFold(n_splits=10, n_repeats=3, random_state=10)
@@ -297,14 +278,14 @@ class XGBoostRegressionModelGenerationPipeline():
         print(np.mean(y))
         model_data = {
             "timestamp": datetime.datetime.now().timestamp(),
-            "train_type": "cross_val_score_Repeated3KFold", # this should be variable instead of hard coded
-            "average_mae": mae_cv_scores.mean(), 
+            "train_type": "cross_val_score_Repeated3KFold",  # this should be variable instead of hard coded
+            "average_mae": mae_cv_scores.mean(),
             "mae_std": mae_cv_scores.std(),
             "average_mape": mape_cv_scores.mean(),
             "mape_std": mape_cv_scores.std(),
             "average_r2": r2_cv_scores.mean(),
             "r2_std": r2_cv_scores.std(),
-            "average_y_val": np.mean(y)
+            "average_y_val": np.mean(y),
         }
 
         # TODO: Determine acceptable average_mae?
@@ -318,7 +299,7 @@ class XGBoostRegressionModelGenerationPipeline():
         print(new_model.objective)
         # Save Model and model_desc.json
         self._save_model(new_model, model_data)
-        
+
     # Receives list of features and returns a list of predictions in order
     # Return None if no available model
     def predict(self, input_values: List[List[float]]) -> Tuple[Optional[List[float]], Optional[Dict[Any, Any]]]:
@@ -331,4 +312,4 @@ class XGBoostRegressionModelGenerationPipeline():
                 predicted_results.append(predicted_result.astype(float)[0])
             return predicted_results, retrieved_model_desc
         return None, None
-        
+

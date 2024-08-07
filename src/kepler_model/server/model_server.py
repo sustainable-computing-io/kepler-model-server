@@ -1,22 +1,16 @@
-from flask import Flask, request, json, make_response, send_file
-
 import os
-import sys
 import codecs
 import shutil
 import requests
 
-src_path = os.path.join(os.path.dirname(__file__), "..")
-util_path = os.path.join(os.path.dirname(__file__), "util")
+from flask import Flask, request, json, make_response, send_file
 
-sys.path.append(src_path)
-sys.path.append(util_path)
+from kepler_model.util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup, PowerSourceMap, weight_support_trainers
+from kepler_model.util.config import getConfig, model_toppath, ERROR_KEY, MODEL_SERVER_MODEL_REQ_PATH, MODEL_SERVER_MODEL_LIST_PATH, initial_pipeline_urls, download_path
+from kepler_model.util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME, get_pipeline_path, any_node_type, is_matched_type, get_largest_candidates
+from kepler_model.util.saver import WEIGHT_FILENAME
+from kepler_model.train import NodeTypeSpec, NodeTypeIndexCollection
 
-from util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup, PowerSourceMap, weight_support_trainers
-from util.config import getConfig, model_toppath, ERROR_KEY, MODEL_SERVER_MODEL_REQ_PATH, MODEL_SERVER_MODEL_LIST_PATH, initial_pipeline_urls, download_path
-from util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME, get_pipeline_path, any_node_type, is_matched_type, get_largest_candidates
-from util.saver import WEIGHT_FILENAME
-from train import NodeTypeSpec, NodeTypeIndexCollection
 
 ###############################################
 # model request #

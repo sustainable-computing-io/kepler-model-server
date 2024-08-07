@@ -1,27 +1,26 @@
 from sklearn.metrics import mean_absolute_error
 import os
-import sys
 import xgboost as xgb
 import numpy as np
 import base64
 
-util_path = os.path.join(os.path.dirname(__file__), '..', '..', 'util')
-sys.path.append(util_path)
-
-from util import save_pkl, load_pkl
+from kepler_model.util import save_pkl, load_pkl
 from abc import abstractmethod
 
 from . import Trainer
 
 model_class = "xgboost"
 
+
 def get_save_path(model_filepath):
     return "/".join(model_filepath.split("/")[0:-1])
+
 
 def _json_filepath(filepath):
     if ".json" not in filepath:
         filepath += ".json"
     return filepath
+
 
 class XgboostTrainer(Trainer):
     def __init__(self, energy_components, feature_group, energy_source, node_level, pipeline_name, scaler_type="maxabs"):
@@ -30,20 +29,20 @@ class XgboostTrainer(Trainer):
 
     def init_model(self):
         return xgb.XGBRegressor(n_estimators=100, learning_rate=0.1)
-    
+
     @abstractmethod
     def _train(self, node_type, component, X_values, y_values):
         return NotImplemented
 
     def train(self, node_type, component, X_values, y_values):
-        if hasattr(self, 'fe'):
+        if hasattr(self, "fe"):
             for index in range(len(self.fe)):
                 X_values = self.fe[index].fit_transform(X_values)
         self._train(node_type, component, X_values, y_values)
 
     def save_checkpoint(self, model, filepath):
         filepath = _json_filepath(filepath)
-        if hasattr(self, 'fe'):
+        if hasattr(self, "fe"):
             save_path = get_save_path(filepath)
             for index in range(len(self.fe)):
                 save_pkl(save_path, self.fe_files[index], self.fe[index])
@@ -51,7 +50,7 @@ class XgboostTrainer(Trainer):
 
     def load_local_checkpoint(self, filepath):
         filepath = _json_filepath(filepath)
-        if hasattr(self, 'fe_files'):
+        if hasattr(self, "fe_files"):
             save_path = get_save_path(filepath)
             for index in range(len(self.fe_files)):
                 loaded_fe = load_pkl(save_path, self.fe_files[index])
@@ -63,7 +62,7 @@ class XgboostTrainer(Trainer):
             loaded_model.load_model(filepath)
         return loaded_model, loaded_model is not None
 
-    #TODO
+    # TODO
     def should_archive(self, node_type):
         return True
 
@@ -74,7 +73,7 @@ class XgboostTrainer(Trainer):
         predicted_values = self.predict(node_type, component, X_test, skip_preprocess=True)
         mae = mean_absolute_error(y_test, predicted_values)
         return mae
-    
+
     def get_mape(self, node_type, component, X_test, y_test):
         y_test = list(y_test)
         predicted_values = self.predict(node_type, component, X_test, skip_preprocess=True)
@@ -93,8 +92,7 @@ class XgboostTrainer(Trainer):
 
     def component_model_filename(self, component):
         return component + ".json"
-    
-    
+
     def get_weight_dict(self, node_type):
         weight_dict = dict()
         scaler = self.node_scalers[node_type]
@@ -106,12 +104,6 @@ class XgboostTrainer(Trainer):
                 return
             with open(filename, "r") as f:
                 contents = f.read()
-            weight_dict[component] = {
-                "All_Weights": {
-                        "Categorical_Variables": dict(),
-                        "Numerical_Variables": {self.features[i]: 
-                                                {"scale": scaler.scale_[i]} for i in range(len(self.features))},
-                        "XGboost_Weights": base64.b64encode(contents.encode('utf-8')).decode('utf-8')
-                }
-            }
+            weight_dict[component] = {"All_Weights": {"Categorical_Variables": dict(), "Numerical_Variables": {self.features[i]: {"scale": scaler.scale_[i]} for i in range(len(self.features))}, "XGboost_Weights": base64.b64encode(contents.encode("utf-8")).decode("utf-8")}}
         return weight_dict
+

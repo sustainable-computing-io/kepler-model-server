@@ -1,33 +1,34 @@
 import requests
-import enum
 import os
-import sys
 import shutil
 import json
 import codecs
 
-util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
-sys.path.append(util_path)
 
-from config import is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint, download_path
-from loader import get_download_output_path
-from train_types import ModelOutputType
+from kepler_model.util.config import is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint, download_path
+from kepler_model.util.loader import get_download_output_path
+from kepler_model.util.train_types import ModelOutputType
+
 
 # discover_spec: determine node spec in json format (refer to NodeTypeSpec)
 def discover_spec():
     import psutil
+
     # TODO: reuse node_type_index/generate_spec with loosen selection
     cores = psutil.cpu_count(logical=True)
-    spec = {
-        "cores": cores
-    }
+    spec = {"cores": cores}
     return spec
+
+
 node_spec = discover_spec()
+
 
 def make_model_request(power_request):
     return {"metrics": power_request.metrics + power_request.system_features, "output_type": power_request.output_type, "source": power_request.energy_source, "filter": power_request.filter, "trainer_name": power_request.trainer_name, "spec": node_spec}
 
-TMP_FILE = 'tmp.zip'
+
+TMP_FILE = "tmp.zip"
+
 
 def unpack(energy_source, output_type, response, replace=True):
     output_path = get_download_output_path(download_path, energy_source, output_type)
@@ -39,11 +40,12 @@ def unpack(energy_source, output_type, response, replace=True):
             return output_path
         # delete existing model
         shutil.rmtree(output_path)
-    with codecs.open(tmp_filepath, 'wb') as f:
+    with codecs.open(tmp_filepath, "wb") as f:
         f.write(response.content)
     shutil.unpack_archive(tmp_filepath, output_path)
     os.remove(tmp_filepath)
     return output_path
+
 
 def make_request(power_request):
     if not is_model_server_enabled():
@@ -59,6 +61,7 @@ def make_request(power_request):
         return None
     return unpack(power_request.energy_source, output_type, response)
 
+
 def list_all_models():
     if not is_model_server_enabled():
         return dict()
@@ -71,3 +74,4 @@ def list_all_models():
         return dict()
     model_names = json.loads(response.content.decode("utf-8"))
     return model_names
+

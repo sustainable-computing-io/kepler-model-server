@@ -72,7 +72,7 @@ class TrainRequest:
                 isolator_args["abs_pipeline_name"] = default_pipelines[self.energy_source]
             isolator = TrainIsolator(idle_data, profiler=profiler, abs_pipeline_name=isolator_args["abs_pipeline_name"])
         else:
-            module_path = importlib.import_module("isolator")
+            module_path = importlib.import_module("kepler_model.train.isolator.isolator")
             # default init, no args
             isolator = getattr(module_path, isolator_key)()
         return isolator

@@ -16,36 +16,25 @@ DATAPATH=/path/to/models python cmd/main.py export --pipeline-name ec2-0.7.11 -o
 """
 
 import os
-import sys
 import json
+import boto3
 
-from profiler.node_type_index import NodeTypeSpec, NodeAttribute
+from kepler_model.train.profiler.node_type_index import NodeTypeSpec, NodeAttribute
+from kepler_model.train.pipeline import NewPipeline
+from kepler_model.train.extractor import DefaultExtractor
+from kepler_model.train.isolator.isolator import MinIdleIsolator
+from kepler_model.util.prom_types import node_info_column, prom_responses_to_results, get_valid_feature_group_from_queries
 
-cur_path = os.path.join(os.path.dirname(__file__), '.')
-sys.path.append(cur_path)
-util_path = os.path.join(os.path.dirname(__file__), '..', 'util')
-sys.path.append(util_path)
-extractor_path = os.path.join(os.path.dirname(__file__), 'extractor')
-sys.path.append(extractor_path)
-isolator_path = os.path.join(os.path.dirname(__file__), 'isolator')
-sys.path.append(isolator_path)
-profiler_path = os.path.join(os.path.dirname(__file__), 'profiler')
-sys.path.append(profiler_path)
-
-from pipeline import NewPipeline
-from extractor import DefaultExtractor
-from isolator import MinIdleIsolator
-from prom_types import node_info_column, prom_responses_to_results, get_valid_feature_group_from_queries
-from train_types import default_trainer_names, PowerSourceMap
-from saver import save_json
-from config import model_toppath
+from kepler_model.util.train_types import default_trainer_names, PowerSourceMap
+from kepler_model.util.saver import save_json
+from kepler_model.util.config import model_toppath
 
 data_path = os.path.join(model_toppath, "..", "data")
 
-node_profiles = ["m5.metal", "i3.metal", "c5.metal",  "r5.metal", "m5zn.metal", "m7i.metal-24xl"]
+node_profiles = ["m5.metal", "i3.metal", "c5.metal", "r5.metal", "m5zn.metal", "m7i.metal-24xl"]
 node_image = "ami-0e4d0bb9670ea8db0"
 
-import boto3
+
 last_modified = None
 
 aws_access_key_id = os.environ["AWS_ACCESS_KEY_ID"]
@@ -53,18 +42,21 @@ aws_secret_access_key = os.environ["AWS_SECRET_ACCESS_KEY"]
 region_name = os.environ["AWS_REGION"]
 
 # Initialize the S3 client
-s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key, region_name=region_name)
-bucket_name = 'kepler-power-model'
+s3 = boto3.client("s3", aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key, region_name=region_name)
+bucket_name = "kepler-power-model"
 unknown = -1
+
+
 def read_response_in_json(key):
     print(key)
     response = s3.get_object(Bucket=bucket_name, Key=key)
     global last_modified
-    last_modified = response['LastModified']
+    last_modified = response["LastModified"]
     print("{} last modified time: {}".format(key, last_modified))
-    return json.loads(response['Body'].read().decode('utf-8'))
+    return json.loads(response["Body"].read().decode("utf-8"))
 
-class Ec2PipelineRun():
+
+class Ec2PipelineRun:
     def __init__(self, name, abs_trainer_names=default_trainer_names, dyn_trainer_names=default_trainer_names, isolator=MinIdleIsolator()):
         self.energy_source = "rapl-sysfs"
         self.energy_components = PowerSourceMap[self.energy_source]
@@ -75,7 +67,7 @@ class Ec2PipelineRun():
             # load data from COS
             machine_id = "-".join([profile, node_image])
             kepler_query_key = os.path.join("/", machine_id, "data", "kepler_query.json")
-            machine_spec_filename =  machine_id + ".json"
+            machine_spec_filename = machine_id + ".json"
             spec_key = os.path.join("/", machine_id, "data", "machine_spec", machine_spec_filename)
             query_response = read_response_in_json(kepler_query_key)
             spec_json = read_response_in_json(spec_key)
@@ -93,7 +85,7 @@ class Ec2PipelineRun():
             node_type = self.pipeline.node_collection.index_train_machine(machine_id, spec)
             query_results = prom_responses_to_results(query_response)
             query_results[node_info_column] = node_type
-            valid_fg = get_valid_feature_group_from_queries([query for query in query_response.keys() if len(query_response[query]) > 1 ])
+            valid_fg = get_valid_feature_group_from_queries([query for query in query_response.keys() if len(query_response[query]) > 1])
             for feature_group in valid_fg:
                 self.pipeline.process(query_results, self.energy_components, self.energy_source, feature_group=feature_group.name, replace_node_type=node_type)
         self.pipeline.node_collection.save()
@@ -103,6 +95,7 @@ class Ec2PipelineRun():
 
     def archive_pipeline(self):
         self.pipeline.archive_pipeline()
+
 
 if __name__ == "__main__":
     pipeline_name = "ec2-0.7.11"
@@ -116,3 +109,4 @@ if __name__ == "__main__":
     item["endTimeUTC"] = last_modified.strftime("%Y-%m-%dT%H:%M:%SZ")
     print(item)
     save_json(path=data_path, name=pipeline_name, data=item)
+
