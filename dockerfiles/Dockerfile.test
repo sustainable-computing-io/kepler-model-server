@@ -11,6 +11,7 @@ COPY tests/ tests/
 RUN pip install --no-cache-dir . && \
 		pip cache purge
 
+RUN mkdir -p /mnt/models
 
 # port for Model Server
 EXPOSE 8100

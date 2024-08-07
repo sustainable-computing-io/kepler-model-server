@@ -20,6 +20,8 @@ RUN pip install --no-cache-dir . && \
 
 RUN hatch env create
 
+
+RUN mkdir -p /mnt/models
 # port for Model Server
 EXPOSE 8100
 # port for Online Trainer (TODO: reserved for event-based online training)
