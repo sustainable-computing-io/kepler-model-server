@@ -2,10 +2,11 @@ FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server
 
 WORKDIR /kepler_model
 
-COPY cmd/ .
-COPY src/ .
 COPY pyproject.toml .
 COPY README.md .
+COPY cmd/ cmd/
+COPY src/ src/
+
 RUN pip install --no-cache-dir .
 
 # port for Model Server

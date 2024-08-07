@@ -11,6 +11,7 @@ COPY pyproject.toml .
 # NOTE: README.md and src/../__about__.py are referenced in pyproject.toml
 # so that they are copied into the image for pip install to succeed
 COPY README.md .
+COPY cmd/ cmd/
 COPY src/ src/
 COPY tests/ tests/
 

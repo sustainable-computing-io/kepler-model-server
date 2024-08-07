@@ -4,9 +4,9 @@ WORKDIR /kepler_model
 
 COPY pyproject.toml .
 COPY README.md .
-COPY src/ .
-COPY tests/ .
-COPY cmd/ .
+COPY cmd/ cmd/
+COPY src/ src/
+COPY tests/ tests/
 
 # port for Model Server
 EXPOSE 8100
