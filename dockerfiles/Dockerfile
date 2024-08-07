@@ -2,11 +2,10 @@ FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server
 
 WORKDIR /kepler_model
 
-RUN mkdir -p /usr/local/src
-RUN mkdir -p /usr/local/resource
 COPY cmd/ cmd/
 COPY src/ src/
-COPY pyproject.toml ./
+COPY pyproject.toml .
+COPY README.md .
 RUN pip install --no-cache-dir .
 
 # port for Model Server
@@ -16,4 +15,4 @@ EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
 
-ENTRYPOINT ["kepler-model-server"]
+ENTRYPOINT ["kepler-model"]
