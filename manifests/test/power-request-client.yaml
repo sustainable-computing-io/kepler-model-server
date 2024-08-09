@@ -10,6 +10,7 @@ spec:
       - name: kepler-exporter
         image: localhost:5001/kepler_model_server:devel-test
         imagePullPolicy: IfNotPresent
+        command: ["/bin/bash", "-c"]
         args: ["until [ -e /tmp/estimator.sock ]; do sleep 1; done && python3 -u tests/estimator_power_request_test.py && echo Done && sleep infinity"]
         volumeMounts:
         - name: cfm

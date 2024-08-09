@@ -21,7 +21,7 @@ spec:
   - name: trainer
     image: localhost:5001/kepler_model_server:devel-test
     imagePullPolicy: IfNotPresent
-    args: ["python3 -u tests/minimal_trainer.py"]
+    args: [python3,  tests/minimal_trainer.py]
     volumeMounts:
     - name: mnt
       mountPath: /mnt
