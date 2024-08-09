@@ -17,8 +17,8 @@ from kepler_model.util.loader import get_download_output_path
 from kepler_model.estimate.model_server_connector import list_all_models
 from kepler_model.util.config import get_model_server_req_endpoint, download_path
 
-from .extractor_test import test_energy_source
-from .estimator_power_request_test import generate_request
+from tests.extractor_test import test_energy_source
+from tests.estimator_power_request_test import generate_request
 
 os.environ["MODEL_SERVER_URL"] = "http://localhost:8100"
 
@@ -56,4 +56,3 @@ if __name__ == "__main__":
                 assert response.status_code == 200, "response {} not OK".format(request_json)
                 loaded_weight = json.loads(response.content)
                 print(loaded_weight)
-

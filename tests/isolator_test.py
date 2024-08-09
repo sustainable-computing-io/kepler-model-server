@@ -13,10 +13,10 @@ from kepler_model.train.extractor.preprocess import find_correlations
 
 from kepler_model.train import DefaultProfiler
 
-from .extractor_test import test_energy_source, get_extract_results, get_expected_power_columns, test_extractors, extractor_output_path
-from .prom_test import get_prom_response
+from tests.extractor_test import test_energy_source, get_extract_results, get_expected_power_columns, test_extractors, extractor_output_path
+from tests.prom_test import get_prom_response
 
-isolator_output_path = os.path.join(os.path.dirname(__file__), 'data', 'isolator_output')
+isolator_output_path = os.path.join(os.path.dirname(__file__), "data", "isolator_output")
 assure_path(isolator_output_path)
 
 test_idle_response = get_prom_response(save_name="idle")
