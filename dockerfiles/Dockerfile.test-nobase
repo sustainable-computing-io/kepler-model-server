@@ -39,3 +39,5 @@ EXPOSE 8100
 EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
+
+CMD ["model-server"]
