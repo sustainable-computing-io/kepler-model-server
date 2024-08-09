@@ -5,6 +5,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 		pip cache purge
 
 WORKDIR /kepler_model
+ENV	PYTHONPATH=/kepler_model
+
 COPY pyproject.toml .
 
 # NOTE: README.md and __about__.py are referenced in pyproject.toml
