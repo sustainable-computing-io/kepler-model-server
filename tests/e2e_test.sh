@@ -75,18 +75,24 @@ wait_for_db() {
 	wait_for_keyword db "Http File Serve Serving" "model-db is not serving"
 	get_db_log
 }
+info() {
+	echo "INFO: $*"
+}
 
 wait_for_keyword() {
 	num_iterations=30
 	component=$1
 	keyword=$2
 	message=$3
+	info "Waiting for '${keyword}' from ${component} log"
+
 	for ((i = 0; i < num_iterations; i++)); do
 		if grep -q "$keyword" <<<$(get_${component}_log); then
 			return
 		fi
 		sleep 5
 	done
+
 	echo "timeout ${num_iterations}s waiting for '${keyword}' from ${component} log"
 	echo "Error: $message"
 
