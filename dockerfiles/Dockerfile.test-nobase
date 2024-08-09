@@ -1,5 +1,7 @@
-# Include base requirements
 FROM python:3.10-slim
+
+# This file contains all tools and dependencies needed for
+# setting up the development and testing environment
 
 RUN python -m pip install --no-cache-dir hatch && \
 		pip cache purge
