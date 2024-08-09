@@ -83,7 +83,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: use Kepler action to deploy cluster
-        uses: sustainable-computing-io/kepler-action@v0.0.7
+        uses: sustainable-computing-io/kepler-action@v0.0.8
         with:
           ebpfprovider: libbpf
           cluster_provider: kind
@@ -91,6 +91,7 @@ jobs:
           prometheus_enable: true
           tekton_enable: true
           kernel_module_names: intel_rapl_common
+          local_dev_cluster_version: v0.0.7
 
       - name: Install Kepler
         working-directory: model_training
