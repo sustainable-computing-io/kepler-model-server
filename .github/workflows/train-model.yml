@@ -116,13 +116,12 @@ jobs:
               sudo pip3 install awscli
 
       - name: use Kepler action to deploy cluster
-        uses: sustainable-computing-io/kepler-action@v0.0.8
+        uses: sustainable-computing-io/kepler-action@v0.0.7
         with:
           ebpfprovider: libbpf
           cluster_provider: kind
           prometheus_enable: true
           tekton_enable: true
-          local_dev_cluster_version: v0.0.7
 
       - name: Prepare PVC
         working-directory: model_training/tekton
