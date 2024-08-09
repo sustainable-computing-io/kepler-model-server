@@ -17,4 +17,5 @@ EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
 
-ENTRYPOINT ["kepler-model"]
+ENTRYPOINT ["bash", "-c"]
+CMD ["kepler-model"]
