@@ -25,171 +25,180 @@ top_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"/..
 echo "Top location: $top_dir"
 
 get_component() {
-    component=$1
-    kubectl get po -n kepler -l app.kubernetes.io/component=${component} -oname
+	component=$1
+	kubectl get po -n kepler -l app.kubernetes.io/component=${component} -oname
 }
 
 get_kepler_log() {
-    wait_for_kepler
-    kubectl logs -n kepler $(get_component exporter) -c kepler-exporter
+	wait_for_kepler
+	kubectl logs -n kepler $(get_component exporter) -c kepler-exporter
 }
 
 get_estimator_log() {
-    wait_for_kepler
-    kubectl logs -n kepler $(get_component exporter) -c estimator
+	wait_for_kepler
+	kubectl logs -n kepler $(get_component exporter) -c estimator
 }
 
 get_server_log() {
-    kubectl logs -n kepler $(get_component model-server) -c server-api
+	kubectl logs -n kepler $(get_component model-server) -c server-api
 }
 
-get_db_log(){
-    kubectl logs -n kepler model-db -c trainer
-    kubectl logs -n kepler model-db
+get_db_log() {
+	kubectl logs -n kepler model-db -c trainer
+	kubectl logs -n kepler model-db
 }
 
 wait_for_kepler() {
-    kubectl rollout status ds kepler-exporter -n kepler --timeout 5m
-    kubectl describe ds -n kepler kepler-exporter
-    kubectl get po -n kepler
+	local ret=0
+	kubectl rollout status ds kepler-exporter -n kepler --timeout 5m || ret=1
+	kubectl describe ds -n kepler kepler-exporter || ret=1
+	kubectl get po -n kepler || ret=1
+
+	kubectl logs -n kepler ds/kepler-exporter --all-containers || ret=1
+	return $ret
 }
 
 wait_for_server() {
-    kubectl rollout status deploy kepler-model-server -n kepler --timeout 5m
-    wait_for_keyword server "initial pipeline is loaded" "server cannot load initial pipeline"
-    wait_for_keyword server "Press CTRL+C to quit" "server has not started yet"
-    get_server_log
-    kubectl get svc kepler-model-server -n kepler
-    kubectl get endpoints kepler-model-server -n kepler
+	kubectl rollout status deploy kepler-model-server -n kepler --timeout 5m
+	wait_for_keyword server "initial pipeline is loaded" "server cannot load initial pipeline"
+	wait_for_keyword server "Press CTRL+C to quit" "server has not started yet"
+	get_server_log
+	kubectl get svc kepler-model-server -n kepler
+	kubectl get endpoints kepler-model-server -n kepler
 }
 
 wait_for_db() {
-    kubectl get po model-db -n kepler
-    kubectl wait -n kepler --for=jsonpath='{.status.phase}'=Running pod/model-db --timeout 5m || true
-    kubectl describe po model-db -n kepler
-    kubectl wait -n kepler --for=jsonpath='{.status.phase}'=Running pod/model-db --timeout 1m
-    wait_for_keyword db "Http File Serve Serving" "model-db is not serving"
-    get_db_log
+	kubectl get po model-db -n kepler
+	kubectl wait -n kepler --for=jsonpath='{.status.phase}'=Running pod/model-db --timeout 5m || true
+	kubectl describe po model-db -n kepler
+	kubectl wait -n kepler --for=jsonpath='{.status.phase}'=Running pod/model-db --timeout 1m
+	wait_for_keyword db "Http File Serve Serving" "model-db is not serving"
+	get_db_log
 }
 
 wait_for_keyword() {
-    num_iterations=30
-    component=$1
-    keyword=$2
-    message=$3
-    for ((i = 0; i < num_iterations; i++)); do
-        if grep -q "$keyword" <<< $(get_${component}_log); then
-            return
-        fi
-        sleep 5
-    done
-    echo "timeout ${num_iterations}s waiting for '${keyword}' from ${component} log"
-    echo "Error: $message"
+	num_iterations=30
+	component=$1
+	keyword=$2
+	message=$3
+	for ((i = 0; i < num_iterations; i++)); do
+		if grep -q "$keyword" <<<$(get_${component}_log); then
+			return
+		fi
+		sleep 5
+	done
+	echo "timeout ${num_iterations}s waiting for '${keyword}' from ${component} log"
+	echo "Error: $message"
 
-    kubectl get po -n kepler -oyaml
+	kubectl get po -n kepler -oyaml
 
-    echo "${component} log:"
-    get_${component}_log
-    # show all status
-    kubectl get po -A
-    if [ ! -z ${SERVER} ]; then
-        get_server_log
-    fi
-    if [ ! -z ${ESTIMATOR} ]; then
-        get_estimator_log
-    fi
-    exit 1
+	echo "${component} log:"
+	get_${component}_log
+	# show all status
+	kubectl get po -A
+	if [ ! -z ${SERVER} ]; then
+		get_server_log
+	fi
+	if [ ! -z ${ESTIMATOR} ]; then
+		get_estimator_log
+	fi
+	exit 1
 }
 
 check_estimator_set_and_init() {
-    wait_for_keyword kepler "Model Config NODE_COMPONENTS: {ModelType:EstimatorSidecar" "Kepler should set desired config"
+	wait_for_keyword kepler "Model Config NODE_COMPONENTS: {ModelType:EstimatorSidecar" "Kepler should set desired config"
 }
 
 restart_kepler() {
-    kubectl delete po -n kepler -l app.kubernetes.io/component=exporter
-    sleep 5
-    get_kepler_log
+	kubectl delete po -n kepler -l app.kubernetes.io/component=exporter
+	sleep 5
+	get_kepler_log
 }
 
 restart_model_server() {
-    kubectl delete po -l app.kubernetes.io/component=model-server -n kepler
-    sleep 10
-    wait_for_server
-    restart_kepler
+	kubectl delete po -l app.kubernetes.io/component=model-server -n kepler
+	sleep 10
+	wait_for_server
+	restart_kepler
 }
 
 test() {
-    # set options
-    DEPLOY_OPTIONS=$1
+	# set options
+	DEPLOY_OPTIONS=$1
 
-    echo ${DEPLOY_OPTIONS}
+	echo ${DEPLOY_OPTIONS}
 
-    for opt in ${DEPLOY_OPTIONS}; do export $opt=true; done;
+	for opt in ${DEPLOY_OPTIONS}; do export $opt=true; done
 
-    # patch MODEL_TOPURL environment if DB is not available
-    if [ -z ${DB} ]; then
+	# patch MODEL_TOPURL environment if DB is not available
+	if [ -z ${DB} ]; then
 
-        # train and deploy local modelDB
-        kubectl apply -f ${top_dir}/manifests/test/file-server.yaml
-        sleep 10
-        wait_for_db
+		# train and deploy local modelDB
+		kubectl apply -f ${top_dir}/manifests/test/file-server.yaml
+		sleep 10
+		wait_for_db
 
-        if [ ! -z ${ESTIMATOR} ]; then
-            kubectl patch configmap -n kepler kepler-cfm --type merge -p "$(cat ${top_dir}/manifests/test/patch-estimator-sidecar.yaml)"
-            kubectl patch ds kepler-exporter -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"estimator","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
-        fi
-        if [ ! -z ${SERVER} ]; then
-            kubectl patch deploy kepler-model-server -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"server-api","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
-            kubectl delete po -n kepler -l app.kubernetes.io/component=model-server
-        fi
-        kubectl delete po -n kepler -l app.kubernetes.io/component=exporter
+		if [ ! -z ${ESTIMATOR} ]; then
+			kubectl patch configmap -n kepler kepler-cfm --type merge -p "$(cat ${top_dir}/manifests/test/patch-estimator-sidecar.yaml)"
+			kubectl patch ds kepler-exporter -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"estimator","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
+		fi
+		if [ ! -z ${SERVER} ]; then
+			kubectl patch deploy kepler-model-server -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"server-api","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
+			kubectl delete po -n kepler -l app.kubernetes.io/component=model-server
+		fi
+		kubectl delete po -n kepler -l app.kubernetes.io/component=exporter
 
-    fi
+	fi
 
-    if [ ! -z ${ESTIMATOR} ]; then
-        # with estimator
-        if [ ! -z ${TEST} ]; then
-            # dummy kepler
-            kubectl patch ds kepler-exporter -n kepler --patch-file ${top_dir}/manifests/test/power-request-client.yaml
-            if [ ! -z ${SERVER} ]; then
-                restart_model_server
-            fi
-            sleep 1
-            wait_for_kepler
-            wait_for_keyword kepler Done "cannot get power"
-        else
-            check_estimator_set_and_init
-        fi
+	if [ ! -z ${ESTIMATOR} ]; then
+		# with estimator
+		if [ ! -z ${TEST} ]; then
+			# dummy kepler
+			kubectl patch ds kepler-exporter -n kepler --patch-file ${top_dir}/manifests/test/power-request-client.yaml
+			if [ ! -z ${SERVER} ]; then
+				restart_model_server
+			fi
+			sleep 1
+			wait_for_kepler || {
+				kubectl get po -n kepler -oyaml
+				kubectl po -n kepler -oyaml
+				exit 1
+			}
+			wait_for_keyword kepler Done "cannot get power"
+		else
+			check_estimator_set_and_init
+		fi
 
-        if [ ! -z ${SERVER} ]; then
-            # with server
-            wait_for_server
-            restart_kepler
-            get_estimator_log
-            sleep 5
-            wait_for_keyword estimator "load model from model server" "estimator should be able to load model from server"
-        else
-            # no server
-            get_estimator_log
-            wait_for_keyword estimator "load model from config" "estimator should be able to load model from config"
-        fi
-    else
-        # no estimator
-        if [ ! -z ${SERVER} ]; then
-            # with server
-            if [ ! -z ${TEST} ]; then 
-                # dummy kepler
-                kubectl patch ds kepler-exporter -n kepler --patch-file ${top_dir}/manifests/test/model-request-client.yaml
-                restart_model_server
-                wait_for_keyword kepler Done "cannot get model weight"
-            else
-                wait_for_server
-                restart_kepler
-                wait_for_keyword kepler "getWeightFromServer.*core" "kepler should get weight from server"
-            fi
-        fi
-    fi
+		if [ ! -z ${SERVER} ]; then
+			# with server
+			wait_for_server
+			restart_kepler
+			get_estimator_log
+			sleep 5
+			wait_for_keyword estimator "load model from model server" "estimator should be able to load model from server"
+		else
+			# no server
+			get_estimator_log
+			wait_for_keyword estimator "load model from config" "estimator should be able to load model from config"
+		fi
+	else
+		# no estimator
+		if [ ! -z ${SERVER} ]; then
+			# with server
+			if [ ! -z ${TEST} ]; then
+				# dummy kepler
+				kubectl patch ds kepler-exporter -n kepler --patch-file ${top_dir}/manifests/test/model-request-client.yaml
+				restart_model_server
+				wait_for_keyword kepler Done "cannot get model weight"
+			else
+				wait_for_server
+				restart_kepler
+				wait_for_keyword kepler "getWeightFromServer.*core" "kepler should get weight from server"
+			fi
+		fi
+	fi
 
 }
 
 "$@"
+
