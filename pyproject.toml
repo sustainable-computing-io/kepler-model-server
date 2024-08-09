@@ -49,6 +49,7 @@ model-server = "kepler_model.server.model_server:run"
 estimator = "kepler_model.estimate.estimator:run"
 kepler-model = "kepler_model.cmd.main:run"
 offline-trainer = "kepler_model.train.offline_trainer:run"
+online-trainer = "kepler_model.train.online_trainer:run"
 
 [project.urls]
 Documentation = "https://github.com/sustainable-computing-io/kepler-model-server#readme"

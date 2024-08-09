@@ -31,7 +31,7 @@ def initial_pipelines():
     return profile_pipeline, non_profile_pipeline
 
 
-if __name__ == "__main__":
+def run():
     profile_pipeline, non_profile_pipeline = initial_pipelines()
     prom_client = PrometheusClient()
     while True:
@@ -50,3 +50,6 @@ if __name__ == "__main__":
                     profile_pipeline.save_metadata()
         time.sleep(SAMPLING_INTERVAL)
 
+
+if __name__ == "__main__":
+    run()
