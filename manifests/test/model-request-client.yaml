@@ -10,8 +10,7 @@ spec:
       - name: kepler-exporter
         image: localhost:5001/kepler_model_server:devel-test
         imagePullPolicy: IfNotPresent
-        command: [ "/bin/bash" ]
-        args: ["-c", "python3 -u tests/weight_model_request_test.py && echo Done && sleep infinity"]
+        args: ["python3 -u tests/weight_model_request_test.py && echo Done && sleep infinity"]
         volumeMounts:
         - name: cfm
           mountPath: /etc/kepler/kepler.config

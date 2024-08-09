@@ -38,8 +38,7 @@ spec:
           - name: mnt
             mountPath: /mnt
             readOnly: false
-        command: [ bash ]
-        args: ["offline-trainer"]
+        args: [offline-trainer]
     
 ---
 kind: Service

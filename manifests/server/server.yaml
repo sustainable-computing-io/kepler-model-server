@@ -44,7 +44,6 @@ spec:
           - name: mnt
             mountPath: /mnt
             readOnly: false
-        command: [ "bash" ]
         args: [ "model-server" ]
 ---
 kind: Service

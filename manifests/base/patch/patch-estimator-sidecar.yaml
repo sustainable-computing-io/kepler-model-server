@@ -28,9 +28,9 @@ spec:
         - mountPath: /tmp
           name: tmp
         name: kepler-exporter
+      # estimator container
       - image: kepler_model_server
         imagePullPolicy: IfNotPresent
-        command: [ "bash" ]
         args: ["estimator" ]
         name: estimator
         volumeMounts:
