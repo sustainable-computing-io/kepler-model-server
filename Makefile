@@ -67,7 +67,7 @@ run-model-server:
 		-p 8100:8100 \
 		--name model-server $(TEST_IMAGE) \
 		/bin/bash -c "$(PYTHON) tests/http_server.py & sleep 10 && model-server"; \
-	while ! docker logs model-server | grep -q Serving; do \
+	while ! docker logs model-server 2>&1 | grep -q 'Running on all'; do \
 		echo "... waiting for model-server to serve";  sleep 5; \
 	done
 
