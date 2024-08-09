@@ -52,7 +52,7 @@ wait_for_kepler() {
 	local ret=0
 	kubectl rollout status ds kepler-exporter -n kepler --timeout 5m || ret=1
 	kubectl describe ds -n kepler kepler-exporter || ret=1
-	kubectl get po -n kepler || ret=1
+	kubectl get pods -n kepler || ret=1
 
 	kubectl logs -n kepler ds/kepler-exporter --all-containers || ret=1
 	return $ret
@@ -160,8 +160,7 @@ test() {
 			fi
 			sleep 1
 			wait_for_kepler || {
-				kubectl get po -n kepler -oyaml
-				kubectl po -n kepler -oyaml
+				kubectl get pods -n kepler -oyaml
 				exit 1
 			}
 			wait_for_keyword kepler Done "cannot get power"
@@ -200,5 +199,5 @@ test() {
 
 }
 
+echo "e2e: invoked with: $*"
 "$@"
-
