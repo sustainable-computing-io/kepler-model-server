@@ -1,6 +1,7 @@
 FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:latest
 
 WORKDIR /kepler_model
+ENV PYTHONPATH=/kepler_model
 
 COPY pyproject.toml .
 COPY README.md .
@@ -20,4 +21,4 @@ EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
 
-CMD [ "python3.10", "-u", "src/server/model_server.py" ]
+CMD [ "kepler-model" ]
