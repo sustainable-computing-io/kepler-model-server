@@ -51,12 +51,21 @@ jobs:
           kind load docker-image ${{ env.KEPLER_IMAGE }}
       - name: checkout
         uses: actions/checkout@v4
+
       - name: set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-        # HACK: for testing
+      - name: set up Kustomize
+        run: |
+          curl -o install_kustomize.sh https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh
+          chmod +x install_kustomize.sh
+          ./install_kustomize.sh 5.3.0
+          chmod +x kustomize
+          mv kustomize /usr/local/bin/
+
+      # HACK: for testing
       - name: rebuild base-image
         run: make build-base
         # HACK: end for testing
@@ -74,15 +83,15 @@ jobs:
         if: ${{ (inputs.base_change == 'true') }}
         run: |
           sed -i "s|${{ env.DEFAULT_MODEL_SERVER_BASE_IMAGE }}|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile.test
+
       - name: build Kepler model server and test image and push to local registry
         run: make build build-test push push-test
-      - name: set up Kustomize
+
+      - name: load kepler image
         run: |
-          curl -o install_kustomize.sh https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh
-          chmod +x install_kustomize.sh
-          ./install_kustomize.sh 5.3.0
-          chmod +x kustomize
-          mv kustomize /usr/local/bin/
+          docker pull ${{ env.IMAGE }}
+          kind load docker-image ${{ env.IMAGE }}
+
       - name: test deploying with only estimator
         run: |
           make deploy
