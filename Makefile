@@ -66,7 +66,7 @@ run-model-server:
 		-v ${MODEL_PATH}:/mnt/models \
 		-p 8100:8100 \
 		--name model-server $(TEST_IMAGE) \
-		/bin/bash -c "$(PYTHON) tests/http_server.py & sleep 10 && model-server"
+		/bin/bash -c "$(PYTHON) tests/http_server.py & sleep 10 && model-server"; \
 	while ! docker logs model-server | grep -q Serving; do \
 		echo "... waiting for model-server to serve";  sleep 5; \
 	done
