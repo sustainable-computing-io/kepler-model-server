@@ -32,7 +32,7 @@ on:
         description: 'Model trainer list (delimit: ,)'
         required: false
         type: string
-        default: XgboostFitTrainer        
+        default: XgboostFitTrainer
 
 env:
   BASE_IMAGE: ${{ inputs.image_repo }}/kepler_model_server_base:${{ inputs.image_tag }}
