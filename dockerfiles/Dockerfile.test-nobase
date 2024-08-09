@@ -5,6 +5,7 @@ RUN python -m pip install --no-cache-dir hatch && \
 		pip cache purge
 
 WORKDIR /kepler_model
+ENV PYTHONPATH=/kepler_model
 
 COPY pyproject.toml .
 
