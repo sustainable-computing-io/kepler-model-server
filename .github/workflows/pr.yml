@@ -205,8 +205,8 @@ jobs:
     if: always()
     uses: ./.github/workflows/integration-test.yml
     with:
-      base_change: ${{ needs.check-change.outputs.base }}
-      # base_change: ${{ false }}
+      #base_change: ${{ needs.check-change.outputs.base }}
+      base_change: ${{ false }}
       docker_secret: ${{ needs.check-secret.outputs.docker-secret }}
       image_repo: ${{ vars.IMAGE_REPO || 'docker.io/library' }}
       image_tag: ${{ needs.check-branch.outputs.tag }}
