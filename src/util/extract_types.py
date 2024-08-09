@@ -1,4 +1,4 @@
-import pandas as pd
+import numpy as np
 
 from prom_types import TIMESTAMP_COL, pkg_id_column
 from train_types import PowerSourceMap
@@ -31,7 +31,7 @@ def ratio_to_col(unit_val):
     return "packge_ratio_{}".format(unit_val)
 
 def get_unit_vals(power_columns):
-    return pd.unique([col_to_unit_val(col) for col in power_columns if "package" in col])
+    return np.unique([col_to_unit_val(col) for col in power_columns if "package" in col])
 
 def get_num_of_unit(energy_source, label_cols):
     energy_components = PowerSourceMap(energy_source)

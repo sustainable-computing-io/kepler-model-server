@@ -64,6 +64,8 @@ def load_pkl(path, name):
     try:
         res = joblib.load(filepath)
         return res
+    except FileNotFoundError:
+        return None
     except Exception as err:
         print("fail to load pkl {}: {}".format(filepath, err))
         return None
