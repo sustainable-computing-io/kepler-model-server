@@ -51,10 +51,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        # HACK: for testing
-      - name: rebuild base-image
-        run: make build-base
-        # HACK: end for testing
       - name: Replace value in file if base changes
         if: ${{ (inputs.base_change == 'true') && (inputs.docker_secret == 'true') }} 
         run: |
