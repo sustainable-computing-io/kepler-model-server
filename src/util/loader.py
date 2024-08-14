@@ -26,7 +26,7 @@ PREPROCESS_FOLDERNAME = "preprocessed_data"
 default_train_output_pipeline = "std_v{}".format(version)
 default_pipelines = {
     "rapl-sysfs": "ec2-{}".format(version),
-    "acpi": "specpower"
+    "acpi": "specpower-{}".format(version)
 }
 base_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v{}".format(major_version)
 def get_pipeline_url(model_topurl, pipeline_name):
