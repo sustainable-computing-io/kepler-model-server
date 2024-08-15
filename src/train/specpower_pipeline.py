@@ -70,6 +70,8 @@ def get_machine_spec(df):
     if len(df) == 0:
         return NodeTypeSpec()
     data_spec = df.iloc[0].to_dict()
+    data_spec["memory"] = data_spec["memory_gb"]
+    data_spec["frequency"] = data_spec["cpu_freq_mhz"]
     spec = NodeTypeSpec(**data_spec)
     return spec
 
