@@ -1,5 +1,21 @@
 FROM python:3.10-slim
-RUN pip install --no-cache-dir --upgrade pip
+#
+# NOTE: This file contains all tools and dependencies needed for
+# setting up the development and testing environment
+
+# Prevents Python from writing pyc files.
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Keeps Python from buffering stdout and stderr to avoid situations where
+# the application crashes without emitting any logs due to buffering.
+ENV PYTHONUNBUFFERED=1
+
+RUN pip install --no-cache-dir --upgrade pip && \
+    python -m pip install --no-cache-dir hatch && \
+		pip cache purge
+
+WORKDIR /kepler_model
+ENV	PYTHONPATH=/kepler_model
 
 COPY pyproject.toml .
 
@@ -7,8 +23,9 @@ COPY pyproject.toml .
 # so they are copied into the image for pip install to succeed
 COPY README.md .
 
-RUN mkdir -p src
-COPY src/__about__.py src/
+RUN mkdir -p src/kepler_model
+COPY src/kepler_model/__init__.py src/kepler_model/
+COPY src/kepler_model/__about__.py src/kepler_model/
 
 RUN pip install --no-cache-dir . && \
 		pip cache purge
