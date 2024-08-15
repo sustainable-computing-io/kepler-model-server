@@ -1,40 +1,37 @@
 import socket
 import json
 
-import os
-import sys
+from kepler_model.util.train_types import WORKLOAD_FEATURES, SYSTEM_FEATURES, ModelOutputType, CATEGORICAL_LABEL_TO_VOCAB
+from kepler_model.util.config import SERVE_SOCKET
+from tests.extractor_test import test_energy_source
 
-util_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'util')
-sys.path.append(util_path)
-
-from train_types import WORKLOAD_FEATURES, SYSTEM_FEATURES, ModelOutputType, CATEGORICAL_LABEL_TO_VOCAB, PowerSourceMap
-from config import SERVE_SOCKET
-from extractor_test import test_energy_source
-
-trainer_names = ['SGDRegressorTrainer']
+trainer_names = ["SGDRegressorTrainer"]
 test_energy_sources = ["acpi", "rapl-sysfs"]
 
+
 def generate_request(train_name, n=1, metrics=WORKLOAD_FEATURES, system_features=SYSTEM_FEATURES, output_type=ModelOutputType.DynPower.name, energy_source=test_energy_source):
-    request_json = dict() 
+    request_json = dict()
     if train_name is not None:
-        request_json['trainer_name'] = train_name
-    request_json['metrics'] = metrics
-    request_json['system_features'] = system_features
-    request_json['system_values'] = []
+        request_json["trainer_name"] = train_name
+    request_json["metrics"] = metrics
+    request_json["system_features"] = system_features
+    request_json["system_values"] = []
     for m in system_features:
-        request_json['system_values'] += [CATEGORICAL_LABEL_TO_VOCAB[m][0]]
-    request_json['values'] = [[1.0] *len(metrics)]*n
-    request_json['output_type'] = output_type
-    request_json['source'] = energy_source
+        request_json["system_values"] += [CATEGORICAL_LABEL_TO_VOCAB[m][0]]
+    request_json["values"] = [[1.0] * len(metrics)] * n
+    request_json["output_type"] = output_type
+    request_json["source"] = energy_source
     return request_json
 
-def process(energy_source):
+
+def process(client, energy_source):
     request_json = generate_request(trainer_names[0], 2, output_type="AbsPower", energy_source=energy_source)
     res = client.make_request(request_json)
     res_json = json.loads(res)
     print(res_json)
-    assert res_json["msg"]=="", "response error: {}".format(res_json["msg"])
+    assert res_json["msg"] == "", "response error: {}".format(res_json["msg"])
     assert len(res_json["powers"]) > 0, "zero powers"
+
 
 class Client:
     def __init__(self, socket_path):
@@ -46,17 +43,22 @@ class Client:
         data = json.dumps(request_json)
         print(data)
         s.send(data.encode())
-        data = b''
+        data = b""
         while True:
             shunk = s.recv(1024).strip()
             data += shunk
-            if shunk is None or len(shunk.decode()) == 0 or shunk.decode()[-1] == '}':
+            if shunk is None or len(shunk.decode()) == 0 or shunk.decode()[-1] == "}":
                 break
         decoded_data = data.decode()
         s.close()
         return decoded_data
 
-if __name__ == '__main__':
+
+def test_estimator_power_request():
     client = Client(SERVE_SOCKET)
     for energy_source in test_energy_sources:
-        process(energy_source)
+        process(client, energy_source)
+
+
+if __name__ == "__main__":
+    test_estimator_power_request()

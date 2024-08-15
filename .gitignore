@@ -139,8 +139,9 @@ tests/download/*
 */*/.DS_Store
 */*/*/.DS_Store
 
-src/models
-tests/models
+/src/kepler_model/models/
+/tests/models/
+/src/resource/
 tests/data/extractor_output
 tests/data/isolator_output
 tests/data/offline_trainer_output
@@ -148,3 +149,4 @@ tests/data/plot_output
 model_training/*data*
 model_training/tekton/secret
 local-dev-cluster
+tmp

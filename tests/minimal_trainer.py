@@ -1,18 +1,8 @@
-import os
-import sys
-
-#################################################################
-# import internal src 
-src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
-sys.path.append(src_path)
-#################################################################
-
 from pipeline_test import process
+from kepler_model.util import FeatureGroup
 
-from util import FeatureGroup
+trainer_names = ["GradientBoostingRegressorTrainer", "SGDRegressorTrainer", "XgboostFitTrainer"]
+valid_feature_groups = [FeatureGroup.BPFOnly]
 
-trainer_names = [ 'GradientBoostingRegressorTrainer', 'SGDRegressorTrainer', 'XgboostFitTrainer' ]
-valid_feature_groups = [ FeatureGroup.BPFOnly ]
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     process(target_energy_sources=["acpi", "rapl-sysfs"], abs_trainer_names=trainer_names, dyn_trainer_names=trainer_names, valid_feature_groups=valid_feature_groups)

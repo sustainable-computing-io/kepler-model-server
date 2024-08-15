@@ -36,6 +36,7 @@ get_kepler_log() {
 
 get_estimator_log() {
     wait_for_kepler
+	kubectl get pods -n kepler -o yaml
     kubectl logs -n kepler $(get_component exporter) -c estimator
 }
 
@@ -49,9 +50,13 @@ get_db_log(){
 }
 
 wait_for_kepler() {
-    kubectl rollout status ds kepler-exporter -n kepler --timeout 5m
-    kubectl describe ds -n kepler kepler-exporter
-    kubectl get po -n kepler
+	local ret=0
+	kubectl rollout status ds kepler-exporter -n kepler --timeout 5m || ret=1
+	kubectl describe ds -n kepler kepler-exporter || ret=1
+	kubectl get pods -n kepler || ret=1
+
+	kubectl logs -n kepler ds/kepler-exporter --all-containers || ret=1
+	return $ret
 }
 
 wait_for_server() {
@@ -71,18 +76,24 @@ wait_for_db() {
     wait_for_keyword db "Http File Serve Serving" "model-db is not serving"
     get_db_log
 }
+info() {
+	echo "INFO: $*"
+}
 
 wait_for_keyword() {
     num_iterations=30
     component=$1
     keyword=$2
     message=$3
+	info "Waiting for '${keyword}' from ${component} log"
+
     for ((i = 0; i < num_iterations; i++)); do
         if grep -q "$keyword" <<< $(get_${component}_log); then
             return
         fi
         sleep 5
     done
+
     echo "timeout ${num_iterations}s waiting for '${keyword}' from ${component} log"
     echo "Error: $message"
 
@@ -124,7 +135,7 @@ test() {
 
     echo ${DEPLOY_OPTIONS}
 
-    for opt in ${DEPLOY_OPTIONS}; do export $opt=true; done;
+	for opt in ${DEPLOY_OPTIONS}; do export $opt=true; done
 
     # patch MODEL_TOPURL environment if DB is not available
     if [ -z ${DB} ]; then
@@ -137,6 +148,7 @@ test() {
         if [ ! -z ${ESTIMATOR} ]; then
             kubectl patch configmap -n kepler kepler-cfm --type merge -p "$(cat ${top_dir}/manifests/test/patch-estimator-sidecar.yaml)"
             kubectl patch ds kepler-exporter -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"estimator","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
+			kubectl get -n kepler ds kepler-exporter -o yaml
         fi
         if [ ! -z ${SERVER} ]; then
             kubectl patch deploy kepler-model-server -n kepler -p '{"spec":{"template":{"spec":{"containers":[{"name":"server-api","env":[{"name":"MODEL_TOPURL","value":"http://model-db.kepler.svc.cluster.local:8110"}]}]}}}}'
@@ -155,7 +167,10 @@ test() {
                 restart_model_server
             fi
             sleep 1
-            wait_for_kepler
+			wait_for_kepler || {
+				kubectl get pods -n kepler -oyaml
+				exit 1
+			}
             wait_for_keyword kepler Done "cannot get power"
         else
             check_estimator_set_and_init
@@ -171,6 +186,11 @@ test() {
         else
             # no server
             get_estimator_log
+			sleep 10
+			kubectl -n kepler logs ds/kepler-exporter --all-containers
+			kubectl -n kepler describe ds/kepler-exporter
+			kubectl -n kepler get pods -o yaml
+
             wait_for_keyword estimator "load model from config" "estimator should be able to load model from config"
         fi
     else
@@ -192,4 +212,5 @@ test() {
 
 }
 
+echo "e2e: invoked with: $*"
 "$@"

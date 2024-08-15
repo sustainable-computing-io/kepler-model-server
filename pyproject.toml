@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "kepler-model-server"
+name = "kepler_model"
 dynamic = ["version"]
 description = "kepler model server for serving kepler models"
 readme = "README.md"
@@ -45,8 +45,11 @@ dependencies = [
 ]
 
 [project.scripts]
-model-server = "server.model_server:run"
-estimator = "estimate.estimator:run"
+model-server = "kepler_model.server.model_server:run"
+estimator = "kepler_model.estimate.estimator:run"
+kepler-model = "kepler_model.cmd.main:run"
+offline-trainer = "kepler_model.train.offline_trainer:run"
+online-trainer = "kepler_model.train.online_trainer:run"
 
 [project.urls]
 Documentation = "https://github.com/sustainable-computing-io/kepler-model-server#readme"
@@ -54,21 +57,29 @@ Issues = "https://github.com/sustainable-computing-io/kepler-model-server/issues
 Source = "https://github.com/sustainable-computing-io/kepler-model-server"
 
 [tool.hatch.version]
-path = "src/__about__.py"
-
-[tool.hatch.build.targets.wheel]
-packages = [
-	"src/server", 
-	"src/estimate",
-	"src/util",
-	"src/train",
-]
+path = "src/kepler_model/__about__.py"
 
 [tool.hatch.envs.default]
 python = "3.10"
 extra-dependencies = [
-	"ipython",
+  "coverage[toml]>=6.5",
 	"ipdb",
+	"ipython",
+  "ipdb",
+  "ipython",
+  "pytest",
+]
+
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests}"
+test-cov = "coverage run -m pytest {args:tests}"
+cov-report = [
+  "- coverage combine",
+  "coverage report",
+]
+cov = [
+  "test-cov",
+  "cov-report",
 ]
 
 [tool.hatch.envs.types]
@@ -78,18 +89,17 @@ extra-dependencies = [
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/kepler_model_server tests}"
 
-
 [tool.coverage.run]
-source_pkgs = ["server", "tests"]
+source_pkgs = ["kepler_model", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/server/__about__.py",
+  "src/kepler_model/__about__.py",
 ]
 
 [tool.coverage.paths]
-server = ["src/server", "*/kepler-model-server/src"]
-tests = ["tests", "*/kepler-model-server/tests"]
+kepler_model = ["src/kepler_model", "*/kepler_model/src/kepler_model"]
+tests = ["tests", "*/kepler_model/tests"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -100,3 +110,8 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = 320
+
+[tool.pytest.ini_options]
+markers = [
+	"focus",  # used in development to mark focused tests
+]

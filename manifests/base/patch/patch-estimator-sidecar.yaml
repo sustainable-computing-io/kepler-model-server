@@ -19,6 +19,7 @@ spec:
   template:
     spec:
       containers:
+        # kepler: wait for estimator socket
       - command:
         - /bin/sh
         - -c
@@ -28,10 +29,10 @@ spec:
         - mountPath: /tmp
           name: tmp
         name: kepler-exporter
+      # estimator container
       - image: kepler_model_server
         imagePullPolicy: IfNotPresent
-        command: [ "python3.10" ]
-        args: ["-u", "src/estimate/estimator.py" ]
+        args: ["estimator" ]
         name: estimator
         volumeMounts:
         - name: cfm

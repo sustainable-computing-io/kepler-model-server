@@ -10,8 +10,7 @@ spec:
   - name: file-server
     image: localhost:5001/kepler_model_server:devel-test
     imagePullPolicy: IfNotPresent
-    command: [ "/bin/sh" ]
-    args: ["-c", "python3.10 -u tests/http_server.py"]
+    args: [python3, tests/http_server.py]
     ports:
     - containerPort: 8110
       name: http
@@ -22,8 +21,7 @@ spec:
   - name: trainer
     image: localhost:5001/kepler_model_server:devel-test
     imagePullPolicy: IfNotPresent
-    command: [ "/bin/sh" ]
-    args: ["-c", "python3.10 -u tests/minimal_trainer.py"]
+    args: [python3, tests/minimal_trainer.py]
     volumeMounts:
     - name: mnt
       mountPath: /mnt

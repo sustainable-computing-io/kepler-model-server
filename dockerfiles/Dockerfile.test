@@ -1,19 +1,24 @@
 FROM --platform=linux/amd64 quay.io/sustainable_computing_io/kepler_model_server_base:latest
 
-WORKDIR /usr/local
+# Prevents Python from writing pyc files.
+ENV PYTHONDONTWRITEBYTECODE=1
 
-RUN mkdir -p /usr/local/src
-RUN mkdir -p /usr/local/resource
+# Keeps Python from buffering stdout and stderr to avoid situations where
+# the application crashes without emitting any logs due to buffering.
+ENV PYTHONUNBUFFERED=1
 
-RUN mkdir -p resource/profiles
-COPY src/estimate src/estimate
-COPY src/server src/server
-COPY src/train src/train
-COPY src/util src/util
 
-RUN mkdir -p tests/data
-COPY tests/data/prom_output tests/data/prom_output 
-COPY tests/*.py tests/
+WORKDIR /kepler_model
+ENV PYTHONPATH=/kepler_model
+
+COPY pyproject.toml .
+COPY README.md .
+COPY cmd/ cmd/
+COPY src/ src/
+COPY tests/ tests/
+
+RUN pip install --no-cache-dir . && \
+		pip cache purge
 
 RUN mkdir -p /mnt/models
 
@@ -24,4 +29,4 @@ EXPOSE 8101
 # port for Offline Trainer
 EXPOSE 8102
 
-CMD [ "python3.10", "-u", "src/server/model_server.py" ]
+CMD ["model-server"]
