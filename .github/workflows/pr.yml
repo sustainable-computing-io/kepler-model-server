@@ -65,9 +65,9 @@ jobs:
             - 'dockerfiles/Dockerfile.base'
             - '.github/workflows/build-push.yml'
           data:
-            - 'src/util/prom_types.py'
-            - 'src/util/train_types.py'
-            - 'src/train/prom/**'
+            - 'src/kepler_model/util/prom_types.py'
+            - 'src/kepler_model/util/train_types.py'
+            - 'src/kepler_model/train/prom/**'
             - 'model_training/tekton/tasks/stressng-task.yaml'
             - 'model_training/tekton/pipelines/collect.yaml'
             - 'hack/**'
