@@ -30,5 +30,4 @@ spec:
           - name: mnt
             mountPath: /mnt
             readOnly: false
-        command: [ "python3.10" ]
-        args: ["-u", "src/train/online_trainer.py" ]
+        args: [online-trainer]
