@@ -1,27 +1,22 @@
 import os
-import sys
 import numpy as np
 
-#################################################################
-# import internal src 
-src_path = os.path.join(os.path.dirname(__file__), '..', 'src')
-sys.path.append(src_path)
-#################################################################
 
-from util import assure_path, save_csv, load_csv, FeatureGroups, FeatureGroup
-from util.train_types import all_feature_groups
-from util.extract_types import container_level_index, node_level_index
-from util.prom_types import prom_responses_to_results
+from kepler_model.util import assure_path, save_csv, load_csv, FeatureGroups, FeatureGroup
+from kepler_model.util.train_types import all_feature_groups
+from kepler_model.util.extract_types import container_level_index, node_level_index
+from kepler_model.util.prom_types import prom_responses_to_results
 
-from train import MinIdleIsolator, ProfileBackgroundIsolator, TrainIsolator, NoneIsolator
-from train import generate_profiles
-from train.extractor.preprocess import find_correlations
+from kepler_model.train import MinIdleIsolator, ProfileBackgroundIsolator, TrainIsolator, NoneIsolator
+from kepler_model.train import generate_profiles
+from kepler_model.train.extractor.preprocess import find_correlations
 
-from train import DefaultProfiler
+from kepler_model.train import DefaultProfiler
 
-from extractor_test import test_energy_source, get_extract_results, get_expected_power_columns, test_extractors, extractor_output_path
-from prom_test import get_prom_response
-isolator_output_path = os.path.join(os.path.dirname(__file__), 'data', 'isolator_output')
+from tests.extractor_test import test_energy_source, get_extract_results, get_expected_power_columns, test_extractors, extractor_output_path
+from tests.prom_test import get_prom_response
+
+isolator_output_path = os.path.join(os.path.dirname(__file__), "data", "isolator_output")
 assure_path(isolator_output_path)
 
 test_idle_response = get_prom_response(save_name="idle")
@@ -89,8 +84,7 @@ def process(test_isolators=test_isolators, customize_isolators=[], extract_path=
                 assert_isolate(extract_result, isolated_data)
                 save_results(test_instance, extractor_name, feature_group, isolated_data, save_path=save_path)
 
-
-if __name__ == '__main__':
+def test_isolators_process():
     # Add customize isolator here
     customize_isolators = [ProfileBackgroundIsolator(test_profiles, test_idle_data)]
     customize_isolators += [TrainIsolator(idle_data=test_idle_data, profiler=DefaultProfiler)]
