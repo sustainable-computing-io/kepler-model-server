@@ -1,13 +1,14 @@
 export IMAGE_REGISTRY ?= quay.io/sustainable_computing_io
 IMAGE_NAME := kepler_model_server
-IMAGE_VERSION := 0.7
+IMAGE_VERSION := v0.7
 
-IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):v$(IMAGE_VERSION)
-BASE_IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME)_base:v$(IMAGE_VERSION)
+IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_VERSION)
+BASE_IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME)_base:$(IMAGE_VERSION)
 LATEST_TAG_IMAGE := $(IMAGE_REGISTRY)/$(IMAGE_NAME):latest
 TEST_IMAGE := $(IMAGE)-test
 
 CTR_CMD = docker
+PYTHON = python3.10
 
 DOCKERFILES_PATH := ./dockerfiles
 MODEL_PATH := ${PWD}/tests/models
@@ -35,50 +36,80 @@ exec-test:
 
 test-pipeline:
 	mkdir -p ${MODEL_PATH}
-	$(CTR_CMD) run --platform linux/amd64 -v ${MODEL_PATH}:/mnt/models -i $(TEST_IMAGE) /bin/bash -c "python3.10 -u ./tests/pipeline_test.py"
+	$(CTR_CMD) run --rm --platform linux/amd64 \
+		-v ${MODEL_PATH}:/mnt/models -i \
+		$(TEST_IMAGE) \
+		hatch run test -vvv -s ./tests/pipeline_test.py
 
 # test collector --> estimator
 run-estimator:
-	$(CTR_CMD) run -d --platform linux/amd64 -e "MODEL_TOPURL=http://localhost:8110" -v ${MODEL_PATH}:/mnt/models -p 8100:8100 --name estimator $(TEST_IMAGE) /bin/bash -c "python3.10 tests/http_server.py & sleep 5 && python3.10 src/estimate/estimator.py"
+	$(CTR_CMD) run --rm -d --platform linux/amd64 \
+		-e "MODEL_TOPURL=http://localhost:8110" \
+		-v ${MODEL_PATH}:/mnt/models \
+		-p 8100:8100 \
+		--name estimator \
+		$(TEST_IMAGE) \
+		/bin/bash -c "$(PYTHON) tests/http_server.py & sleep 5 && estimator"
 
 run-collector-client:
-	$(CTR_CMD) exec estimator /bin/bash -c "while [ ! -S "/tmp/estimator.sock" ]; do sleep 1; done; python3.10 -u ./tests/estimator_power_request_test.py"
+	$(CTR_CMD) exec estimator /bin/bash -c \
+		"while [ ! -S "/tmp/estimator.sock" ]; do sleep 1; done; hatch test -vvv -s ./tests/estimator_power_request_test.py"
 
 clean-estimator:
 	$(CTR_CMD) stop estimator
-	$(CTR_CMD) rm estimator
 
 test-estimator: run-estimator run-collector-client clean-estimator
 
-# test estimator --> model-server
 run-model-server:
-	$(CTR_CMD) run -d --platform linux/amd64 -e "MODEL_TOPURL=http://localhost:8110" -v ${MODEL_PATH}:/mnt/models -p 8100:8100 --name model-server $(TEST_IMAGE) /bin/bash -c "python3.10 tests/http_server.py & sleep 10 &&  python3.10 src/server/model_server.py"
-	while ! docker logs model-server | grep -q Serving; do   echo "waiting for model-server to serve";  sleep 5; done
+	$(CTR_CMD) run --rm -d --platform linux/amd64 \
+		-e "MODEL_TOPURL=http://localhost:8110" \
+		-v ${MODEL_PATH}:/mnt/models \
+		-p 8100:8100 \
+		--name model-server $(TEST_IMAGE) \
+		/bin/bash -c "$(PYTHON) tests/http_server.py & sleep 10 && model-server"; \
+	while ! docker logs model-server 2>&1 | grep -q 'Running on all'; do \
+		echo "... waiting for model-server to serve";  sleep 5; \
+	done
 
 run-estimator-client:
-	$(CTR_CMD) exec model-server /bin/bash -c "python3.10 -u ./tests/estimator_model_request_test.py"
+	$(CTR_CMD) exec model-server \
+		hatch run test -vvv -s ./tests/estimator_model_request_test.py
 
 clean-model-server:
 	@$(CTR_CMD) stop model-server
-	@$(CTR_CMD) rm model-server
 
-test-model-server: run-model-server run-estimator-client clean-model-server
+test-model-server: \
+	run-model-server \
+	run-estimator-client \
+	clean-model-server
 
 # test offline trainer
 run-offline-trainer:
-	$(CTR_CMD) run -d --platform linux/amd64  -p 8102:8102 --name offline-trainer $(TEST_IMAGE) python3.10 src/train/offline_trainer.py
+	$(CTR_CMD) run -d --rm --platform linux/amd64  \
+		-p 8102:8102 \
+		--name offline-trainer \
+		$(TEST_IMAGE) \
+		offline-trainer
 	sleep 5
 
 run-offline-trainer-client:
-	$(CTR_CMD) exec offline-trainer /bin/bash -c "python3.10 -u ./tests/offline_trainer_test.py"
+	$(CTR_CMD) exec offline-trainer \
+		hatch run test -vvv -s ./tests/offline_trainer_test.py
 
 clean-offline-trainer:
 	@$(CTR_CMD) stop offline-trainer
-	@$(CTR_CMD) rm offline-trainer
 
-test-offline-trainer: run-offline-trainer run-offline-trainer-client clean-offline-trainer
+test-offline-trainer: \
+	run-offline-trainer \
+	run-offline-trainer-client \
+	clean-offline-trainer
 
-test: build-test test-pipeline test-estimator test-model-server test-offline-trainer
+test: \
+	build-test \
+	test-pipeline \
+	test-estimator \
+	test-model-server \
+	test-offline-trainer
 
 # set image
 set-image:
@@ -103,7 +134,7 @@ deploy:
 	@./manifests/set.sh "${OPTS}"
 	@$(MAKE) _deploy
 
-manifest: 
+manifest:
 	@chmod +x ./manifests/set.sh
 	@./manifests/set.sh "${OPTS}"
 	@$(MAKE) _print
