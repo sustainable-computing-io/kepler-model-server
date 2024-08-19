@@ -1,8 +1,11 @@
+import sys
 import os
 import codecs
 import shutil
-import requests
+import logging
 
+import requests
+import click
 from flask import Flask, request, json, make_response, send_file
 
 from kepler_model.util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup, PowerSourceMap, weight_support_trainers
@@ -11,6 +14,7 @@ from kepler_model.util.loader import parse_filters, is_valid_model, load_json, l
 from kepler_model.util.saver import WEIGHT_FILENAME
 from kepler_model.train import NodeTypeSpec, NodeTypeIndexCollection
 
+logger = logging.getLogger(__name__)
 
 ###############################################
 # model request #
@@ -41,10 +45,7 @@ class ModelRequest:
 
 
 ###########################################
-
-MODEL_SERVER_PORT = 8100
-MODEL_SERVER_PORT = getConfig("MODEL_SERVER_PORT", MODEL_SERVER_PORT)
-MODEL_SERVER_PORT = int(MODEL_SERVER_PORT)
+MODEL_SERVER_PORT = int(getConfig("MODEL_SERVER_PORT", "8100"))
 
 # pipelineName and nodeCollection are global dict values set at initial state (load_init_pipeline)
 ## pipelineName: map of energy_source to target pipeline name
@@ -79,28 +80,28 @@ def select_best_model(spec, valid_groupath, filters, energy_source, pipeline_nam
     if len(model_names) > 0 and len(candidates) == 0:
         # loosen all spec
         candidates = get_largest_candidates(model_names, pipeline_name, nodeCollection, energy_source)
-        print("no matched models, select from large candidates: ", candidates)
+        logger.info("no matched models, select from large candidates: %s", candidates)
         if candidates is None:
-            print("no large candidates, select from all availables")
+            logger.warn("no large candidates, select from all availables")
             candidates = model_names
     for model_name in candidates:
         model_savepath = os.path.join(valid_groupath, model_name)
         metadata = load_json(model_savepath, METADATA_FILENAME)
         if metadata is None or not is_valid_model(metadata, filters) or ERROR_KEY not in metadata:
             # invalid metadata
-            print("invalid", is_valid_model(metadata, filters), metadata)
+            logger.warn("invalid metadata %s : %s", is_valid_model(metadata, filters), metadata)
             continue
         if weight:
             response = load_weight(model_savepath)
             if response is None:
                 # fail to get weight file
-                print("weight failed", model_savepath)
+                logger.warn("weight failed: %s", model_savepath)
                 continue
         else:
             response = get_archived_file(valid_groupath, model_name)
             if not os.path.exists(response):
                 # archived model file does not exists
-                print("archived failed", response)
+                logger.warn("archive failed: %s", response)
                 continue
         if best_cadidate is None or best_cadidate[ERROR_KEY] > metadata[ERROR_KEY]:
             best_cadidate = metadata
@@ -115,7 +116,7 @@ app = Flask(__name__)
 @app.route(MODEL_SERVER_MODEL_REQ_PATH, methods=["POST"])
 def get_model():
     model_request = request.get_json()
-    print("get request /model: {}".format(model_request))
+    logger.info("get request /model: %s", model_request)
     req = ModelRequest(**model_request)
     energy_source = req.source
     # TODO: need revisit if get more than one rapl energy source
@@ -221,21 +222,21 @@ def set_pipelines():
         pipeline_path = get_pipeline_path(model_toppath, pipeline_name=pipeline_name)
         global nodeCollection
         nodeCollection[pipeline_name] = NodeTypeIndexCollection(pipeline_path)
-        print("initial pipeline is loaded to {}".format(pipeline_path))
+        logger.info("initial pipeline is loaded to %s", pipeline_path)
         for energy_source in PowerSourceMap.keys():
             if os.path.exists(os.path.join(pipeline_path, energy_source)):
                 pipelineName[energy_source] = pipeline_name
-                print("set pipeline {} for {}".format(pipeline_name, energy_source))
+                logger.info("set pipeline %s for %s", pipeline_name, energy_source)
 
 
 # load_init_pipeline: load pipeline from URLs and set pipeline variables
 def load_init_pipeline():
     for initial_pipeline_url in initial_pipeline_urls:
-        print("try downloading archieved pipeline from URL: {}".format(initial_pipeline_url))
+        logger.info("downloading archived pipeline from URL: %s", initial_pipeline_url)
         response = requests.get(initial_pipeline_url)
-        print(response)
+        logger.debug("response: %s", response)
         if response.status_code != 200:
-            print("failed to download archieved pipeline.")
+            logger.error("failed to download archieved pipeline - %s", initial_pipeline_url)
             return
         # delete existing default pipeline
         basename = os.path.basename(initial_pipeline_url)
@@ -253,17 +254,27 @@ def load_init_pipeline():
             shutil.unpack_archive(tmp_filepath, pipeline_path)
             unpack_zip_files(pipeline_path)
         except Exception as e:
-            print("failed to unpack downloaded pipeline: ", e)
+            logger.error("failed to unpack downloaded pipeline: %s", e)
             return
         # remove downloaded zip
         os.remove(tmp_filepath)
     set_pipelines()
 
 
-def run():
+@click.command()
+@click.option(
+    "--log-level",
+    "-l",
+    type=click.Choice(["debug", "info", "warn", "error"]),
+    default="info",
+    required=False,
+)
+def run(log_level: str):
+    level = getattr(logging, log_level.upper())
+    logging.basicConfig(level=level)
     load_init_pipeline()
     app.run(host="0.0.0.0", port=MODEL_SERVER_PORT)
 
 
 if __name__ == "__main__":
-    run()
+    sys.exit(run())
