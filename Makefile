@@ -1,10 +1,12 @@
 export IMAGE_REGISTRY ?= quay.io/sustainable_computing_io
 IMAGE_NAME := kepler_model_server
-IMAGE_VERSION := v0.7
+IMAGE_VERSION := latest
+KEPLER_IMAGE_NAME := kepler
+KEPLER_IMAGE_VERSION := release-0.7.11
 
 IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_VERSION)
+KEPLER_IMAGE ?=  $(IMAGE_REGISTRY)/$(KEPLER_IMAGE_NAME):$(KEPLER_IMAGE_VERSION)
 BASE_IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME)_base:$(IMAGE_VERSION)
-LATEST_TAG_IMAGE := $(IMAGE_REGISTRY)/$(IMAGE_NAME):latest
 TEST_IMAGE := $(IMAGE)-test
 
 CTR_CMD = docker
@@ -115,6 +117,7 @@ test: \
 set-image:
 	@cd ./manifests/base && kustomize edit set image kepler_model_server=$(IMAGE)
 	@cd ./manifests/server && kustomize edit set image kepler_model_server=$(IMAGE)
+	@cd ./manifests/kepler && kustomize edit set image kepler=$(KEPLER_IMAGE)
 
 # deploy
 _deploy:

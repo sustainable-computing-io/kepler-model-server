@@ -78,6 +78,7 @@ jobs:
           make cleanup
         env:
           OPTS: "ESTIMATOR${{ inputs.additional_opts }}"
+          KEPLER_IMAGE_VERSION: "${{ inputs.kepler_tag }}"
       - name: test deploying with only server
         run: |
           make deploy
@@ -85,6 +86,7 @@ jobs:
           make cleanup
         env:
           OPTS: "SERVER${{ inputs.additional_opts }}"
+          KEPLER_IMAGE_VERSION: "${{ inputs.kepler_tag }}"
       - name: test deploying with estimator and model server
         run: |
           make deploy
@@ -92,3 +94,4 @@ jobs:
           make cleanup
         env:
           OPTS: "ESTIMATOR SERVER${{ inputs.additional_opts }}"
+          KEPLER_IMAGE_VERSION: "${{ inputs.kepler_tag }}"
