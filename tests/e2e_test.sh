@@ -91,7 +91,7 @@ wait_for_keyword() {
         if grep -q "$keyword" <<< $(get_${component}_log); then
             return
         fi
-        sleep 5
+        sleep 10
     done
 
     echo "timeout ${num_iterations}s waiting for '${keyword}' from ${component} log"

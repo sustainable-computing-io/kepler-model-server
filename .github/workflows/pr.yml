@@ -234,6 +234,18 @@ jobs:
       kepler_tag: release-0.7.11
       additional_opts: " DB"
 
+  integration-test-with-latest:
+    needs: [check-secret, check-branch, check-change, base-image]
+    if: always()
+    uses: ./.github/workflows/integration-test.yml
+    with:
+      base_change: ${{ needs.check-change.outputs.base }}
+      docker_secret: ${{ needs.check-secret.outputs.docker-secret }}
+      image_repo: ${{ vars.IMAGE_REPO || 'docker.io/library' }}
+      image_tag: ${{ needs.check-branch.outputs.tag }}
+      kepler_tag: latest
+      additional_opts: " DB"
+
   verify_model_training_script:
     runs-on: ubuntu-latest
     steps:
