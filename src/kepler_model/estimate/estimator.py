@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 import sys
-import argparse
+import click
 import logging
 
 import pandas as pd
@@ -19,7 +19,6 @@ from kepler_model.util.train_types import is_support_output_type, ModelOutputTyp
 ###############################################
 # power request
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -139,7 +138,7 @@ class EstimatorServer:
 
 
 def clean_socket():
-    print("clean socket")
+    logger.info("clean socket")
     if os.path.exists(SERVE_SOCKET):
         os.unlink(SERVE_SOCKET)
 
@@ -149,21 +148,30 @@ def sig_handler(signum, frame) -> None:
     sys.exit(1)
 
 
-def run():
+@click.command()
+@click.option(
+    "--log-level",
+    "-l",
+    type=click.Choice(["debug", "info", "warn", "error"]),
+    default="info",
+    required=False,
+)
+def run(log_level: str):
+    level = getattr(logging, log_level.upper())
+    logging.basicConfig(level=level)
+
     set_env_from_model_config()
     clean_socket()
     signal.signal(signal.SIGTERM, sig_handler)
     try:
-        parser = argparse.ArgumentParser()
-        parser.add_argument("-e", "--err", required=False, type=str, default="mae", metavar="<error metric>", help="Error metric for determining the model with minimum error value")
-        args = parser.parse_args()
-        DEFAULT_ERROR_KEYS = args.err.split(",")
         server = EstimatorServer(SERVE_SOCKET)
         server.start()
     finally:
-        print("estimator exit")
+        click.echo("estimator exit")
         clean_socket()
+
+    return 0
 
 
 if __name__ == "__main__":
-    run()
+    sys.exit(run())
