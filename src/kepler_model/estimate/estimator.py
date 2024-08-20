@@ -47,7 +47,7 @@ def handle_request(data):
     try:
         power_request = json.loads(data, object_hook=lambda d: PowerRequest(**d))
     except Exception as e:
-        logger.error("fail to handle request: {}".format(e))
+        logger.error(f"fail to handle request: {e}")
         msg = "fail to handle request: {}".format(e)
         return {"powers": dict(), "msg": msg}
 
@@ -70,7 +70,7 @@ def handle_request(data):
             current_trainer = loaded_model[output_type.name][power_request.energy_source].trainer_name
             request_trainer = current_trainer != power_request.trainer_name
             if request_trainer:
-                logger.info("try obtaining the requesting trainer {} (current: {})".format(power_request.trainer_name, current_trainer))
+                logger.info(f"try obtaining the requesting trainer {power_request.trainer_name} (current: {current_trainer})")
     if power_request.energy_source not in loaded_model[output_type.name] or request_trainer:
         output_path = get_download_output_path(download_path, power_request.energy_source, output_type)
         if not os.path.exists(output_path):
@@ -84,20 +84,20 @@ def handle_request(data):
                     logger.error(msg)
                     return {"powers": dict(), "msg": msg}
                 else:
-                    logger.info("load model from config: ", output_path)
+                    logger.info(f"load model from config: {output_path}")
             else:
-                logger.info("load model from model server: %s", output_path)
+                logger.info(f"load model from model server: {output_path}")
         loaded_item = load_downloaded_model(power_request.energy_source, output_type)
         if loaded_item is not None and loaded_item.estimator is not None:
             loaded_model[output_type.name][power_request.energy_source] = loaded_item
-            logger.info("set model {0} for {2} ({1})".format(loaded_item.model_name, output_type.name, power_request.energy_source))
+            logger.info(f"set model {loaded_item.model_name} for {output_type.name} ({power_request.energy_source})")
         # remove loaded model
         shutil.rmtree(output_path)
 
     model = loaded_model[output_type.name][power_request.energy_source]
     powers, msg = model.get_power(power_request.datapoint)
     if msg != "":
-        logger.info("{} fail to predict, removed: {}".format(model.model_name, msg))
+        logger.info(f"{model.model_name} failed to predict; removed: {msg}")
         if output_path != "" and os.path.exists(output_path):
             shutil.rmtree(output_path)
     return {"powers": powers, "msg": msg}
@@ -111,7 +111,7 @@ class EstimatorServer:
         s = self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.bind(self.socket_path)
         s.listen(1)
-        logger.info("started serving on {}".format(self.socket_path))
+        logger.info(f"started serving on {self.socket_path}")
         try:
             while True:
                 connection, _ = s.accept()
@@ -121,8 +121,7 @@ class EstimatorServer:
                 os.remove(self.socket_path)
                 sys.stdout.write("close socket\n")
             except Exception as e:
-                logger.error("fail to close socket: ", e)
-                pass
+                logger.error(f"fail to close socket: {e}")
 
     def accepted(self, connection):
         data = b""
