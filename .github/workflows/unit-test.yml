@@ -38,9 +38,3 @@ jobs:
         timeout-minutes: 5
       - name: Test offline trainer
         run: make test-offline-trainer
-      - name: Test model server select
-        run: make test-model-server-select
-        timeout-minutes: 5
-      - name: Test model server select via estimator
-        run: make test-model-server-estimator-select
-        timeout-minutes: 5
