@@ -9,7 +9,7 @@ import pandas as pd
 
 import socket
 import signal
-from kepler_model.estimate.model_server_connector import make_request
+from kepler_model.estimate.model_server_connector import make_request, is_model_server_enabled
 from kepler_model.estimate.archived_model import get_achived_model
 from kepler_model.estimate.model.model import load_downloaded_model
 from kepler_model.util.loader import get_download_output_path
@@ -64,15 +64,19 @@ def handle_request(data):
     if output_type.name not in loaded_model:
         loaded_model[output_type.name] = dict()
     output_path = ""
-    request_trainer = False
-    if power_request.trainer_name is not None:
-        if output_type.name in loaded_model and power_request.energy_source in loaded_model[output_type.name]:
-            current_trainer = loaded_model[output_type.name][power_request.energy_source].trainer_name
-            request_trainer = current_trainer != power_request.trainer_name
-            if request_trainer:
-                logger.info(f"try obtaining the requesting trainer {power_request.trainer_name} (current: {current_trainer})")
-    if power_request.energy_source not in loaded_model[output_type.name] or request_trainer:
+    mismatch_trainer = False
+    if is_model_server_enabled():
+        if power_request.trainer_name is not None and power_request.trainer_name:
+            if output_type.name in loaded_model and power_request.energy_source in loaded_model[output_type.name]:
+                current_trainer = loaded_model[output_type.name][power_request.energy_source].trainer_name
+                mismatch_trainer = current_trainer != power_request.trainer_name
+                if mismatch_trainer:
+                    logger.info(f"try obtaining the requesting trainer {power_request.trainer_name} (current: {current_trainer})")
+    if power_request.energy_source not in loaded_model[output_type.name] or mismatch_trainer:
         output_path = get_download_output_path(download_path, power_request.energy_source, output_type)
+        if  mismatch_trainer and os.path.exists(output_path):
+            # remove existing model if mismatch
+            shutil.rmtree(output_path)
         if not os.path.exists(output_path):
             # try connecting to model server
             output_path = make_request(power_request)
@@ -87,12 +91,11 @@ def handle_request(data):
                     logger.info(f"load model from config: {output_path}")
             else:
                 logger.info(f"load model from model server: {output_path}")
+
         loaded_item = load_downloaded_model(power_request.energy_source, output_type)
         if loaded_item is not None and loaded_item.estimator is not None:
             loaded_model[output_type.name][power_request.energy_source] = loaded_item
             logger.info(f"set model {loaded_item.model_name} for {output_type.name} ({power_request.energy_source})")
-        # remove loaded model
-        shutil.rmtree(output_path)
 
     model = loaded_model[output_type.name][power_request.energy_source]
     powers, msg = model.get_power(power_request.datapoint)

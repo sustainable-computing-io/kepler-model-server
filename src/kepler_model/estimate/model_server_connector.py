@@ -35,8 +35,9 @@ def unpack(energy_source, output_type, response, replace=True):
     tmp_filepath = os.path.join(download_path, TMP_FILE)
     if os.path.exists(output_path):
         if not replace:
-            # delete downloaded file
-            os.remove(tmp_filepath)
+            if os.path.exists(tmp_filepath):
+                # delete downloaded file
+                os.remove(tmp_filepath)
             return output_path
         # delete existing model
         shutil.rmtree(output_path)
