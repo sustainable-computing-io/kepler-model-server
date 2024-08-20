@@ -112,13 +112,14 @@ def get_model_server_list_endpoint():
 # set_env_from_model_config: extract environment values based on environment key MODEL_CONFIG
 def set_env_from_model_config():
     model_config = getConfig("MODEL_CONFIG", "")
-    if model_config != "":
-        lines = model_config.splitlines()
-        for line in lines:
-            splits = line.split("=")
-            if len(splits) > 1:
-                os.environ[splits[0]] = splits[1]
-                print("set {} to {}.".format(splits[0], splits[1]))
+    if not model_config:
+        return
+
+    for line in model_config.splitlines():
+        splits = line.split("=")
+        if len(splits) > 1:
+            os.environ[splits[0].strip()] = splits[1].strip()
+            print("set {} to {}.".format(splits[0], splits[1]))
 
 
 def is_estimator_enable(prefix):
@@ -156,4 +157,3 @@ def get_init_model_url(energy_source, output_type, model_topurl=model_topurl):
                 return modelURL
     print("no match config for {}, {}".format(output_type, energy_source))
     return ""
-
