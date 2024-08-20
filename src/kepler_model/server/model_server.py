@@ -80,28 +80,28 @@ def select_best_model(spec, valid_groupath, filters, energy_source, pipeline_nam
     if len(model_names) > 0 and len(candidates) == 0:
         # loosen all spec
         candidates = get_largest_candidates(model_names, pipeline_name, nodeCollection, energy_source)
-        logger.info("no matched models, select from large candidates: %s", candidates)
+        logger.info(f"no matched models; selecting from large candidates: {candidates}")
         if candidates is None:
-            logger.warn("no large candidates, select from all availables")
+            logger.warn("no large candidates; selecting from all available")
             candidates = model_names
     for model_name in candidates:
         model_savepath = os.path.join(valid_groupath, model_name)
         metadata = load_json(model_savepath, METADATA_FILENAME)
         if metadata is None or not is_valid_model(metadata, filters) or ERROR_KEY not in metadata:
             # invalid metadata
-            logger.warn("invalid metadata %s : %s", is_valid_model(metadata, filters), metadata)
+            logger.warn(f"invalid metadata {is_valid_model(metadata, filters)} : {metadata}")
             continue
         if weight:
             response = load_weight(model_savepath)
             if response is None:
                 # fail to get weight file
-                logger.warn("weight failed: %s", model_savepath)
+                logger.warn(f"weight failed: {model_savepath}")
                 continue
         else:
             response = get_archived_file(valid_groupath, model_name)
             if not os.path.exists(response):
                 # archived model file does not exists
-                logger.warn("archive failed: %s", response)
+                logger.warn(f"archive failed: {response}")
                 continue
         if best_cadidate is None or best_cadidate[ERROR_KEY] > metadata[ERROR_KEY]:
             best_cadidate = metadata
@@ -116,7 +116,7 @@ app = Flask(__name__)
 @app.route(MODEL_SERVER_MODEL_REQ_PATH, methods=["POST"])
 def get_model():
     model_request = request.get_json()
-    logger.info("get request /model: %s", model_request)
+    logger.info(f"get request /model: {model_request}")
     req = ModelRequest(**model_request)
     energy_source = req.source
     # TODO: need revisit if get more than one rapl energy source
@@ -222,22 +222,26 @@ def set_pipelines():
         pipeline_path = get_pipeline_path(model_toppath, pipeline_name=pipeline_name)
         global nodeCollection
         nodeCollection[pipeline_name] = NodeTypeIndexCollection(pipeline_path)
-        logger.info("initial pipeline is loaded to %s", pipeline_path)
+        logger.info(f"initial pipeline is loaded to {pipeline_path}")
         for energy_source in PowerSourceMap.keys():
             if os.path.exists(os.path.join(pipeline_path, energy_source)):
                 pipelineName[energy_source] = pipeline_name
-                logger.info("set pipeline %s for %s", pipeline_name, energy_source)
+                logger.info(f"set pipeline {pipeline_name} for {energy_source}")
 
 
 # load_init_pipeline: load pipeline from URLs and set pipeline variables
 def load_init_pipeline():
     for initial_pipeline_url in initial_pipeline_urls:
-        logger.info("downloading archived pipeline from URL: %s", initial_pipeline_url)
+        logger.info(f"downloading archived pipeline from URL: {initial_pipeline_url}")
         response = requests.get(initial_pipeline_url)
-        logger.debug("response: %s", response)
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"response: {response}")
+
         if response.status_code != 200:
-            logger.error("failed to download archieved pipeline - %s", initial_pipeline_url)
+            logger.error(f"failed to download archived pipeline - status code: {response.status_code}, url: {initial_pipeline_url}")
             return
+
         # delete existing default pipeline
         basename = os.path.basename(initial_pipeline_url)
         pipeline_name = basename.split(".zip")[0]
@@ -254,7 +258,7 @@ def load_init_pipeline():
             shutil.unpack_archive(tmp_filepath, pipeline_path)
             unpack_zip_files(pipeline_path)
         except Exception as e:
-            logger.error("failed to unpack downloaded pipeline: %s", e)
+            logger.error(f"failed to unpack downloaded pipeline: {e}")
             return
         # remove downloaded zip
         os.remove(tmp_filepath)
