@@ -1,4 +1,5 @@
 __pycache__
 src/resource/
 src/kepler_model/models/
+src/models/
 tests/models/

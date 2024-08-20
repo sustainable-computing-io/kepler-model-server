@@ -8,22 +8,31 @@ import codecs
 from kepler_model.util.config import is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint, download_path
 from kepler_model.util.loader import get_download_output_path
 from kepler_model.util.train_types import ModelOutputType
+from kepler_model.train.profiler.node_type_index import discover_spec_values
 
+machine_spec_mount_path = "/etc/kepler/models/machine_spec"
+machine_id = os.getenv('MACHINE_ID', None)
 
-# discover_spec: determine node spec in json format (refer to NodeTypeSpec)
-def discover_spec():
-    import psutil
+# get_spec_values: determine node spec in json format (refer to NodeTypeSpec)
+def get_spec_values(machine_id : str|None):
+    if machine_id is not None:
+        spec_file = os.path.join(machine_spec_mount_path, machine_id)
+        try:
+            with open(spec_file) as f:
+                res = json.load(f)
+            return res
+        except:
+            pass
+    return discover_spec_values()
 
-    # TODO: reuse node_type_index/generate_spec with loosen selection
-    cores = psutil.cpu_count(logical=True)
-    spec = {"cores": cores}
-    return spec
-
-
-node_spec = discover_spec()
+node_spec = None
 
 
 def make_model_request(power_request):
+    global node_spec
+    if node_spec is None:
+         node_spec = get_spec_values(machine_id)
+         print(f"Node spec: {node_spec}")
     return {"metrics": power_request.metrics + power_request.system_features, "output_type": power_request.output_type, "source": power_request.energy_source, "filter": power_request.filter, "trainer_name": power_request.trainer_name, "spec": node_spec}
 
 
@@ -62,11 +71,17 @@ def make_request(power_request):
     return unpack(power_request.energy_source, output_type, response)
 
 
-def list_all_models():
+def list_all_models(energy_source=None, node_type=None):
     if not is_model_server_enabled():
         return dict()
     try:
-        response = requests.get(get_model_server_list_endpoint())
+        endpoint = get_model_server_list_endpoint()
+        params= {}
+        if energy_source:
+            params["source"] = energy_source
+        if node_type:
+           params["type"] = node_type
+        response = requests.get(endpoint, params=params)
     except Exception as err:
         print("cannot list model: {}".format(err))
         return dict()
@@ -74,4 +89,3 @@ def list_all_models():
         return dict()
     model_names = json.loads(response.content.decode("utf-8"))
     return model_names
-
