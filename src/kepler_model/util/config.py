@@ -41,14 +41,17 @@ MODEL_SERVER_ENABLE = False
 SERVE_SOCKET = "/tmp/estimator.sock"
 
 
-def getConfig(key, default):
+def getConfig(key: str, default):
     # check configmap path
     file = os.path.join(CONFIG_PATH, key)
     if os.path.exists(file):
         with open(file, "r") as f:
-            return f.read()
+            return f.read().strip()
     # check env
-    return os.getenv(key, default)
+    cfg = os.environ.get(key, default)
+    if type(cfg) is str:
+        return cfg.strip()
+    return cfg
 
 
 def getPath(subpath):
