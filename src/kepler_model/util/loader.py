@@ -60,7 +60,7 @@ def load_json(path, name):
         with open(filepath) as f:
             res = json.load(f)
         return res
-    except Exception:
+    except Exception as err:
         return None
 
 
@@ -88,16 +88,6 @@ def load_remote_pkl(url_path):
     except:
         return None
 
-def load_remote_json(url_path):
-    if ".json" not in url_path:
-        url_path = url_path + ".json"
-    try:        
-        response = urlopen(url_path)
-        response_data = response.read().decode('utf-8')
-        json_data = json.loads(response_data)
-        return json_data
-    except:
-        return None
 
 def load_machine_spec(data_path, machine_id):
     machine_spec_path = os.path.join(data_path, MACHINE_SPEC_PATH)

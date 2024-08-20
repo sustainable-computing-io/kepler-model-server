@@ -146,7 +146,6 @@ tests/data/extractor_output
 tests/data/isolator_output
 tests/data/offline_trainer_output
 tests/data/plot_output
-tests/db-models
 model_training/*data*
 model_training/tekton/secret
 local-dev-cluster
