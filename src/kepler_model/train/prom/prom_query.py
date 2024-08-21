@@ -1,9 +1,16 @@
 import datetime
+
 from prometheus_api_client import PrometheusConnect
 
-from kepler_model.util.prom_types import PROM_SERVER, PROM_HEADERS, PROM_SSL_DISABLE, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, metric_prefix
-from kepler_model.util.prom_types import generate_dataframe_from_response
-
+from kepler_model.util.prom_types import (
+    PROM_HEADERS,
+    PROM_QUERY_INTERVAL,
+    PROM_QUERY_STEP,
+    PROM_SERVER,
+    PROM_SSL_DISABLE,
+    generate_dataframe_from_response,
+    metric_prefix,
+)
 
 UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
 

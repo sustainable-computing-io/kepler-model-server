@@ -5,18 +5,16 @@
 #   node_type = index_collection.index_train_machine(machine_id, new_spec)
 #   index_collection.save()
 
-import re
 import enum
+import re
 import subprocess
 
-import psutil
 import cpuinfo
-
+import psutil
 import pyudev
 
-
-from kepler_model.util.saver import save_node_type_index, save_machine_spec
 from kepler_model.util.loader import load_node_type_index
+from kepler_model.util.saver import save_machine_spec, save_node_type_index
 
 
 def rename(name: str) -> str:
@@ -66,7 +64,7 @@ def generate_spec(data_path, machine_id):
     cpu_freq_mhz = round(max(freq.max, freq.current) / 100) * 100  # round to one decimal of GHz
     spec_values = {"vendor": vendor, "processor": processor, "cores": cores, "chips": chips, "memory": memory_gb, "frequency": cpu_freq_mhz, "threads_per_core": threads_per_core}
     spec = NodeTypeSpec(**spec_values)
-    print("Save machine spec ({}): ".format(data_path))
+    print(f"Save machine spec ({data_path}): ")
     print(str(spec))
     save_machine_spec(data_path, machine_id, spec)
 
@@ -140,14 +138,14 @@ class NodeTypeSpec:
     def __str__(self):
         out_str = ""
         for attr in NodeAttribute:
-            out_str += "{} ({})\n".format(attr, str(self.attrs[attr]))
+            out_str += f"{attr} ({self.attrs[attr]!s})\n"
         return out_str
 
     def get_json(self):
         json_obj = dict()
         json_obj["attrs"] = dict()
         for attr in NodeAttribute:
-            json_obj["attrs"]["{}".format(attr)] = self.attrs[attr]
+            json_obj["attrs"][f"{attr}"] = self.attrs[attr]
         json_obj["members"] = self.members
         return json_obj
 

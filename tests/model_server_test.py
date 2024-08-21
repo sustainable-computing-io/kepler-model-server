@@ -1,13 +1,13 @@
-import requests
+import codecs
+import json
 import os
 import shutil
-import json
 
-import codecs
+import requests
 
-from kepler_model.util.train_types import FeatureGroup, FeatureGroups, ModelOutputType
 from kepler_model.server.model_server import MODEL_SERVER_PORT
 from kepler_model.util.config import download_path
+from kepler_model.util.train_types import FeatureGroup, FeatureGroups, ModelOutputType
 
 TMP_FILE = "tmp.zip"
 
@@ -18,7 +18,7 @@ def get_model_request_json(metrics, output_type, node_type, weight, trainer_name
 
 def make_request(metrics, output_type, node_type=-1, weight=False, trainer_name="", energy_source="rapl-sysfs"):
     model_request = get_model_request_json(metrics, output_type, node_type, weight, trainer_name, energy_source)
-    response = requests.post("http://localhost:{}/model".format(MODEL_SERVER_PORT), json=model_request)
+    response = requests.post(f"http://localhost:{MODEL_SERVER_PORT}/model", json=model_request)
     assert response.status_code == 200, response.text
     if weight:
         weight_dict = json.loads(response.text)
@@ -26,7 +26,7 @@ def make_request(metrics, output_type, node_type=-1, weight=False, trainer_name=
         for weight_values in weight_dict.values():
             weight_length = len(weight_values["All_Weights"]["Numerical_Variables"])
             expected_length = len(metrics)
-            assert weight_length <= expected_length, "weight metrics should covered by the requested {} > {}".format(weight_length, expected_length)
+            assert weight_length <= expected_length, f"weight metrics should covered by the requested {weight_length} > {expected_length}"
     else:
         output_path = os.path.join(download_path, output_type.name)
         if os.path.exists(output_path):
@@ -38,7 +38,7 @@ def make_request(metrics, output_type, node_type=-1, weight=False, trainer_name=
 
 
 def get_models():
-    response = requests.get("http://localhost:{}/best-models".format(MODEL_SERVER_PORT))
+    response = requests.get(f"http://localhost:{MODEL_SERVER_PORT}/best-models")
     assert response.status_code == 200, response.text
     response = json.loads(response.text)
     return response

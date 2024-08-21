@@ -1,11 +1,10 @@
 from kepler_model.train import NewPipeline, NodeTypeSpec
-from kepler_model.util import get_valid_feature_group_from_queries, PowerSourceMap
-from kepler_model.util.loader import default_train_output_pipeline, default_node_type
-
-from tests.prom_test import get_query_results, prom_output_path, prom_output_filename
-from tests.extractor_test import test_extractors, test_energy_source
+from kepler_model.util import PowerSourceMap, get_valid_feature_group_from_queries
+from kepler_model.util.loader import default_node_type, default_train_output_pipeline
+from tests.extractor_test import test_energy_source, test_extractors
 from tests.isolator_test import test_isolators
-from tests.trainer_test import test_trainer_names, assert_train
+from tests.prom_test import get_query_results, prom_output_filename, prom_output_path
+from tests.trainer_test import assert_train, test_trainer_names
 
 # fake spec value
 spec_values = {"processor": "test", "cores": 1, "chips": 1, "memory": -1, "frequency": -1}
@@ -16,7 +15,7 @@ test_energy_sources = ["acpi", "rapl-sysfs"]
 
 def assert_pipeline(pipeline, query_results, feature_group, energy_source, energy_components):
     success, abs_data, dyn_data = pipeline.process(query_results, energy_components, energy_source, feature_group=feature_group.name, replace_node_type=default_node_type)
-    assert success, "failed to process pipeline {}".format(pipeline.name)
+    assert success, f"failed to process pipeline {pipeline.name}"
     for trainer in pipeline.trainers:
         if trainer.feature_group == feature_group and trainer.energy_source == energy_source:
             if trainer.node_level:

@@ -3,16 +3,22 @@
 # - model.get_power()
 
 import os
+
 import pandas as pd
 
-from kepler_model.estimate import load_model, default_predicted_col_func, compute_error
+from kepler_model.estimate import compute_error, default_predicted_col_func, load_model
 from kepler_model.train.trainer import model_toppath
-from kepler_model.util.loader import get_model_group_path, default_train_output_pipeline
 from kepler_model.util import FeatureGroup, ModelOutputType, list_model_names
+from kepler_model.util.loader import default_train_output_pipeline, get_model_group_path
 from kepler_model.util.prom_types import TIMESTAMP_COL
-
-from tests.isolator_test import test_isolators, get_isolate_results, isolator_output_path
-from tests.extractor_test import test_extractors, get_extract_results, test_energy_source, get_expected_power_columns, extractor_output_path
+from tests.extractor_test import (
+    extractor_output_path,
+    get_expected_power_columns,
+    get_extract_results,
+    test_energy_source,
+    test_extractors,
+)
+from tests.isolator_test import get_isolate_results, isolator_output_path, test_isolators
 
 
 # extract_result, power_columns, corr, features = extractor.extract(query_results, energy_components, feature_group, energy_source, node_level)

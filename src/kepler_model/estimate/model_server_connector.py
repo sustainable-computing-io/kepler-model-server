@@ -1,11 +1,16 @@
-import requests
+import codecs
+import json
 import os
 import shutil
-import json
-import codecs
 
+import requests
 
-from kepler_model.util.config import is_model_server_enabled, get_model_server_req_endpoint, get_model_server_list_endpoint, download_path
+from kepler_model.util.config import (
+    download_path,
+    get_model_server_list_endpoint,
+    get_model_server_req_endpoint,
+    is_model_server_enabled,
+)
 from kepler_model.util.loader import get_download_output_path
 from kepler_model.util.train_types import ModelOutputType
 
@@ -56,7 +61,7 @@ def make_request(power_request):
     try:
         response = requests.post(get_model_server_req_endpoint(), json=model_request)
     except Exception as err:
-        print("cannot make request to {}: {}".format(get_model_server_req_endpoint(), err))
+        print(f"cannot make request to {get_model_server_req_endpoint()}: {err}")
         return None
     if response.status_code != 200:
         return None
@@ -69,7 +74,7 @@ def list_all_models():
     try:
         response = requests.get(get_model_server_list_endpoint())
     except Exception as err:
-        print("cannot list model: {}".format(err))
+        print(f"cannot list model: {err}")
         return dict()
     if response.status_code != 200:
         return dict()

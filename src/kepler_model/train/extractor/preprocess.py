@@ -1,9 +1,9 @@
 import numpy as np
 
-from kepler_model.util.train_types import PowerSourceMap
-from kepler_model.util.prom_types import TIMESTAMP_COL
-from kepler_model.util.extract_types import col_to_component
 from kepler_model.estimate.model.model import get_label_power_colname
+from kepler_model.util.extract_types import col_to_component
+from kepler_model.util.prom_types import TIMESTAMP_COL
+from kepler_model.util.train_types import PowerSourceMap
 
 
 def drop_zero_column(data, cols):

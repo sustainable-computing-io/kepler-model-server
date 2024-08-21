@@ -1,18 +1,46 @@
-import sys
-import os
 import codecs
-import shutil
 import logging
+import os
+import shutil
+import sys
 
-import requests
 import click
-from flask import Flask, request, json, make_response, send_file
+import requests
+from flask import Flask, json, make_response, request, send_file
 
-from kepler_model.util.train_types import get_valid_feature_groups, ModelOutputType, FeatureGroups, FeatureGroup, PowerSourceMap, weight_support_trainers
-from kepler_model.util.config import getConfig, model_toppath, ERROR_KEY, MODEL_SERVER_MODEL_REQ_PATH, MODEL_SERVER_MODEL_LIST_PATH, initial_pipeline_urls, download_path
-from kepler_model.util.loader import parse_filters, is_valid_model, load_json, load_weight, get_model_group_path, get_archived_file, METADATA_FILENAME, CHECKPOINT_FOLDERNAME, get_pipeline_path, any_node_type, is_matched_type, get_largest_candidates
+from kepler_model.train import NodeTypeIndexCollection, NodeTypeSpec
+from kepler_model.util.config import (
+    ERROR_KEY,
+    MODEL_SERVER_MODEL_LIST_PATH,
+    MODEL_SERVER_MODEL_REQ_PATH,
+    download_path,
+    getConfig,
+    initial_pipeline_urls,
+    model_toppath,
+)
+from kepler_model.util.loader import (
+    CHECKPOINT_FOLDERNAME,
+    METADATA_FILENAME,
+    any_node_type,
+    get_archived_file,
+    get_largest_candidates,
+    get_model_group_path,
+    get_pipeline_path,
+    is_matched_type,
+    is_valid_model,
+    load_json,
+    load_weight,
+    parse_filters,
+)
 from kepler_model.util.saver import WEIGHT_FILENAME
-from kepler_model.train import NodeTypeSpec, NodeTypeIndexCollection
+from kepler_model.util.train_types import (
+    FeatureGroup,
+    FeatureGroups,
+    ModelOutputType,
+    PowerSourceMap,
+    get_valid_feature_groups,
+    weight_support_trainers,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -82,26 +110,26 @@ def select_best_model(spec, valid_groupath, filters, energy_source, pipeline_nam
         candidates = get_largest_candidates(model_names, pipeline_name, nodeCollection, energy_source)
         logger.info(f"no matched models; selecting from large candidates: {candidates}")
         if candidates is None:
-            logger.warn("no large candidates; selecting from all available")
+            logger.warning("no large candidates; selecting from all available")
             candidates = model_names
     for model_name in candidates:
         model_savepath = os.path.join(valid_groupath, model_name)
         metadata = load_json(model_savepath, METADATA_FILENAME)
         if metadata is None or not is_valid_model(metadata, filters) or ERROR_KEY not in metadata:
             # invalid metadata
-            logger.warn(f"invalid metadata {is_valid_model(metadata, filters)} : {metadata}")
+            logger.warning(f"invalid metadata {is_valid_model(metadata, filters)} : {metadata}")
             continue
         if weight:
             response = load_weight(model_savepath)
             if response is None:
                 # fail to get weight file
-                logger.warn(f"weight failed: {model_savepath}")
+                logger.warning(f"weight failed: {model_savepath}")
                 continue
         else:
             response = get_archived_file(valid_groupath, model_name)
             if not os.path.exists(response):
                 # archived model file does not exists
-                logger.warn(f"archive failed: {response}")
+                logger.warning(f"archive failed: {response}")
                 continue
         if best_cadidate is None or best_cadidate[ERROR_KEY] > metadata[ERROR_KEY]:
             best_cadidate = metadata
@@ -141,18 +169,18 @@ def get_model():
                 best_model = best_candidate
                 best_response = response
     if best_model is None:
-        return make_response("cannot find model for {} at the moment".format(model_request), 400)
+        return make_response(f"cannot find model for {model_request} at the moment", 400)
     if req.weight:
         try:
             response = app.response_class(response=json.dumps(best_response), status=200, mimetype="application/json")
             return response
         except ValueError as err:
-            return make_response("get weight response error: {}".format(err), 400)
+            return make_response(f"get weight response error: {err}", 400)
     else:
         try:
             return send_file(best_response, as_attachment=True)
         except ValueError as err:
-            return make_response("send archived model error: {}".format(err), 400)
+            return make_response(f"send archived model error: {err}", 400)
 
 
 # get_available_models: return name list of best-candidate pipelines
@@ -195,7 +223,7 @@ def get_available_models():
         response = app.response_class(response=json.dumps(model_names), status=200, mimetype="application/json")
         return response
     except (ValueError, Exception) as err:
-        return make_response("failed to get best model list: {}".format(err), 400)
+        return make_response(f"failed to get best model list: {err}", 400)
 
 
 # upack_zip_files: unpack all model.zip files to model folder and copy model.json to model/weight.zip

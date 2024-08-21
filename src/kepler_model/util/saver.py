@@ -1,6 +1,7 @@
 import json
-import joblib
 import os
+
+import joblib
 
 METADATA_FILENAME = 'metadata'
 SCALER_FILENAME = 'scaler'
@@ -11,10 +12,10 @@ NODE_TYPE_INDEX_FILENAME = 'node_type_index'
 MACHINE_SPEC_PATH = "machine_spec"
 
 def _pipeline_model_metadata_filename(energy_source, model_type):
-    return "{}_{}_model_metadata".format(energy_source, model_type)
+    return f"{energy_source}_{model_type}_model_metadata"
 
 def _power_curve_filename(energy_source, model_type):
-    return "{}_{}_power_curve".format(energy_source, model_type)
+    return f"{energy_source}_{model_type}_power_curve"
 
 def assure_path(path):
     if path == '':
@@ -27,7 +28,7 @@ def save_json(path, name, data):
     if '.json' not in name:
         name = name + '.json'
     assure_path(path)
-    filename = os.path.join(path, name)   
+    filename = os.path.join(path, name)
     with open(filename, "w") as f:
         json.dump(data, f)
     return name
@@ -36,7 +37,7 @@ def save_pkl(path, name, data):
     if '.pkl' not in name:
         name = name + '.pkl'
     assure_path(path)
-    filename = os.path.join(path, name)   
+    filename = os.path.join(path, name)
     joblib.dump(data, filename)
     return name
 
@@ -44,7 +45,7 @@ def save_csv(path, name, data):
     if '.csv' not in name:
         name = name + '.csv'
     assure_path(path)
-    filename = os.path.join(path, name)   
+    filename = os.path.join(path, name)
     data.to_csv(filename)
     return name
 

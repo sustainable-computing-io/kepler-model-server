@@ -1,11 +1,12 @@
-from sklearn.metrics import mean_absolute_error
-import os
-import xgboost as xgb
-import numpy as np
 import base64
-
-from kepler_model.util import save_pkl, load_pkl
+import os
 from abc import abstractmethod
+
+import numpy as np
+import xgboost as xgb
+from sklearn.metrics import mean_absolute_error
+
+from kepler_model.util import load_pkl, save_pkl
 
 from . import Trainer
 
@@ -102,7 +103,7 @@ class XgboostTrainer(Trainer):
             if not os.path.exists(filename):
                 self.print_log("cannot get checkpoint file (in json) for xgboost")
                 return
-            with open(filename, "r") as f:
+            with open(filename) as f:
                 contents = f.read()
             weight_dict[component] = {"All_Weights": {"Categorical_Variables": dict(), "Numerical_Variables": {self.features[i]: {"scale": scaler.scale_[i]} for i in range(len(self.features))}, "XGboost_Weights": base64.b64encode(contents.encode("utf-8")).decode("utf-8")}}
         return weight_dict

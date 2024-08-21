@@ -1,9 +1,10 @@
 import os
+
 import cpuinfo
 import numpy as np
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-from kepler_model.util.loader import load_pkl, load_json
+from kepler_model.util.loader import load_json, load_pkl
 
 keras_enabled = True
 cpu_info = cpuinfo.get_cpu_info()
@@ -32,7 +33,7 @@ def transform_and_predict(model, datapoint):
         y[y < 0] = 0
         y = y.tolist()
     except Exception as e:
-        msg = "{}\n".format(e)
+        msg = f"{e}\n"
         y = []
     return y, msg
 

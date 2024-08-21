@@ -1,10 +1,11 @@
-from sklearn.metrics import mean_absolute_error
-from sklearn.exceptions import NotFittedError
-import numpy as np
-from scipy.optimize import curve_fit
 import os
 
-from kepler_model.util import save_pkl, load_pkl
+import numpy as np
+from scipy.optimize import curve_fit
+from sklearn.exceptions import NotFittedError
+from sklearn.metrics import mean_absolute_error
+
+from kepler_model.util import load_pkl, save_pkl
 from kepler_model.util.train_types import main_feature
 
 from . import Trainer

@@ -2,18 +2,17 @@
 # to visualize data
 import os
 
-import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from sklearn.preprocessing import MaxAbsScaler
 
-
-from kepler_model.util import assure_path, FeatureGroups, FeatureGroup, PowerSourceMap
-from kepler_model.util.prom_types import TIMESTAMP_COL
-from kepler_model.util.extract_types import col_to_component
-from kepler_model.train.extractor.preprocess import get_extracted_power_labels
 from kepler_model.estimate import get_label_power_colname
+from kepler_model.train.extractor.preprocess import get_extracted_power_labels
+from kepler_model.util import FeatureGroup, FeatureGroups, PowerSourceMap, assure_path
+from kepler_model.util.extract_types import col_to_component
+from kepler_model.util.prom_types import TIMESTAMP_COL
 
 plot_output_path = os.path.join(os.path.dirname(__file__), "data", "plot_output")
 assure_path(plot_output_path)
@@ -32,7 +31,7 @@ def preprocess_data(df):
 
 
 # plot extract result
-from extractor_test import test_energy_source, get_extract_results, get_expected_power_columns, test_extractors
+from extractor_test import get_expected_power_columns, get_extract_results, test_energy_source, test_extractors
 
 
 def plot_extract_result(extractor_name, feature_group, result, energy_source=test_energy_source, label_cols=get_expected_power_columns(), save_path=plot_output_path, features=None, title=None):
@@ -48,27 +47,27 @@ def plot_extract_result(extractor_name, feature_group, result, energy_source=tes
     i = 0
     for feature in features:
         sns.lineplot(data=result, x=TIMESTAMP_COL, y=feature, ax=axes[i])
-        axes[i].set_title("{}".format(feature))
+        axes[i].set_title(f"{feature}")
         axes[i].set_ylabel("")
         i += 1
     while i < ncols:
-        fig.delaxes(axes[i]) 
+        fig.delaxes(axes[i])
         i += 1
     i = ncols
     for energy_component in energy_components:
         component_label_col = get_label_power_colname(energy_component)
         sns.lineplot(data=extracted_power_labels, x=TIMESTAMP_COL, y=component_label_col, ax=axes[i])
-        axes[i].set_title("{}".format(component_label_col))
+        axes[i].set_title(f"{component_label_col}")
         axes[i].set_ylabel("")
         i += 1
     while i < 2*ncols:
-        fig.delaxes(axes[i]) 
+        fig.delaxes(axes[i])
         i += 1
     if title is None:
-        title = "{} on {}".format(extractor_name, feature_group)
+        title = f"{extractor_name} on {feature_group}"
     plt.suptitle(title)
-    
-    figname = "extract_result_{}_{}".format(extractor_name, feature_group)
+
+    figname = f"extract_result_{extractor_name}_{feature_group}"
     plt.tight_layout()
     fig.savefig(_fig_filename(figname, save_path=save_path))
 
@@ -80,9 +79,9 @@ def plot_power_cols(extractor_name, result, energy_source=test_energy_source, la
     target_df = result[[TIMESTAMP_COL] + target_cols].groupby([TIMESTAMP_COL]).mean().reset_index().sort_index()
     df = pd.melt(target_df, id_vars=[TIMESTAMP_COL], var_name="source", value_name="watts")
     ax = sns.lineplot(data=df, x=TIMESTAMP_COL, y="watts", hue="source")
-    title = "{} {}".format(extractor_name, energy_source)
+    title = f"{extractor_name} {energy_source}"
     ax.set_title(title)
-    figname = "extract_result_{}_{}".format(extractor_name, energy_source)
+    figname = f"extract_result_{extractor_name}_{energy_source}"
     plt.tight_layout()
     fig.savefig(_fig_filename(figname, save_path=save_path))
 

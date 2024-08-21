@@ -1,8 +1,13 @@
-import socket
 import json
+import socket
 
-from kepler_model.util.train_types import WORKLOAD_FEATURES, SYSTEM_FEATURES, ModelOutputType, CATEGORICAL_LABEL_TO_VOCAB
 from kepler_model.util.config import SERVE_SOCKET
+from kepler_model.util.train_types import (
+    CATEGORICAL_LABEL_TO_VOCAB,
+    SYSTEM_FEATURES,
+    WORKLOAD_FEATURES,
+    ModelOutputType,
+)
 from tests.extractor_test import test_energy_source
 
 trainer_names = ["SGDRegressorTrainer"]

@@ -1,17 +1,30 @@
+import os
 import shutil
-
 from abc import ABCMeta, abstractmethod
 
-import os
-
-
-from kepler_model.util import assure_path, ModelOutputType, FeatureGroups, FeatureGroup, save_json, save_metadata, load_metadata, save_scaler, save_weight
-
+from kepler_model.util import (
+    FeatureGroup,
+    FeatureGroups,
+    ModelOutputType,
+    assure_path,
+    load_metadata,
+    save_json,
+    save_metadata,
+    save_scaler,
+    save_weight,
+)
+from kepler_model.util.config import model_toppath
+from kepler_model.util.extract_types import component_to_col, get_unit_vals, ratio_to_col
+from kepler_model.util.loader import (
+    CHECKPOINT_FOLDERNAME,
+    get_archived_file,
+    get_model_group_path,
+    get_model_name,
+    get_save_path,
+    load_scaler,
+)
 from kepler_model.util.prom_types import node_info_column
 from kepler_model.util.train_types import main_feature
-from kepler_model.util.extract_types import component_to_col, get_unit_vals, ratio_to_col
-from kepler_model.util.loader import get_model_group_path, get_save_path, get_model_name, get_archived_file, CHECKPOINT_FOLDERNAME, load_scaler
-from kepler_model.util.config import model_toppath
 
 
 def get_assured_checkpoint_path(group_path, assure=True):
@@ -59,7 +72,7 @@ class Trainer(metaclass=ABCMeta):
         return model_name, model_file
 
     def _checkpoint_filename(self, component, node_type):
-        return "{}_{}_{}".format(self.trainer_name, component, node_type)
+        return f"{self.trainer_name}_{component}_{node_type}"
 
     def _checkpoint_filepath(self, component, node_type):
         checkpoint_filename = self._checkpoint_filename(component, node_type)
@@ -119,11 +132,11 @@ class Trainer(metaclass=ABCMeta):
             model, ok = self.load_local_checkpoint(local_checkpoint)
             if ok:
                 self.node_models[node_type][component] = model
-                self.print_log("Continue from last checkpoint ({})".format(component))
+                self.print_log(f"Continue from last checkpoint ({component})")
             else:
                 # init if failed to load any checkpoint
                 self.node_models[node_type][component] = self.init_model()
-                self.print_log("Newly initialize model ({})".format(component))
+                self.print_log(f"Newly initialize model ({component})")
             if hasattr(self.node_models[node_type][component], "set_feature_index"):
                 feature_index = main_feature(self.feature_group_name, component)
                 self.node_models[node_type][component].set_feature_index(feature_index)
@@ -138,7 +151,7 @@ class Trainer(metaclass=ABCMeta):
 
             node_type_filtered_data = data[data[node_info_column] == node_type]
             if self.node_scalers[node_type] is None:
-                self.print_log("fit scaler to latest data {1} for node_type={0}".format(node_type, self.feature_group_name))
+                self.print_log(f"fit scaler to latest data {self.feature_group_name} for node_type={node_type}")
                 # no profiled scaler
                 x_values = node_type_filtered_data[self.features].values
                 self.node_scalers[node_type] = MaxAbsScaler()
@@ -155,14 +168,14 @@ class Trainer(metaclass=ABCMeta):
                     self.train(node_type, component, X_train, y_train)
                     self.save_checkpoint(self.node_models[node_type][component], self._checkpoint_filepath(component, node_type))
             except Exception as err:
-                self.print_log("failed to process {}: {}".format(node_type, err))
+                self.print_log(f"failed to process {node_type}: {err}")
                 continue
             if self.should_archive(node_type):
                 pipeline_lock.acquire()
                 try:
                     self.save_model_and_metadata(node_type, X_test_map, y_test_map)
                 except Exception as err:
-                    self.print_log("failed to save model {}: {}".format(node_type, err))
+                    self.print_log(f"failed to save model {node_type}: {err}")
                 finally:
                     pipeline_lock.release()
 
@@ -255,12 +268,12 @@ class Trainer(metaclass=ABCMeta):
                 max_mae = mae
             if max_mape is None or mape > max_mape:
                 max_mape = mape
-            mae_map["{}_mae".format(component)] = mae
-            mape_map["{}_mape".format(component)] = mape
+            mae_map[f"{component}_mae"] = mae
+            mape_map[f"{component}_mape"] = mape
         self.save_metadata(node_type, max_mae, mae_map, mape, mape_map, item)
         # archive model
         self.archive_model(node_type)
-        print("save model to {}".format(save_path))
+        print(f"save model to {save_path}")
 
     def predict(self, node_type, component, X_values, skip_preprocess=False):
         save_path = self._get_save_path(node_type)
@@ -281,7 +294,7 @@ class Trainer(metaclass=ABCMeta):
         return model.predict(features)
 
     def print_log(self, message):
-        print("{}: {}".format(self.to_string(), message), flush=True)
+        print(f"{self.to_string()}: {message}", flush=True)
 
     def to_string(self):
         return "{} trainer ({}/{}/{})".format(self.trainer_name, "Abs" if self.node_level else "Dyn", self.feature_group, self.energy_source)

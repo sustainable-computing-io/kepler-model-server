@@ -13,10 +13,10 @@ container_level_index = [TIMESTAMP_COL, container_id_colname]
 
 
 def component_to_col(component, unit_col=None, unit_val=None):
-    power_colname = "{}_power".format(component)
+    power_colname = f"{component}_power"
     if unit_col is None:
         return power_colname
-    return "{}_{}_{}".format(unit_col, unit_val, power_colname)
+    return f"{unit_col}_{unit_val}_{power_colname}"
 
 
 def col_to_component(component_col):
@@ -32,7 +32,7 @@ def col_to_unit_val(component_col):
 
 
 def ratio_to_col(unit_val):
-    return "packge_ratio_{}".format(unit_val)
+    return f"packge_ratio_{unit_val}"
 
 
 def get_unit_vals(power_columns):

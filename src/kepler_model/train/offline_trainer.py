@@ -9,20 +9,19 @@
 #   python tests/offline_trainer_test.py <src_json_file> <save_path>
 
 import importlib
+import shutil
 
-from kepler_model.util.config import model_toppath
-from kepler_model.util.loader import get_pipeline_path, default_pipelines
-from kepler_model.util.train_types import PowerSourceMap
-from kepler_model.util.prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
-from kepler_model.train.profiler.profiler import Profiler, generate_profiles
+from flask import Flask, make_response, request, send_file
+
 from kepler_model.train.extractor.extractor import DefaultExtractor
 from kepler_model.train.isolator.isolator import ProfileBackgroundIsolator
 from kepler_model.train.isolator.train_isolator import TrainIsolator
 from kepler_model.train.pipeline import NewPipeline
-
-import shutil
-
-from flask import Flask, request, make_response, send_file
+from kepler_model.train.profiler.profiler import Profiler, generate_profiles
+from kepler_model.util.config import model_toppath
+from kepler_model.util.loader import default_pipelines, get_pipeline_path
+from kepler_model.util.prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
+from kepler_model.util.train_types import PowerSourceMap
 
 serve_port = 8102
 
@@ -115,14 +114,14 @@ def train():
     train_request = request.get_json()
     req = TrainRequest(**train_request)
     model = req.get_model()
-    print("Get Model: {}".format(model))
+    print(f"Get Model: {model}")
     if model is None:
-        return make_response("Cannot train model {}".format(req.name), 400)
+        return make_response(f"Cannot train model {req.name}", 400)
     else:
         try:
             return send_file(model, as_attachment=True)
         except ValueError as err:
-            return make_response("Send trained model error: {}".format(err), 400)
+            return make_response(f"Send trained model error: {err}", 400)
 
 
 def run():

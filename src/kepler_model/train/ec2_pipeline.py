@@ -15,19 +15,23 @@ example of export command:
 DATAPATH=/path/to/models python cmd/main.py export --pipeline-name ec2-0.7.11 -o /path/to/kepler-model-db/models --publisher sunya-ch --zip=true --collect-date "July 2024"
 """
 
-import os
 import json
+import os
+
 import boto3
 
-from kepler_model.train.profiler.node_type_index import NodeTypeSpec, NodeAttribute
-from kepler_model.train.pipeline import NewPipeline
 from kepler_model.train.extractor import DefaultExtractor
 from kepler_model.train.isolator.isolator import MinIdleIsolator
-from kepler_model.util.prom_types import node_info_column, prom_responses_to_results, get_valid_feature_group_from_queries
-
-from kepler_model.util.train_types import default_trainer_names, PowerSourceMap
-from kepler_model.util.saver import save_json
+from kepler_model.train.pipeline import NewPipeline
+from kepler_model.train.profiler.node_type_index import NodeTypeSpec
 from kepler_model.util.config import model_toppath
+from kepler_model.util.prom_types import (
+    get_valid_feature_group_from_queries,
+    node_info_column,
+    prom_responses_to_results,
+)
+from kepler_model.util.saver import save_json
+from kepler_model.util.train_types import PowerSourceMap, default_trainer_names
 
 data_path = os.path.join(model_toppath, "..", "data")
 
@@ -52,7 +56,7 @@ def read_response_in_json(key):
     response = s3.get_object(Bucket=bucket_name, Key=key)
     global last_modified
     last_modified = response["LastModified"]
-    print("{} last modified time: {}".format(key, last_modified))
+    print(f"{key} last modified time: {last_modified}")
     return json.loads(response["Body"].read().decode("utf-8"))
 
 

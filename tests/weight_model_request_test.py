@@ -6,20 +6,19 @@
 #
 #########################
 
-import os
 import json
-import time
+import os
 import sys
+import time
 
 import requests
 
-from kepler_model.util.train_types import FeatureGroups, FeatureGroup, ModelOutputType
-from kepler_model.util.loader import get_download_output_path
 from kepler_model.estimate.model_server_connector import list_all_models
-from kepler_model.util.config import get_model_server_req_endpoint, download_path
-
-from tests.extractor_test import test_energy_source
+from kepler_model.util.config import download_path, get_model_server_req_endpoint
+from kepler_model.util.loader import get_download_output_path
+from kepler_model.util.train_types import FeatureGroup, FeatureGroups, ModelOutputType
 from tests.estimator_power_request_test import generate_request
+from tests.extractor_test import test_energy_source
 
 os.environ["MODEL_SERVER_URL"] = "http://localhost:8100"
 
@@ -52,8 +51,8 @@ if __name__ == "__main__":
                 try:
                     response = requests.post(get_model_server_req_endpoint(), json=request_json)
                 except Exception as err:
-                    print("cannot get response from model server: {}".format(err))
+                    print(f"cannot get response from model server: {err}")
                     sys.exit(1)
-                assert response.status_code == 200, "response {} not OK".format(request_json)
+                assert response.status_code == 200, f"response {request_json} not OK"
                 loaded_weight = json.loads(response.content)
                 print(loaded_weight)

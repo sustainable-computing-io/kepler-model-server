@@ -13,7 +13,7 @@
 import os
 
 from kepler_model.train.prom import PrometheusClient
-from kepler_model.util import save_json, load_json
+from kepler_model.util import load_json, save_json
 from kepler_model.util.prom_types import prom_responses_to_results
 
 prom_output_path = os.path.join(os.path.dirname(__file__), "data", "prom_output")

@@ -1,8 +1,9 @@
-from sklearn.metrics import mean_absolute_error
-import numpy as np
 import os
 
-from kepler_model.util import save_pkl, load_pkl
+import numpy as np
+from sklearn.metrics import mean_absolute_error
+
+from kepler_model.util import load_pkl, save_pkl
 
 from . import Trainer
 

@@ -1,4 +1,5 @@
 from sklearn.linear_model import LinearRegression
+
 from kepler_model.train.trainer.scikit import ScikitTrainer
 
 model_class = "scikit"

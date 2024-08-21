@@ -8,19 +8,18 @@
 # test offline trainer
 #
 
-import requests
+import codecs
 import os
 import shutil
-import codecs
+
+import requests
 
 from kepler_model.train.offline_trainer import TrainAttribute, TrainRequest, serve_port
-
-
+from kepler_model.util.loader import class_to_json, list_all_abs_models, list_all_dyn_models
+from kepler_model.util.prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
+from tests.extractor_test import test_energy_source
 from tests.model_server_test import TMP_FILE
 from tests.prom_test import get_prom_response
-from tests.extractor_test import test_energy_source
-from kepler_model.util.loader import list_all_abs_models, list_all_dyn_models, class_to_json
-from kepler_model.util.prom_types import get_valid_feature_group_from_queries, prom_responses_to_results
 
 offline_trainer_output_path = os.path.join(os.path.dirname(__file__), "data", "offline_trainer_output")
 
@@ -57,7 +56,7 @@ def make_request(pipeline_name, idle_prom_response, isolator, isolator_args, pro
     train_request.trainer = class_to_json(trainer)
     request = class_to_json(train_request)
     # send request
-    response = requests.post("http://localhost:{}/train".format(serve_port), json=request)
+    response = requests.post(f"http://localhost:{serve_port}/train", json=request)
     assert response.status_code == 200, response.text
     with codecs.open(TMP_FILE, "wb") as f:
         f.write(response.content)
@@ -67,13 +66,13 @@ def make_request(pipeline_name, idle_prom_response, isolator, isolator_args, pro
 
 
 def get_pipeline_name(dataset_name, isolator):
-    return "{}_{}".format(dataset_name, isolator)
+    return f"{dataset_name}_{isolator}"
 
 
 def _assert_offline_trainer(model_list_map):
     for model_path, models in model_list_map.items():
-        assert len(models) > 0, "No trained model in {}".format(model_path)
-        print("Trained model in {}: {}".format(model_path, models))
+        assert len(models) > 0, f"No trained model in {model_path}"
+        print(f"Trained model in {model_path}: {models}")
 
 
 def assert_offline_trainer_output(target_path, energy_source, valid_fgs, pipeline_name):

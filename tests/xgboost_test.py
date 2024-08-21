@@ -1,10 +1,10 @@
-import os
 import json
+import os
 
 from kepler_model.train import DefaultExtractor
-from kepler_model.util.train_types import FeatureGroup, XGBoostRegressionTrainType
 from kepler_model.train.profiler.profiler import response_to_result
 from kepler_model.train.trainer.XGBoostTrainer.main import XGBoostRegressionStandalonePipeline
+from kepler_model.util.train_types import FeatureGroup, XGBoostRegressionTrainType
 
 energy_components = ["package", "core", "uncore", "dram"]
 feature_group = FeatureGroup.BPFIRQ.name

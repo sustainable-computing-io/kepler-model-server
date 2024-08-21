@@ -1,16 +1,24 @@
 import datetime
 import json
 import os
-from typing import List, Optional, Tuple, Dict, Any
-import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, mean_absolute_percentage_error
-from sklearn.model_selection import train_test_split, RepeatedKFold, cross_val_score
+from typing import Any
+
 import numpy as np
+import pandas as pd
 import xgboost as xgb
+from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, r2_score
+from sklearn.model_selection import RepeatedKFold, cross_val_score, train_test_split
 
-
-from kepler_model.util.train_types import FeatureGroup, FeatureGroups, EnergyComponentLabelGroups, EnergyComponentLabelGroup, XGBoostMissingModelXOrModelDescException, XGBoostModelFeatureOrLabelIncompatabilityException, XGBoostRegressionTrainType
 from kepler_model.train.extractor.extractor import DefaultExtractor
+from kepler_model.util.train_types import (
+    EnergyComponentLabelGroup,
+    EnergyComponentLabelGroups,
+    FeatureGroup,
+    FeatureGroups,
+    XGBoostMissingModelXOrModelDescException,
+    XGBoostModelFeatureOrLabelIncompatabilityException,
+    XGBoostRegressionTrainType,
+)
 
 
 # Currently Cgroup Metrics are not exported
@@ -77,7 +85,7 @@ class XGBoostRegressionStandalonePipeline:
             raise Exception("extractor failed")
 
     # Accepts JSON Input with feature and corresponding prediction
-    def predict(self, features_and_predictions: List[Dict[str, float]]) -> Tuple[List[float], Dict[Any, Any]]:
+    def predict(self, features_and_predictions: list[dict[str, float]]) -> tuple[list[float], dict[Any, Any]]:
         # features Convert to List[List[float]]
         list_of_predictions = []
         for prediction in features_and_predictions:
@@ -104,11 +112,11 @@ class XGBoostRegressionModelGenerationPipeline:
 
     """
 
-    feature_names: List[str]
-    label_names: List[str]
+    feature_names: list[str]
+    label_names: list[str]
     model_name: str
 
-    def __init__(self, feature_names_in_order: List[str], label_names_in_order: List[str], save_location: str, model_name: str) -> None:
+    def __init__(self, feature_names_in_order: list[str], label_names_in_order: list[str], save_location: str, model_name: str) -> None:
         # model data will be generated consistently using the list of feature names and labels (Order does not matter)
 
         self.feature_names = feature_names_in_order.copy()
@@ -141,7 +149,7 @@ class XGBoostRegressionModelGenerationPipeline:
         filename_path = self._generate_model_data_filepath()
         return os.path.exists(os.path.join(filename_path, self.model_desc))
 
-    def retrieve_all_model_data(self) -> Tuple[Optional[xgb.XGBRegressor], Optional[Dict[Any, Any]]]:
+    def retrieve_all_model_data(self) -> tuple[xgb.XGBRegressor | None, dict[Any, Any] | None]:
         # Note that when generating base model, it does not need to contain default hyperparameters if it will just be
         # used for prediction
         # Returns model and model_desc
@@ -151,14 +159,14 @@ class XGBoostRegressionModelGenerationPipeline:
             raise XGBoostMissingModelXOrModelDescException(missing_model=self.model_exists(), missing_model_desc=self.model_json_data_exists())
         if self.model_exists() and self.model_json_data_exists():
             new_model.load_model(os.path.join(filename_path, self.model_filename))
-            with open(os.path.join(filename_path, self.model_desc), "r") as f:
+            with open(os.path.join(filename_path, self.model_desc)) as f:
                 json_data = json.load(f)
             if json_data["feature_names"] != self.feature_names or json_data["label_names"] != self.label_names:
                 raise XGBoostModelFeatureOrLabelIncompatabilityException(json_data["feature_names"], json_data["label_names"], self.feature_names, self.label_names)
             return new_model, json_data
         return None, None
 
-    def _save_model(self, model: xgb.XGBRegressor, model_desc: Dict[Any, Any]) -> None:
+    def _save_model(self, model: xgb.XGBRegressor, model_desc: dict[Any, Any]) -> None:
         filename_path = self._generate_model_data_filepath()
         if not self._model_data_filepath_exists():
             os.makedirs(filename_path)
@@ -302,7 +310,7 @@ class XGBoostRegressionModelGenerationPipeline:
 
     # Receives list of features and returns a list of predictions in order
     # Return None if no available model
-    def predict(self, input_values: List[List[float]]) -> Tuple[Optional[List[float]], Optional[Dict[Any, Any]]]:
+    def predict(self, input_values: list[list[float]]) -> tuple[list[float] | None, dict[Any, Any] | None]:
         retrieved_model, retrieved_model_desc = self.retrieve_all_model_data()
         predicted_results = []
         if retrieved_model is not None:

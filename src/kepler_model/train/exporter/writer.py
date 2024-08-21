@@ -1,10 +1,10 @@
 import os
+
 import pandas as pd
 
-
-from kepler_model.util.loader import load_json, version
-from kepler_model.util.saver import assure_path, _pipeline_model_metadata_filename, _power_curve_filename
 from kepler_model.train.exporter.validator import mae_threshold, mape_threshold
+from kepler_model.util.loader import load_json, version
+from kepler_model.util.saver import _pipeline_model_metadata_filename, _power_curve_filename, assure_path
 from kepler_model.util.train_types import ModelOutputType, PowerSourceMap
 
 error_report_foldername = "error_report"
@@ -16,7 +16,7 @@ def write_markdown(markdown_filepath, markdown_content):
             # Write the Markdown content to the file
             markdown_file.write(markdown_content)
             print(f"Markdown file '{markdown_filepath}' has been created successfully.")
-    except IOError as e:
+    except OSError as e:
         print(f"Cannot write '{markdown_filepath}': {e}")
 
 
@@ -64,7 +64,7 @@ def get_workload_content(data_path, inputs):
             # read file directly
             filepath = os.path.join(data_path, input)
             if os.path.exists(filepath):
-                with open(filepath, "r") as file:
+                with open(filepath) as file:
                     content = file.read()
 
         workload_content += """
@@ -85,7 +85,7 @@ def get_workload_content(data_path, inputs):
 def format_trainer(trainers):
     trainer_content = ""
     for trainer in trainers:
-        trainer_content += "  - {}\n".format(trainer)
+        trainer_content += f"  - {trainer}\n"
     return trainer_content
 
 
@@ -93,7 +93,7 @@ def generate_pipeline_page(version_path, pipeline_metadata, workload_content, sk
     doc_path = os.path.join(version_path, ".doc")
     assure_path(doc_path)
     pipeline_name = pipeline_metadata["name"]
-    markdown_filename = "{}.md".format(pipeline_name)
+    markdown_filename = f"{pipeline_name}.md"
     markdown_filepath = os.path.join(doc_path, markdown_filename)
     if skip_if_exist and os.path.exists(markdown_filepath):
         print(f"Markdown file '{markdown_filepath}' already exists.")
@@ -131,7 +131,7 @@ def _error_report_url(export_path, node_type, assure):
     error_report_folder = os.path.join(export_path, error_report_foldername)
     if assure:
         assure_path(error_report_folder)
-    node_type_file = "node_type_{}.md".format(node_type)
+    node_type_file = f"node_type_{node_type}.md"
     return os.path.join(error_report_folder, node_type_file)
 
 
@@ -164,7 +164,7 @@ def format_error_report(error_dict):
     for energy_source in sorted(error_dict.keys()):
         for outputy_type_name in sorted(error_dict[energy_source].keys()):
             df = error_dict[energy_source][outputy_type_name]
-            content += "### {} {} model\n\n".format(energy_source, outputy_type_name)
+            content += f"### {energy_source} {outputy_type_name} model\n\n"
             if len(df) == 0:
                 content += "No model available\n\n"
             else:
@@ -178,7 +178,7 @@ def generate_report_results(local_export_path, best_model_collections, node_type
         if best_model_collections[int(node_type)].has_model:
             markdown_filepath = _error_report_url(local_export_path, node_type, assure=True)
             error_dict, error_dict_with_weight = get_error_dict(remote_version_path, collection)
-            markdown_content = "# Validation results on node type {}\n\n".format(node_type)
+            markdown_content = f"# Validation results on node type {node_type}\n\n"
             markdown_content += data_to_markdown_table(pd.DataFrame([node_type_index_json[str(node_type)]["attrs"]])) + "\n"
 
             # add links
@@ -195,8 +195,8 @@ def generate_report_results(local_export_path, best_model_collections, node_type
 # generate_pipeline_readme - version/pipeline_name/README.md
 def generate_pipeline_readme(pipeline_name, local_export_path, node_type_index_json, best_model_collections):
     markdown_filepath = os.path.join(local_export_path, "README.md")
-    markdown_content = "# {} on v{} Build\n\n".format(pipeline_name, version)
-    markdown_content += "MAE Threshold = {}, MAPE Threshold = {}%\n\n".format(mae_threshold, int(mape_threshold))
+    markdown_content = f"# {pipeline_name} on v{version} Build\n\n"
+    markdown_content += f"MAE Threshold = {mae_threshold}, MAPE Threshold = {int(mape_threshold)}%\n\n"
     items = []
     for node_type, spec_json in node_type_index_json.items():
         if best_model_collections[int(node_type)].has_model:
@@ -204,15 +204,15 @@ def generate_pipeline_readme(pipeline_name, local_export_path, node_type_index_j
             item = {"node type": node_type}
             item.update(spec_json["attrs"])
             item["member size"] = len(spec_json["members"])
-            item["error report"] = "[link]({})".format(error_file)
+            item["error report"] = f"[link]({error_file})"
             items += [item]
     df = pd.DataFrame(items)
-    markdown_content += "Available Node Type: {}\n\n".format(len(df))
+    markdown_content += f"Available Node Type: {len(df)}\n\n"
     # add metadata figures
     for ot in ModelOutputType:
         for energy_source in PowerSourceMap.keys():
             data_filename = _pipeline_model_metadata_filename(energy_source, ot.name)
-            markdown_content += "![]({}.png)\n".format(data_filename)
+            markdown_content += f"![]({data_filename}.png)\n"
 
     markdown_content += data_to_markdown_table(df.sort_values(by=["node type"]))
     # add power curve figures
@@ -220,8 +220,8 @@ def generate_pipeline_readme(pipeline_name, local_export_path, node_type_index_j
         for energy_source in PowerSourceMap.keys():
             data_filename = _power_curve_filename(energy_source, ot.name)
             png_filename = data_filename + ".png"
-            markdown_content += "## {} ({})\n".format(energy_source, ot.name)
-            markdown_content += "![]({})\n".format(png_filename)
+            markdown_content += f"## {energy_source} ({ot.name})\n"
+            markdown_content += f"![]({png_filename})\n"
 
     write_markdown(markdown_filepath, markdown_content)
     return markdown_filepath

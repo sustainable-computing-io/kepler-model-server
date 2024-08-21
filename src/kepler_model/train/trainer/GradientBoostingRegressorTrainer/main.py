@@ -1,4 +1,5 @@
 from sklearn.ensemble import GradientBoostingRegressor
+
 from kepler_model.train.trainer.scikit import ScikitTrainer
 
 model_class = "scikit"

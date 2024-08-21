@@ -1,4 +1,5 @@
 from sklearn.neighbors import KNeighborsRegressor
+
 from kepler_model.train.trainer.scikit import ScikitTrainer
 
 model_class = "scikit"
