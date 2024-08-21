@@ -58,7 +58,9 @@ run-collector-client:
 		"while [ ! -S "/tmp/estimator.sock" ]; do sleep 1; done; hatch test -vvv -s ./tests/estimator_power_request_test.py"
 
 clean-estimator:
-	$(CTR_CMD) stop estimator
+	@$(CTR_CMD) logs estimator
+	@$(CTR_CMD) stop estimator
+	@$(CTR_CMD) rm estimator || true
 
 test-estimator: run-estimator run-collector-client clean-estimator
 
@@ -78,7 +80,9 @@ run-estimator-client:
 		hatch run test -vvv -s ./tests/estimator_model_request_test.py
 
 clean-model-server:
+	@$(CTR_CMD) logs model-server
 	@$(CTR_CMD) stop model-server
+	@$(CTR_CMD) rm model-server || true
 
 test-model-server: \
 	run-model-server \
