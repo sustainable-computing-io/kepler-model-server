@@ -14,7 +14,7 @@
 
 import os
 from .loader import get_url, get_pipeline_url, base_model_url, default_pipelines, default_train_output_pipeline
-from .train_types import ModelOutputType, is_support_output_type, FeatureGroup
+from .train_types import ModelOutputType, is_output_type_supported, FeatureGroup
 
 # must be writable (for shared volume mount)
 MNT_PATH = "/mnt"
@@ -150,7 +150,7 @@ def get_init_model_url(energy_source, output_type, model_topurl=model_topurl):
         if get_energy_source(prefix) == energy_source:
             modelURL = get_init_url(prefix)
             print("get init url", modelURL)
-            if modelURL == "" and is_support_output_type(output_type):
+            if modelURL == "" and is_output_type_supported(output_type):
                 print("init URL is not set, try using default URL".format(output_type))
                 return get_url(feature_group=FeatureGroup.BPFOnly, output_type=ModelOutputType[output_type], energy_source=energy_source, model_topurl=model_topurl, pipeline_name=pipeline_name)
             else:

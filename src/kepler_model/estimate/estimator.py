@@ -14,7 +14,7 @@ from kepler_model.estimate.archived_model import get_achived_model
 from kepler_model.estimate.model.model import load_downloaded_model
 from kepler_model.util.loader import get_download_output_path
 from kepler_model.util.config import set_env_from_model_config, SERVE_SOCKET, download_path
-from kepler_model.util.train_types import is_support_output_type, ModelOutputType
+from kepler_model.util.train_types import is_output_type_supported, ModelOutputType
 
 ###############################################
 # power request
@@ -43,16 +43,16 @@ class PowerRequest:
 loaded_model = dict()
 
 
-def handle_request(data):
+def handle_request(data: str) -> dict:
     try:
         power_request = json.loads(data, object_hook=lambda d: PowerRequest(**d))
     except Exception as e:
-        logger.error(f"fail to handle request: {e}")
-        msg = "fail to handle request: {}".format(e)
+        msg = f"failed to handle request: {e}"
+        logger.error(msg)
         return {"powers": dict(), "msg": msg}
 
-    if not is_support_output_type(power_request.output_type):
-        msg = "output type {} is not supported".format(power_request.output_type)
+    if not is_output_type_supported(power_request.output_type):
+        msg = f"output type {power_request.output_type} is not supported"
         logger.error(msg)
         return {"powers": dict(), "msg": msg}
 
@@ -63,6 +63,7 @@ def handle_request(data):
 
     if output_type.name not in loaded_model:
         loaded_model[output_type.name] = dict()
+
     output_path = ""
     mismatch_trainer = False
     if is_model_server_enabled():
@@ -87,12 +88,12 @@ def handle_request(data):
                     msg = "failed to get model from request {}".format(data)
                     logger.error(msg)
                     return {"powers": dict(), "msg": msg}
-                else:
-                    logger.info(f"load model from config: {output_path}")
+                logger.info(f"load model from config: {output_path}")
             else:
                 logger.info(f"load model from model server: {output_path}")
 
         loaded_item = load_downloaded_model(power_request.energy_source, output_type)
+
         if loaded_item is not None and loaded_item.estimator is not None:
             loaded_model[output_type.name][power_request.energy_source] = loaded_item
             logger.info(f"set model {loaded_item.model_name} for {output_type.name} ({power_request.energy_source})")
@@ -103,6 +104,7 @@ def handle_request(data):
         logger.info(f"{model.model_name} failed to predict; removed: {msg}")
         if output_path != "" and os.path.exists(output_path):
             shutil.rmtree(output_path)
+
     return {"powers": powers, "msg": msg}
 
 
@@ -124,7 +126,7 @@ class EstimatorServer:
                 os.remove(self.socket_path)
                 sys.stdout.write("close socket\n")
             except Exception as e:
-                logger.error(f"fail to close socket: {e}")
+                logger.error(f"failed to close socket: {e}")
 
     def accepted(self, connection):
         data = b""

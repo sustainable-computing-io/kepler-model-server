@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 import joblib
 import pandas as pd
 from .saver import assure_path, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME, TRAIN_ARGS_FILENAME, NODE_TYPE_INDEX_FILENAME, MACHINE_SPEC_PATH, _pipeline_model_metadata_filename
@@ -31,6 +32,9 @@ default_pipelines = {
 base_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v{}".format(major_version)
 
 
+logger = logging.getLogger(__name__)
+
+
 def get_pipeline_url(model_topurl, pipeline_name):
     file_ext = ".zip"
     return os.path.join(model_topurl, pipeline_name + file_ext)
@@ -52,21 +56,24 @@ any_node_type = -1
 default_feature_group = FeatureGroup.BPFOnly
 
 
-def load_json(path, name):
-    if ".json" not in name:
+def load_json(path: str, name: str):
+    if name.endswith(".json") is False:
         name = name + ".json"
+
     filepath = os.path.join(path, name)
     try:
         with open(filepath) as f:
             res = json.load(f)
         return res
     except Exception as err:
+        logger.error(f"fail to load json {filepath}: {err}")
         return None
 
 
-def load_pkl(path, name):
-    if ".pkl" not in name:
+def load_pkl(path: str, name: str):
+    if name.endswith(".pkl") is False:
         name = name + ".pkl"
+
     filepath = os.path.join(path, name)
     try:
         res = joblib.load(filepath)
@@ -74,18 +81,20 @@ def load_pkl(path, name):
     except FileNotFoundError:
         return None
     except Exception as err:
-        print("fail to load pkl {}: {}".format(filepath, err))
+        logger.error(f"failed to load pkl {filepath}: {err}")
         return None
 
 
 def load_remote_pkl(url_path):
-    if ".pkl" not in url_path:
-        url_path = url_path + ".pkl"
+    if url_path.endswith(".pkl") is False:
+        url_path += ".pkl"
+
     try:
         response = urlopen(url_path)
         loaded_model = joblib.load(response)
         return loaded_model
-    except:
+    except Exception as e:
+        logger.error(f"failed to load pkl url {url_path}: {e}")
         return None
 
 
@@ -133,8 +142,8 @@ def load_csv(path, name):
         data = pd.read_csv(file_path)
         data = data.apply(pd.to_numeric, errors="ignore")
         return data
-    except:
-        # print('cannot load {}'.format(file_path))
+    except Exception as err:
+        logger.error(f"cannot load {file_path}: {err}")
         return None
 
 

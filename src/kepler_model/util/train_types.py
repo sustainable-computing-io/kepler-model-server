@@ -1,6 +1,6 @@
 ###########################################################
 ## types.py
-## 
+##
 ## defines
 ## - collection of features
 ## - feature groups
@@ -17,7 +17,7 @@ SYSTEM_FEATURES = ["node_info", "cpu_scaling_frequency_hertz"]
 COUNTER_FEAUTRES = ["cache_miss", "cpu_cycles", "cpu_instructions"]
 BPF_FEATURES = ["bpf_cpu_time_ms", "bpf_page_cache_hit"]
 IRQ_FEATURES = ["bpf_block_irq", "bpf_net_rx_irq", "bpf_net_tx_irq"]
-ACCELERATE_FEATURES = ['accelerator_intel_qat']
+ACCELERATE_FEATURES = ["accelerator_intel_qat"]
 WORKLOAD_FEATURES = COUNTER_FEAUTRES + BPF_FEATURES + IRQ_FEATURES + ACCELERATE_FEATURES
 BASIC_FEATURES = COUNTER_FEAUTRES + BPF_FEATURES
 
@@ -40,8 +40,8 @@ CATEGORICAL_LABEL_TO_VOCAB = {
                     "cpu_scaling_frequency_hertz": ["1GHz", "2GHz", "3GHz"],
                     }
 
-no_weight_trainers = ['PolynomialRegressionTrainer', 'GradientBoostingRegressorTrainer', 'KNeighborsRegressorTrainer', 'LinearRegressionTrainer','SVRRegressorTrainer', 'XgboostFitTrainer']
-weight_support_trainers = ['SGDRegressorTrainer', 'LogarithmicRegressionTrainer', 'LogisticRegressionTrainer', 'ExponentialRegressionTrainer']
+no_weight_trainers = ["PolynomialRegressionTrainer", "GradientBoostingRegressorTrainer", "KNeighborsRegressorTrainer", "LinearRegressionTrainer", "SVRRegressorTrainer", "XgboostFitTrainer"]
+weight_support_trainers = ["SGDRegressorTrainer", "LogarithmicRegressionTrainer", "LogisticRegressionTrainer", "ExponentialRegressionTrainer"]
 default_trainer_names = no_weight_trainers + weight_support_trainers
 default_trainers = ",".join(default_trainer_names)
 
@@ -59,23 +59,28 @@ class FeatureGroup(enum.Enum):
     ThirdParty = 10
     Unknown = 99
 
+
 class EnergyComponentLabelGroup(enum.Enum):
     PackageEnergyComponentOnly = 1
     DRAMEnergyComponentOnly = 2
     CoreEnergyComponentOnly = 3
     PackageDRAMEnergyComponents = 4
 
+
 class ModelOutputType(enum.Enum):
     AbsPower = 1
     DynPower = 2
 
-def is_support_output_type(output_type_name):
+
+def is_output_type_supported(output_type_name):
     return any(output_type_name == item.name for item in ModelOutputType)
+
 
 def deep_sort(elements):
     sorted_elements = elements.copy()
     sorted_elements.sort()
     return sorted_elements
+
 
 FeatureGroups = {
     FeatureGroup.Full: deep_sort(WORKLOAD_FEATURES + SYSTEM_FEATURES),
@@ -90,8 +95,10 @@ FeatureGroups = {
 
 SingleSourceFeatures = [FeatureGroup.CounterOnly.name, FeatureGroup.BPFOnly.name, FeatureGroup.BPFIRQ.name]
 
+
 def is_single_source_feature_group(fg):
     return fg.name in SingleSourceFeatures
+
 
 default_main_feature_map = {
     FeatureGroup.Full: "cpu_instructions",
@@ -122,15 +129,17 @@ def main_feature(feature_group_name, energy_component):
         feature = default_main_feature_map[feature_group]
     return features.index(feature)
 
+
 # XGBoostRegressionTrainType
 class XGBoostRegressionTrainType(enum.Enum):
     TrainTestSplitFit = 1
     KFoldCrossValidation = 2
 
+
 # XGBoost Model Feature and Label Incompatability Exception
 class XGBoostModelFeatureOrLabelIncompatabilityException(Exception):
-    """Exception raised when a saved model's features and label is incompatable with the training data. 
-    
+    """Exception raised when a saved model's features and label is incompatable with the training data.
+
     ...
 
     Attributes
@@ -139,7 +148,7 @@ class XGBoostModelFeatureOrLabelIncompatabilityException(Exception):
     expected_labels: the expected model labels
     actual_features: the actual model features
     actual_labels: the actual model labels
-    features_incompatible: true if expected_features == actual_features else false 
+    features_incompatible: true if expected_features == actual_features else false
     labels_incompatible: true if expected_labels == actual_labels else false
     """
 
@@ -149,7 +158,6 @@ class XGBoostModelFeatureOrLabelIncompatabilityException(Exception):
     actual_labels: List[str]
     features_incompatible: bool
     labels_incompatible: bool
-
 
     def __init__(self, expected_features: List[str], expected_labels: List[str], received_features: List[str], received_labels: List[str], message="expected features/labels are the not the same as the features/labels of the training data") -> None:
         self.expected_features = expected_features
@@ -188,11 +196,11 @@ EnergyComponentLabelGroups = {
     EnergyComponentLabelGroup.PackageEnergyComponentOnly: deep_sort(PACKAGE_ENERGY_COMPONENT_LABEL),
     EnergyComponentLabelGroup.DRAMEnergyComponentOnly: deep_sort(DRAM_ENERGY_COMPONENT_LABEL),
     EnergyComponentLabelGroup.CoreEnergyComponentOnly: deep_sort(CORE_ENERGY_COMPONENT_LABEL),
-    EnergyComponentLabelGroup.PackageDRAMEnergyComponents: deep_sort(PACKAGE_ENERGY_COMPONENT_LABEL + DRAM_ENERGY_COMPONENT_LABEL)
-
+    EnergyComponentLabelGroup.PackageDRAMEnergyComponents: deep_sort(PACKAGE_ENERGY_COMPONENT_LABEL + DRAM_ENERGY_COMPONENT_LABEL),
 }
 
 all_feature_groups = [fg.name for fg in FeatureGroups.keys()]
+
 
 def get_feature_group(features):
     sorted_features = deep_sort(features)
@@ -201,6 +209,7 @@ def get_feature_group(features):
         if sorted_features == g_features:
             return g
     return FeatureGroup.Unknown
+
 
 def get_valid_feature_groups(features):
     valid_fgs = []
@@ -214,6 +223,7 @@ def get_valid_feature_groups(features):
             valid_fgs += [fg_key]
     return valid_fgs
 
+
 def is_weight_output(output_type):
     if output_type == ModelOutputType.AbsModelWeight:
         return True
@@ -225,7 +235,8 @@ def is_weight_output(output_type):
         return True
     return False
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     for g, g_features in FeatureGroups.items():
         shuffled_features = g_features.copy()
         random.shuffle(shuffled_features)

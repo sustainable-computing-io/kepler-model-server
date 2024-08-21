@@ -1,4 +1,5 @@
 import json
+import logging
 import pandas as pd
 
 from kepler_model.util.loader import load_metadata, get_download_output_path
@@ -9,6 +10,8 @@ from kepler_model.estimate.model.scikit_model import ScikitModelEstimator
 from kepler_model.estimate.model.xgboost_model import XgboostModelEstimator
 from kepler_model.estimate.model.curvefit_model import CurveFitModelEstimator
 # from keras_model import KerasModelEstimator
+
+logger = logging.getLogger(__name__)
 
 # model wrapper
 MODELCLASS = {
@@ -157,17 +160,18 @@ class Model:
 
 def load_model(model_path):
     metadata = load_metadata(model_path)
-    if metadata is not None:
-        metadata["model_path"] = model_path
-        metadata_str = json.dumps(metadata)
-        try:
-            model = json.loads(metadata_str, object_hook=lambda d: Model(**d))
-            return model
-        except Exception as e:
-            print("fail to load: ", e)
-            return None
-    print("no metadata")
-    return None
+    if not metadata:
+        logger.warn(f"no metadata in {model_path}")
+        return None
+
+    metadata["model_path"] = model_path
+    metadata_str = json.dumps(metadata)
+    try:
+        model = json.loads(metadata_str, object_hook=lambda d: Model(**d))
+        return model
+    except Exception as e:
+        logger.error(f"fail to load: {model_path} - {e}")
+        return None
 
 
 # download model folder has no subfolder of energy source and feature group because it has been already determined by model request
