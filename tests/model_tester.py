@@ -1,21 +1,19 @@
 # deprecated
 # WARN: is this test still needed
 
-import pandas as pd
 
 import os
 
-from sklearn.metrics import mean_squared_error, mean_absolute_error
 from prom_test import get_query_results
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-from kepler_model.train import DefaultExtractor
-from kepler_model.train.profile import profile_process, get_min_max_watt
-from kepler_model.util.train_types import ModelOutputType, PowerSourceMap
-from kepler_model.train.isolator.train_isolator import get_background_containers, isolate_container
 from kepler_model.estimate.model.model import load_model
+from kepler_model.train import DefaultExtractor
+from kepler_model.train.isolator.train_isolator import get_background_containers, isolate_container
+from kepler_model.train.profile import get_min_max_watt, profile_process
 from kepler_model.util.loader import default_node_type
-
-from kepler_model.util.prom_types import prom_responses_to_results, TIMESTAMP_COL
+from kepler_model.util.prom_types import TIMESTAMP_COL, prom_responses_to_results
+from kepler_model.util.train_types import ModelOutputType, PowerSourceMap
 
 # model_tester.py
 # to get the test result across different train/test data set
@@ -68,7 +66,7 @@ def process(train_dataset_name, test_dataset_name, target_path):
                         extracted_data, power_columns, _, _ = extractor.extract(test_data, energy_components, feature_group, energy_source, node_level=False)
                         feature_columns = [col for col in extracted_data.columns if col not in power_columns]
                         if not model.feature_check(feature_columns):
-                            print("model {} ({}/{}/{})is not valid to test".format(model.name, energy_source, output_type.name, feature_group))
+                            print(f"model {model.name} ({energy_source}/{output_type.name}/{feature_group})is not valid to test")
                             continue
                         if output_type == ModelOutputType.AbsPower:
                             data_with_prediction = extracted_data.copy()

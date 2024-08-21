@@ -1,8 +1,14 @@
 import collections.abc
 import os
+
 import xgboost as xgb
 
-from kepler_model.estimate.model.estimate_common import transform_and_predict, load_model_by_pickle, load_model_by_json, is_component_model
+from kepler_model.estimate.model.estimate_common import (
+    is_component_model,
+    load_model_by_json,
+    load_model_by_pickle,
+    transform_and_predict,
+)
 from kepler_model.util import ModelOutputType
 
 

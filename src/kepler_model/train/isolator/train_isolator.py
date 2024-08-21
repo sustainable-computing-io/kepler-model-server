@@ -1,18 +1,26 @@
 import os
+
 import numpy as np
 import pandas as pd
 
-from .isolator import Isolator, isolate_container
-
-from kepler_model.estimate import load_model, get_predicted_power_colname, get_predicted_background_power_colname, get_dynamic_power_colname, get_reconstructed_power_colname, get_label_power_colname, get_background_containers
+from kepler_model.estimate import (
+    get_background_containers,
+    get_dynamic_power_colname,
+    get_label_power_colname,
+    get_predicted_background_power_colname,
+    get_predicted_power_colname,
+    get_reconstructed_power_colname,
+    load_model,
+)
 from kepler_model.train.extractor.preprocess import find_correlations, get_extracted_power_labels
-
 from kepler_model.util import PowerSourceMap
-from kepler_model.util.train_types import get_valid_feature_groups
-from kepler_model.util.prom_types import TIMESTAMP_COL, get_container_name_from_id
-from kepler_model.util.extract_types import container_level_index, container_id_colname, col_to_component
 from kepler_model.util.config import model_toppath
-from kepler_model.util.loader import list_all_abs_models, default_train_output_pipeline
+from kepler_model.util.extract_types import col_to_component, container_id_colname, container_level_index
+from kepler_model.util.loader import default_train_output_pipeline, list_all_abs_models
+from kepler_model.util.prom_types import TIMESTAMP_COL, get_container_name_from_id
+from kepler_model.util.train_types import get_valid_feature_groups
+
+from .isolator import Isolator, isolate_container
 
 
 def is_better(curr_min_err, err, curr_max_corr, corr, corr_threshold=0.7):

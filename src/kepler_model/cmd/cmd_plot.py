@@ -1,11 +1,11 @@
 import os
-from kepler_model.util.prom_types import TIMESTAMP_COL
-from kepler_model.util import PowerSourceMap
 
-from kepler_model.util.train_types import FeatureGroup, ModelOutputType, weight_support_trainers
-from kepler_model.util.loader import load_metadata, load_scaler, get_model_group_path
-from kepler_model.train.profiler.node_type_index import NodeTypeIndexCollection
 from kepler_model.estimate import load_model
+from kepler_model.train.profiler.node_type_index import NodeTypeIndexCollection
+from kepler_model.util import PowerSourceMap
+from kepler_model.util.loader import get_model_group_path, load_metadata, load_scaler
+from kepler_model.util.prom_types import TIMESTAMP_COL
+from kepler_model.util.train_types import FeatureGroup, ModelOutputType, weight_support_trainers
 
 markers = ["o", "s", "^", "v", "<", ">", "p", "P", "*", "x", "+", "|", "_"]
 
@@ -18,14 +18,14 @@ def ts_plot(data, cols, title, output_folder, name, labels=None, subtitles=None,
 
     sns.set(font_scale=1.2)
     fig, axes = plt.subplots(len(cols), 1, figsize=(plot_width, len(cols) * plot_height))
-    for i in range(0, len(cols)):
+    for i in range(len(cols)):
         if len(cols) == 1:
             ax = axes
         else:
             ax = axes[i]
         if isinstance(cols[i], list):
             # multiple lines
-            for j in range(0, len(cols[i])):
+            for j in range(len(cols[i])):
                 sns.lineplot(data=data, x=TIMESTAMP_COL, y=cols[i][j], ax=ax, label=labels[j])
             ax.set_title(subtitles[i])
         else:
@@ -52,19 +52,18 @@ def feature_power_plot(data, model_id, output_type, energy_source, feature_cols,
     col_num = len(actual_power_cols)
     width = max(10, col_num * plot_width)
     fig, axes = plt.subplots(row_num, col_num, figsize=(width, row_num * plot_height))
-    for xi in range(0, row_num):
+    for xi in range(row_num):
         feature_col = feature_cols[xi]
-        for yi in range(0, col_num):
+        for yi in range(col_num):
             if row_num == 1:
                 if col_num == 1:
                     ax = axes
                 else:
                     ax = axes[yi]
+            elif col_num == 1:
+                ax = axes[xi]
             else:
-                if col_num == 1:
-                    ax = axes[xi]
-                else:
-                    ax = axes[xi][yi]
+                ax = axes[xi][yi]
             sorted_data = data.sort_values(by=[feature_col])
             sns.scatterplot(data=sorted_data, x=feature_col, y=actual_power_cols[yi], ax=ax, label="actual")
             sns.lineplot(data=sorted_data, x=feature_col, y=predicted_power_cols[yi], ax=ax, label="predicted", color="C1")
@@ -72,7 +71,7 @@ def feature_power_plot(data, model_id, output_type, energy_source, feature_cols,
                 ax.set_title(actual_power_cols[yi])
             if yi == 0:
                 ax.set_ylabel("Power (W)")
-    title = "{} {} prediction correlation \n by {}".format(energy_source, output_type, model_id)
+    title = f"{energy_source} {output_type} prediction correlation \n by {model_id}"
     plt.suptitle(title, x=0.5, y=0.99)
     plt.tight_layout()
     filename = os.path.join(output_folder, name + ".png")
@@ -96,7 +95,7 @@ def summary_plot(args, energy_source, summary_df, output_folder, name):
     energy_components = PowerSourceMap[energy_source]
     col_num = len(energy_components)
     fig, axes = plt.subplots(col_num, 1, figsize=(plot_width, plot_height * col_num))
-    for i in range(0, col_num):
+    for i in range(col_num):
         component = energy_components[i]
         data = summary_df[(summary_df["energy_source"] == energy_source) & (summary_df["energy_component"] == component)]
         data = data.sort_values(by=["Feature Group", "MAE"])
@@ -111,7 +110,7 @@ def summary_plot(args, energy_source, summary_df, output_folder, name):
         if i < col_num - 1:
             ax.set_xlabel("")
         ax.legend(bbox_to_anchor=(1.05, 1.05))
-    plt.suptitle("{} {} error".format(energy_source, args.output_type))
+    plt.suptitle(f"{energy_source} {args.output_type} error")
     plt.tight_layout()
     filename = os.path.join(output_folder, name + ".png")
     fig.savefig(filename)
@@ -134,7 +133,7 @@ def metadata_plot(args, energy_source, metadata_df, output_folder, name):
     energy_components = PowerSourceMap[energy_source]
     col_num = len(energy_components)
     fig, axes = plt.subplots(col_num, 1, figsize=(plot_width, plot_height * col_num))
-    for i in range(0, col_num):
+    for i in range(col_num):
         component = energy_components[i]
         metadata_df = metadata_df.sort_values(by="feature_group")
         if col_num == 1:
@@ -149,7 +148,7 @@ def metadata_plot(args, energy_source, metadata_df, output_folder, name):
         if i < col_num - 1:
             ax.set_xlabel("")
     #  ax.legend(bbox_to_anchor=(1.05, 1.05))
-    plt.suptitle("Pipieline metadata of {} {}".format(energy_source.upper(), args.output_type))
+    plt.suptitle(f"Pipieline metadata of {energy_source.upper()} {args.output_type}")
     plt.tight_layout()
     plt.legend(frameon=False)
     filename = os.path.join(output_folder, name + ".png")
@@ -174,7 +173,7 @@ def power_curve_plot(args, data_path, energy_source, output_folder, name):
 
 def _get_model(model_toppath, trainer, model_node_type, output_type, name, energy_source):
     feature_group = FeatureGroup.BPFOnly
-    model_name = "{}_{}".format(trainer, model_node_type)
+    model_name = f"{trainer}_{model_node_type}"
     group_path = get_model_group_path(model_toppath, output_type, feature_group, energy_source, name)
     model_path = os.path.join(group_path, model_name)
     model = load_model(model_path)
@@ -204,10 +203,11 @@ def _load_all_models(model_toppath, output_type, name, node_types, energy_source
 
 
 def _plot_models(models, cpu_ms_max, energy_source, output_folder, name, max_plot=15, cpu_time_bin_num=10, sample_num=20):
-    from kepler_model.util.train_types import BPF_FEATURES
     import numpy as np
     import pandas as pd
     import seaborn as sns
+
+    from kepler_model.util.train_types import BPF_FEATURES
 
     sns.set_palette("Paired")
 
@@ -253,7 +253,7 @@ def _plot_models(models, cpu_ms_max, energy_source, output_folder, name, max_plo
                 ax = axes[axes_index // num_cols][axes_index % num_cols]
             node_type = data_with_prediction_index[0]
             data_with_prediction = data_with_prediction_index[1]
-            sns.lineplot(data=data_with_prediction, x=main_feature_col, y=predicted_col[energy_source], label="type={}".format(node_type), marker=markers[index], ax=ax)
+            sns.lineplot(data=data_with_prediction, x=main_feature_col, y=predicted_col[energy_source], label=f"type={node_type}", marker=markers[index], ax=ax)
             index += 1
             index = index % len(markers)
             if index % max_plot == 0:

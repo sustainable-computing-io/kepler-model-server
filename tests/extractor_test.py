@@ -8,17 +8,21 @@
 # import external src
 import os
 
-from kepler_model.train.pipeline import load_class
 from kepler_model.train import DefaultExtractor, SmoothExtractor
+from kepler_model.train.pipeline import load_class
+from kepler_model.util import (
+    FeatureGroup,
+    FeatureGroups,
+    PowerSourceMap,
+    assure_path,
+    get_valid_feature_group_from_queries,
+    load_csv,
+    save_csv,
+)
 from kepler_model.util.extract_types import component_to_col
 from kepler_model.util.prom_types import node_info_column
 from kepler_model.util.train_types import all_feature_groups
-from kepler_model.util import FeatureGroups, FeatureGroup, PowerSourceMap
-from kepler_model.util import assure_path, get_valid_feature_group_from_queries
-from kepler_model.util import save_csv, load_csv
-
 from tests.prom_test import get_query_results
-
 
 data_path = os.path.join(os.path.dirname(__file__), "data")
 assure_path(data_path)
@@ -37,7 +41,7 @@ test_customize_extractors = []
 
 
 def get_filename(extractor_name, feature_group, node_level):
-    return "{}_{}_{}".format(extractor_name, feature_group, node_level)
+    return f"{extractor_name}_{feature_group}_{node_level}"
 
 
 def get_extract_result(extractor_name, feature_group, node_level, save_path=extractor_output_path):
@@ -70,15 +74,15 @@ def assert_extract(extracted_data, power_columns, energy_components, num_of_unit
     extracted_data_column_names = extracted_data.columns
     # basic assert
     assert extracted_data is not None, "extracted data is None"
-    assert len(power_columns) > 0, "no power label column {}".format(extracted_data_column_names)
-    assert node_info_column in extracted_data_column_names, "no {} in column {}".format(node_info_column, extracted_data_column_names)
+    assert len(power_columns) > 0, f"no power label column {extracted_data_column_names}"
+    assert node_info_column in extracted_data_column_names, f"no {node_info_column} in column {extracted_data_column_names}"
     # TODO: if ratio applied, expected_power_column_length = len(energy_components) * num_of_unit
     expected_power_column_length = len(energy_components)
     # detail assert
-    assert len(power_columns) == expected_power_column_length, "unexpected power label columns {}, expected {}".format(power_columns, expected_power_column_length)
+    assert len(power_columns) == expected_power_column_length, f"unexpected power label columns {power_columns}, expected {expected_power_column_length}"
     # TODO: if ratio applied, expected_col_size must + 1 for power_ratio
     expected_col_size = expected_power_column_length + len(FeatureGroups[FeatureGroup[feature_group]]) + num_of_unit  # power ratio
-    assert len(extracted_data_column_names) == expected_col_size, "unexpected column length: expected {}, got {}({}) ".format(expected_col_size, extracted_data_column_names, len(extracted_data_column_names))
+    assert len(extracted_data_column_names) == expected_col_size, f"unexpected column length: expected {expected_col_size}, got {extracted_data_column_names}({len(extracted_data_column_names)}) "
 
 
 def process(query_results, feature_group, save_path=extractor_output_path, customize_extractors=test_customize_extractors, energy_source=test_energy_source, num_of_unit=2):

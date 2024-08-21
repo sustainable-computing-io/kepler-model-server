@@ -1,14 +1,15 @@
 import json
 import logging
+
 import pandas as pd
 
-from kepler_model.util.loader import load_metadata, get_download_output_path
-from kepler_model.util.config import download_path
-from kepler_model.util.prom_types import valid_container_query
-
+from kepler_model.estimate.model.curvefit_model import CurveFitModelEstimator
 from kepler_model.estimate.model.scikit_model import ScikitModelEstimator
 from kepler_model.estimate.model.xgboost_model import XgboostModelEstimator
-from kepler_model.estimate.model.curvefit_model import CurveFitModelEstimator
+from kepler_model.util.config import download_path
+from kepler_model.util.loader import get_download_output_path, load_metadata
+from kepler_model.util.prom_types import valid_container_query
+
 # from keras_model import KerasModelEstimator
 
 logger = logging.getLogger(__name__)
@@ -23,11 +24,11 @@ MODELCLASS = {
 
 
 def default_predicted_col_func(energy_component):
-    return "default_{}_power".format(energy_component)
+    return f"default_{energy_component}_power"
 
 
 def default_idle_predicted_col_func(energy_component):
-    return "default_idle_{}_power".format(energy_component)
+    return f"default_idle_{energy_component}_power"
 
 
 def get_background_containers(idle_data):
@@ -35,31 +36,31 @@ def get_background_containers(idle_data):
 
 
 def get_label_power_colname(energy_component):
-    return "node_{}_power".format(energy_component)
+    return f"node_{energy_component}_power"
 
 
 def get_predicted_power_colname(energy_component):
-    return "predicted_container_{}_power".format(energy_component)
+    return f"predicted_container_{energy_component}_power"
 
 
 def get_predicted_background_power_colname(energy_component):
-    return "predicted_container_{}_background_power".format(energy_component)
+    return f"predicted_container_{energy_component}_background_power"
 
 
 def get_dynamic_power_colname(energy_component):
-    return "container_{}_dynamic_power".format(energy_component)
+    return f"container_{energy_component}_dynamic_power"
 
 
 def get_predicted_dynamic_power_colname(energy_component):
-    return "predicted_container_{}_dynamic_power".format(energy_component)
+    return f"predicted_container_{energy_component}_dynamic_power"
 
 
 def get_predicted_dynamic_background_power_colname(energy_component):
-    return "predicted_container_{}_dynamic_background_power".format(energy_component)
+    return f"predicted_container_{energy_component}_dynamic_background_power"
 
 
 def get_reconstructed_power_colname(energy_component):
-    return "{}_reconstructed_power".format(energy_component)
+    return f"{energy_component}_reconstructed_power"
 
 
 class Model:
@@ -114,18 +115,17 @@ class Model:
             if attrb == "features":
                 if not self.feature_check(val):
                     return False
+            elif not hasattr(self, attrb) or getattr(self, attrb) is None:
+                self.print_log(f"{self.model_name} has no {attrb}")
             else:
-                if not hasattr(self, attrb) or getattr(self, attrb) is None:
-                    self.print_log("{} has no {}".format(self.model_name, attrb))
-                else:
-                    cmp_val = getattr(self, attrb)
-                    val = float(val)
-                    if attrb == "abs_max_corr":  # higher is better
-                        valid = cmp_val >= val
-                    else:  # lower is better
-                        valid = cmp_val <= val
-                    if not valid:
-                        return False
+                cmp_val = getattr(self, attrb)
+                val = float(val)
+                if attrb == "abs_max_corr":  # higher is better
+                    valid = cmp_val >= val
+                else:  # lower is better
+                    valid = cmp_val <= val
+                if not valid:
+                    return False
         return True
 
     def feature_check(self, features):
@@ -149,7 +149,7 @@ class Model:
         return predicted_power_map, data_with_prediction
 
     def print_log(self, message):
-        print("{} model: {}".format(self.model_name, message))
+        print(f"{self.model_name} model: {message}")
 
     def append_idle_prediction(self, data, predicted_col_func=default_idle_predicted_col_func):
         idle_data = data.copy()
@@ -161,7 +161,7 @@ class Model:
 def load_model(model_path):
     metadata = load_metadata(model_path)
     if not metadata:
-        logger.warn(f"no metadata in {model_path}")
+        logger.warning(f"no metadata in {model_path}")
         return None
 
     metadata["model_path"] = model_path

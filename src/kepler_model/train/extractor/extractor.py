@@ -1,12 +1,30 @@
-import pandas as pd
-import numpy as np
 from abc import ABCMeta, abstractmethod
 
-from kepler_model.util.prom_types import TIMESTAMP_COL, SOURCE_COL, get_energy_unit, usage_ratio_query, node_info_query, energy_component_to_query, feature_to_query, pkg_id_column, container_id_cols, node_info_column
-from kepler_model.util.train_types import FeatureGroups, FeatureGroup, SYSTEM_FEATURES
-from kepler_model.util.loader import default_node_type
-from kepler_model.util.extract_types import container_id_colname, ratio_to_col, component_to_col, get_unit_vals, accelerator_type_colname
+import numpy as np
+import pandas as pd
+
 from kepler_model.train.extractor.preprocess import drop_zero_column, find_correlations
+from kepler_model.util.extract_types import (
+    accelerator_type_colname,
+    component_to_col,
+    container_id_colname,
+    get_unit_vals,
+    ratio_to_col,
+)
+from kepler_model.util.loader import default_node_type
+from kepler_model.util.prom_types import (
+    SOURCE_COL,
+    TIMESTAMP_COL,
+    container_id_cols,
+    energy_component_to_query,
+    feature_to_query,
+    get_energy_unit,
+    node_info_column,
+    node_info_query,
+    pkg_id_column,
+    usage_ratio_query,
+)
+from kepler_model.util.train_types import SYSTEM_FEATURES, FeatureGroup, FeatureGroups
 
 
 # append ratio for each unit
@@ -173,7 +191,7 @@ class DefaultExtractor(Extractor):
                 # separate based on type label
                 grouped = aggr_query_data.groupby([accelerator_type_colname])
                 for group_name, group_data in grouped:
-                    new_colname = "{}_{}".format(feature, group_name)
+                    new_colname = f"{feature}_{group_name}"
                     cur_accelerator_features.append(new_colname)
                     group_data.rename(columns={query: new_colname}, inplace=True)
                     group_data = group_data[[TIMESTAMP_COL, new_colname]]

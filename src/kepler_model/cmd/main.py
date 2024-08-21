@@ -1,9 +1,10 @@
-import os
-import sys
 import argparse
 import datetime
-import pandas as pd
+import os
+import sys
+import threading
 
+import pandas as pd
 
 from kepler_model.train import load_class
 from kepler_model.train.exporter import exporter
@@ -11,17 +12,66 @@ from kepler_model.train.profiler.node_type_index import NodeTypeIndexCollection,
 from kepler_model.train.prom.prom_query import _range_queries
 from kepler_model.util.config import ERROR_KEY, model_toppath
 from kepler_model.util.extract_types import get_expected_power_columns
-from kepler_model.util.loader import default_train_output_pipeline, load_json, load_pipeline_metadata, get_pipeline_path, get_model_group_path, list_pipelines, list_model_names, load_metadata, load_csv, get_preprocess_folder, get_general_filename, load_machine_spec
-from kepler_model.util.prom_types import PROM_SERVER, PROM_QUERY_INTERVAL, PROM_QUERY_STEP, PROM_QUERY_START_TIME, PROM_QUERY_END_TIME, PROM_HEADERS, PROM_SSL_DISABLE, PROM_THIRDPARTY_METRICS
-from kepler_model.util.prom_types import get_valid_feature_group_from_queries
-from kepler_model.util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX, prom_responses_to_results, TIMESTAMP_COL, feature_to_query, update_thirdparty_metrics, node_info_column
-from kepler_model.util.saver import save_json, save_csv, save_train_args, _pipeline_model_metadata_filename, _power_curve_filename
-from kepler_model.util.train_types import ModelOutputType, FeatureGroups, is_single_source_feature_group, all_feature_groups, default_trainers, PowerSourceMap
+from kepler_model.util.loader import (
+    default_train_output_pipeline,
+    get_general_filename,
+    get_model_group_path,
+    get_pipeline_path,
+    get_preprocess_folder,
+    list_model_names,
+    list_pipelines,
+    load_csv,
+    load_json,
+    load_machine_spec,
+    load_metadata,
+    load_pipeline_metadata,
+)
+from kepler_model.util.prom_types import (
+    PROM_HEADERS,
+    PROM_QUERY_END_TIME,
+    PROM_QUERY_INTERVAL,
+    PROM_QUERY_START_TIME,
+    PROM_QUERY_STEP,
+    PROM_SERVER,
+    PROM_SSL_DISABLE,
+    PROM_THIRDPARTY_METRICS,
+    TIMESTAMP_COL,
+    feature_to_query,
+    get_valid_feature_group_from_queries,
+    node_info_column,
+    prom_responses_to_results,
+    update_thirdparty_metrics,
+)
+from kepler_model.util.prom_types import metric_prefix as KEPLER_METRIC_PREFIX
+from kepler_model.util.saver import (
+    _pipeline_model_metadata_filename,
+    _power_curve_filename,
+    save_csv,
+    save_json,
+    save_train_args,
+)
+from kepler_model.util.train_types import (
+    FeatureGroups,
+    ModelOutputType,
+    PowerSourceMap,
+    all_feature_groups,
+    default_trainers,
+    is_single_source_feature_group,
+)
 
-from .cmd_plot import ts_plot, feature_power_plot, summary_plot, metadata_plot, power_curve_plot
-from .cmd_util import extract_time, save_query_results, get_validate_df, summary_validation, get_extractor, check_ot_fg, get_pipeline, assert_train, get_isolator, UTC_OFFSET_TIMEDELTA
-
-import threading
+from .cmd_plot import feature_power_plot, metadata_plot, power_curve_plot, summary_plot, ts_plot
+from .cmd_util import (
+    UTC_OFFSET_TIMEDELTA,
+    assert_train,
+    check_ot_fg,
+    extract_time,
+    get_extractor,
+    get_isolator,
+    get_pipeline,
+    get_validate_df,
+    save_query_results,
+    summary_validation,
+)
 
 data_path = "/data"
 default_output_filename = "output"
@@ -67,7 +117,7 @@ def query(args):
         benchmark_filename = args.input
         filepath = os.path.join(data_path, benchmark_filename + ".json")
         if os.path.isfile(filepath):
-            print("Query from {}.".format(benchmark_filename))
+            print(f"Query from {benchmark_filename}.")
             start, end = extract_time(data_path, benchmark_filename)
     if start is None or end is None:
         if args.benchmark:
@@ -77,12 +127,12 @@ def query(args):
             exit()
         if args.start_time != "" and args.end_time != "":
             # by [start time, end time]
-            print("Query from start_time {} to end_time {}.".format(args.start_time, args.end_time))
+            print(f"Query from start_time {args.start_time} to end_time {args.end_time}.")
             start = datetime.datetime.strptime(args.start_time, "%Y-%m-%dT%H:%M:%SZ")
             end = datetime.datetime.strptime(args.end_time, "%Y-%m-%dT%H:%M:%SZ")
         else:
             # by interval
-            print("Query last {} interval.".format(args.interval))
+            print(f"Query last {args.interval} interval.")
             end = datetime.datetime.now(datetime.timezone.utc)
             start = end - datetime.timedelta(seconds=args.interval)
         # save benchmark
@@ -98,12 +148,12 @@ def query(args):
     queries = None
     if args.thirdparty_metrics != "":
         queries = [m for m in available_metrics if args.metric_prefix in m or m in args.thirdparty_metrics]
-    elif PROM_THIRDPARTY_METRICS != [""]:
+    elif [""] != PROM_THIRDPARTY_METRICS:
         queries = [m for m in available_metrics if args.metric_prefix in m or m in PROM_THIRDPARTY_METRICS]
     else:
         queries = [m for m in available_metrics if args.metric_prefix in m]
 
-    print("Start {} End {}".format(start, end))
+    print(f"Start {start} End {end}")
     response = _range_queries(prom, queries, start, end, args.step, None)
     save_json(path=data_path, name=args.output, data=response)
     if args.to_csv:
@@ -163,12 +213,12 @@ def extract(args):
     # Inject thirdparty_metrics to FeatureGroup
     if args.thirdparty_metrics != "":
         update_thirdparty_metrics(args.thirdparty_metrics)
-    elif PROM_THIRDPARTY_METRICS != [""]:
+    elif [""] != PROM_THIRDPARTY_METRICS:
         update_thirdparty_metrics(PROM_THIRDPARTY_METRICS)
     valid_fg = get_valid_feature_group_from_queries([query for query in query_results.keys() if len(query_results[query]) > 1])
     ot, fg = check_ot_fg(args, valid_fg)
     if fg is None or ot is None:
-        print("feature group {} or model output type {} is wrong. (valid feature group: {})".format(args.feature_group, args.output_type, valid_fg))
+        print(f"feature group {args.feature_group} or model output type {args.output_type} is wrong. (valid feature group: {valid_fg})")
         exit()
 
     energy_components = PowerSourceMap[args.energy_source]
@@ -281,12 +331,12 @@ def train_from_data(args):
     # Inject thirdparty_metrics to FeatureGroup
     if args.thirdparty_metrics != "":
         update_thirdparty_metrics(args.thirdparty_metrics)
-    elif PROM_THIRDPARTY_METRICS != [""]:
+    elif [""] != PROM_THIRDPARTY_METRICS:
         update_thirdparty_metrics(PROM_THIRDPARTY_METRICS)
     valid_fg = [fg_key for fg_key in FeatureGroups.keys()]
     ot, fg = check_ot_fg(args, valid_fg)
     if fg is None or ot is None:
-        print("feature group {} or model output type {} is wrong. (valid feature group: {})".format(args.feature_group, args.output_type, all_feature_groups))
+        print(f"feature group {args.feature_group} or model output type {args.output_type} is wrong. (valid feature group: {all_feature_groups})")
         exit()
 
     energy_components = PowerSourceMap[args.energy_source]
@@ -310,7 +360,7 @@ def train_from_data(args):
             new_spec = NodeTypeSpec()
             new_spec.load(machine_spec_json)
             node_type = node_collection.index_train_machine(machine_id, new_spec)
-            print("Replace {} with {}".format(node_info_column, node_type))
+            print(f"Replace {node_info_column} with {node_type}")
             data[node_info_column] = int(node_type)
 
     if node_type is None:
@@ -361,6 +411,7 @@ arguments:
 
 def train(args):
     import warnings
+
     from sklearn.exceptions import ConvergenceWarning
 
     warnings.filterwarnings("ignore", category=ConvergenceWarning)
@@ -372,7 +423,7 @@ def train(args):
     # Inject thirdparty_metrics to FeatureGroup
     if args.thirdparty_metrics != "":
         update_thirdparty_metrics(args.thirdparty_metrics)
-    elif PROM_THIRDPARTY_METRICS != [""]:
+    elif [""] != PROM_THIRDPARTY_METRICS:
         update_thirdparty_metrics(PROM_THIRDPARTY_METRICS)
 
     pipeline_name = default_train_output_pipeline
@@ -425,7 +476,7 @@ def train(args):
         energy_components = PowerSourceMap[energy_source]
         for feature_group in valid_feature_groups:
             success, abs_data, dyn_data = pipeline.process_multiple_query(input_query_results_list, energy_components, energy_source, feature_group=feature_group.name, replace_node_type=node_type)
-            assert success, "failed to process pipeline {}".format(pipeline.name)
+            assert success, f"failed to process pipeline {pipeline.name}"
             for trainer in pipeline.trainers:
                 if trainer.feature_group == feature_group and trainer.energy_source == energy_source:
                     if trainer.node_level and abs_data is not None:
@@ -439,7 +490,7 @@ def train(args):
             if dyn_data is not None:
                 save_csv(data_saved_path, get_general_filename("preprocess", energy_source, feature_group, ModelOutputType.DynPower, args.extractor, args.isolator), dyn_data)
 
-        print("=========== Train {} Summary ============".format(energy_source))
+        print(f"=========== Train {energy_source} Summary ============")
         # save args
         argparse_dict = vars(args)
         save_train_args(pipeline.path, argparse_dict)
@@ -488,12 +539,12 @@ def estimate(args):
         print("must give input filename (query response) via --input for estimation.")
         exit()
 
-    from kepler_model.estimate import load_model, default_predicted_col_func, compute_error
+    from kepler_model.estimate import compute_error, default_predicted_col_func, load_model
 
     # Inject thirdparty_metrics to FeatureGroup
     if args.thirdparty_metrics != "":
         update_thirdparty_metrics(args.thirdparty_metrics)
-    elif PROM_THIRDPARTY_METRICS != [""]:
+    elif [""] != PROM_THIRDPARTY_METRICS:
         update_thirdparty_metrics(PROM_THIRDPARTY_METRICS)
 
     inputs = args.input.split(",")
@@ -527,11 +578,11 @@ def estimate(args):
             pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
             pipeline_metadata = load_metadata(pipeline_path)
             if pipeline_metadata is None:
-                print("no metadata for pipeline {}.".format(pipeline_name))
+                print(f"no metadata for pipeline {pipeline_name}.")
                 continue
             pipeline = get_pipeline(data_path, pipeline_name, pipeline_metadata["extractor"], args.profile, args.target_hints, args.bg_hints, args.abs_pipeline_name, pipeline_metadata["isolator"], pipeline_metadata["abs_trainers"], pipeline_metadata["dyn_trainers"], energy_sources, valid_fg)
             if pipeline is None:
-                print("cannot get pipeline {}.".format(pipeline_name))
+                print(f"cannot get pipeline {pipeline_name}.")
                 continue
             for fg in valid_fg:
                 print(" Feature Group: ", fg)
@@ -542,7 +593,7 @@ def estimate(args):
                 model_names = list_model_names(group_path)
                 if args.model_name:
                     if args.model_name not in model_names:
-                        print("model: {} is not availble in pipeline {}, continue. available models are {}".format(args.model_name, pipeline_name, model_names))
+                        print(f"model: {args.model_name} is not availble in pipeline {pipeline_name}, continue. available models are {model_names}")
                         continue
                     model_names = [args.model_name]
                 for model_name in model_names:
@@ -577,7 +628,7 @@ def estimate(args):
                         best_result = data_with_prediction.copy()
                         best_model_path = model_path
                         best_mae = max_mae
-                    print("     Model {}: ".format(model_name), max_mae)
+                    print(f"     Model {model_name}: ", max_mae)
 
         # save best result
         if best_model_path is not None:
@@ -589,16 +640,16 @@ def estimate(args):
             # save model
             import shutil
 
-            best_model = "{}_model".format(energy_source)
+            best_model = f"{energy_source}_model"
             if not args.id:
                 # not only for export
                 shutil.make_archive(os.path.join(output_folder, best_model), "zip", best_model_path)
                 # save result
-                estimation_result = "{}_estimation_result".format(energy_source)
+                estimation_result = f"{energy_source}_estimation_result"
                 save_csv(output_folder, estimation_result, best_result)
             best_result_map[energy_source] = best_result
             path_splits = best_model_path.split("/")
-            best_model_id_map[energy_source] = "{} using {}".format(path_splits[-1], path_splits[-2])
+            best_model_id_map[energy_source] = f"{path_splits[-1]} using {path_splits[-2]}"
     return best_result_map, power_labels_map, best_model_id_map, pd.DataFrame(summary_items)
 
 
@@ -652,20 +703,21 @@ def plot(args):
                     return
                 data = load_csv(data_saved_path, data_filename)
                 if data is None:
-                    print("cannot load data from {}/{}".format(data_saved_path, data_filename))
+                    print(f"cannot load data from {data_saved_path}/{data_filename}")
                     continue
                 feature_plot += [fg.name]
                 feature_cols = FeatureGroups[fg]
                 power_cols = [col for col in data.columns if "power" in col]
                 feature_data = data.groupby([TIMESTAMP_COL]).sum()
-                ts_plot(feature_data, feature_cols, "Feature group: {}".format(fg.name), output_folder, data_filename)
+                ts_plot(feature_data, feature_cols, f"Feature group: {fg.name}", output_folder, data_filename)
                 if not energy_plot:
                     power_data = data.groupby([TIMESTAMP_COL]).max()
                     data_filename = get_general_filename(args.target_data, energy_source, None, ot, args.extractor, args.isolator)
-                    ts_plot(power_data, power_cols, "Power source: {}".format(energy_source), output_folder, data_filename, ylabel="Power (W)")
+                    ts_plot(power_data, power_cols, f"Power source: {energy_source}", output_folder, data_filename, ylabel="Power (W)")
     elif args.target_data == "estimate":
-        from kepler_model.estimate import default_predicted_col_func
         from sklearn.preprocessing import MaxAbsScaler
+
+        from kepler_model.estimate import default_predicted_col_func
 
         best_result_map, power_labels_map, best_model_id_map, summary_df = estimate(args)
         print(summary_df)
@@ -690,20 +742,21 @@ def plot(args):
                 predicted_power_cols += [predicted_power_colname]
             data_filename = get_general_filename(args.target_data, energy_source, fg, ot, args.extractor, args.isolator)
             # plot prediction
-            ts_plot(data, cols, "{} {} Prediction Result \n by {}".format(energy_source, ot.name, model_id), output_folder, "{}_{}".format(data_filename, model_id), subtitles=subtitles, labels=plot_labels, ylabel="Power (W)")
+            ts_plot(data, cols, f"{energy_source} {ot.name} Prediction Result \n by {model_id}", output_folder, f"{data_filename}_{model_id}", subtitles=subtitles, labels=plot_labels, ylabel="Power (W)")
             # plot correlation to utilization if feature group is set
             if fg is not None:
                 feature_cols = FeatureGroups[fg]
                 scaler = MaxAbsScaler()
                 data[feature_cols] = best_restult[[TIMESTAMP_COL] + feature_cols].groupby([TIMESTAMP_COL]).sum().sort_index()
                 # plot raw feature data to confirm min-max value
-                ts_plot(data, feature_cols, "Features {}".format(fg), output_folder, "{}_{}".format(data_filename, fg), labels=None, subtitles=None, ylabel=None)
+                ts_plot(data, feature_cols, f"Features {fg}", output_folder, f"{data_filename}_{fg}", labels=None, subtitles=None, ylabel=None)
                 data[feature_cols] = scaler.fit_transform(data[feature_cols])
-                feature_power_plot(data, model_id, ot.name, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, "{}_{}_corr".format(data_filename, model_id))
+                feature_power_plot(data, model_id, ot.name, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, f"{data_filename}_{model_id}_corr")
 
     elif args.target_data == "error":
-        from kepler_model.estimate import default_predicted_col_func
         from sklearn.preprocessing import MaxAbsScaler
+
+        from kepler_model.estimate import default_predicted_col_func
 
         _, _, _, summary_df = estimate(args)
         for energy_source in energy_sources:
@@ -870,11 +923,11 @@ def plot_scenario(args):
             feature_cols = FeatureGroups[fg]
             power_cols = [col for col in data.columns if "power" in col]
             feature_data = data.groupby([TIMESTAMP_COL]).sum()
-            ts_plot(feature_data, feature_cols, "Feature group: {} ({})".format(fg.name, args.scenario), output_folder, data_filename)
+            ts_plot(feature_data, feature_cols, f"Feature group: {fg.name} ({args.scenario})", output_folder, data_filename)
             if not energy_plot:
                 power_data = data.groupby([TIMESTAMP_COL]).max()
                 data_filename = get_general_filename(args.target_data, energy_source, None, ot, args.extractor, args.isolator) + "_" + args.scenario
-                ts_plot(power_data, power_cols, "Power source: {} ({})".format(energy_source, args.scenario), output_folder, data_filename, ylabel="Power (W)")
+                ts_plot(power_data, power_cols, f"Power source: {energy_source} ({args.scenario})", output_folder, data_filename, ylabel="Power (W)")
 
 
 def run():
@@ -946,8 +999,8 @@ def run():
         if not os.path.exists(data_path):
             if args.command == "query":
                 os.makedirs(data_path)
-                print("create new folder for data: {}".format(data_path))
+                print(f"create new folder for data: {data_path}")
             else:
-                print('{0} not exists. For docker run, {0} must be mount, add -v "$(pwd)":{0}. For native run, set DATAPATH'.format(data_path))
+                print(f'{data_path} not exists. For docker run, {data_path} must be mount, add -v "$(pwd)":{data_path}. For native run, set DATAPATH')
                 exit()
         getattr(sys.modules[__name__], args.command)(args)

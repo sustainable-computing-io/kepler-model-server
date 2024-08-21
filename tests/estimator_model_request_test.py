@@ -9,28 +9,28 @@
 #
 #########################
 # import external modules
-import shutil
-import requests
+import json
 
 # import from src
 import os
-import json
+import shutil
 
-from kepler_model.util.train_types import FeatureGroups, FeatureGroup, ModelOutputType
-from kepler_model.util.loader import get_download_output_path, default_train_output_pipeline, get_url
-from kepler_model.util.config import get_init_model_url, set_env_from_model_config, download_path
-from kepler_model.estimate.estimator import handle_request, loaded_model, PowerRequest
-from kepler_model.estimate.model_server_connector import list_all_models
+import requests
+
 from kepler_model.estimate.archived_model import get_achived_model, reset_failed_list
-from tests.extractor_test import test_energy_source
-
+from kepler_model.estimate.estimator import PowerRequest, handle_request, loaded_model
+from kepler_model.estimate.model_server_connector import list_all_models
+from kepler_model.util.config import download_path, get_init_model_url, set_env_from_model_config
+from kepler_model.util.loader import default_train_output_pipeline, get_download_output_path, get_url
+from kepler_model.util.train_types import FeatureGroup, FeatureGroups, ModelOutputType
 from tests.estimator_power_request_test import generate_request
+from tests.extractor_test import test_energy_source
 from tests.http_server import http_file_server
 
 file_server_port = 8110
 # set environment
 os.environ["MODEL_SERVER_URL"] = "http://localhost:8100"
-model_topurl = "http://localhost:{}".format(file_server_port)
+model_topurl = f"http://localhost:{file_server_port}"
 os.environ["MODEL_TOPURL"] = model_topurl
 os.environ["INITIAL_PIPELINE_URL"] = os.path.join(model_topurl, "std_v0.7.11")
 
@@ -55,7 +55,7 @@ def test_model_request():
             request_json = generate_request(train_name=None, n=10, metrics=metrics, output_type=output_type_name)
             data = json.dumps(request_json)
             output = handle_request(data)
-            print("result {}/{} from model server: {}".format(output_type_name, fg_name, output))
+            print(f"result {output_type_name}/{fg_name} from model server: {output}")
             assert len(output["powers"]) > 0, "cannot get power {}\n {}".format(output["msg"], request_json)
 
     # test with initial models
@@ -76,7 +76,7 @@ def test_model_request():
             data = json.dumps(request_json)
             output = handle_request(data)
             assert len(output["powers"]) > 0, "cannot get power {}\n {}".format(output["msg"], request_json)
-            print("result from {}: {}".format(url, output))
+            print(f"result from {url}: {output}")
 
     output_type_name = "AbsPower"
     estimator_enable_key = "NODE_COMPONENTS_ESTIMATOR"
@@ -99,7 +99,7 @@ def test_model_request():
     data = json.dumps(request_json)
     output = handle_request(data)
     assert len(output["powers"]) > 0, "cannot get power {}\n {}".format(output["msg"], request_json)
-    print("result {}/{} from static set: {}".format(output_type_name, FeatureGroup.BPFOnly.name, output))
+    print(f"result {output_type_name}/{FeatureGroup.BPFOnly.name} from static set: {output}")
     del loaded_model[output_type_name][energy_source]
     # invalid model
     os.environ[init_url_key] = get_url(energy_source=energy_source, output_type=output_type, feature_group=FeatureGroup.BPFOnly, model_topurl=model_topurl, pipeline_name=default_train_output_pipeline)
@@ -108,8 +108,8 @@ def test_model_request():
     data = json.dumps(request_json)
     power_request = json.loads(data, object_hook=lambda d: PowerRequest(**d))
     output_path = get_achived_model(power_request)
-    assert output_path is None, "model should be invalid\n {}".format(output_path)
-    os.environ["MODEL_CONFIG"] = "{}=true\n{}={}\n".format(estimator_enable_key, init_url_key, get_url(energy_source=energy_source, output_type=output_type, feature_group=FeatureGroup.BPFOnly, model_topurl=model_topurl, pipeline_name=default_train_output_pipeline))
+    assert output_path is None, f"model should be invalid\n {output_path}"
+    os.environ["MODEL_CONFIG"] = f"{estimator_enable_key}=true\n{init_url_key}={get_url(energy_source=energy_source, output_type=output_type, feature_group=FeatureGroup.BPFOnly, model_topurl=model_topurl, pipeline_name=default_train_output_pipeline)}\n"
     set_env_from_model_config()
     print("Requesting from ", os.environ[init_url_key])
     reset_failed_list()

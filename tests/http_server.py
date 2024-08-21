@@ -1,7 +1,7 @@
-import os
-import http.server
-import socketserver
 import atexit
+import http.server
+import os
+import socketserver
 import threading
 
 from kepler_model.util.config import model_toppath
@@ -31,7 +31,7 @@ def http_file_server(file_server_port):
         server_thread.daemon = True
         server_thread.start()
     except Exception as err:
-        print("File server is running: {}".format(err))
+        print(f"File server is running: {err}")
 
 
 def run():

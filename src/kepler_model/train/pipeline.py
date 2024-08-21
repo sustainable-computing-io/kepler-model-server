@@ -1,29 +1,26 @@
+import datetime
 import os
-import sys
+import shutil
 import threading
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import wait
+from concurrent.futures import ThreadPoolExecutor, wait
 
 import pandas as pd
-import shutil
-import datetime
 
-from kepler_model.train.profiler.node_type_index import NodeTypeIndexCollection
 from kepler_model.train.extractor import DefaultExtractor
 from kepler_model.train.isolator.isolator import MinIdleIsolator
-
-from kepler_model.util.train_types import PowerSourceMap, FeatureGroups, ModelOutputType
-from kepler_model.util.prom_types import node_info_column
-from kepler_model.util.config import model_toppath, ERROR_KEY
-from kepler_model.util.loader import get_all_metadata, get_pipeline_path, get_metadata_df, get_archived_file
-from kepler_model.util.saver import save_pipeline_metadata
+from kepler_model.train.profiler.node_type_index import NodeTypeIndexCollection
+from kepler_model.util.config import ERROR_KEY, model_toppath
 from kepler_model.util.format import print_bounded_multiline_message, time_to_str
+from kepler_model.util.loader import get_all_metadata, get_archived_file, get_metadata_df, get_pipeline_path
+from kepler_model.util.prom_types import node_info_column
+from kepler_model.util.saver import save_pipeline_metadata
+from kepler_model.util.train_types import FeatureGroups, ModelOutputType, PowerSourceMap
 
 
 def load_class(module_name, class_name):
     import importlib
 
-    module_path = importlib.import_module("kepler_model.train.{}.{}.main".format(module_name, class_name))
+    module_path = importlib.import_module(f"kepler_model.train.{module_name}.{class_name}.main")
     return getattr(module_path, class_name)
 
 
@@ -66,14 +63,14 @@ class Pipeline:
         if extracted_data is None:
             self.print_log("cannot extract data")
             return None, None, None
-        self.print_log("{} extraction done.".format(feature_group))
+        self.print_log(f"{feature_group} extraction done.")
         abs_data = extracted_data.copy()
         # 2. get dyn_data
         isolated_data = self.get_dyn_data(query_results, energy_components, feature_group, energy_source)
         if isolated_data is None:
             self.print_log("cannot isolate data")
             return abs_data, None, power_labels
-        self.print_log("{} isolation done.".format(feature_group))
+        self.print_log(f"{feature_group} isolation done.")
         dyn_data = isolated_data.copy()
         return abs_data, dyn_data, power_labels
 
@@ -85,14 +82,14 @@ class Pipeline:
         for input_query_results in input_query_results_list:
             extracted_data, isolated_data, extracted_labels = self.prepare_data(input_query_results, energy_components, energy_source, feature_group, aggr)
             if extracted_data is None:
-                self.print_log("cannot extract data index={}".format(index))
+                self.print_log(f"cannot extract data index={index}")
                 continue
             abs_data_list += [extracted_data]
             if power_labels is None:
                 # set power_labels once
                 power_labels = extracted_labels
             if isolated_data is None:
-                self.print_log("cannot isolate data index={}".format(index))
+                self.print_log(f"cannot isolate data index={index}")
                 continue
             dyn_data_list += [isolated_data]
             index += 1
@@ -121,7 +118,7 @@ class Pipeline:
                 elif dyn_data is not None:
                     future = executor.submit(run_train, trainer, dyn_data, power_labels, pipeline_lock=self.lock)
                     futures += [future]
-            self.print_log("Waiting for {} trainers to complete...".format(len(futures)))
+            self.print_log(f"Waiting for {len(futures)} trainers to complete...")
             wait(futures)
             # Handle exceptions if any
             for future in futures:
@@ -129,15 +126,15 @@ class Pipeline:
                     # Handle the exception here
                     print(f"Exception occurred: {future.exception()}")
 
-            self.print_log("{}/{} trainers are trained from {} to {}".format(len(futures), len(self.trainers), feature_group, energy_source))
+            self.print_log(f"{len(futures)}/{len(self.trainers)} trainers are trained from {feature_group} to {energy_source}")
 
     def process(self, input_query_results, energy_components, energy_source, feature_group, aggr=True, replace_node_type=None):
-        self.print_log("{} start processing.".format(feature_group))
+        self.print_log(f"{feature_group} start processing.")
         abs_data, dyn_data, power_labels = self.prepare_data(input_query_results, energy_components, energy_source, feature_group, aggr)
         if abs_data is None and dyn_data is None:
             return False, None, None
         if replace_node_type is not None:
-            self.print_log("Replace Node Type:  {}".format(replace_node_type))
+            self.print_log(f"Replace Node Type:  {replace_node_type}")
             abs_data[node_info_column] = replace_node_type
             dyn_data[node_info_column] = replace_node_type
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
@@ -150,7 +147,7 @@ class Pipeline:
         if (abs_data is None or len(abs_data) == 0) and (dyn_data is None or len(dyn_data) == 0):
             return False, None, None
         if replace_node_type is not None:
-            self.print_log("Replace Node Type: {}".format(replace_node_type))
+            self.print_log(f"Replace Node Type: {replace_node_type}")
             abs_data[node_info_column] = replace_node_type
             dyn_data[node_info_column] = replace_node_type
         self._train(abs_data, dyn_data, power_labels, energy_source, feature_group)
@@ -159,7 +156,7 @@ class Pipeline:
         return True, abs_data, dyn_data
 
     def print_log(self, message):
-        print("{} pipeline: {}".format(self.name, message), flush=True)
+        print(f"{self.name} pipeline: {message}", flush=True)
 
     def save_metadata(self):
         all_metadata = get_all_metadata(model_toppath, self.name)
@@ -177,19 +174,19 @@ class Pipeline:
             node_types = pd.unique(abs_metadata_df[node_info_column])
 
             abs_messages = [
-                "Pipeline {} has finished for modeling {} power by {} feature".format(self.name, energy_source, feature_group),
+                f"Pipeline {self.name} has finished for modeling {energy_source} power by {feature_group} feature",
                 "    Extractor: {}".format(self.metadata["extractor"]),
                 "    Isolator: {}".format(self.metadata["isolator"]),
                 "Absolute Power Modeling:",
-                "    Input data size: {}".format(len(abs_data)),
-                "    Model Trainers: {}".format(abs_trainer_names),
-                "    Output: {}".format(abs_group_path),
+                f"    Input data size: {len(abs_data)}",
+                f"    Model Trainers: {abs_trainer_names}",
+                f"    Output: {abs_group_path}",
                 " ",
             ]
             for node_type in node_types:
                 filtered_data = abs_metadata_df[abs_metadata_df[node_info_column] == node_type]
                 min_mae = -1 if len(filtered_data) == 0 else filtered_data.loc[filtered_data[ERROR_KEY].idxmin()][ERROR_KEY]
-                abs_messages += ["    NodeType {} Min {}: {}".format(node_type, ERROR_KEY, min_mae)]
+                abs_messages += [f"    NodeType {node_type} Min {ERROR_KEY}: {min_mae}"]
             abs_messages += [" "]
 
         if dyn_data is not None:
@@ -197,14 +194,14 @@ class Pipeline:
             dyn_metadata_df, dyn_group_path = get_metadata_df(model_toppath, ModelOutputType.DynPower.name, feature_group, energy_source, self.name)
             dyn_messages = [
                 "Dynamic Power Modeling:",
-                "    Input data size: {}".format(len(dyn_data)),
-                "    Model Trainers: {}".format(dyn_trainer_names),
-                "    Output: {}".format(dyn_group_path),
+                f"    Input data size: {len(dyn_data)}",
+                f"    Model Trainers: {dyn_trainer_names}",
+                f"    Output: {dyn_group_path}",
             ]
             for node_type in node_types:
                 filtered_data = dyn_metadata_df[dyn_metadata_df[node_info_column] == node_type]
                 min_mae = -1 if len(filtered_data) == 0 else filtered_data.loc[filtered_data[ERROR_KEY].idxmin()][ERROR_KEY]
-                dyn_messages += ["    NodeType {} Min {}: {}".format(node_type, ERROR_KEY, min_mae)]
+                dyn_messages += [f"    NodeType {node_type} Min {ERROR_KEY}: {min_mae}"]
 
         messages = abs_messages + dyn_messages
         print_bounded_multiline_message(messages)

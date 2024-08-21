@@ -1,5 +1,6 @@
+from kepler_model.util.train_types import SYSTEM_FEATURES, FeatureGroup, FeatureGroups
+
 from .extractor import DefaultExtractor, find_correlations
-from kepler_model.util.train_types import FeatureGroups, FeatureGroup, SYSTEM_FEATURES
 
 
 class SmoothExtractor(DefaultExtractor):

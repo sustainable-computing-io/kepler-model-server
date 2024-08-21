@@ -8,21 +8,22 @@ required step:
     docker run -it -p 8080:80 quay.io/sustainability/kepler_spec_power_db:v0.7
 """
 
-import requests
-from io import StringIO
-import os
-import pandas as pd
-import json
 import datetime
+import json
+import os
+from io import StringIO
 
-from kepler_model.train.profiler.node_type_index import NodeTypeSpec
-from kepler_model.train.pipeline import NewPipeline
+import pandas as pd
+import requests
+
 from kepler_model.train.extractor import DefaultExtractor
 from kepler_model.train.isolator.isolator import MinIdleIsolator
-from kepler_model.util.format import time_to_str
-from kepler_model.util.prom_types import node_info_column, TIMESTAMP_COL
+from kepler_model.train.pipeline import NewPipeline
+from kepler_model.train.profiler.node_type_index import NodeTypeSpec
 from kepler_model.util.extract_types import component_to_col
-from kepler_model.util.train_types import FeatureGroup, default_trainer_names, BPF_FEATURES, PowerSourceMap
+from kepler_model.util.format import time_to_str
+from kepler_model.util.prom_types import TIMESTAMP_COL, node_info_column
+from kepler_model.util.train_types import BPF_FEATURES, FeatureGroup, PowerSourceMap, default_trainer_names
 
 platform_energy_source = "acpi"
 acpi_component = PowerSourceMap[platform_energy_source][0]

@@ -13,19 +13,18 @@
 ##   {component: {node_type: {min_watt: ,max_watt: } }}
 ############################################################
 
+import json
 import os
 from urllib.request import urlopen
+
 import joblib
-
 import pandas as pd
-import json
 
-from kepler_model.util.train_types import PowerSourceMap, FeatureGroups
-from kepler_model.util.prom_types import node_info_column, node_info_query, generate_dataframe_from_response
 from kepler_model.util.extract_types import component_to_col
-from kepler_model.util.saver import save_profile
 from kepler_model.util.loader import default_node_type
-
+from kepler_model.util.prom_types import generate_dataframe_from_response, node_info_column, node_info_query
+from kepler_model.util.saver import save_profile
+from kepler_model.util.train_types import FeatureGroups, PowerSourceMap
 
 min_watt_key = "min_watt"
 max_watt_key = "max_watt"
@@ -185,7 +184,7 @@ class Profile:
         return self.profile[source][component][min_watt_key]
 
     def print_profile(self):
-        print("Profile (node type={}): \n Available energy components: {}\n Available maxabs scalers: {}".format(self.node_type, ["{}/{}".format(key, list(self.profile[key].keys())) for key in self.profile.keys()], self.max_scaler.keys()))
+        print("Profile (node type={}): \n Available energy components: {}\n Available maxabs scalers: {}".format(self.node_type, [f"{key}/{list(self.profile[key].keys())}" for key in self.profile.keys()], self.max_scaler.keys()))
 
 
 def generate_profiles(profile_map):
@@ -210,7 +209,7 @@ def load_all_profiles():
             response = urlopen(url_path)
             profile = json.loads(response.read())
         except Exception as e:
-            print("Failed to load profile {}: {}".format(source, e))
+            print(f"Failed to load profile {source}: {e}")
             continue
         profile_map[source] = profile
     return generate_profiles(profile_map)

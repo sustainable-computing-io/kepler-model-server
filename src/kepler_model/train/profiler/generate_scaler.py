@@ -15,12 +15,12 @@
 import os
 import pickle
 
-from sklearn.preprocessing import MaxAbsScaler
 import pandas as pd
+from sklearn.preprocessing import MaxAbsScaler
 
 from kepler_model.train import DefaultExtractor
-from kepler_model.util.prom_types import node_info_column, TIMESTAMP_COL
-from kepler_model.util.train_types import SYSTEM_FEATURES, FeatureGroups, FeatureGroup
+from kepler_model.util.prom_types import TIMESTAMP_COL, node_info_column
+from kepler_model.util.train_types import SYSTEM_FEATURES, FeatureGroup, FeatureGroups
 
 # WARN: unable to find this anymore
 # from profile_background import profile_path

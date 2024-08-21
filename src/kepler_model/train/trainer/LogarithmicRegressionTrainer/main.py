@@ -1,5 +1,6 @@
 import numpy as np
-from kepler_model.train.trainer.curvefit import CurveFitTrainer, CurveFitModel
+
+from kepler_model.train.trainer.curvefit import CurveFitModel, CurveFitTrainer
 
 
 def p0_func(x, y):

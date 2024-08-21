@@ -1,7 +1,14 @@
 import pandas as pd
 
 from .config import getConfig
-from .train_types import SYSTEM_FEATURES, WORKLOAD_FEATURES, FeatureGroups, FeatureGroup, deep_sort, get_valid_feature_groups
+from .train_types import (
+    SYSTEM_FEATURES,
+    WORKLOAD_FEATURES,
+    FeatureGroup,
+    FeatureGroups,
+    deep_sort,
+    get_valid_feature_groups,
+)
 
 PROM_SERVER = "http://localhost:9090"
 PROM_SSL_DISABLE = "True"
@@ -53,16 +60,16 @@ def get_energy_unit(component):
 
 def feature_to_query(feature):
     if feature in SYSTEM_FEATURES:
-        return "{}_{}".format(node_query_prefix, feature)
+        return f"{node_query_prefix}_{feature}"
     if feature in FeatureGroups[FeatureGroup.AcceleratorOnly]:
-        return "{}_{}".format(node_query_prefix, feature)
+        return f"{node_query_prefix}_{feature}"
     if FeatureGroup.ThirdParty in FeatureGroups is not None and feature in FeatureGroups[FeatureGroup.ThirdParty]:
         return feature
-    return "{}_{}_{}".format(container_query_prefix, feature, container_query_suffix)
+    return f"{container_query_prefix}_{feature}_{container_query_suffix}"
 
 
 def energy_component_to_query(component):
-    return "{}_{}_{}".format(node_query_prefix, component, node_query_suffix)
+    return f"{node_query_prefix}_{component}_{node_query_suffix}"
 
 
 def update_thirdparty_metrics(metrics):

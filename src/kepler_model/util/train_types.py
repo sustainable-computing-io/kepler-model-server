@@ -10,7 +10,6 @@
 
 import enum
 import random
-from typing import List
 
 SYSTEM_FEATURES = ["node_info", "cpu_scaling_frequency_hertz"]
 
@@ -152,14 +151,14 @@ class XGBoostModelFeatureOrLabelIncompatabilityException(Exception):
     labels_incompatible: true if expected_labels == actual_labels else false
     """
 
-    expected_features: List[str]
-    expected_labels: List[str]
-    actual_features: List[str]
-    actual_labels: List[str]
+    expected_features: list[str]
+    expected_labels: list[str]
+    actual_features: list[str]
+    actual_labels: list[str]
     features_incompatible: bool
     labels_incompatible: bool
 
-    def __init__(self, expected_features: List[str], expected_labels: List[str], received_features: List[str], received_labels: List[str], message="expected features/labels are the not the same as the features/labels of the training data") -> None:
+    def __init__(self, expected_features: list[str], expected_labels: list[str], received_features: list[str], received_labels: list[str], message="expected features/labels are the not the same as the features/labels of the training data") -> None:
         self.expected_features = expected_features
         self.expected_labels = expected_labels
         self.received_features = received_features
@@ -199,7 +198,7 @@ EnergyComponentLabelGroups = {
     EnergyComponentLabelGroup.PackageDRAMEnergyComponents: deep_sort(PACKAGE_ENERGY_COMPONENT_LABEL + DRAM_ENERGY_COMPONENT_LABEL),
 }
 
-all_feature_groups = [fg.name for fg in FeatureGroups.keys()]
+all_feature_groups = [fg.name for fg in FeatureGroups]
 
 
 def get_feature_group(features):

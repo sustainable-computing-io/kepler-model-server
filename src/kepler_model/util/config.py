@@ -13,8 +13,9 @@
 #################################################
 
 import os
-from .loader import get_url, get_pipeline_url, base_model_url, default_pipelines, default_train_output_pipeline
-from .train_types import ModelOutputType, is_output_type_supported, FeatureGroup
+
+from .loader import base_model_url, default_pipelines, default_train_output_pipeline, get_pipeline_url, get_url
+from .train_types import FeatureGroup, ModelOutputType, is_output_type_supported
 
 # must be writable (for shared volume mount)
 MNT_PATH = "/mnt"
@@ -33,7 +34,7 @@ modelConfigPrefix = ["_".join([level, coverage]) for level in ["NODE", "CONTAINE
 
 MODEL_SERVER_SVC = "kepler-model-server.kepler.svc.cluster.local"
 DEFAULT_MODEL_SERVER_PORT = 8100
-MODEL_SERVER_ENDPOINT = "http://{}:{}".format(MODEL_SERVER_SVC, DEFAULT_MODEL_SERVER_PORT)
+MODEL_SERVER_ENDPOINT = f"http://{MODEL_SERVER_SVC}:{DEFAULT_MODEL_SERVER_PORT}"
 MODEL_SERVER_MODEL_REQ_PATH = "/model"
 MODEL_SERVER_MODEL_LIST_PATH = "/best-models"
 MODEL_SERVER_ENABLE = False
@@ -45,7 +46,7 @@ def getConfig(key: str, default):
     # check configmap path
     file = os.path.join(CONFIG_PATH, key)
     if os.path.exists(file):
-        with open(file, "r") as f:
+        with open(file) as f:
             return f.read().strip()
     # check env
     cfg = os.environ.get(key, default)
@@ -95,7 +96,7 @@ def _model_server_endpoint():
     if MODEL_SERVER_URL == MODEL_SERVER_SVC:
         MODEL_SERVER_PORT = getConfig("MODEL_SERVER_PORT", DEFAULT_MODEL_SERVER_PORT)
         MODEL_SERVER_PORT = int(MODEL_SERVER_PORT)
-        modelServerEndpoint = "http://{}:{}".format(MODEL_SERVER_URL, MODEL_SERVER_PORT)
+        modelServerEndpoint = f"http://{MODEL_SERVER_URL}:{MODEL_SERVER_PORT}"
     else:
         modelServerEndpoint = MODEL_SERVER_URL
     return modelServerEndpoint
@@ -119,7 +120,7 @@ def set_env_from_model_config():
         splits = line.split("=")
         if len(splits) > 1:
             os.environ[splits[0].strip()] = splits[1].strip()
-            print("set {} to {}.".format(splits[0], splits[1]))
+            print(f"set {splits[0]} to {splits[1]}.")
 
 
 def is_estimator_enable(prefix):
@@ -151,9 +152,9 @@ def get_init_model_url(energy_source, output_type, model_topurl=model_topurl):
             modelURL = get_init_url(prefix)
             print("get init url", modelURL)
             if modelURL == "" and is_output_type_supported(output_type):
-                print("init URL is not set, try using default URL".format(output_type))
+                print("init URL is not set, try using default URL".format())
                 return get_url(feature_group=FeatureGroup.BPFOnly, output_type=ModelOutputType[output_type], energy_source=energy_source, model_topurl=model_topurl, pipeline_name=pipeline_name)
             else:
                 return modelURL
-    print("no match config for {}, {}".format(output_type, energy_source))
+    print(f"no match config for {output_type}, {energy_source}")
     return ""

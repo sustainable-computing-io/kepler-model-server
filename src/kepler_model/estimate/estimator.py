@@ -1,20 +1,20 @@
 import json
+import logging
 import os
 import shutil
+import signal
+import socket
 import sys
-import click
-import logging
 
+import click
 import pandas as pd
 
-import socket
-import signal
-from kepler_model.estimate.model_server_connector import make_request, is_model_server_enabled
 from kepler_model.estimate.archived_model import get_achived_model
 from kepler_model.estimate.model.model import load_downloaded_model
+from kepler_model.estimate.model_server_connector import is_model_server_enabled, make_request
+from kepler_model.util.config import SERVE_SOCKET, download_path, set_env_from_model_config
 from kepler_model.util.loader import get_download_output_path
-from kepler_model.util.config import set_env_from_model_config, SERVE_SOCKET, download_path
-from kepler_model.util.train_types import is_output_type_supported, ModelOutputType
+from kepler_model.util.train_types import ModelOutputType, is_output_type_supported
 
 ###############################################
 # power request
@@ -85,7 +85,7 @@ def handle_request(data: str) -> dict:
                 # find from config
                 output_path = get_achived_model(power_request)
                 if output_path is None:
-                    msg = "failed to get model from request {}".format(data)
+                    msg = f"failed to get model from request {data}"
                     logger.error(msg)
                     return {"powers": dict(), "msg": msg}
                 logger.info(f"load model from config: {output_path}")

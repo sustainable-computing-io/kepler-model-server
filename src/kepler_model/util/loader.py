@@ -1,14 +1,24 @@
-import os
+import codecs
 import json
 import logging
-import joblib
-import pandas as pd
-from .saver import assure_path, METADATA_FILENAME, SCALER_FILENAME, WEIGHT_FILENAME, TRAIN_ARGS_FILENAME, NODE_TYPE_INDEX_FILENAME, MACHINE_SPEC_PATH, _pipeline_model_metadata_filename
-from .train_types import ModelOutputType, FeatureGroup, PowerSourceMap, all_feature_groups
+import os
 from urllib.request import urlopen
 
+import joblib
+import pandas as pd
 import requests
-import codecs
+
+from .saver import (
+    MACHINE_SPEC_PATH,
+    METADATA_FILENAME,
+    NODE_TYPE_INDEX_FILENAME,
+    SCALER_FILENAME,
+    TRAIN_ARGS_FILENAME,
+    WEIGHT_FILENAME,
+    _pipeline_model_metadata_filename,
+    assure_path,
+)
+from .train_types import FeatureGroup, ModelOutputType, PowerSourceMap, all_feature_groups
 
 major_version = "0.7"
 version = "0.7.11"
@@ -24,12 +34,12 @@ PREPROCESS_FOLDERNAME = "preprocessed_data"
 # pipeline loader
 
 ## default_train_output_pipeline: a default pipeline name which is output from the training pipeline
-default_train_output_pipeline = "std_v{}".format(version)
+default_train_output_pipeline = f"std_v{version}"
 default_pipelines = {
-    "rapl-sysfs": "ec2-{}".format(version),
-    "acpi": "specpower-{}".format(version)
+    "rapl-sysfs": f"ec2-{version}",
+    "acpi": f"specpower-{version}"
 }
-base_model_url = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v{}".format(major_version)
+base_model_url = f"https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v{major_version}"
 
 
 logger = logging.getLogger(__name__)
@@ -181,7 +191,7 @@ def is_valid_model(metadata, filters):
 
 
 def get_model_name(trainer_name, node_type):
-    return "{}_{}".format(trainer_name, node_type)
+    return f"{trainer_name}_{node_type}"
 
 
 def get_node_type_from_name(model_name):
@@ -253,14 +263,14 @@ def download_and_save(url, filepath):
     try:
         response = requests.get(url)
     except Exception as e:
-        print("Failed to load {} to {}: {}".format(url, filepath, e))
+        print(f"Failed to load {url} to {filepath}: {e}")
         return None
     if response.status_code != 200:
-        print("Failed to load {} to {}: {}".format(url, filepath, response.status_code))
+        print(f"Failed to load {url} to {filepath}: {response.status_code}")
         return None
     with codecs.open(filepath, "wb") as f:
         f.write(response.content)
-    print("Successfully load {} to {}".format(url, filepath))
+    print(f"Successfully load {url} to {filepath}")
     return filepath
 
 
@@ -365,7 +375,7 @@ def class_to_json(class_obj):
 
 
 def get_version_path(output_path, assure=True):
-    version_path = os.path.join(output_path, "v{}".format(major_version))
+    version_path = os.path.join(output_path, f"v{major_version}")
     if assure:
         return assure_path(version_path)
     return version_path
@@ -389,7 +399,7 @@ def get_preprocess_folder(pipeline_path, assure=True):
 def get_general_filename(prefix, energy_source, fg, ot, extractor, isolator=None):
     fg_suffix = "" if fg is None else "_" + fg.name
     if ot.name == ModelOutputType.DynPower.name:
-        return "{}_dyn_{}_{}_{}{}".format(prefix, extractor, isolator, energy_source, fg_suffix)
+        return f"{prefix}_dyn_{extractor}_{isolator}_{energy_source}{fg_suffix}"
     if ot.name == ModelOutputType.AbsPower.name:
-        return "{}_abs_{}_{}{}".format(prefix, extractor, energy_source, fg_suffix)
+        return f"{prefix}_abs_{extractor}_{energy_source}{fg_suffix}"
     return None

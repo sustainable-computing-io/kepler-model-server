@@ -1,9 +1,9 @@
 import requests
 
 from kepler_model.estimate.model_server_connector import unpack
-from kepler_model.util.train_types import ModelOutputType
 from kepler_model.util.config import get_init_model_url
 from kepler_model.util.loader import load_metadata
+from kepler_model.util.train_types import ModelOutputType
 
 failed_list = []
 
@@ -70,7 +70,7 @@ def get_achived_model(power_request):
     if url == "":
         print("no URL set for ", output_type_name, power_request.energy_source)
         return None
-    print("try getting archieved model from URL: {} for {}".format(url, output_type_name))
+    print(f"try getting archieved model from URL: {url} for {output_type_name}")
     response = requests.get(url)
     print(response)
     if response.status_code != 200:

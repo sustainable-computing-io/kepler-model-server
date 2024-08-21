@@ -1,15 +1,20 @@
 # trainer_test.py
+import threading
+
+import pandas as pd
 import sklearn
 
 from kepler_model.train import load_class
 from kepler_model.util.loader import default_train_output_pipeline
 from kepler_model.util.train_types import PowerSourceMap, default_trainer_names
-
-from tests.isolator_test import test_isolators, get_isolate_results
-from tests.extractor_test import test_extractors, get_extract_results, test_energy_source, get_expected_power_columns, node_info_column
-
-import pandas as pd
-import threading
+from tests.extractor_test import (
+    get_expected_power_columns,
+    get_extract_results,
+    node_info_column,
+    test_energy_source,
+    test_extractors,
+)
+from tests.isolator_test import get_isolate_results, test_isolators
 
 test_trainer_names = default_trainer_names
 pipeline_lock = threading.Lock()
@@ -25,7 +30,7 @@ def assert_train(trainer, data, energy_components):
         for component in energy_components:
             try:
                 output = trainer.predict(node_type_str, component, X_values)
-                assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
+                assert len(output) == len(X_values), f"length of predicted values != features ({len(output)}!={len(X_values)})"
             except sklearn.exceptions.NotFittedError:
                 pass
 

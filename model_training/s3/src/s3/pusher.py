@@ -2,8 +2,9 @@
 # client = new_<provider>_client(args)
 ## upload all files in mnt path
 # <provider>_upload(client, mnt_path)
-import os
 import argparse
+import os
+
 from . import util
 
 model_dir = "models"

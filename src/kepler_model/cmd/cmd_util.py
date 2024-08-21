@@ -1,12 +1,17 @@
-import os
 import datetime
+import os
+
 import pandas as pd
 
-
-from kepler_model.util.prom_types import node_info_column, prom_responses_to_results, SOURCE_COL, energy_component_to_query
-from kepler_model.util.train_types import ModelOutputType, FeatureGroup, PowerSourceMap
-from kepler_model.util.loader import load_json, get_pipeline_path, default_node_type
+from kepler_model.util.loader import default_node_type, get_pipeline_path, load_json
+from kepler_model.util.prom_types import (
+    SOURCE_COL,
+    energy_component_to_query,
+    node_info_column,
+    prom_responses_to_results,
+)
 from kepler_model.util.saver import assure_path, save_csv
+from kepler_model.util.train_types import FeatureGroup, ModelOutputType, PowerSourceMap
 
 UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
 
@@ -14,12 +19,12 @@ UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
 def print_file_to_stdout(data_path, args):
     file_path = os.path.join(data_path, args.output)
     try:
-        with open(file_path, "r") as file:
+        with open(file_path) as file:
             contents = file.read()
             print(contents)
     except FileNotFoundError:
         print(f"Error: Output '{file_path}' not found.")
-    except IOError:
+    except OSError:
         print(f"Error: Unable to read output '{file_path}'.")
 
 
@@ -41,7 +46,7 @@ def extract_time(data_path, benchmark_filename):
 
 def save_query_results(data_path, output_filename, query_response):
     query_results = prom_responses_to_results(query_response)
-    save_path = os.path.join(data_path, "{}_csv".format(output_filename))
+    save_path = os.path.join(data_path, f"{output_filename}_csv")
     assure_path(save_path)
     for query, data in query_results.items():
         save_csv(save_path, query, data)
@@ -80,13 +85,13 @@ def summary_validation(validate_df):
         no_data_df = target_df[target_df["count"] == 0]
         zero_data_df = target_df[target_df[">0"] == 0]
         valid_df = target_df[target_df[">0"] > 0]
-        print("==== {} ====".format(metric))
+        print(f"==== {metric} ====")
         if len(no_data_df) > 0:
             print("{} pods: \tNo data for {}".format(len(no_data_df), pd.unique(no_data_df["scenarioID"])))
         if len(zero_data_df) > 0:
             print("{} pods: \tZero data for {}".format(len(zero_data_df), pd.unique(zero_data_df["scenarioID"])))
 
-        print("{} pods: \tValid\n".format(len(valid_df)))
+        print(f"{len(valid_df)} pods: \tValid\n")
         print("Valid data points:")
         print("Empty" if len(valid_df[">0"]) == 0 else valid_df.groupby(["scenarioID"]).sum()[[">0"]])
     for metric, query in metric_to_validate_power.items():
@@ -246,7 +251,7 @@ def check_ot_fg(args, valid_fg):
         try:
             fg = FeatureGroup[args.feature_group]
             if args.feature_group not in valid_fg_name_list:
-                print("feature group: {} is not available in your data. please choose from the following list: {}".format(args.feature_group, valid_fg_name_list))
+                print(f"feature group: {args.feature_group} is not available in your data. please choose from the following list: {valid_fg_name_list}")
                 exit()
         except KeyError:
             print("invalid feature group: {}. valid feature group are {}.".format((args.feature_group, [fg.name for fg in valid_fg])))
@@ -268,14 +273,21 @@ def assert_train(trainer, data, energy_components):
             try:
                 output = trainer.predict(node_type, component, X_values)
                 if output is not None:
-                    assert len(output) == len(X_values), "length of predicted values != features ({}!={})".format(len(output), len(X_values))
+                    assert len(output) == len(X_values), f"length of predicted values != features ({len(output)}!={len(X_values)})"
             except sklearn.exceptions.NotFittedError:
                 pass
 
 
 def get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_hints, abs_pipeline_name, replace_node_type=default_node_type):
     pipeline_path = get_pipeline_path(data_path, pipeline_name=pipeline_name)
-    from kepler_model.train import MinIdleIsolator, NoneIsolator, DefaultProfiler, ProfileBackgroundIsolator, TrainIsolator, generate_profiles
+    from kepler_model.train import (
+        DefaultProfiler,
+        MinIdleIsolator,
+        NoneIsolator,
+        ProfileBackgroundIsolator,
+        TrainIsolator,
+        generate_profiles,
+    )
 
     supported_isolator = {
         MinIdleIsolator().get_name(): MinIdleIsolator(),
@@ -306,13 +318,12 @@ def get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_h
         if abs_pipeline_name != "":
             trainer_isolator = TrainIsolator(idle_data=idle_data, profiler=DefaultProfiler, target_hints=target_hints, bg_hints=bg_hints, abs_pipeline_name=abs_pipeline_name)
             supported_isolator[trainer_isolator.get_name()] = trainer_isolator
-    else:
-        if abs_pipeline_name != "":
-            trainer_isolator = TrainIsolator(target_hints=target_hints, bg_hints=bg_hints, abs_pipeline_name=abs_pipeline_name)
-            supported_isolator[trainer_isolator.get_name()] = trainer_isolator
+    elif abs_pipeline_name != "":
+        trainer_isolator = TrainIsolator(target_hints=target_hints, bg_hints=bg_hints, abs_pipeline_name=abs_pipeline_name)
+        supported_isolator[trainer_isolator.get_name()] = trainer_isolator
 
     if isolator not in supported_isolator:
-        print("isolator {} is not supported. supported isolator: {}".format(isolator, supported_isolator.keys()))
+        print(f"isolator {isolator} is not supported. supported isolator: {supported_isolator.keys()}")
         return None
     return supported_isolator[isolator]
 
@@ -322,7 +333,7 @@ def get_extractor(extractor):
 
     supported_extractor = {DefaultExtractor().get_name(): DefaultExtractor(), SmoothExtractor().get_name(): SmoothExtractor()}
     if extractor not in supported_extractor:
-        print("extractor {} is not supported. supported extractor: {}".format(extractor, supported_extractor.keys()))
+        print(f"extractor {extractor} is not supported. supported extractor: {supported_extractor.keys()}")
         return None
     return supported_extractor[extractor]
 
