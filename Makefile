@@ -55,7 +55,10 @@ run-estimator:
 
 run-collector-client:
 	$(CTR_CMD) exec estimator /bin/bash -c \
-		"while [ ! -S "/tmp/estimator.sock" ]; do sleep 1; done; hatch test -vvv -s ./tests/estimator_power_request_test.py"
+		"while [ ! -S "/tmp/estimator.sock" ]; do \
+			sleep 1; \
+		done; \
+		hatch run test -vvv -s ./tests/estimator_power_request_test.py"
 
 clean-estimator:
 	$(CTR_CMD) stop estimator
