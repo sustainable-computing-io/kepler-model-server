@@ -189,6 +189,7 @@ def get_available_models():
     fg = request.args.get("fg")
     ot = request.args.get("ot")
     energy_source = request.args.get("source")
+    node_type = request.args.get("type")
     filter = request.args.get("filter")
 
     try:
@@ -205,6 +206,11 @@ def get_available_models():
         if energy_source is None or "rapl" in energy_source:
             energy_source = "rapl-sysfs"
 
+        if node_type is None:
+            node_type = any_node_type
+        else:
+            node_type = int(node_type)
+
         if filter is None:
             filters = dict()
         else:
@@ -212,11 +218,13 @@ def get_available_models():
 
         model_names = dict()
         for output_type in output_types:
+            logger.debug(f"Searching output type {output_type}")
             model_names[output_type.name] = dict()
             for fg in valid_fgs:
+                logger.debug(f"Searching feature group {fg}")
                 valid_groupath = get_model_group_path(model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source])
                 if os.path.exists(valid_groupath):
-                    best_candidate, _ = select_best_model(None, valid_groupath, filters, energy_source)
+                    best_candidate, _ = select_best_model(None, valid_groupath, filters, energy_source, node_type=node_type)
                     if best_candidate is None:
                         continue
                     model_names[output_type.name][fg.name] = best_candidate["model_name"]
