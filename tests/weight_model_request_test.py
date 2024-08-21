@@ -29,11 +29,11 @@ if __name__ == "__main__":
     os.environ["MODEL_SERVER_ENABLE"] = "true"
     energy_source = test_energy_source
 
-    available_models = list_all_models()
+    available_models = list_all_models(energy_source=energy_source)
     while len(available_models) == 0:
         time.sleep(1)
         print("wait for kepler model server response")
-        available_models = list_all_models()
+        available_models = list_all_models(energy_source=energy_source)
 
     for output_type_name, valid_fgs in available_models.items():
         output_type = ModelOutputType[output_type_name]

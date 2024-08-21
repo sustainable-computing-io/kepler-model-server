@@ -68,11 +68,17 @@ def make_request(power_request):
     return unpack(power_request.energy_source, output_type, response)
 
 
-def list_all_models():
+def list_all_models(energy_source=None, node_type=None):
     if not is_model_server_enabled():
         return dict()
     try:
-        response = requests.get(get_model_server_list_endpoint())
+        endpoint = get_model_server_list_endpoint()
+        params= {}
+        if energy_source:
+            params["source"] = energy_source
+        if node_type:
+           params["type"] = node_type
+        response = requests.get(endpoint, params=params)
     except Exception as err:
         print(f"cannot list model: {err}")
         return dict()

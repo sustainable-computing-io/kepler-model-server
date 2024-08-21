@@ -40,7 +40,7 @@ def test_model_request():
     energy_source = test_energy_source
     # test getting model from server
     os.environ["MODEL_SERVER_ENABLE"] = "true"
-    available_models = list_all_models()
+    available_models = list_all_models(energy_source=energy_source)
     assert len(available_models) > 0, "must have more than one available models"
     print("Available Models:", available_models)
     for output_type_name, valid_fgs in available_models.items():
