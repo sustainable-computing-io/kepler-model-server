@@ -83,7 +83,7 @@ nodeCollection = dict()
 
 """
 select_best_model:
-1. list model_names from valid_grouppath (determined by valid features)
+1. list model_names from valid_group_path (determined by valid features)
 2. filter weight-supported model if requesting for model weight
 3. filter matched type by requesting node_type or node_collection over node spec
 4. if no candidate left, list model with largest number of cores
@@ -93,8 +93,8 @@ select_best_model:
 """
 
 
-def select_best_model(spec, valid_groupath, filters, energy_source, pipeline_name="", trainer_name="", node_type=any_node_type, weight=False):
-    model_names = [f for f in os.listdir(valid_groupath) if f != CHECKPOINT_FOLDERNAME and not os.path.isfile(os.path.join(valid_groupath, f)) and (trainer_name == "" or trainer_name in f)]
+def select_best_model(spec, valid_group_path, filters, energy_source, pipeline_name="", trainer_name="", node_type=any_node_type, weight=False):
+    model_names = [f for f in os.listdir(valid_group_path) if f != CHECKPOINT_FOLDERNAME and not os.path.isfile(os.path.join(valid_group_path, f)) and (trainer_name == "" or trainer_name in f)]
     if weight:
         model_names = [name for name in model_names if name.split("_")[0] in weight_support_trainers]
     # Load metadata of trainers
@@ -113,7 +113,7 @@ def select_best_model(spec, valid_groupath, filters, energy_source, pipeline_nam
             logger.warning("no large candidates; selecting from all available")
             candidates = model_names
     for model_name in candidates:
-        model_savepath = os.path.join(valid_groupath, model_name)
+        model_savepath = os.path.join(valid_group_path, model_name)
         metadata = load_json(model_savepath, METADATA_FILENAME)
         if metadata is None or not is_valid_model(metadata, filters) or ERROR_KEY not in metadata:
             # invalid metadata
@@ -126,7 +126,7 @@ def select_best_model(spec, valid_groupath, filters, energy_source, pipeline_nam
                 logger.warning(f"weight failed: {model_savepath}")
                 continue
         else:
-            response = get_archived_file(valid_groupath, model_name)
+            response = get_archived_file(valid_group_path, model_name)
             if not os.path.exists(response):
                 # archived model file does not exists
                 logger.warning(f"archive failed: {response}")
@@ -160,9 +160,9 @@ def get_model():
     best_response = None
     # find best model comparing best candidate from each valid feature group complied with filtering conditions
     for fg in valid_fgs:
-        valid_groupath = get_model_group_path(model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source])
-        if os.path.exists(valid_groupath):
-            best_candidate, response = select_best_model(req.spec, valid_groupath, filters, energy_source, req.pipeline_name, req.trainer_name, req.node_type, req.weight)
+        valid_group_path = get_model_group_path(model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source])
+        if os.path.exists(valid_group_path):
+            best_candidate, response = select_best_model(req.spec, valid_group_path, filters, energy_source, req.pipeline_name, req.trainer_name, req.node_type, req.weight)
             if best_candidate is None:
                 continue
             if best_model is None or best_model[ERROR_KEY] > best_candidate[ERROR_KEY]:
@@ -222,9 +222,9 @@ def get_available_models():
             model_names[output_type.name] = dict()
             for fg in valid_fgs:
                 logger.debug(f"Searching feature group {fg}")
-                valid_groupath = get_model_group_path(model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source])
-                if os.path.exists(valid_groupath):
-                    best_candidate, _ = select_best_model(None, valid_groupath, filters, energy_source, node_type=node_type)
+                valid_group_path = get_model_group_path(model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source])
+                if os.path.exists(valid_group_path):
+                    best_candidate, _ = select_best_model(None, valid_group_path, filters, energy_source, node_type=node_type)
                     if best_candidate is None:
                         continue
                     model_names[output_type.name][fg.name] = best_candidate["model_name"]
