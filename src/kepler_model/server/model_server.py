@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import sys
+import enum
 
 import click
 import requests
@@ -71,6 +72,13 @@ class ModelRequest:
         if spec is not None:
             self.spec = NodeTypeSpec(**spec)
 
+# ModelListParams defines parameters for /best-models API
+class ModelListParam(enum.Enum):
+    EnergySource = "energy-source"
+    OutputType = "output-type"
+    FeatureGroup = "feature-group"
+    NodeType = "node-type"
+    Filter = "filter"
 
 ###########################################
 MODEL_SERVER_PORT = int(getConfig("MODEL_SERVER_PORT", "8100"))
@@ -93,7 +101,7 @@ select_best_model:
 """
 
 
-def select_best_model(spec, valid_group_path, filters, energy_source, pipeline_name="", trainer_name="", node_type=any_node_type, weight=False):
+def select_best_model(spec, valid_group_path: str, filters: dict, energy_source: str, pipeline_name: str="", trainer_name: str="", node_type: int=any_node_type, weight: bool=False):
     model_names = [f for f in os.listdir(valid_group_path) if f != CHECKPOINT_FOLDERNAME and not os.path.isfile(os.path.join(valid_group_path, f)) and (trainer_name == "" or trainer_name in f)]
     if weight:
         model_names = [name for name in model_names if name.split("_")[0] in weight_support_trainers]
@@ -186,11 +194,11 @@ def get_model():
 # get_available_models: return name list of best-candidate pipelines
 @app.route(MODEL_SERVER_MODEL_LIST_PATH, methods=["GET"])
 def get_available_models():
-    fg = request.args.get("fg")
-    ot = request.args.get("ot")
-    energy_source = request.args.get("source")
-    node_type = request.args.get("type")
-    filter = request.args.get("filter")
+    fg = request.args.get(ModelListParam.FeatureGroup.value)
+    ot = request.args.get(ModelListParam.OutputType.value)
+    energy_source = request.args.get(ModelListParam.EnergySource.value)
+    node_type = request.args.get(ModelListParam.NodeType.value)
+    filter = request.args.get(ModelListParam.Filter.value)
 
     try:
         if fg is None:

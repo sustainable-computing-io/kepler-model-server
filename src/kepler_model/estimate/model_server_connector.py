@@ -13,7 +13,7 @@ from kepler_model.util.config import (
 )
 from kepler_model.util.loader import get_download_output_path
 from kepler_model.util.train_types import ModelOutputType
-
+from kepler_model.server.model_server import ModelListParam
 
 # discover_spec: determine node spec in json format (refer to NodeTypeSpec)
 def discover_spec():
@@ -68,16 +68,23 @@ def make_request(power_request):
     return unpack(power_request.energy_source, output_type, response)
 
 
-def list_all_models(energy_source=None, node_type=None):
+def list_all_models(energy_source=None, output_type=None, feature_group=None, node_type=None, filter=None):
     if not is_model_server_enabled():
         return dict()
     try:
         endpoint = get_model_server_list_endpoint()
         params= {}
         if energy_source:
-            params["source"] = energy_source
+            params[ModelListParam.EnergySource.value] = energy_source
+        if output_type:
+            params[ModelListParam.OutputType.value] = output_type
+        if feature_group:
+            params[ModelListParam.FeatureGroup.value] = feature_group
         if node_type:
-           params["type"] = node_type
+           params[ModelListParam.NodeType.value] = node_type
+        if filter:
+            params[ModelListParam.Filter.value] = filter
+
         response = requests.get(endpoint, params=params)
     except Exception as err:
         print(f"cannot list model: {err}")
@@ -86,4 +93,3 @@ def list_all_models(energy_source=None, node_type=None):
         return dict()
     model_names = json.loads(response.content.decode("utf-8"))
     return model_names
-
