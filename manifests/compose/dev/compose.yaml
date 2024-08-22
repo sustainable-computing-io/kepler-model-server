@@ -13,9 +13,9 @@ services:
       - type: bind
         source: /proc
         target: /proc
-      # - type: bind
-      #   source: /sys
-      #   target: /sys
+      - type: bind
+        source: /sys
+        target: /sys
       - type: bind
         source: ./kepler/etc/kepler
         target: /etc/kepler
@@ -63,6 +63,7 @@ services:
         set -x;
         /usr/bin/kepler \
           -address="0.0.0.0:9100" \
+          -disable-power-meter \
           -v="8"
 
   estimator:
