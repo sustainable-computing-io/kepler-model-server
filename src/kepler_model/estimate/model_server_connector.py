@@ -75,15 +75,15 @@ def list_all_models(energy_source=None, output_type=None, feature_group=None, no
         endpoint = get_model_server_list_endpoint()
         params= {}
         if energy_source:
-            params[ModelListParam.EnergySource] = energy_source
+            params[ModelListParam.EnergySource.value] = energy_source
         if output_type:
-            params[ModelListParam.OutputType] = output_type
+            params[ModelListParam.OutputType.value] = output_type
         if feature_group:
-            params[ModelListParam.FeatureGroup] = feature_group
+            params[ModelListParam.FeatureGroup.value] = feature_group
         if node_type:
-           params[ModelListParam.NodeType] = node_type
+           params[ModelListParam.NodeType.value] = node_type
         if filter:
-            params[ModelListParam.Filter] = filter
+            params[ModelListParam.Filter.value] = filter
 
         response = requests.get(endpoint, params=params)
     except Exception as err:

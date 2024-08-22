@@ -101,7 +101,7 @@ select_best_model:
 """
 
 
-def select_best_model(spec, valid_group_path, filters, energy_source, pipeline_name="", trainer_name="", node_type=any_node_type, weight=False):
+def select_best_model(spec, valid_group_path: str, filters: dict, energy_source: str, pipeline_name: str="", trainer_name: str="", node_type: int=any_node_type, weight: bool=False):
     model_names = [f for f in os.listdir(valid_group_path) if f != CHECKPOINT_FOLDERNAME and not os.path.isfile(os.path.join(valid_group_path, f)) and (trainer_name == "" or trainer_name in f)]
     if weight:
         model_names = [name for name in model_names if name.split("_")[0] in weight_support_trainers]
@@ -194,11 +194,11 @@ def get_model():
 # get_available_models: return name list of best-candidate pipelines
 @app.route(MODEL_SERVER_MODEL_LIST_PATH, methods=["GET"])
 def get_available_models():
-    fg = request.args.get(ModelListParam.FeatureGroup)
-    ot = request.args.get(ModelListParam.OutputType)
-    energy_source = request.args.get(ModelListParam.EnergySource)
-    node_type = request.args.get(ModelListParam.NodeType)
-    filter = request.args.get(ModelListParam.Filter)
+    fg = request.args.get(ModelListParam.FeatureGroup.value)
+    ot = request.args.get(ModelListParam.OutputType.value)
+    energy_source = request.args.get(ModelListParam.EnergySource.value)
+    node_type = request.args.get(ModelListParam.NodeType.value)
+    filter = request.args.get(ModelListParam.Filter.value)
 
     try:
         if fg is None:

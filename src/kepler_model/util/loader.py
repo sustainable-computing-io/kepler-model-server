@@ -173,7 +173,7 @@ def parse_filters(filter):
     return filters
 
 
-def is_valid_model(metadata, filters):
+def is_valid_model(metadata, filters: dict):
     for attrb, val in filters.items():
         if not hasattr(metadata, attrb) or getattr(metadata, attrb) is None:
             print("{} has no {}".format(metadata["model_name"], attrb))
