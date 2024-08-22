@@ -5,6 +5,7 @@ import shutil
 
 import requests
 
+from kepler_model.server.model_server import ModelListParam
 from kepler_model.util.config import (
     download_path,
     get_model_server_list_endpoint,
@@ -13,7 +14,7 @@ from kepler_model.util.config import (
 )
 from kepler_model.util.loader import get_download_output_path
 from kepler_model.util.train_types import ModelOutputType
-from kepler_model.server.model_server import ModelListParam
+
 
 # discover_spec: determine node spec in json format (refer to NodeTypeSpec)
 def discover_spec():

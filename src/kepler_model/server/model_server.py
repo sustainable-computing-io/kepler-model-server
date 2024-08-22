@@ -1,9 +1,9 @@
 import codecs
+import enum
 import logging
 import os
 import shutil
 import sys
-import enum
 
 import click
 import requests
@@ -39,6 +39,7 @@ from kepler_model.util.train_types import (
     FeatureGroups,
     ModelOutputType,
     PowerSourceMap,
+    convert_enery_source,
     get_valid_feature_groups,
     weight_support_trainers,
 )
@@ -52,7 +53,7 @@ logger = logging.getLogger(__name__)
 class ModelRequest:
     def __init__(self, metrics, output_type, source="rapl-sysfs", node_type=-1, weight=False, trainer_name="", filter="", pipeline_name="", spec=None):
         # target source of power metric to be predicted (e.g., rapl-sysfs, acpi)
-        self.source = source
+        self.source = convert_enery_source(source)
         # type of node to select a model learned from similar nodes (default: -1, applied universal model learned by all node_type (TODO))
         self.node_type = node_type
         # list of available resource usage metrics to find applicable models (using a valid feature group that can be obtained from the list)
@@ -197,6 +198,7 @@ def get_available_models():
     fg = request.args.get(ModelListParam.FeatureGroup.value)
     ot = request.args.get(ModelListParam.OutputType.value)
     energy_source = request.args.get(ModelListParam.EnergySource.value)
+    energy_source = convert_enery_source(energy_source)
     node_type = request.args.get(ModelListParam.NodeType.value)
     filter = request.args.get(ModelListParam.Filter.value)
 

@@ -234,6 +234,11 @@ def is_weight_output(output_type):
         return True
     return False
 
+def convert_enery_source(energy_source: str) -> str:
+    # TODO: need revisit if get more than one rapl energy source
+    if energy_source is None or "rapl" in energy_source:
+        return "rapl-sysfs"
+    return energy_source
 
 if __name__ == "__main__":
     for g, g_features in FeatureGroups.items():

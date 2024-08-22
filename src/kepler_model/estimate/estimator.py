@@ -14,7 +14,7 @@ from kepler_model.estimate.model.model import load_downloaded_model
 from kepler_model.estimate.model_server_connector import is_model_server_enabled, make_request
 from kepler_model.util.config import SERVE_SOCKET, download_path, set_env_from_model_config
 from kepler_model.util.loader import get_download_output_path
-from kepler_model.util.train_types import ModelOutputType, is_output_type_supported
+from kepler_model.util.train_types import ModelOutputType, convert_enery_source, is_output_type_supported
 
 ###############################################
 # power request
@@ -57,9 +57,7 @@ def handle_request(data: str) -> dict:
         return {"powers": dict(), "msg": msg}
 
     output_type = ModelOutputType[power_request.output_type]
-    # TODO: need revisit if get more than one rapl energy source
-    if power_request.energy_source is None or "rapl" in power_request.energy_source:
-        power_request.energy_source = "rapl-sysfs"
+    power_request.energy_source = convert_enery_source(power_request.energy_source)
 
     if output_type.name not in loaded_model:
         loaded_model[output_type.name] = dict()

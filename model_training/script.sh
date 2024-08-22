@@ -16,7 +16,7 @@ declare KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-"kind-for-training"}
 declare KIND_REGISTRY_NAME=${KIND_REGISTRY_NAME:-"kind-registry-for-training"}
 
 declare PROM_SERVER=${PROM_SERVER:-"http://localhost:9090"}
-declare ENERGY_SOURCE=${ENERGY_SOURCE:-"intel_rapl,acpi"}
+declare ENERGY_SOURCE=${ENERGY_SOURCE:-"rapl-sysfs,acpi"}
 
 declare VERSION=${VERSION:-"latest"}
 declare PIPELINE_PREFIX=${PIPELINE_PREFIX:-"std_"}
