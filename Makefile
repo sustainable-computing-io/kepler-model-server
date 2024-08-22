@@ -53,6 +53,12 @@ run-estimator:
 		$(TEST_IMAGE) \
 		/bin/bash -c "$(PYTHON) tests/http_server.py & sleep 5 && estimator --log-level debug"
 
+run-estimator-with-test-spec:
+	$(CTR_CMD) run --rm -d --platform linux/amd64 \
+		--name estimator \
+		$(TEST_IMAGE) \
+		/bin/bash -c "estimator --machine-spec tests/data/machine/spec.json"
+
 run-collector-client:
 	$(CTR_CMD) exec estimator /bin/bash -c \
 		"while [ ! -S "/tmp/estimator.sock" ]; do \

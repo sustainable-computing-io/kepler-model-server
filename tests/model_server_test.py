@@ -1,3 +1,4 @@
+# model_server_test.py requires model-server to run
 import codecs
 import json
 import os
@@ -6,6 +7,7 @@ import shutil
 import requests
 
 from kepler_model.server.model_server import MODEL_SERVER_PORT
+from kepler_model.train.profiler.node_type_index import NodeAttribute, attr_has_value
 from kepler_model.util.config import download_path
 from kepler_model.util.train_types import FeatureGroup, FeatureGroups, ModelOutputType
 
@@ -43,8 +45,31 @@ def get_models():
     response = json.loads(response.text)
     return response
 
+def test_attr_has_value():
+    attrs = dict()
+    non_numerical_test_cases = {
+        "": False,
+        None: False,
+        "some": True
+    }
+    numerical_test_cases = {
+        "": False,
+        None: False,
+        "0": False,
+        0: False,
+        "-1": False,
+        -1: False,
+        "1": True,
+        1: True
+    }
+    for tc, value in non_numerical_test_cases.items():
+        attrs[NodeAttribute.PROCESSOR] = tc
+        assert attr_has_value(attrs, NodeAttribute.PROCESSOR) == value
+    for tc, value in numerical_test_cases.items():
+        attrs[NodeAttribute.CORES] = tc
+        assert attr_has_value(attrs, NodeAttribute.CORES) == value
 
-if __name__ == "__main__":
+def test_model_request():
     models = get_models()
     assert len(models) > 0, "more than one type of output"
     for output_models in models.values():
@@ -75,3 +100,7 @@ if __name__ == "__main__":
     make_request(metrics, output_type, trainer_name=trainer_name, node_type=1, weight=True)
     # with acpi source
     make_request(metrics, output_type, energy_source="acpi", trainer_name=trainer_name, node_type=1, weight=True)
+
+if __name__ == "__main__":
+    test_attr_has_value()
+    test_model_request()

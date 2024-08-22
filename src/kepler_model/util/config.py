@@ -13,8 +13,9 @@
 #################################################
 
 import os
+import requests
 
-from .loader import base_model_url, default_pipelines, default_train_output_pipeline, get_pipeline_url, get_url
+from .loader import base_model_url, default_pipelines, default_train_output_pipeline, get_pipeline_url, get_url, default_init_model_name
 from .train_types import FeatureGroup, ModelOutputType, is_output_type_supported
 
 # must be writable (for shared volume mount)
@@ -151,10 +152,16 @@ def get_init_model_url(energy_source, output_type, model_topurl=model_topurl):
         if get_energy_source(prefix) == energy_source:
             modelURL = get_init_url(prefix)
             print("get init url", modelURL)
+            url = get_url(feature_group=FeatureGroup.BPFOnly, output_type=ModelOutputType[output_type], energy_source=energy_source, model_topurl=model_topurl, pipeline_name=pipeline_name)
             if modelURL == "" and is_output_type_supported(output_type):
-                print("init URL is not set, try using default URL".format())
-                return get_url(feature_group=FeatureGroup.BPFOnly, output_type=ModelOutputType[output_type], energy_source=energy_source, model_topurl=model_topurl, pipeline_name=pipeline_name)
-            else:
-                return modelURL
+                if energy_source in default_init_model_name:
+                    model_name = default_init_model_name[energy_source]
+                    modelURL = get_url(feature_group=FeatureGroup.BPFOnly, output_type=ModelOutputType[output_type], energy_source=energy_source, model_topurl=model_topurl, pipeline_name=pipeline_name, model_name=model_name)
+                    if url:
+                        response = requests.get(url)
+                        if response.status_code== 200:
+                            modelURL = url
+                print(f"init URL is not set, use {modelURL}")
+            return modelURL
     print(f"no match config for {output_type}, {energy_source}")
     return ""
