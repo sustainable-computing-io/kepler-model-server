@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import sys
+import enum
 
 import click
 import requests
@@ -71,6 +72,13 @@ class ModelRequest:
         if spec is not None:
             self.spec = NodeTypeSpec(**spec)
 
+# ModelListParams defines parameters for /best-models API
+class ModelListParam(enum.Enum):
+    EnergySource = "energy-source"
+    OutputType = "output-type"
+    FeatureGroup = "feature-group"
+    NodeType = "node-type"
+    Filter = "filter"
 
 ###########################################
 MODEL_SERVER_PORT = int(getConfig("MODEL_SERVER_PORT", "8100"))
@@ -186,11 +194,11 @@ def get_model():
 # get_available_models: return name list of best-candidate pipelines
 @app.route(MODEL_SERVER_MODEL_LIST_PATH, methods=["GET"])
 def get_available_models():
-    fg = request.args.get("fg")
-    ot = request.args.get("ot")
-    energy_source = request.args.get("source")
-    node_type = request.args.get("type")
-    filter = request.args.get("filter")
+    fg = request.args.get(ModelListParam.FeatureGroup)
+    ot = request.args.get(ModelListParam.OutputType)
+    energy_source = request.args.get(ModelListParam.EnergySource)
+    node_type = request.args.get(ModelListParam.NodeType)
+    filter = request.args.get(ModelListParam.Filter)
 
     try:
         if fg is None:
