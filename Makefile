@@ -9,7 +9,7 @@ KEPLER_IMAGE ?=  $(IMAGE_REGISTRY)/$(KEPLER_IMAGE_NAME):$(KEPLER_IMAGE_VERSION)
 BASE_IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME)_base:$(IMAGE_VERSION)
 TEST_IMAGE := $(IMAGE)-test
 
-CTR_CMD = docker
+CTR_CMD ?= docker
 PYTHON = python3.10
 
 DOCKERFILES_PATH := ./dockerfiles
@@ -51,7 +51,7 @@ run-estimator:
 		-p 8100:8100 \
 		--name estimator \
 		$(TEST_IMAGE) \
-		/bin/bash -c "$(PYTHON) tests/http_server.py & sleep 5 && estimator"
+		/bin/bash -c "$(PYTHON) tests/http_server.py & sleep 5 && estimator --log-level debug"
 
 run-collector-client:
 	$(CTR_CMD) exec estimator /bin/bash -c \
@@ -73,8 +73,8 @@ run-model-server:
 		-v ${MODEL_PATH}:/mnt/models \
 		-p 8100:8100 \
 		--name model-server $(TEST_IMAGE) \
-		/bin/bash -c "$(PYTHON) tests/http_server.py & sleep 10 && model-server"; \
-	while ! docker logs model-server 2>&1 | grep -q 'Running on all'; do \
+		/bin/bash -c "$(PYTHON) tests/http_server.py & sleep 10 && model-server --log-level debug"; \
+	while ! $(CTR_CMD) logs model-server 2>&1 | grep -q 'Running on all'; do \
 		echo "... waiting for model-server to serve";  sleep 5; \
 	done
 
