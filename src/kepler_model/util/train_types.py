@@ -70,6 +70,12 @@ class ModelOutputType(enum.Enum):
     AbsPower = 1
     DynPower = 2
 
+class NodeAttribute(str, enum.Enum):
+    PROCESSOR = "processor"
+    CORES = "cores"
+    CHIPS = "chips"
+    MEMORY = "memory"
+    FREQ = "frequency"
 
 def is_output_type_supported(output_type_name):
     return any(output_type_name == item.name for item in ModelOutputType)

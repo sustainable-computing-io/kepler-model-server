@@ -13,9 +13,10 @@
 #################################################
 
 import os
+
 import requests
 
-from .loader import base_model_url, default_pipelines, default_train_output_pipeline, get_pipeline_url, get_url, default_init_model_name
+from .loader import base_model_url, default_init_model_name, default_pipelines, default_train_output_pipeline, get_pipeline_url, get_url
 from .train_types import FeatureGroup, ModelOutputType, is_output_type_supported
 
 # must be writable (for shared volume mount)

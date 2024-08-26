@@ -150,3 +150,5 @@ model_training/*data*
 model_training/tekton/secret
 local-dev-cluster
 tmp
+tests/db-models
+db-models

@@ -23,9 +23,11 @@ from kepler_model.util.loader import (
     CHECKPOINT_FOLDERNAME,
     METADATA_FILENAME,
     any_node_type,
+    default_pipelines,
     get_archived_file,
     get_largest_candidates,
     get_model_group_path,
+    get_node_type_from_name,
     get_pipeline_path,
     is_matched_type,
     is_valid_model,
@@ -51,11 +53,11 @@ logger = logging.getLogger(__name__)
 
 
 class ModelRequest:
-    def __init__(self, metrics, output_type, source="rapl-sysfs", node_type=-1, weight=False, trainer_name="", filter="", pipeline_name="", spec=None):
+    def __init__(self, metrics, output_type, source="rapl-sysfs", node_type=-1, weight=False, trainer_name="", filter="", pipeline_name="", spec=None, loose_node_type=True):
         # target source of power metric to be predicted (e.g., rapl-sysfs, acpi)
         self.source = convert_enery_source(source)
         # type of node to select a model learned from similar nodes (default: -1, applied universal model learned by all node_type (TODO))
-        self.node_type = node_type
+        self.node_type = int(node_type) if node_type or node_type == 0 else -1
         # list of available resource usage metrics to find applicable models (using a valid feature group that can be obtained from the list)
         self.metrics = metrics
         # specific trainer name (default: empty, selecting any of the best trainer)
@@ -72,6 +74,7 @@ class ModelRequest:
         self.spec = NodeTypeSpec()
         if spec is not None:
             self.spec = NodeTypeSpec(**spec)
+        self.loose_node_type = loose_node_type
 
 # ModelListParams defines parameters for /best-models API
 class ModelListParam(enum.Enum):
@@ -102,10 +105,27 @@ select_best_model:
 """
 
 
-def select_best_model(spec, valid_group_path: str, filters: dict, energy_source: str, pipeline_name: str="", trainer_name: str="", node_type: int=any_node_type, weight: bool=False):
-    model_names = [f for f in os.listdir(valid_group_path) if f != CHECKPOINT_FOLDERNAME and not os.path.isfile(os.path.join(valid_group_path, f)) and (trainer_name == "" or trainer_name in f)]
+def select_best_model(spec, valid_group_path: str, filters: dict, energy_source: str, pipeline_name: str="", trainer_name: str="", node_type: int=any_node_type, weight: bool=False, loose_node_type: bool=True):
+    # Set default pipeline if not specified
+    if pipeline_name == "" and energy_source in default_pipelines:
+        pipeline_name = default_pipelines[energy_source]
+
+    # Find initial model list filtered by trainer
+    initial_model_names = [f for f in os.listdir(valid_group_path) if f != CHECKPOINT_FOLDERNAME and not os.path.isfile(os.path.join(valid_group_path, f)) and os.path.exists(os.path.join(valid_group_path, f, METADATA_FILENAME + ".json")) and (trainer_name == "" or trainer_name in f)]
+    if node_type != any_node_type:
+        model_names = [name for name in initial_model_names if f"_{node_type}" in name]
+        if len(model_names) == 0:
+            if not loose_node_type:
+                return None, None
+            logger.warning(f"{valid_group_path} has no matched model for node type={node_type}, try all available models")
+            model_names = initial_model_names
+    else:
+        model_names = initial_model_names
+
+    # Filter weight models
     if weight:
         model_names = [name for name in model_names if name.split("_")[0] in weight_support_trainers]
+
     # Load metadata of trainers
     best_cadidate = None
     best_response = None
@@ -167,18 +187,33 @@ def get_model():
     output_type = ModelOutputType[req.output_type]
     best_model = None
     best_response = None
+    best_uncertainty = None
+    best_looseness = None
     # find best model comparing best candidate from each valid feature group complied with filtering conditions
     for fg in valid_fgs:
+        pipeline_name = pipelineName[energy_source]
         valid_group_path = get_model_group_path(model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source])
+        node_type = req.node_type
+        if req.node_type == any_node_type and req.spec is not None and not req.spec.is_none() and pipeline_name in nodeCollection:
+            node_type, uncertainty, looseness = nodeCollection[pipeline_name].get_node_type(req.spec, loose_search=True)
+        else:
+            uncertainty = 0
+            looseness = 0
         if os.path.exists(valid_group_path):
-            best_candidate, response = select_best_model(req.spec, valid_group_path, filters, energy_source, req.pipeline_name, req.trainer_name, req.node_type, req.weight)
+            best_candidate, response = select_best_model(req.spec, valid_group_path, filters, energy_source, req.pipeline_name, req.trainer_name, node_type, req.weight, loose_node_type=req.loose_node_type)
             if best_candidate is None:
                 continue
+            if node_type != any_node_type and best_model is not None and get_node_type_from_name(best_model['model_name']) == node_type:
+                if get_node_type_from_name(best_candidate['model_name']) != node_type:
+                    continue
             if best_model is None or best_model[ERROR_KEY] > best_candidate[ERROR_KEY]:
                 best_model = best_candidate
                 best_response = response
+                best_uncertainty = uncertainty
+                best_looseness = looseness
     if best_model is None:
         return make_response(f"cannot find model for {model_request} at the moment", 400)
+    logger.info(f"response: model {best_model['model_name']} by {best_model['features']} with {ERROR_KEY}={best_model[ERROR_KEY]} selected with uncertainty={best_uncertainty}, looseness={best_looseness}")
     if req.weight:
         try:
             response = app.response_class(response=json.dumps(best_response), status=200, mimetype="application/json")
@@ -234,7 +269,7 @@ def get_available_models():
                 logger.debug(f"Searching feature group {fg}")
                 valid_group_path = get_model_group_path(model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source])
                 if os.path.exists(valid_group_path):
-                    best_candidate, _ = select_best_model(None, valid_group_path, filters, energy_source, node_type=node_type)
+                    best_candidate, _ = select_best_model(None, valid_group_path, filters, energy_source, node_type=node_type, loose_node_type=False)
                     if best_candidate is None:
                         continue
                     model_names[output_type.name][fg.name] = best_candidate["model_name"]
