@@ -23,7 +23,7 @@ def make_model_request(power_request, machine_spec=None):
                      "filter": power_request.filter,
                      "trainer_name": power_request.trainer_name}
     if machine_spec is not None:
-        model_request["spec"] = machine_spec
+        model_request["machine_spec"] = machine_spec
     return model_request
 
 

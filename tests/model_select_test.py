@@ -31,7 +31,7 @@ def get_node_types(energy_source):
 def make_request_with_spec(metrics, output_type, node_type=-1, trainer_name="", energy_source='rapl-sysfs', spec=None):
     weight = False
     model_request = get_model_request_json(metrics, output_type, node_type, weight, trainer_name, energy_source)
-    model_request["spec"] = spec
+    model_request["machine_spec"] = spec
     response = requests.post(f'http://localhost:{MODEL_SERVER_PORT}/model', json=model_request)
     assert response.status_code == 200, response.text
     output_path = os.path.join(download_path, output_type.name)
