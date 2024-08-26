@@ -12,9 +12,9 @@ import pandas as pd
 from kepler_model.estimate.archived_model import get_achived_model
 from kepler_model.estimate.model.model import load_downloaded_model
 from kepler_model.estimate.model_server_connector import is_model_server_enabled, make_request
-from kepler_model.train.profiler.node_type_index import get_machine_spec
+from kepler_model.train.profiler.node_type_index import NodeTypeSpec, discover_spec_values, get_machine_spec
 from kepler_model.util.config import SERVE_SOCKET, download_path, set_env_from_model_config
-from kepler_model.util.loader import get_download_output_path
+from kepler_model.util.loader import get_download_output_path, load_metadata
 from kepler_model.util.train_types import ModelOutputType, convert_enery_source, is_output_type_supported
 
 ###############################################
@@ -42,7 +42,7 @@ class PowerRequest:
 
 loaded_model = dict()
 
-def handle_request(data: str, machine_spec=None) -> dict:
+def handle_request(data: str, machine_spec=None, discovered_core=None) -> dict:
     try:
         power_request = json.loads(data, object_hook=lambda d: PowerRequest(**d))
     except Exception as e:
@@ -94,6 +94,10 @@ def handle_request(data: str, machine_spec=None) -> dict:
         if loaded_item is not None and loaded_item.estimator is not None:
             loaded_model[output_type.name][power_request.energy_source] = loaded_item
             logger.info(f"set model {loaded_item.model_name} for {output_type.name} ({power_request.energy_source})")
+        else:
+            msg = f"load item for {power_request.energy_source} is none"
+            logger.error(msg)
+            return {"powers": dict(), "msg": msg}
 
     model = loaded_model[output_type.name][power_request.energy_source]
     powers, msg = model.get_power(power_request.datapoint)
@@ -101,15 +105,30 @@ def handle_request(data: str, machine_spec=None) -> dict:
         logger.info(f"{model.model_name} failed to predict; removed: {msg}")
         if output_path != "" and os.path.exists(output_path):
             shutil.rmtree(output_path)
+    response = {"powers": powers, "msg": msg}
+    # add core_ratio if applicable
+    core_ratio = 1
+    if discovered_core is not None and discovered_core > 0:
+        metadata = load_metadata(output_path)
+        if metadata is not None and "machine_spec" in metadata:
+            model_spec = NodeTypeSpec(**metadata["machine_spec"])
+            model_cores = model_spec.get_cores()
+            if model_cores > 0:
+                core_ratio = discovered_core/model_cores
+            logger.debug(f"model cores: {model_cores}")
+        logger.debug(f"metadata: {metadata}")
+    response["core_ratio"] = core_ratio
 
-    return {"powers": powers, "msg": msg}
-
+    return response
 
 class EstimatorServer:
     def __init__(self, socket_path, machine_spec):
         self.socket_path = socket_path
         self.machine_spec = machine_spec
-        logger.info(f"initialize EstimatorServer with spec={machine_spec}")
+        spec_values = discover_spec_values()
+        discovered_spec = NodeTypeSpec(**spec_values)
+        self.discovered_core = discovered_spec.get_cores()
+        logger.info(f"initialize EstimatorServer with spec={machine_spec}, discovered_core={self.discovered_core}")
 
     def start(self):
         s = self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -135,10 +154,9 @@ class EstimatorServer:
             if shunk is None or shunk.decode()[-1] == "}":
                 break
         decoded_data = data.decode()
-        y = handle_request(decoded_data, self.machine_spec)
+        y = handle_request(decoded_data, self.machine_spec, self.discovered_core)
         response = json.dumps(y)
         connection.send(response.encode())
-
 
 def clean_socket():
     logger.info("clean socket")

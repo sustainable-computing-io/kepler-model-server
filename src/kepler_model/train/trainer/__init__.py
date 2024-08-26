@@ -61,6 +61,10 @@ class Trainer(metaclass=ABCMeta):
         self.node_models = dict()
         self.node_scalers = dict()
         self.scaler_type = scaler_type
+        self.node_type_index = dict()
+
+    def set_node_type_index(self, node_type_index):
+        self.node_type_index = node_type_index
 
     def _get_save_path(self, node_type):
         save_path = get_save_path(self.group_path, self.trainer_name, node_type=node_type)
@@ -214,6 +218,7 @@ class Trainer(metaclass=ABCMeta):
         save_path = self._get_save_path(node_type)
         model_name, model_file = self._model_filename(node_type)
         item["model_name"] = model_name
+        item["trainer"] = self.trainer_name
         item["model_class"] = self.model_class
         item["model_file"] = model_file
         item["features"] = self.features
@@ -221,6 +226,9 @@ class Trainer(metaclass=ABCMeta):
         item["output_type"] = self.output_type.name
         item["mae"] = mae
         item["mape"] = mape
+        if node_type in self.node_type_index:
+            item["node_type"] = node_type
+            item["machine_spec"] = self.node_type_index[node_type].get_json()["attrs"]
         item.update(mae_map)
         item.update(mape_map)
         self.metadata = item

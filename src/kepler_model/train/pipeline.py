@@ -44,6 +44,8 @@ class Pipeline:
         self.metadata["abs_trainers"] = [trainer.__class__.__name__ for trainer in trainers if trainer.node_level]
         self.metadata["dyn_trainers"] = [trainer.__class__.__name__ for trainer in trainers if not trainer.node_level]
         self.metadata["init_time"] = time_to_str(datetime.datetime.utcnow())
+        for trainer in trainers:
+            trainer.set_node_type_index(self.node_collection.node_type_index)
 
     def get_abs_data(self, query_results, energy_components, feature_group, energy_source, aggr):
         extracted_data, power_labels, _, _ = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=True, aggr=aggr)

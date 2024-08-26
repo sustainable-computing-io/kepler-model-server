@@ -57,7 +57,7 @@ run-estimator-with-test-spec:
 	$(CTR_CMD) run --rm -d --platform linux/amd64 \
 		--name estimator \
 		$(TEST_IMAGE) \
-		/bin/bash -c "estimator --machine-spec tests/data/machine/spec.json"
+		/bin/bash -c "estimator --machine-spec tests/data/machine/spec.json --log-level debug"
 
 run-collector-client:
 	$(CTR_CMD) exec estimator /bin/bash -c \
@@ -129,7 +129,7 @@ run-model-server-with-db:
 		-p 8100:8100 \
 		--name model-server $(TEST_IMAGE) \
 		model-server
-	while ! docker logs model-server 2>&1 | grep -q 'Running on all'; do \
+	while ! $(CTR_CMD) logs model-server 2>&1 | grep -q 'Running on all'; do \
 		echo "... waiting for model-server to serve";  sleep 5; \
 	done
 

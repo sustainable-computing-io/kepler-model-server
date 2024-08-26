@@ -7,8 +7,9 @@ import shutil
 import requests
 
 from kepler_model.server.model_server import MODEL_SERVER_PORT
-from kepler_model.train.profiler.node_type_index import NodeAttribute, attr_has_value
-from kepler_model.util.config import download_path
+from kepler_model.train.profiler.node_type_index import NodeAttribute, NodeTypeSpec, attr_has_value
+from kepler_model.util.config import ERROR_KEY, download_path
+from kepler_model.util.loader import any_node_type
 from kepler_model.util.train_types import FeatureGroup, FeatureGroups, ModelOutputType
 
 TMP_FILE = "tmp.zip"
@@ -18,17 +19,28 @@ def get_model_request_json(metrics, output_type, node_type, weight, trainer_name
     return {"metrics": metrics, "output_type": output_type.name, "node_type": node_type, "weight": weight, "trainer_name": trainer_name, "source": energy_source}
 
 
-def make_request(metrics, output_type, node_type=-1, weight=False, trainer_name="", energy_source="rapl-sysfs"):
+def make_request(metrics, output_type, node_type=any_node_type, weight=False, trainer_name="", energy_source="rapl-sysfs"):
     model_request = get_model_request_json(metrics, output_type, node_type, weight, trainer_name, energy_source)
     response = requests.post(f"http://localhost:{MODEL_SERVER_PORT}/model", json=model_request)
     assert response.status_code == 200, response.text
     if weight:
         weight_dict = json.loads(response.text)
         assert len(weight_dict) > 0, "weight dict must contain one or more than one component"
-        for weight_values in weight_dict.values():
-            weight_length = len(weight_values["All_Weights"]["Numerical_Variables"])
-            expected_length = len(metrics)
-            assert weight_length <= expected_length, f"weight metrics should covered by the requested {weight_length} > {expected_length}"
+        if node_type == any_node_type:
+            assert "model_name" in weight_dict
+            assert "machine_spec" in weight_dict
+            assert ERROR_KEY in weight_dict
+            assert len(weight_dict["model_name"]) > 0
+            spec_values = weight_dict["machine_spec"]
+            spec = NodeTypeSpec(**spec_values)
+            assert spec.get_cores() > 0
+
+        for key, values in weight_dict.items():
+            if key not in ["model_name", "machine_spec", ERROR_KEY]:
+                if "All_Weights" in values:
+                    weight_length = len(values["All_Weights"]["Numerical_Variables"])
+                    expected_length = len(metrics)
+                    assert weight_length <= expected_length, f"weight metrics should covered by the requested {weight_length} > {expected_length}"
     else:
         output_path = os.path.join(download_path, output_type.name)
         if os.path.exists(output_path):

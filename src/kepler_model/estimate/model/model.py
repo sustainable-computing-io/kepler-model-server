@@ -165,6 +165,10 @@ def load_model(model_path):
         return None
 
     metadata["model_path"] = model_path
+    logger.info(f"load metadata {metadata}")
+    # need to delete machine_spec before load model
+    if "machine_spec" in metadata:
+        del metadata["machine_spec"]
     metadata_str = json.dumps(metadata)
     try:
         model = json.loads(metadata_str, object_hook=lambda d: Model(**d))
