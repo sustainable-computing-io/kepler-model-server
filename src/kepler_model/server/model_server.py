@@ -32,10 +32,11 @@ from kepler_model.util.loader import (
     is_matched_type,
     is_valid_model,
     load_json,
+    load_metadata,
     load_weight,
     parse_filters,
 )
-from kepler_model.util.saver import WEIGHT_FILENAME
+from kepler_model.util.saver import WEIGHT_FILENAME, save_metadata
 from kepler_model.util.train_types import (
     FeatureGroup,
     FeatureGroups,
@@ -216,6 +217,13 @@ def get_model():
     logger.info(f"response: model {best_model['model_name']} by {best_model['features']} with {ERROR_KEY}={best_model[ERROR_KEY]} selected with uncertainty={best_uncertainty}, looseness={best_looseness}")
     if req.weight:
         try:
+            # add this condition to provide compatibility to old version
+            # the old version always set default node_type
+            if req.node_type == any_node_type:
+                best_response["model_name"] = best_model["model_name"]
+                if "machine_spec" in best_model:
+                    best_response["machine_spec"] = best_model["machine_spec"]
+                best_response[ERROR_KEY] = best_model[ERROR_KEY]
             response = app.response_class(response=json.dumps(best_response), status=200, mimetype="application/json")
             return response
         except ValueError as err:
@@ -344,7 +352,30 @@ def load_init_pipeline():
         # remove downloaded zip
         os.remove(tmp_filepath)
     set_pipelines()
+    fill_machine_spec()
 
+def fill_machine_spec():
+    for energy_source in PowerSourceMap.keys():
+        if energy_source in pipelineName:
+            pipeline_name = pipelineName[energy_source]
+            if pipeline_name in nodeCollection:
+                node_collection = nodeCollection[pipeline_name]
+                for output_type in ModelOutputType:
+                    for feature_group in FeatureGroup:
+                        valid_group_path = get_model_group_path(model_toppath, output_type, feature_group, energy_source, pipeline_name=pipeline_name)
+                        for f in  os.listdir(valid_group_path):
+                            path = os.path.join(valid_group_path, f)
+                            if not os.path.isfile(path):
+                                metadata = load_metadata(path)
+                                if metadata is not None:
+                                    if "machine_spec" not in metadata and "model_name" in metadata:
+                                        model_name = metadata["model_name"]
+                                        node_type = get_node_type_from_name(model_name)
+                                        if node_type in node_collection.node_type_index:
+                                            metadata["machine_spec"] = node_collection.node_type_index[node_type].get_json()["attrs"]
+                                            save_metadata(path, metadata)
+                                            save_path = os.path.join(valid_group_path, model_name)
+                                            shutil.make_archive(save_path, "zip", save_path)
 
 @click.command()
 @click.option(

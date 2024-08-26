@@ -7,6 +7,11 @@
 # - kepler-model-server is not connected, but some achived models can be download via URL.
 #   - set sample model and make a dummy valid PowerRequest and another invalid PowerRequest
 #
+# Requires
+# - run `model-server``
+# - run `pytest tests/pipeline_test.py` (run once to get models)
+# - run `MODEL_PATH=$(pwd)/src/kepler_model/models python tests/http_server.py`
+#
 #########################
 # import external modules
 import json
@@ -66,7 +71,7 @@ def test_model_request():
         if url != "":
             print("Download: ", url)
             response = requests.get(url)
-            assert response.status_code == 200, "init url must be set and valid"
+            assert response.status_code == 200, f"init url {url} must be set and valid"
             output_path = get_download_output_path(download_path, energy_source, output_type)
             if output_type_name in loaded_model and energy_source in loaded_model[output_type.name]:
                 del loaded_model[output_type_name][energy_source]

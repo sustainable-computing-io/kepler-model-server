@@ -156,8 +156,10 @@ class NodeTypeSpec:
     def get_size(self):
         return len(self.members)
 
-    def get_cores(self):
-        return self.attrs[NodeAttribute.CORES]
+    def get_cores(self) -> int:
+        if attr_has_value(self.attrs, NodeAttribute.CORES):
+            return int(self.attrs[NodeAttribute.CORES])
+        return 0
 
     # check the comparing node-type spec is covered by this node-type spec
     def cover(self, compare_spec):
