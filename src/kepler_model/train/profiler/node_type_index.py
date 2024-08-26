@@ -6,6 +6,8 @@
 #   index_collection.save()
 
 import enum
+import logging
+import os
 import re
 import subprocess
 
@@ -13,9 +15,12 @@ import cpuinfo
 import psutil
 import pyudev
 
-from kepler_model.util.loader import load_node_type_index
+from kepler_model.util.loader import load_json, load_node_type_index
 from kepler_model.util.saver import save_machine_spec, save_node_type_index
 
+logger = logging.getLogger(__name__)
+
+default_machine_spec_file = "/etc/kepler/models/machine/spec.json"
 
 def rename(name: str) -> str:
     name = name.replace("(R)", "")
@@ -34,6 +39,8 @@ def rename(name: str) -> str:
 
 
 def format_processor(processor):
+    if len(processor) < 2: # brand_raw is set to "-" on some machine
+        return ""
     return "_".join(re.sub(r"\(.*\)", "", rename(processor)).split()).replace("-", "_").lower().replace("_v", "v")
 
 
@@ -43,8 +50,7 @@ def format_vendor(vendor):
 
 GB = 1024 * 1024 * 1024
 
-
-def generate_spec(data_path, machine_id):
+def discover_spec_values():
     processor = ""
     vendor = ""
     cpu_info = cpuinfo.get_cpu_info()
@@ -55,19 +61,44 @@ def generate_spec(data_path, machine_id):
         if device.get("ID_VENDOR") is not None:
             vendor = format_vendor(device.get("ID_VENDOR"))
             break
+    if vendor == "" and "vendor_id_raw" in cpu_info:
+        vendor = format_vendor(cpu_info["vendor_id_raw"])
+
     cores = psutil.cpu_count(logical=True)
     chips = max(1, int(subprocess.check_output('cat /proc/cpuinfo | grep "physical id" | sort -u | wc -l', shell=True)))
     threads_per_core = max(1, cores // psutil.cpu_count(logical=False))
     memory = psutil.virtual_memory().total
     memory_gb = int(memory / GB)
     freq = psutil.cpu_freq(percpu=False)
-    cpu_freq_mhz = round(max(freq.max, freq.current) / 100) * 100  # round to one decimal of GHz
-    spec_values = {"vendor": vendor, "processor": processor, "cores": cores, "chips": chips, "memory": memory_gb, "frequency": cpu_freq_mhz, "threads_per_core": threads_per_core}
+    spec_values = {
+        "vendor": vendor,
+        "processor": processor,
+        "cores": cores,
+        "chips": chips,
+        "memory": memory_gb,
+        "threads_per_core": threads_per_core
+    }
+    if freq is not None:
+        cpu_freq_mhz = round(max(freq.max, freq.current) / 100) * 100  # round to one decimal of GHz
+        spec_values["frequency"] = cpu_freq_mhz
+    return spec_values
+
+def generate_spec(data_path, machine_id):
+    spec_values = discover_spec_values()
     spec = NodeTypeSpec(**spec_values)
-    print(f"Save machine spec ({data_path}): ")
-    print(str(spec))
+    logger.info(f"Save machine spec to {data_path}/{machine_id}")
     save_machine_spec(data_path, machine_id, spec)
 
+def get_machine_spec(cmd_machine_spec_file: str):
+    if cmd_machine_spec_file:
+        spec = load_json(cmd_machine_spec_file)
+        if spec is not None:
+            return spec
+    if os.path.exists(default_machine_spec_file):
+        spec = load_json(default_machine_spec_file)
+        if spec is not None:
+            return spec
+    return discover_spec_values()
 
 class NodeAttribute(str, enum.Enum):
     PROCESSOR = "processor"
@@ -75,7 +106,6 @@ class NodeAttribute(str, enum.Enum):
     CHIPS = "chips"
     MEMORY = "memory"
     FREQ = "frequency"
-
 
 def load_node_type_spec(node_type_index_json):
     node_type_spec_index = dict()
@@ -86,9 +116,18 @@ def load_node_type_spec(node_type_index_json):
             node_type_spec_index[int(index)] = spec
     return node_type_spec_index
 
-
 no_data = None
 
+def attr_has_value(attrs: dict, key: NodeAttribute) -> bool:
+    if key not in attrs:
+        return False
+    value = attrs[key]
+    if value != no_data and value:
+        if key != NodeAttribute.PROCESSOR:
+            if float(value) <= 0:
+                return False
+        return True
+    return False
 
 # NodeTypeSpec defines spec of each node_type index
 class NodeTypeSpec:
@@ -100,6 +139,13 @@ class NodeTypeSpec:
         self.attrs[NodeAttribute.MEMORY] = kwargs.get("memory", no_data)
         self.attrs[NodeAttribute.FREQ] = kwargs.get("frequency", no_data)
         self.members = []
+
+    # check if all attribute is none
+    def is_none(self):
+        for key in self.attrs.keys():
+            if attr_has_value(self.attrs, key):
+                return False
+        return True
 
     def load(self, json_obj):
         for attr, attr_values in json_obj["attrs"].items():
@@ -124,7 +170,7 @@ class NodeTypeSpec:
         if not isinstance(compare_spec, NodeTypeSpec):
             return False
         for attr in NodeAttribute:
-            if compare_spec.attrs[attr] is not None:
+            if attr_has_value(compare_spec.attrs, attr):
                 try:
                     # Attempt to convert values to floats
                     if float(self.attrs[attr]) != float(compare_spec.attrs[attr]):
@@ -205,4 +251,3 @@ class NodeTypeIndexCollection:
         for node_type in removed_items:
             del node_collection.node_type_index[node_type]
         return node_collection
-

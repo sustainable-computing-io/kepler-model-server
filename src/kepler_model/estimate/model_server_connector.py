@@ -16,21 +16,15 @@ from kepler_model.util.loader import get_download_output_path
 from kepler_model.util.train_types import ModelOutputType
 
 
-# discover_spec: determine node spec in json format (refer to NodeTypeSpec)
-def discover_spec():
-    import psutil
-
-    # TODO: reuse node_type_index/generate_spec with loosen selection
-    cores = psutil.cpu_count(logical=True)
-    spec = {"cores": cores}
-    return spec
-
-
-node_spec = discover_spec()
-
-
-def make_model_request(power_request):
-    return {"metrics": power_request.metrics + power_request.system_features, "output_type": power_request.output_type, "source": power_request.energy_source, "filter": power_request.filter, "trainer_name": power_request.trainer_name, "spec": node_spec}
+def make_model_request(power_request, machine_spec=None):
+    model_request = {"metrics": power_request.metrics + power_request.system_features,
+                     "output_type": power_request.output_type,
+                     "source": power_request.energy_source,
+                     "filter": power_request.filter,
+                     "trainer_name": power_request.trainer_name}
+    if machine_spec is not None:
+        model_request["spec"] = machine_spec
+    return model_request
 
 
 TMP_FILE = "tmp.zip"
@@ -54,10 +48,10 @@ def unpack(energy_source, output_type, response, replace=True):
     return output_path
 
 
-def make_request(power_request):
+def make_request(power_request, machine_spec):
     if not is_model_server_enabled():
         return None
-    model_request = make_model_request(power_request)
+    model_request = make_model_request(power_request, machine_spec)
     output_type = ModelOutputType[power_request.output_type]
     try:
         response = requests.post(get_model_server_req_endpoint(), json=model_request)

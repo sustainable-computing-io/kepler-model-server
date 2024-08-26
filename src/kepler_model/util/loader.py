@@ -64,13 +64,18 @@ default_trainer_name = "GradientBoostingRegressorTrainer"
 default_node_type = 0
 any_node_type = -1
 default_feature_group = FeatureGroup.BPFOnly
+# need to set as default node_type is not available in latest release DB
+default_init_model_name = {
+    "rapl-sysfs": "GradientBoostingRegressorTrainer_1",
+    "acpi": "XgboostFitTrainer_109"
+}
 
-
-def load_json(path: str, name: str):
-    if name.endswith(".json") is False:
-        name = name + ".json"
-
-    filepath = os.path.join(path, name)
+def load_json(path: str, name: str=""):
+    filepath = path
+    if name:
+        if name.endswith(".json") is False:
+            name = name + ".json"
+        filepath = os.path.join(path, name)
     try:
         with open(filepath) as f:
             res = json.load(f)
@@ -106,7 +111,6 @@ def load_remote_pkl(url_path):
     except Exception as e:
         logger.error(f"failed to load pkl url {url_path}: {e}")
         return None
-
 
 def load_machine_spec(data_path, machine_id):
     machine_spec_path = os.path.join(data_path, MACHINE_SPEC_PATH)

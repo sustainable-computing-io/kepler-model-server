@@ -12,6 +12,7 @@ import pandas as pd
 from kepler_model.estimate.archived_model import get_achived_model
 from kepler_model.estimate.model.model import load_downloaded_model
 from kepler_model.estimate.model_server_connector import is_model_server_enabled, make_request
+from kepler_model.train.profiler.node_type_index import get_machine_spec
 from kepler_model.util.config import SERVE_SOCKET, download_path, set_env_from_model_config
 from kepler_model.util.loader import get_download_output_path
 from kepler_model.util.train_types import ModelOutputType, convert_enery_source, is_output_type_supported
@@ -39,11 +40,9 @@ class PowerRequest:
 ###############################################
 # serve
 
-
 loaded_model = dict()
 
-
-def handle_request(data: str) -> dict:
+def handle_request(data: str, machine_spec=None) -> dict:
     try:
         power_request = json.loads(data, object_hook=lambda d: PowerRequest(**d))
     except Exception as e:
@@ -78,7 +77,7 @@ def handle_request(data: str) -> dict:
             shutil.rmtree(output_path)
         if not os.path.exists(output_path):
             # try connecting to model server
-            output_path = make_request(power_request)
+            output_path = make_request(power_request, machine_spec)
             if output_path is None:
                 # find from config
                 output_path = get_achived_model(power_request)
@@ -107,8 +106,10 @@ def handle_request(data: str) -> dict:
 
 
 class EstimatorServer:
-    def __init__(self, socket_path):
+    def __init__(self, socket_path, machine_spec):
         self.socket_path = socket_path
+        self.machine_spec = machine_spec
+        logger.info(f"initialize EstimatorServer with spec={machine_spec}")
 
     def start(self):
         s = self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -134,7 +135,7 @@ class EstimatorServer:
             if shunk is None or shunk.decode()[-1] == "}":
                 break
         decoded_data = data.decode()
-        y = handle_request(decoded_data)
+        y = handle_request(decoded_data, self.machine_spec)
         response = json.dumps(y)
         connection.send(response.encode())
 
@@ -158,7 +159,12 @@ def sig_handler(signum, frame) -> None:
     default="info",
     required=False,
 )
-def run(log_level: str):
+@click.option(
+    "--machine-spec",
+    type=click.Path(exists=True),
+    required=False,
+)
+def run(log_level: str, machine_spec: str):
     level = getattr(logging, log_level.upper())
     logging.basicConfig(level=level)
 
@@ -166,7 +172,8 @@ def run(log_level: str):
     clean_socket()
     signal.signal(signal.SIGTERM, sig_handler)
     try:
-        server = EstimatorServer(SERVE_SOCKET)
+        spec = get_machine_spec(machine_spec)
+        server = EstimatorServer(SERVE_SOCKET, spec)
         server.start()
     finally:
         click.echo("estimator exit")
