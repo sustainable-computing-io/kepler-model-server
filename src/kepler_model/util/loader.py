@@ -112,6 +112,18 @@ def load_remote_pkl(url_path):
         logger.error(f"failed to load pkl url {url_path}: {e}")
         return None
 
+def load_remote_json(url_path):
+    if ".json" not in url_path:
+        url_path = url_path + ".json"
+    try:
+        response = urlopen(url_path)
+        response_data = response.read().decode('utf-8')
+        json_data = json.loads(response_data)
+        return json_data
+    except Exception as e:
+        logger.error(f"failed to load json url {url_path}: {e}")
+        return None
+
 def load_machine_spec(data_path, machine_id):
     machine_spec_path = os.path.join(data_path, MACHINE_SPEC_PATH)
     return load_json(machine_spec_path, machine_id)
@@ -216,7 +228,7 @@ def is_matched_type(nodeCollection, spec, pipeline_name, model_name, node_type, 
             return True
     return False
 
-
+# get_largest_candidates return list of model_names that have maximum number of cores
 def get_largest_candidates(model_names, pipeline_name, nodeCollection, energy_source):
     pipeline_name = assure_pipeline_name(pipeline_name, energy_source, nodeCollection)
     if pipeline_name not in nodeCollection:

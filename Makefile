@@ -119,12 +119,47 @@ test-offline-trainer: \
 	run-offline-trainer-client \
 	clean-offline-trainer
 
+# test model server select
+create-container-net:
+	@$(CTR_CMD) network create kepler-model-server-test
+
+run-model-server-with-db:
+	$(CTR_CMD) run -d --platform linux/amd64 \
+		--network kepler-model-server-test \
+		-p 8100:8100 \
+		--name model-server $(TEST_IMAGE) \
+		model-server
+	while ! docker logs model-server 2>&1 | grep -q 'Running on all'; do \
+		echo "... waiting for model-server to serve";  sleep 5; \
+	done
+
+run-estimator-with-model-server:
+	$(CTR_CMD) run -d --platform linux/amd64 \
+		--network kepler-model-server-test \
+		-e "MODEL_SERVER_ENABLE=true" \
+		-e "MODEL_SERVER_URL=http://model-server:8100" \
+		--name estimator $(TEST_IMAGE) \
+		/bin/bash -c "estimator --machine-spec tests/data/machine/spec.json"
+
+clean-container-net:
+	@$(CTR_CMD) network rm kepler-model-server-test
+
+run-select-client:
+	$(CTR_CMD) exec model-server \
+		hatch run test -vvv -s ./tests/model_select_test.py
+
+test-model-server-select: create-container-net run-model-server-with-db run-select-client clean-model-server clean-container-net
+
+test-model-server-estimator-select: create-container-net run-model-server-with-db run-estimator-with-model-server run-collector-client clean-estimator clean-model-server clean-container-net
+
 test: \
 	build-test \
 	test-pipeline \
 	test-estimator \
 	test-model-server \
-	test-offline-trainer
+	test-offline-trainer \
+	test-model-server-select \
+	test-model-server-estimator-select
 
 # set image
 set-image:
