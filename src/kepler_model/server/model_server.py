@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModelRequest:
-    def __init__(self, metrics, output_type, source="rapl-sysfs", node_type=-1, weight=False, trainer_name="", filter="", pipeline_name="", spec=None, loose_node_type=True):
+    def __init__(self, metrics, output_type, source="rapl-sysfs", node_type=-1, weight=False, trainer_name="", filter="", pipeline_name="", machine_spec=None, loose_node_type=True):
         # target source of power metric to be predicted (e.g., rapl-sysfs, acpi)
         self.source = convert_enery_source(source)
         # type of node to select a model learned from similar nodes (default: -1, applied universal model learned by all node_type (TODO))
@@ -71,9 +71,9 @@ class ModelRequest:
         # specific pipeline (default: empty, selecting default pipeline)
         self.pipeline_name = pipeline_name
         # spec of requesting node to determine node_type
-        self.spec = NodeTypeSpec()
-        if spec is not None:
-            self.spec = NodeTypeSpec(**spec)
+        self.machine_spec = NodeTypeSpec()
+        if machine_spec is not None:
+            self.machine_spec = NodeTypeSpec(**machine_spec)
         self.loose_node_type = loose_node_type
 
 # ModelListParams defines parameters for /best-models API
@@ -194,13 +194,13 @@ def get_model():
         pipeline_name = pipelineName[energy_source]
         valid_group_path = get_model_group_path(model_toppath, output_type, fg, energy_source, pipeline_name=pipelineName[energy_source])
         node_type = req.node_type
-        if req.node_type == any_node_type and req.spec is not None and not req.spec.is_none() and pipeline_name in nodeCollection:
-            node_type, uncertainty, looseness = nodeCollection[pipeline_name].get_node_type(req.spec, loose_search=True)
+        if req.node_type == any_node_type and req.machine_spec is not None and not req.machine_spec.is_none() and pipeline_name in nodeCollection:
+            node_type, uncertainty, looseness = nodeCollection[pipeline_name].get_node_type(req.machine_spec, loose_search=True)
         else:
             uncertainty = 0
             looseness = 0
         if os.path.exists(valid_group_path):
-            best_candidate, response = select_best_model(req.spec, valid_group_path, filters, energy_source, req.pipeline_name, req.trainer_name, node_type, req.weight, loose_node_type=req.loose_node_type)
+            best_candidate, response = select_best_model(req.machine_spec, valid_group_path, filters, energy_source, req.pipeline_name, req.trainer_name, node_type, req.weight, loose_node_type=req.loose_node_type)
             if best_candidate is None:
                 continue
             if node_type != any_node_type and best_model is not None and get_node_type_from_name(best_model['model_name']) == node_type:
