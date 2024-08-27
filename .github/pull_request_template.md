@@ -1,16 +1,20 @@
 <!--
-PR Content
+Pull Request Template
 -->
 
 ---
-In addition to approval, the author must confirm the following check list:
-- [ ] Run 
-    ```bash
-    hatch fmt
-    ```
-- [ ] Create issues for unresolved comments for tracking with either one of the following labels and link them to this PR: `must-fix`, `minor`, and `nit`.
 
-    - must-fix: the logic seems wrong here. Could you please fix this?
-    - minor: reciever has a typo
-    - minor: code can be refactored to better readabilty
-    - nit: extra space, coma, ..  etc
+### Checklist for PR Author
+
+In addition to approval, the author must confirm the following check list:
+
+- [ ] Run the following command to format your code:
+
+  ```bash
+  hatch fmt
+  ```
+
+- [ ] Create issues for unresolved comments and link them to this PR. Use one of the following labels:
+  - `must-fix`: The logic appears incorrect and must be addressed.
+  - `minor`: Typos, minor issues, or potential refactoring for better readability.
+  - `nit`: Trivial issues like extra spaces, commas, etc.
