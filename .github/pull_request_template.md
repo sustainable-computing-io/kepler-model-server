@@ -1,10 +1,6 @@
-<!--
-Pull Request Template
--->
+# Checklist for PR Author
 
 ---
-
-### Checklist for PR Author
 
 In addition to approval, the author must confirm the following check list:
 

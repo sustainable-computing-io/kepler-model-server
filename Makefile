@@ -15,6 +15,10 @@ PYTHON  := python3.10
 DOCKERFILES_PATH := ./dockerfiles
 MODEL_PATH := ${PWD}/tests/models
 
+.PHONY: lint
+lint:
+	@hatch run pymarkdownlnt scan -r .
+
 .PHONY: build
 build:
 	$(CTR_CMD) build -t $(IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile .

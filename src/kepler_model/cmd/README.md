@@ -1,4 +1,4 @@
-# Kepler Model Server entrypoint
+# Kepler Model Server Entrypoint
 
 Use kepler model server function as a standalone docker container.
 
@@ -62,14 +62,14 @@ Use kepler model server function as a standalone docker container.
 
     output will be under the folder `output`.
 
-    ```
+    ```bash
     output
     ├── rapl_estimation_result.csv.csv
     └── rapl_model.zip
     ```
 
-5. Plot and save image 
-  
+5. Plot and save image
+
    5.1. Plot extracted and isolated data (`preprocess`)
 
       ```bash
@@ -96,7 +96,7 @@ Use kepler model server function as a standalone docker container.
 
     output will be under the folder `output`.
 
-5. Export
+6. Export
 
     ```bash
     KEPLER_MODEL_DB_MODELS_PATH= < path to kepler-model-db/models >
@@ -104,4 +104,3 @@ Use kepler model server function as a standalone docker container.
     GH_ACCOUNT= < github account >
     docker run --rm -v "${KEPLER_MODEL_DB_MODELS_PATH}":/output -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11 export $MACHINE_ID /output $GH_ACCOUNT
     ```
-

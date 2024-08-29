@@ -41,7 +41,8 @@ dependencies = [
   "seaborn==0.13.2",
   "Werkzeug==3.0.4",
   "xgboost==2.1.1",
-  "boto3==1.34.155"
+  "boto3==1.34.155",
+  "pymarkdownlnt==0.9.22"
 ]
 
 [project.scripts]
@@ -115,3 +116,6 @@ line-length = 320
 markers = [
 	"focus",  # used in development to mark focused tests
 ]
+
+[tool.pymarkdown]
+plugins.md013.enabled = false
