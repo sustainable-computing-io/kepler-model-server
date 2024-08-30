@@ -1,6 +1,7 @@
 # Contribute to power profiling and model training
 
 <!--toc:start-->
+
 - [Contribute to power profiling and model training](#contribute-to-power-profiling-and-model-training)
   - [Requirements](#requirements)
   - [Pre-step](#pre-step)
@@ -10,8 +11,8 @@
     - [For managed cluster](#for-managed-cluster)
     - [Run benchmark and collect metrics](#run-benchmark-and-collect-metrics)
     - [With manual execution](#with-manual-execution)
-    - [[Manual Metric Collection and Training with Entrypoint](./cmd_instruction.md)](#manual-metric-collection-and-training-with-entrypointcmdinstructionmd)
   - [Clean up](#clean-up)
+
 <!--toc:end-->
 
 ## Requirements
@@ -68,7 +69,7 @@ There are two options to run the benchmark and collect the metrics, [CPE-operato
 
 - [CPE Operator Instruction](./cpe_script_instruction.md)
 
-With manual execution
+### With manual execution
 
 In addition to the above two automation approach, you can manually run your own benchmarks, then collect, train, and export the models by the entrypoint `cmd/main.py`
 

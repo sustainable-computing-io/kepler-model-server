@@ -9,8 +9,11 @@ Previous step: [Prepare cluster](./README.md#1-prepare-cluster)
   - [2. Deploy Tekton tasks and pipelines](#2-deploy-tekton-tasks-and-pipelines)
   - [3. Quick test](#3-quick-test)
   - [4. Run Tekton pipeline](#4-run-tekton-pipeline)
-  - [Advanced Step: customize the pipelinerun](#advanced-step-customize-the-pipelinerun) - [Single train run](#single-train-run) - [Original complete run](#original-complete-run)
-  <!--toc:end-->
+  - [Advanced Step: customize the pipelinerun](#advanced-step-customize-the-pipelinerun)
+    - [Single train run](#single-train-run)
+    - [Original complete run](#original-complete-run)
+
+<!--toc:end-->
 
 ## 1. Prepare resource
 
@@ -85,7 +88,7 @@ kubectl apply -f examples/single-train/abs-power.yaml
 ## 4. Run Tekton pipeline
 
 The minimum required pipelinerun for default power model of Kepler on VM is as below:
-![](../../fig/tekton-kepler-default.png)
+![tekton-kepler-default](../../fig/tekton-kepler-default.png)
 
 ```bash
 kubectl apply -f examples/single-train/default.yaml
@@ -95,13 +98,13 @@ kubectl apply -f examples/single-train/default.yaml
 
 ## Advanced Step: customize the pipelinerun
 
-The defined tasks can be reused for the various training runs based on two availble pipelines: single-train and complete-train as follows.
+The defined tasks can be reused for the various training runs based on two available pipelines: single-train and complete-train as follows.
 
 ### Single train run
 
 A single flow to apply a set of trainers to specific feature group and energy source.
 
-![](../../fig/tekton-single-train.png)
+![tekton-single-train](../../fig/tekton-single-train.png)
 
 Check [single-train](./pipelines/single-train.yaml) pipeline.
 
@@ -121,31 +124,33 @@ kubectl apply -f examples/single-train/dyn-power.yaml
 
 To customize feature metrics, set
 
-parameters|value
----|---
-THIRDPARTY_METRICS|customized metric list (use comma as delimiter)
-FEATURE_GROUP|`ThirdParty`
+| parameters         | value                                           |
+|--------------------|-------------------------------------------------|
+| THIRDPARTY_METRICS | customized metric list (use comma as delimiter) |
+| FEATURE_GROUP      | ThirdParty                                      |
 
 To customize stressng workload, set
-parameters|value
----|---
-STRESS_BREAK_INTERVAL|break interval between each stress load
-STRESS_TIMEOUT|stress duration (timeout to stop stress)
-STRESS_ARGS|array of arguments for CPU frequency and stressng workload<br>- `STRESS_LOAD;STRESS_EXTRA_PARAM_KEYS;STRESS_EXTRA_PARAM_VALS`<br>* use `none` if not applicable for `STRESS_EXTRA_PARAM_KEYS`, and `STRESS_EXTRA_PARAM_VALS`<br>* `CPU_FREQUENCY` and `STRESS_INSTANCE` variation range will be automatic computed by machine CPU info.
+
+| parameters            | value                                                                                                                                                                                                                                                                                                                        |
+|-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| STRESS_BREAK_INTERVAL | break interval between each stress load                                                                                                                                                                                                                                                                                      |
+| STRESS_TIMEOUT        | stress duration (timeout to stop stress)                                                                                                                                                                                                                                                                                     |
+| STRESS_ARGS           | array of arguments for CPU frequency and stressng workload - STRESS_LOAD;STRESS_EXTRA_PARAM_KEYS;STRESS_EXTRA_PARAM_VALS  use `none` if not applicable for `STRESS_EXTRA_PARAM_KEYS`, and `STRESS_EXTRA_PARAM_VALS`  `CPU_FREQUENCY` and `STRESS_INSTANCE` variation range will be automatic computed by machine CPU info. |
 
 To customize preprocessing and training components
-parameters|value
----|---
-PIPELINE_NAME|pipeline name (output prefix/folder)
-EXTRACTOR|extractor class (default or smooth)
-ISOLATOR|isolator class (none, min, profile, or trainer)<br> For trainer isolator, ABS_PIPELINE_NAME must be set to use existing trained pipeline to estimate background power.
-TRAINERS|list of trainer classes (use comma as delimiter)
+
+| parameters    | value                                                                                                                                                              |
+|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PIPELINE_NAME | pipeline name (output prefix/folder)                                                                                                                               |
+| EXTRACTOR     | extractor class (default or smooth)                                                                                                                                |
+| ISOLATOR      | isolator class (none, min, profile, or trainer) For trainer isolator, ABS_PIPELINE_NAME must be set to use existing trained pipeline to estimate background power. |
+| TRAINERS      | list of trainer classes (use comma as delimiter)                                                                                                                   |
 
 ### Original complete run
 
 Apply a set of trainers to all available feature groups and energy sources
 
-![](../../fig/tekton-complete-train.png)
+![tekton-complete-train](../../fig/tekton-complete-train.png)
 
 Check [complete-train](./pipelines/complete-train.yaml) pipeline.
 
@@ -156,9 +161,10 @@ kubectl apply -f examples/complete-pipelinerun.yaml
 ```
 
 To customize `ThirdParty` feature group, set
-parameters|value
----|---
-THIRDPARTY_METRICS|customized metric list (use comma as delimiter)
+
+| parameters         | value                                           |
+|--------------------|-------------------------------------------------|
+| THIRDPARTY_METRICS | customized metric list (use comma as delimiter) |
 
 Stressng load can be set similarly to [single train run](#single-train-run).
 

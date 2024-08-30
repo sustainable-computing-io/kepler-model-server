@@ -1,6 +1,7 @@
 # Manual Metric Collection and Training with Entrypoint
 
 ## 1. Collect metrics
+
 Without benchmark/pipeline automation, kepler metrics can be collected by `query` function by setting `BENCHMARK`, `PROM_URL`, `COLLECT_ID` and either one of the following time options.
 
 > It is recommend to set BENCHMARK name as a part of the pod name such as `stressng` to filter the validated results. BENCHMARK name will be also used by the TrainerIsolator to filter the target pods. If the BENCHMARK cannot be used to filter the target pods, the validated results will show result from all pods.
@@ -32,8 +33,10 @@ INTERVAL= # in second
 DATAPATH=/path/to/workspace python cmd/main.py query --benchmark $BENCHMARK --server $PROM_URL --output kepler_query --interval $INTERVAL --id $COLLECT_ID
 ```
 
-### Output:
+### Output
+
 There will three files created in the `/path/to/workspace`, those are:
+
 - `kepler_query.json`: raw prometheus query response
 - `<COLLECT_ID>.json`: machine system features (spec)
 - `<BENCHMARK>.json`: an item contains startTimeUTC and endTimeUTC
@@ -50,6 +53,7 @@ DATAPATH=/path/to/workspace MODEL_PATH=/path/to/workspace python cmd/main.py tra
 ```
 
 ## 3. Export models
+
 Export function is to archive the model that has an error less than threshold from the trained pipeline and make a report in the format that is ready to push to kepler-model-db. To use export function, need to set `EXPORTER_PATH` and `PUBLISHER`, and collect date option.
 
 ```bash
@@ -81,4 +85,3 @@ COLLECT_DATE= # collect date
 # require PIPELINE_NAME from train step
 DATAPATH=/path/to/workspace MODEL_PATH=/path/to/workspace python cmd/main.py export --pipeline-name $PIPELINE_NAME -o $EXPORT_PATH --publisher $PUBLISHER --zip=true --collect-date $COLLECT_DATE
 ```
-
