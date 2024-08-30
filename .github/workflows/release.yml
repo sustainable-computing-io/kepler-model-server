@@ -1,0 +1,108 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name, e.g. 0.7.11"
+        default: ""
+        required: true
+
+jobs:
+  build:
+    name: Upload Release Asset
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Quay.io
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ vars.IMAGE_REGISTRY }}
+          username: ${{ secrets.docker_username }}
+          password: ${{ secrets.docker_password }}
+
+      - name: Git set user
+        shell: bash
+        run: |
+          git config user.name "$USERNAME"
+          git config user.email "$USERENAME-bot@users.noreply.github.com"
+        env:
+          USERNAME: ${{ github.actor }}
+
+      - name: Update the VERSION
+        run: |
+          echo "$VERSION" > VERSION
+        env:
+          VERSION: ${{ github.event.inputs.tag }}
+
+      - name: Build model-server-base
+        run: |
+          make build-base
+        env:
+          IMAGE_REGISTRY: ${{ vars.IMAGE_REGISTRY }}
+
+      - name: Push model-server-base
+        run: |
+          make push-base
+        env:
+          IMAGE_REGISTRY: ${{ vars.IMAGE_REGISTRY }}
+
+      - name: Update base in model-server dockerfile
+        run: |
+          sed -i "s/model_server_base:.*/model_server_base:v$VERSION/g" ./dockerfiles/Dockerfile
+        env:
+          VERSION: ${{ github.event.inputs.tag }}
+
+      - name: Build model-server
+        run: |
+          make build
+        env:
+          IMAGE_REGISTRY: ${{ vars.IMAGE_REGISTRY }}
+
+      - name: Create tag
+        run: |
+          git add VERSION ./dockerfiles/Dockerfile
+          git commit -m "ci: update VERSION to $VERSION"
+          git tag -a "v$VERSION" -m "$VERSION"
+          git show --stat
+        env:
+          VERSION: ${{ github.event.inputs.tag }}
+
+      - name: Push Images
+        run: |
+          make push
+        env:
+          IMAGE_REGISTRY: ${{ vars.IMAGE_REGISTRY }}
+
+      - name: Push Release tag
+        run: |
+          git push --follow-tags
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ github.event.inputs.tag }}"
+          release_name: "v${{ github.event.inputs.tag }}-release"
+          draft: false
+          prerelease: false
+
+  create-release-branch:
+    name: Create Release Branch
+    permissions:
+      contents: write
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release branch
+        uses: peterjgrainger/action-create-branch@v2.2.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          branch: "v${{ github.event.inputs.tag }}-release"
+          sha: "${{ github.event.pull_request.head.sha }}"

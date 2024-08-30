@@ -1,8 +1,8 @@
-export IMAGE_REGISTRY ?= quay.io/sustainable_computing_io
+IMAGE_REGISTRY ?= quay.io/sustainable_computing_io
 IMAGE_NAME := kepler_model_server
-IMAGE_VERSION := latest
+IMAGE_VERSION ?= v$(shell cat VERSION)
 KEPLER_IMAGE_NAME := kepler
-KEPLER_IMAGE_VERSION := release-0.7.11
+KEPLER_IMAGE_VERSION ?= release-0.7.11
 
 IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_VERSION)
 KEPLER_IMAGE ?=  $(IMAGE_REGISTRY)/$(KEPLER_IMAGE_NAME):$(KEPLER_IMAGE_VERSION)
@@ -10,26 +10,36 @@ BASE_IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME)_base:$(IMAGE_VERSION)
 TEST_IMAGE := $(IMAGE)-test
 
 CTR_CMD ?= docker
-PYTHON = python3.10
+PYTHON  := python3.10
 
 DOCKERFILES_PATH := ./dockerfiles
 MODEL_PATH := ${PWD}/tests/models
 
+.PHONY: build
 build:
 	$(CTR_CMD) build -t $(IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile .
 
+.PHONY: build-base
 build-base:
 	$(CTR_CMD) build -t $(BASE_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.base .
 
+.PHONY: build-test-nobase
 build-test-nobase:
 	$(CTR_CMD) build -t $(TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test-nobase .
 
+.PHONY: build-test
 build-test:
 	$(CTR_CMD) build -t $(TEST_IMAGE) -f $(DOCKERFILES_PATH)/Dockerfile.test .
 
+.PHONY: push
 push:
 	$(CTR_CMD) push $(IMAGE)
 
+.PHONY: push-base
+push-base:
+	$(CTR_CMD) push $(BASE_IMAGE)
+
+.PHONY: push-test
 push-test:
 	$(CTR_CMD) push $(TEST_IMAGE)
 
