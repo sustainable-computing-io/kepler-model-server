@@ -11,57 +11,57 @@ metadata:
   name: isolate-from-metric
 spec:
   params:
-  - name: MODEL_SERVER_IMAGE
-    description: Specify model server image
-    default: quay.io/sustainable_computing_io/kepler_model_server:latest
-  - name: PIPELINE_NAME
-    description: Specify pipeline name (output prefix/folder)
-    default: default
-  - name: ENERGY_SOURCE
-    description: Specify target energy source (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
-    default: rapl-sysfs
-  - name: FEATURE_GROUP
-    description: Specify target feature group (check https://sustainable-computing.io/kepler_model_server/pipeline/#feature-group)
-    default: BPFOnly
-  - name: EXTRACTOR
-    description: Specify extractor class (default or smooth)
-    default: default
-  - name: ISOLATOR
-    description: Specify isolator class (none, min, profile, or trainer (if ABS_PIPELINE_NAME is set)
-    default: min
-  - name: THIRDPARTY_METRICS
-    description: Specify list of third party metric to export (required only for ThirdParty feature group)
-    default: ""
-  - name: TARGET_HINTS
-    description: Specify target process keywords to keep in DynPower model training
-    default: stress
-  - name: BG_HINTS
-    description: Specify background process keywords to remove from DynPower model training
-    default: ""
-  - name: ABS_PIPELINE_NAME
-    description: Specify pipeline name to be used for initializing trainer isolator
-    default: ""
+    - name: MODEL_SERVER_IMAGE
+      description: Specify model server image
+      default: quay.io/sustainable_computing_io/kepler_model_server:latest
+    - name: PIPELINE_NAME
+      description: Specify pipeline name (output prefix/folder)
+      default: default
+    - name: ENERGY_SOURCE
+      description: Specify target energy source (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
+      default: rapl-sysfs
+    - name: FEATURE_GROUP
+      description: Specify target feature group (check https://sustainable-computing.io/kepler_model_server/pipeline/#feature-group)
+      default: BPFOnly
+    - name: EXTRACTOR
+      description: Specify extractor class (default or smooth)
+      default: default
+    - name: ISOLATOR
+      description: Specify isolator class (none, min, profile, or trainer (if ABS_PIPELINE_NAME is set)
+      default: min
+    - name: THIRDPARTY_METRICS
+      description: Specify list of third party metric to export (required only for ThirdParty feature group)
+      default: ""
+    - name: TARGET_HINTS
+      description: Specify target process keywords to keep in DynPower model training
+      default: stress
+    - name: BG_HINTS
+      description: Specify background process keywords to remove from DynPower model training
+      default: ""
+    - name: ABS_PIPELINE_NAME
+      description: Specify pipeline name to be used for initializing trainer isolator
+      default: ""
   workspaces:
-  - name: mnt
-    optional: true
+    - name: mnt
+      optional: true
   steps:
     - name: isolate
       image: $(params.MODEL_SERVER_IMAGE)
-      command: ["python3.10"]
+      command: [python3.10]
       args:
-      - cmd/main.py
-      - isolate
-      - --data-path=$(workspaces.mnt.path)/data
-      - --input=kepler_query
-      - --output=$(params.PIPELINE_NAME)_$(params.ENERGY_SOURCE)_$(params.FEATURE_GROUP)_data
-      - --pipeline-name=$(params.PIPELINE_NAME)
-      - --extractor=$(params.EXTRACTOR)
-      - --isolator=$(params.ISOLATOR)
-      - --feature-group=$(params.FEATURE_GROUP)
-      - --energy-source=$(params.ENERGY_SOURCE)
-      - --output-type=DynPower
-      - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
-      - --abs-pipeline-name=$(params.ABS_PIPELINE_NAME)
-      - --profile=idle
-      - --target-hints="$(params.TARGET_HINTS)"
-      - --bg-hints="$(params.BG_HINTS)"
+        - cmd/main.py
+        - isolate
+        - --data-path=$(workspaces.mnt.path)/data
+        - --input=kepler_query
+        - --output=$(params.PIPELINE_NAME)_$(params.ENERGY_SOURCE)_$(params.FEATURE_GROUP)_data
+        - --pipeline-name=$(params.PIPELINE_NAME)
+        - --extractor=$(params.EXTRACTOR)
+        - --isolator=$(params.ISOLATOR)
+        - --feature-group=$(params.FEATURE_GROUP)
+        - --energy-source=$(params.ENERGY_SOURCE)
+        - --output-type=DynPower
+        - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
+        - --abs-pipeline-name=$(params.ABS_PIPELINE_NAME)
+        - --profile=idle
+        - --target-hints="$(params.TARGET_HINTS)"
+        - --bg-hints="$(params.BG_HINTS)"

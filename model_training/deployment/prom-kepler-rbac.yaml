@@ -13,7 +13,7 @@ rules:
       - list
       - watch
     apiGroups:
-      - ''
+      - "" # yamllint disable-line rule:quoted-strings
     resources:
       - services
       - endpoints

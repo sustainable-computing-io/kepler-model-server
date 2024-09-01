@@ -1,9 +1,9 @@
 name: Release
-on:
+on: # yamllint disable-line rule:truthy
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag name, e.g. 0.7.11"
+        description: Tag name, e.g. 0.7.11
         default: ""
         required: true
 
@@ -87,8 +87,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "v${{ github.event.inputs.tag }}"
-          release_name: "v${{ github.event.inputs.tag }}-release"
+          tag_name: v${{ github.event.inputs.tag }}
+          release_name: v${{ github.event.inputs.tag }}-release
           draft: false
           prerelease: false
 
@@ -104,5 +104,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          branch: "v${{ github.event.inputs.tag }}-release"
-          sha: "${{ github.event.pull_request.head.sha }}"
+          branch: v${{ github.event.inputs.tag }}-release
+          sha: ${{ github.event.pull_request.head.sha }}

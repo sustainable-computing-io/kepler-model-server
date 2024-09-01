@@ -11,33 +11,33 @@ metadata:
   name: run-stressng
 spec:
   params:
-  - name: arguments
-    description: Define array of argument for CPU frequency and stressng workload (STRESS_LOAD;STRESS_EXTRA_PARAM_KEYS;STRESS_EXTRA_PARAM_VALS)
-    type: array
-  - name: TIMEOUT
-    description: Timeout to run the load
-    default: 20
-  - name: INTERVAL
-    description: Interval between each run
-    default: 5
-  - name: CPU_FREQUENCY_ENABLED
-    description: Enable/Disable CPU Frequency Steps
-    default: true
+    - name: arguments
+      description: Define array of argument for CPU frequency and stressng workload (STRESS_LOAD;STRESS_EXTRA_PARAM_KEYS;STRESS_EXTRA_PARAM_VALS)
+      type: array
+    - name: TIMEOUT
+      description: Timeout to run the load
+      default: 20
+    - name: INTERVAL
+      description: Interval between each run
+      default: 5
+    - name: CPU_FREQUENCY_ENABLED
+      description: Enable/Disable CPU Frequency Steps
+      default: true
   results:
-  - name: stress-end-time
-    description: The time recorded after running the workload
+    - name: stress-end-time
+      description: The time recorded after running the workload
   volumes:
-  - name: system-cpu
-    hostPath:
-      path: /sys/devices/system/cpu/cpufreq
-      type: Directory
+    - name: system-cpu
+      hostPath:
+        path: /sys/devices/system/cpu/cpufreq
+        type: Directory
   steps:
     - name: run-stressng
       image: quay.io/sustainability/stress-ng:0.16.02
       volumeMounts:
-      - mountPath: /sys/devices/system/cpu/cpufreq
-        name: system-cpu
-        readOnly: false
+        - mountPath: /sys/devices/system/cpu/cpufreq
+          name: system-cpu
+          readOnly: false
       args: ["$(params.arguments[*])"]
       securityContext:
         privileged: true
@@ -102,14 +102,14 @@ spec:
                     else
                         if [[ "$STRESS_EXTRA_PARAM_KEYS" != "none" ]] ; then
                         echo /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --$STRESS_EXTRA_PARAM_KEYS "$STRESS_EXTRA_PARAM_VALS" --timeout $(params.TIMEOUT) --aggressive --metrics-brief
-                        /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --$STRESS_EXTRA_PARAM_KEYS "$STRESS_EXTRA_PARAM_VALS" --timeout $(params.TIMEOUT) --aggressive --metrics-brief &        
+                        /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --$STRESS_EXTRA_PARAM_KEYS "$STRESS_EXTRA_PARAM_VALS" --timeout $(params.TIMEOUT) --aggressive --metrics-brief &
                         else
                         echo /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --timeout $(params.TIMEOUT) --aggressive --metrics-brief
-                        /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --timeout $(params.TIMEOUT) --aggressive --metrics-brief &    
+                        /usr/bin/stress-ng --$STRESS_LOAD 1 --taskset ${CPU} --timeout $(params.TIMEOUT) --aggressive --metrics-brief &
                         fi
                     fi
                 done
-                
+
                 wait
 
                 # Revert the CPU freq back to max
@@ -136,7 +136,7 @@ spec:
                     fi
                     echo STRESS_INSTANCE_NUM=$i
                     run $freq $i $argument
-                done 
+                done
                 for i in $(seq 16 8 $OVERCOMMIT); do
                     echo STRESS_INSTANCE_NUM=$i
                     run $freq $i $argument
@@ -152,13 +152,13 @@ spec:
 
             TOTAL_CPUS=$(lscpu|grep "CPU(s):"|head -n 1|awk '{print $2}')
             OVERCOMMIT=$((TOTAL_CPUS + 8))
-            
+
             if [ -f "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq" ] && [ "$CPU_FREQUENCY_ENABLED" = true ]; then
               FREQ_COUNT=$(((MAX_FREQ-START_FREQ)/CPU_FREQUENCY_STEP+1))
             else
               FREQ_COUNT=1
             fi
-            
+
             INSTANCE_COUNT=$(((OVERCOMMIT-16)/8+1+4))
             TIMEOUT=$(params.TIMEOUT)
             INTERVAL=$(params.INTERVAL)

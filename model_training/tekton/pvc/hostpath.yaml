@@ -11,7 +11,7 @@ spec:
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "/mnt"
+    path: /mnt
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

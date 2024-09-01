@@ -1,58 +1,58 @@
 name: Train Power Model on GitHub Runner
 
-on:
+on: # yamllint disable-line rule:truthy
   workflow_call:
     secrets:
       self_hosted_github_token:
-        description: 'The GitHub token to use'
+        description: The GitHub token to use
         required: true
       aws_access_key_id:
-        description: 'The AWS access key id to use'
+        description: The AWS access key id to use
         required: true
       aws_secret_access_key:
-        description: 'The AWS secret access key to use'
+        description: The AWS secret access key to use
         required: true
       aws_region:
-        description: 'The AWS region to use'
+        description: The AWS region to use
         required: true
     inputs:
-      pipeline_name: 
-        description: 'Pipeline name'
+      pipeline_name:
+        description: Pipeline name
         required: true
         type: string
       github_repo:
-        description: 'The GitHub repo to use'
+        description: The GitHub repo to use
         required: true
         type: string
       ami_id:
-        description: 'The AMI ID to use for the EC2 instance'
+        description: The AMI ID to use for the EC2 instance
         required: true
         type: string
       instance_type:
-        description: 'The instance type to use for the EC2 instance'
+        description: The instance type to use for the EC2 instance
         required: true
         type: string
       model_server_image:
-        description: 'Kepler Model Server image'
+        description: Kepler Model Server image
         required: true
         type: string
       output_type:
-        description: 'Model output type (AbsPower, DynPower)'
+        description: Model output type (AbsPower, DynPower)
         required: false
         type: string
         default: AbsPower
       energy_source:
-        description: 'Target energy source'
+        description: Target energy source
         required: false
         type: string
         default: rapl-sysfs
       feature_group:
-        description: 'Target feature group'
+        description: Target feature group
         required: false
         type: string
         default: BPFOnly
       trainers:
-        description: 'Model trainer list (delimit: ,)'
+        description: Model trainer list (delimited by ,)
         required: false
         type: string
         default: XgboostFitTrainer
@@ -83,12 +83,12 @@ jobs:
               sudo apt-get update
               sudo apt-get install -y python3-pip bc
               sudo pip3 install awscli
-          
+
       - name: Check Data
         id: check-data
         run: |
           export HOST_MNT_PATH=$(pwd)/mnt
-          
+
           if [ "$AWS_SECRET_ACCESS_KEY" == "" ]; then
               echo "available=false" >> "$GITHUB_OUTPUT"
           else
@@ -98,7 +98,7 @@ jobs:
                   echo "available=false" >> "$GITHUB_OUTPUT"
               fi
           fi
-          
+
   retrain-model:
     needs: check-data
     if: ${{ needs.check-data.outputs.available == 'true' }}

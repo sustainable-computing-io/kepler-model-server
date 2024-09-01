@@ -113,7 +113,6 @@ body:
           </details>
     validations:
       required: false
-      
   - type: textarea
     id: kubeVersion
     attributes:
@@ -151,17 +150,14 @@ body:
         $ KEPLER_NAMESPACE=kepler
 
         # provide kepler configmap
-        $ kubectl get configmap kepler-cfm -n ${KEPLER_NAMESPACE} 
+        $ kubectl get configmap kepler-cfm -n ${KEPLER_NAMESPACE}
         # paste output here
-
-        # provide kepler model server configmap if Kepler Model Server is deployed 
-        $ kubectl get configmap kepler-model-server-cfm -n ${KEPLER_NAMESPACE} 
+        # provide kepler model server configmap if Kepler Model Server is deployed
+        $ kubectl get configmap kepler-model-server-cfm -n ${KEPLER_NAMESPACE}
         # paste output here
-
         # provide kepler deployment description
-        $ kubectl describe deployment kepler-exporter -n ${KEPLER_NAMESPACE} 
+        $ kubectl describe deployment kepler-exporter -n ${KEPLER_NAMESPACE}
         ```
-
         For standalone:
         # put your Kepler command argument here
 

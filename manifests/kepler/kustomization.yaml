@@ -1,11 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- github.com/sustainable-computing-io/kepler/manifests/k8s/config/base
+  - github.com/sustainable-computing-io/kepler/manifests/k8s/config/base
 
 patchesStrategicMerge:
-- ./patch/patch-ci.yaml
+  - ./patch/patch-ci.yaml
 images:
-- name: kepler
-  newName: quay.io/sustainable_computing_io/kepler
-  newTag: release-0.7.11
+  - name: kepler
+    newName: quay.io/sustainable_computing_io/kepler
+    newTag: release-0.7.11

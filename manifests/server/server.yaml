@@ -25,26 +25,26 @@ spec:
         app.kubernetes.io/name: kepler-model-server
     spec:
       volumes:
-      - name: cfm
-        configMap:
-          name: kepler-model-server-cfm
-      - emptyDir: {}
-        name: mnt
+        - name: cfm
+          configMap:
+            name: kepler-model-server-cfm
+        - emptyDir: {}
+          name: mnt
       containers:
-      - name: server-api
-        image: kepler_model_server
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8100
-          name: http
-        volumeMounts:
-          - name: cfm
-            mountPath: /etc/kepler/kepler.config
-            readOnly: true
-          - name: mnt
-            mountPath: /mnt
-            readOnly: false
-        args: [ "model-server" ]
+        - name: server-api
+          image: kepler_model_server
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8100
+              name: http
+          volumeMounts:
+            - name: cfm
+              mountPath: /etc/kepler/kepler.config
+              readOnly: true
+            - name: mnt
+              mountPath: /mnt
+              readOnly: false
+          args: [model-server]
 ---
 kind: Service
 apiVersion: v1
@@ -60,6 +60,6 @@ spec:
     app.kubernetes.io/component: model-server
     app.kubernetes.io/name: kepler-model-server
   ports:
-  - name: http
-    port: 8100
-    targetPort: http
+    - name: http
+      port: 8100
+      targetPort: http
