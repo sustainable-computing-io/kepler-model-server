@@ -3,12 +3,12 @@ namespace: kepler
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- name: kepler_model_server
-  newName: localhost:5001/kepler_model_server
-  newTag: devel
+  - name: kepler_model_server
+    newName: localhost:5001/kepler_model_server
+    newTag: devel
 
 patchesStrategicMerge:
-- ./patch/patch-estimator-sidecar.yaml
+  - ./patch/patch-estimator-sidecar.yaml
 
 resources:
-- ../kepler
+  - ../kepler

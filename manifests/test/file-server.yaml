@@ -7,28 +7,28 @@ metadata:
     app.kubernetes.io/component: model-db
 spec:
   containers:
-  - name: file-server
-    image: localhost:5001/kepler_model_server:devel-test
-    imagePullPolicy: IfNotPresent
-    args: [python3, tests/http_server.py]
-    ports:
-    - containerPort: 8110
-      name: http
-    volumeMounts:
-    - name: mnt
-      mountPath: /mnt
+    - name: file-server
+      image: localhost:5001/kepler_model_server:devel-test
+      imagePullPolicy: IfNotPresent
+      args: [python3, tests/http_server.py]
+      ports:
+        - containerPort: 8110
+          name: http
+      volumeMounts:
+        - name: mnt
+          mountPath: /mnt
   initContainers:
-  - name: trainer
-    image: localhost:5001/kepler_model_server:devel-test
-    imagePullPolicy: IfNotPresent
-    args: [python3, tests/minimal_trainer.py]
-    volumeMounts:
-    - name: mnt
-      mountPath: /mnt
-    # Add other init container configurations here
+    - name: trainer
+      image: localhost:5001/kepler_model_server:devel-test
+      imagePullPolicy: IfNotPresent
+      args: [python3, tests/minimal_trainer.py]
+      volumeMounts:
+        - name: mnt
+          mountPath: /mnt
+  # Add other init container configurations here
   volumes:
-  - name: mnt
-    emptyDir: {}
+    - name: mnt
+      emptyDir: {}
 ---
 kind: Service
 apiVersion: v1
@@ -42,6 +42,6 @@ spec:
   selector:
     app.kubernetes.io/component: model-db
   ports:
-  - name: http
-    port: 8110
-    targetPort: http
+    - name: http
+      port: 8110
+      targetPort: http

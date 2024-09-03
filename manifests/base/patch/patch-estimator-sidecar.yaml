@@ -20,30 +20,30 @@ spec:
     spec:
       containers:
         # kepler: wait for estimator socket
-      - command:
-        - /bin/sh
-        - -c
-        args:
-        - until [ -e /tmp/estimator.sock ]; do sleep 1; done && /usr/bin/kepler -v=$(KEPLER_LOG_LEVEL)
-        volumeMounts:
-        - mountPath: /tmp
-          name: tmp
-        name: kepler-exporter
-      # estimator container
-      - image: kepler_model_server
-        imagePullPolicy: IfNotPresent
-        args: ["estimator" ]
-        name: estimator
-        volumeMounts:
-        - name: cfm
-          mountPath: /etc/kepler/kepler.config
-          readOnly: true
-        - mountPath: /tmp
-          name: tmp
-        - mountPath: /mnt
-          name: mnt
+        - command:
+            - /bin/sh
+            - -c
+          args:
+            - until [ -e /tmp/estimator.sock ]; do sleep 1; done && /usr/bin/kepler -v=$(KEPLER_LOG_LEVEL)
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+          name: kepler-exporter
+        # estimator container
+        - image: kepler_model_server
+          imagePullPolicy: IfNotPresent
+          args: [estimator]
+          name: estimator
+          volumeMounts:
+            - name: cfm
+              mountPath: /etc/kepler/kepler.config
+              readOnly: true
+            - mountPath: /tmp
+              name: tmp
+            - mountPath: /mnt
+              name: mnt
       volumes:
-      - emptyDir: {}
-        name: tmp
-      - emptyDir: {}
-        name: mnt
+        - emptyDir: {}
+          name: tmp
+        - emptyDir: {}
+          name: mnt

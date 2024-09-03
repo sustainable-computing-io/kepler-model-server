@@ -1,7 +1,7 @@
 ##############################################
 ##
 ##  single-train-pipeline:
-##    
+##
 ##    - presteps (collect metrics at idle state and record start time)
 ##    - run stressng workloads (tasks/stressng-task.yaml)
 ##    - collect metrics (record end time and collect metrics when running stressng)
@@ -16,70 +16,70 @@ metadata:
   name: single-train-pipeline
 spec:
   workspaces:
-  - name: mnt
-    description: Mount path
+    - name: mnt
+      description: Mount path
   params:
-  - name: MODEL_SERVER_IMAGE
-    description: Specify model server image
-    default: quay.io/sustainable_computing_io/kepler_model_server:latest
-  - name: PIPELINE_NAME
-    description: Specify pipeline name (output prefix/folder)
-  - name: OUTPUT_TYPE
-    description: Specify target output type (check https://sustainable-computing.io/kepler_model_server/pipeline/#power-isolation)
-  - name: ENERGY_SOURCE
-    description: Specify target energy source (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
-    default: rapl-sysfs
-  - name: FEATURE_GROUP
-    description: Specify target feature group (check https://sustainable-computing.io/kepler_model_server/pipeline/#feature-group)
-    default: BPFOnly
-  - name: IDLE_COLLECT_INTERVAL
-    description: Specify interval time to collect profile (idle) data before start the workload
-    default: 100
-  - name: STRESS_BREAK_INTERVAL
-    description: Specify break interval between each stress load
-    default: 5
-  - name: STRESS_TIMEOUT
-    description: Specify stress duration (timeout to stop stress)
-    default: 20
-  - name: STRESS_ARGS
-    description: List arguments for CPU frequency and stressng workload (CPU_FREQUENCY;STRESS_LOAD;STRESS_INSTANCE_NUM;STRESS_EXTRA_PARAM_KEYS;STRESS_EXTRA_PARAM_VALS)
-    type: array
-    default:
-    - "cpu;none;none"
-    - "branch;none;none"
-    - "regs;none;none"
-    - "l1cache;none;none"
-    - "cache;none;none"
-    # - "stream;none;none"
-    # - "vm-rw;vm-rw-bytes;4G"
-    # - "sctp;none;none"
-  - name: EXTRACTOR
-    description: Specify extractor class (default or smooth)
-    default: default
-  - name: ISOLATOR
-    description: Specify isolator class (none, min, profile, or trainer (if ABS_PIPELINE_NAME is set)
-    default: min
-  - name: TRAINERS
-    description: Specify trainer names (use comma(,) as delimiter)
-    default: XgboostFitTrainer
-  - name: THIRDPARTY_METRICS
-    description: Specify list of third party metric to export (required only for ThirdParty feature group)
-    default: ""
-  - name: ABS_PIPELINE_NAME
-    description: Specify pipeline name to be used for initializing trainer isolator
-    default: ""
-  - name: COS_PROVIDER
-    description: Specify COS provider (supported choices are ibmcloud, aws)
-    default: ""
-  - name: COS_SECRET_NAME
-    description: Specify COS secret name
-    default: ""
-  - name: MACHINE_ID
-    description: Specify machine id to group model result in bucket
-    default: ""
-  - name: CPU_FREQUENCY_ENABLED
-    description: Enable/Disable CPU Frequency Steps
-    default: true
+    - name: MODEL_SERVER_IMAGE
+      description: Specify model server image
+      default: quay.io/sustainable_computing_io/kepler_model_server:latest
+    - name: PIPELINE_NAME
+      description: Specify pipeline name (output prefix/folder)
+    - name: OUTPUT_TYPE
+      description: Specify target output type (check https://sustainable-computing.io/kepler_model_server/pipeline/#power-isolation)
+    - name: ENERGY_SOURCE
+      description: Specify target energy source (check https://sustainable-computing.io/kepler_model_server/pipeline/#energy-source)
+      default: rapl-sysfs
+    - name: FEATURE_GROUP
+      description: Specify target feature group (check https://sustainable-computing.io/kepler_model_server/pipeline/#feature-group)
+      default: BPFOnly
+    - name: IDLE_COLLECT_INTERVAL
+      description: Specify interval time to collect profile (idle) data before start the workload
+      default: 100
+    - name: STRESS_BREAK_INTERVAL
+      description: Specify break interval between each stress load
+      default: 5
+    - name: STRESS_TIMEOUT
+      description: Specify stress duration (timeout to stop stress)
+      default: 20
+    - name: STRESS_ARGS
+      description: List arguments for CPU frequency and stressng workload (CPU_FREQUENCY;STRESS_LOAD;STRESS_INSTANCE_NUM;STRESS_EXTRA_PARAM_KEYS;STRESS_EXTRA_PARAM_VALS)
+      type: array
+      default:
+        - cpu;none;none
+        - branch;none;none
+        - regs;none;none
+        - l1cache;none;none
+        - cache;none;none
+        # - "stream;none;none"
+        # - "vm-rw;vm-rw-bytes;4G"
+        # - "sctp;none;none"
+    - name: EXTRACTOR
+      description: Specify extractor class (default or smooth)
+      default: default
+    - name: ISOLATOR
+      description: Specify isolator class (none, min, profile, or trainer (if ABS_PIPELINE_NAME is set)
+      default: min
+    - name: TRAINERS
+      description: Specify trainer names (use comma(,) as delimiter)
+      default: XgboostFitTrainer
+    - name: THIRDPARTY_METRICS
+      description: Specify list of third party metric to export (required only for ThirdParty feature group)
+      default: ""
+    - name: ABS_PIPELINE_NAME
+      description: Specify pipeline name to be used for initializing trainer isolator
+      default: ""
+    - name: COS_PROVIDER
+      description: Specify COS provider (supported choices are ibmcloud, aws)
+      default: ""
+    - name: COS_SECRET_NAME
+      description: Specify COS secret name
+      default: ""
+    - name: MACHINE_ID
+      description: Specify machine id to group model result in bucket
+      default: ""
+    - name: CPU_FREQUENCY_ENABLED
+      description: Enable/Disable CPU Frequency Steps
+      default: true
   tasks:
     - name: presteps
       params:
@@ -112,18 +112,18 @@ spec:
           - name: collect-idle
             image: $(params.MODEL_SERVER_IMAGE)
             args:
-            - cmd/main.py
-            - query
-            - --data-path=$(workspaces.mnt.path)/data
-            - --interval=$(params.IDLE_COLLECT_INTERVAL)
-            - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
-            - --benchmark=idle
-            - -o=idle
-            - --id=$(params.MACHINE_ID)
-            command: ["python3.10"]
+              - cmd/main.py
+              - query
+              - --data-path=$(workspaces.mnt.path)/data
+              - --interval=$(params.IDLE_COLLECT_INTERVAL)
+              - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
+              - --benchmark=idle
+              - -o=idle
+              - --id=$(params.MACHINE_ID)
+            command: [python3.10]
             env:
-            - name: PROM_SERVER
-              value: http://prometheus-k8s.monitoring.svc:9090
+              - name: PROM_SERVER
+                value: http://prometheus-k8s.monitoring.svc:9090
           - name: record-start-time
             image: bash:5.2
             script: |
@@ -133,7 +133,7 @@ spec:
       runAfter: [presteps]
       taskRef:
         name: run-stressng
-      timeout: "5h"
+      timeout: 5h
       params:
         - name: INTERVAL
           value: $(params.STRESS_BREAK_INTERVAL)
@@ -166,161 +166,161 @@ spec:
           - name: collect-stressng
             image: $(params.MODEL_SERVER_IMAGE)
             args:
-            - cmd/main.py
-            - query
-            - --data-path=$(workspaces.mnt.path)/data
-            - --start-time=$(tasks.presteps.results.stress-start-time)
-            - --end-time=$(tasks.run-stressng.results.stress-end-time)
-            - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
-            - --benchmark=stressng
-            - -o=kepler_query
-            - --id=$(params.MACHINE_ID)
-            command: ["python3.10"]
+              - cmd/main.py
+              - query
+              - --data-path=$(workspaces.mnt.path)/data
+              - --start-time=$(tasks.presteps.results.stress-start-time)
+              - --end-time=$(tasks.run-stressng.results.stress-end-time)
+              - --thirdparty-metrics="$(params.THIRDPARTY_METRICS)"
+              - --benchmark=stressng
+              - -o=kepler_query
+              - --id=$(params.MACHINE_ID)
+            command: [python3.10]
             env:
-            - name: PROM_SERVER
-              value: http://prometheus-k8s.monitoring.svc:9090
+              - name: PROM_SERVER
+                value: http://prometheus-k8s.monitoring.svc:9090
     - name: extract
       when:
-        - input: "$(params.OUTPUT_TYPE)"
+        - input: $(params.OUTPUT_TYPE)
           operator: in
-          values: ["AbsPower"]
+          values: [AbsPower]
       runAfter: [collect-metric]
       workspaces:
-      - name: mnt
+        - name: mnt
       taskRef:
         name: extract-from-metric
       params:
-      - name: MODEL_SERVER_IMAGE
-        value: $(params.MODEL_SERVER_IMAGE)
-      - name: PIPELINE_NAME
-        value: $(params.PIPELINE_NAME)
-      - name: OUTPUT_TYPE
-        value: $(params.OUTPUT_TYPE)
-      - name: ENERGY_SOURCE
-        value: $(params.ENERGY_SOURCE)
-      - name: FEATURE_GROUP
-        value: $(params.FEATURE_GROUP)
-      - name: EXTRACTOR
-        value: $(params.EXTRACTOR)
-      - name: THIRDPARTY_METRICS
-        value: $(params.THIRDPARTY_METRICS)
+        - name: MODEL_SERVER_IMAGE
+          value: $(params.MODEL_SERVER_IMAGE)
+        - name: PIPELINE_NAME
+          value: $(params.PIPELINE_NAME)
+        - name: OUTPUT_TYPE
+          value: $(params.OUTPUT_TYPE)
+        - name: ENERGY_SOURCE
+          value: $(params.ENERGY_SOURCE)
+        - name: FEATURE_GROUP
+          value: $(params.FEATURE_GROUP)
+        - name: EXTRACTOR
+          value: $(params.EXTRACTOR)
+        - name: THIRDPARTY_METRICS
+          value: $(params.THIRDPARTY_METRICS)
     - name: isolate
       when:
-        - input: "$(params.OUTPUT_TYPE)"
+        - input: $(params.OUTPUT_TYPE)
           operator: in
-          values: ["DynPower"]
+          values: [DynPower]
       runAfter: [collect-metric]
       workspaces:
-      - name: mnt
+        - name: mnt
       taskRef:
         name: isolate-from-metric
       params:
-      - name: MODEL_SERVER_IMAGE
-        value: $(params.MODEL_SERVER_IMAGE)
-      - name: PIPELINE_NAME
-        value: $(params.PIPELINE_NAME)
-      - name: ENERGY_SOURCE
-        value: $(params.ENERGY_SOURCE)
-      - name: FEATURE_GROUP
-        value: $(params.FEATURE_GROUP)
-      - name: EXTRACTOR
-        value: $(params.EXTRACTOR)
-      - name: ISOLATOR
-        value: $(params.ISOLATOR)
-      - name: THIRDPARTY_METRICS
-        value: $(params.THIRDPARTY_METRICS)
-      - name: ABS_PIPELINE_NAME
-        value: $(params.ABS_PIPELINE_NAME)
+        - name: MODEL_SERVER_IMAGE
+          value: $(params.MODEL_SERVER_IMAGE)
+        - name: PIPELINE_NAME
+          value: $(params.PIPELINE_NAME)
+        - name: ENERGY_SOURCE
+          value: $(params.ENERGY_SOURCE)
+        - name: FEATURE_GROUP
+          value: $(params.FEATURE_GROUP)
+        - name: EXTRACTOR
+          value: $(params.EXTRACTOR)
+        - name: ISOLATOR
+          value: $(params.ISOLATOR)
+        - name: THIRDPARTY_METRICS
+          value: $(params.THIRDPARTY_METRICS)
+        - name: ABS_PIPELINE_NAME
+          value: $(params.ABS_PIPELINE_NAME)
     - name: train-absolute-power-model
       when:
-        - input: "$(params.OUTPUT_TYPE)"
+        - input: $(params.OUTPUT_TYPE)
           operator: in
-          values: ["AbsPower"]
+          values: [AbsPower]
       runAfter: [extract]
       workspaces:
-      - name: mnt
+        - name: mnt
       taskRef:
         name: train-model
       params:
-      - name: MODEL_SERVER_IMAGE
-        value: $(params.MODEL_SERVER_IMAGE)
-      - name: INPUT_DATA
-        value: extracted_$(params.PIPELINE_NAME)_$(params.ENERGY_SOURCE)_$(params.FEATURE_GROUP)_data
-      - name: PIPELINE_NAME
-        value: $(params.PIPELINE_NAME)
-      - name: OUTPUT_TYPE
-        value: $(params.OUTPUT_TYPE)
-      - name: ENERGY_SOURCE
-        value: $(params.ENERGY_SOURCE)
-      - name: FEATURE_GROUP
-        value: $(params.FEATURE_GROUP)
-      - name: TRAINERS
-        value: $(params.TRAINERS)
-      - name: THIRDPARTY_METRICS
-        value: $(params.THIRDPARTY_METRICS)
-      - name: MACHINE_ID
-        value: $(params.MACHINE_ID)
+        - name: MODEL_SERVER_IMAGE
+          value: $(params.MODEL_SERVER_IMAGE)
+        - name: INPUT_DATA
+          value: extracted_$(params.PIPELINE_NAME)_$(params.ENERGY_SOURCE)_$(params.FEATURE_GROUP)_data
+        - name: PIPELINE_NAME
+          value: $(params.PIPELINE_NAME)
+        - name: OUTPUT_TYPE
+          value: $(params.OUTPUT_TYPE)
+        - name: ENERGY_SOURCE
+          value: $(params.ENERGY_SOURCE)
+        - name: FEATURE_GROUP
+          value: $(params.FEATURE_GROUP)
+        - name: TRAINERS
+          value: $(params.TRAINERS)
+        - name: THIRDPARTY_METRICS
+          value: $(params.THIRDPARTY_METRICS)
+        - name: MACHINE_ID
+          value: $(params.MACHINE_ID)
     - name: train-dynamic-power-model
       when:
-        - input: "$(params.OUTPUT_TYPE)"
+        - input: $(params.OUTPUT_TYPE)
           operator: in
-          values: ["DynPower"]
+          values: [DynPower]
       runAfter: [isolate]
       workspaces:
-      - name: mnt
+        - name: mnt
       taskRef:
         name: train-model
       params:
-      - name: MODEL_SERVER_IMAGE
-        value: $(params.MODEL_SERVER_IMAGE)
-      - name: INPUT_DATA
-        value: isolated_$(params.PIPELINE_NAME)_$(params.ENERGY_SOURCE)_$(params.FEATURE_GROUP)_data
-      - name: PIPELINE_NAME
-        value: $(params.PIPELINE_NAME)
-      - name: OUTPUT_TYPE
-        value: $(params.OUTPUT_TYPE)
-      - name: ENERGY_SOURCE
-        value: $(params.ENERGY_SOURCE)
-      - name: FEATURE_GROUP
-        value: $(params.FEATURE_GROUP)
-      - name: TRAINERS
-        value: $(params.TRAINERS)
-      - name: THIRDPARTY_METRICS
-        value: $(params.THIRDPARTY_METRICS)
-      - name: MACHINE_ID
-        value: $(params.MACHINE_ID)
+        - name: MODEL_SERVER_IMAGE
+          value: $(params.MODEL_SERVER_IMAGE)
+        - name: INPUT_DATA
+          value: isolated_$(params.PIPELINE_NAME)_$(params.ENERGY_SOURCE)_$(params.FEATURE_GROUP)_data
+        - name: PIPELINE_NAME
+          value: $(params.PIPELINE_NAME)
+        - name: OUTPUT_TYPE
+          value: $(params.OUTPUT_TYPE)
+        - name: ENERGY_SOURCE
+          value: $(params.ENERGY_SOURCE)
+        - name: FEATURE_GROUP
+          value: $(params.FEATURE_GROUP)
+        - name: TRAINERS
+          value: $(params.TRAINERS)
+        - name: THIRDPARTY_METRICS
+          value: $(params.THIRDPARTY_METRICS)
+        - name: MACHINE_ID
+          value: $(params.MACHINE_ID)
   finally:
     - name: ibmcloud-s3-push
       when:
-      - input: "$(params.COS_PROVIDER)"
-        operator: in
-        values: ["ibmcloud"]
-      - input: "$(params.COS_SECRET_NAME)"
-        operator: notin
-        values: [""]
+        - input: $(params.COS_PROVIDER)
+          operator: in
+          values: [ibmcloud]
+        - input: $(params.COS_SECRET_NAME)
+          operator: notin
+          values: [""]
       workspaces:
-      - name: mnt
+        - name: mnt
       params:
-      - name: COS_SECRET_NAME
-        value: $(params.COS_SECRET_NAME)
-      - name: MACHINE_ID
-        value: $(params.MACHINE_ID)
+        - name: COS_SECRET_NAME
+          value: $(params.COS_SECRET_NAME)
+        - name: MACHINE_ID
+          value: $(params.MACHINE_ID)
       taskRef:
         name: ibmcloud-s3-push
     - name: aws-s3-push
       when:
-      - input: "$(params.COS_PROVIDER)"
-        operator: in
-        values: ["aws"]
-      - input: "$(params.COS_SECRET_NAME)"
-        operator: notin
-        values: [""]
+        - input: $(params.COS_PROVIDER)
+          operator: in
+          values: [aws]
+        - input: $(params.COS_SECRET_NAME)
+          operator: notin
+          values: [""]
       workspaces:
-      - name: mnt
+        - name: mnt
       params:
-      - name: COS_SECRET_NAME
-        value: $(params.COS_SECRET_NAME)
-      - name: MACHINE_ID
-        value: $(params.MACHINE_ID)
+        - name: COS_SECRET_NAME
+          value: $(params.COS_SECRET_NAME)
+        - name: MACHINE_ID
+          value: $(params.MACHINE_ID)
       taskRef:
         name: aws-s3-push

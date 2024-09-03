@@ -9,49 +9,49 @@ metadata:
   name: aws-s3-load
 spec:
   params:
-  - name: COS_SECRET_NAME
-    description: Specify cos secret name
-    default: ""
-  - name: MACHINE_ID
-    description: Specify machine id to group model result in bucket
-    default: ""
-  - name: PIPELINE_NAME
-    description: Specify pipeline name (output prefix/folder)
-    default: default
+    - name: COS_SECRET_NAME
+      description: Specify cos secret name
+      default: ""
+    - name: MACHINE_ID
+      description: Specify machine id to group model result in bucket
+      default: ""
+    - name: PIPELINE_NAME
+      description: Specify pipeline name (output prefix/folder)
+      default: default
   workspaces:
-  - name: mnt
-    optional: true
+    - name: mnt
+      optional: true
   steps:
     - name: load
       image: quay.io/sustainable_computing_io/kepler_model_server/s3:latest
       env:
-      - name: ACCESS_KEY_ID
-        valueFrom:
-          secretKeyRef:
-            name: $(params.COS_SECRET_NAME)
-            key: accessKeyID
-      - name: ACCESS_SECRET
-        valueFrom:
-          secretKeyRef:
-            name: $(params.COS_SECRET_NAME)
-            key: accessSecret
-      - name: REGION_NAME
-        valueFrom:
-          secretKeyRef:
-            name: $(params.COS_SECRET_NAME)
-            key: regionName
-      - name: BUCKET_NAME
-        valueFrom:
-          secretKeyRef:
-            name: $(params.COS_SECRET_NAME)
-            key: bucketName
-      command: ["s3-loader"]
+        - name: ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: $(params.COS_SECRET_NAME)
+              key: accessKeyID
+        - name: ACCESS_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: $(params.COS_SECRET_NAME)
+              key: accessSecret
+        - name: REGION_NAME
+          valueFrom:
+            secretKeyRef:
+              name: $(params.COS_SECRET_NAME)
+              key: regionName
+        - name: BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              name: $(params.COS_SECRET_NAME)
+              key: bucketName
+      command: [s3-loader]
       args:
-      - aws
-      - --aws-access-key-id=$(ACCESS_KEY_ID)
-      - --aws-secret-access-key=$(ACCESS_SECRET)
-      - --region-name=$(REGION_NAME)
-      - --bucket-name=$(BUCKET_NAME)
-      - --mnt-path=$(workspaces.mnt.path)
-      - --pipeline-name=$(params.PIPELINE_NAME)
-      - --machine-id=$(params.MACHINE_ID)
+        - aws
+        - --aws-access-key-id=$(ACCESS_KEY_ID)
+        - --aws-secret-access-key=$(ACCESS_SECRET)
+        - --region-name=$(REGION_NAME)
+        - --bucket-name=$(BUCKET_NAME)
+        - --mnt-path=$(workspaces.mnt.path)
+        - --pipeline-name=$(params.PIPELINE_NAME)
+        - --machine-id=$(params.MACHINE_ID)

@@ -18,6 +18,7 @@ MODEL_PATH := ${PWD}/tests/models
 .PHONY: lint
 lint:
 	@hatch run pymarkdownlnt scan -r .
+	@hatch run yamllint -c ./.yamllint.yaml --strict .
 
 .PHONY: build
 build:

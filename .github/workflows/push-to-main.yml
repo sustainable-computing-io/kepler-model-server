@@ -1,10 +1,10 @@
-on:
+on: # yamllint disable-line rule:truthy
   push:
     branches:
       - main
 
 env:
-  TAG: "latest"
+  TAG: latest
 
 jobs:
   check-branch:
@@ -14,22 +14,22 @@ jobs:
       tag: ${{ steps.image-tag.outputs.tag }}
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Find Image Tag
-      id: image-tag
-      env:
-        BRANCH: ${{ github.ref_name }}
-        COMMIT: ${{ github.sha }}
-      run: |
-          if [ "${{ github.event_name }}" == 'pull_request' ]; then
-            echo "tag=pr-${{ github.event.number }}" >> "$GITHUB_OUTPUT"
-          else
-            if [ "$BRANCH" == "main" ]; then
-                echo "tag=${{ env.TAG }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+      - name: Find Image Tag
+        id: image-tag
+        env:
+          BRANCH: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+        run: |
+            if [ "${{ github.event_name }}" == 'pull_request' ]; then
+              echo "tag=pr-${{ github.event.number }}" >> "$GITHUB_OUTPUT"
             else
-                echo "tag=$COMMIT" >> "$GITHUB_OUTPUT"
+              if [ "$BRANCH" == "main" ]; then
+                  echo "tag=${{ env.TAG }}" >> "$GITHUB_OUTPUT"
+              else
+                  echo "tag=$COMMIT" >> "$GITHUB_OUTPUT"
+              fi
             fi
-          fi
 
   check-change:
     runs-on: ubuntu-latest
@@ -40,22 +40,22 @@ jobs:
       s3: ${{ steps.filter.outputs.s3 }}
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: dorny/paths-filter@v3
-      id: filter
-      with:
-        filters: |
-          base:
-            - 'pyproject.toml'
-            - 'dockerfiles/Dockerfile.base'
-            - '.github/workflows/build-push.yml'
-          modeling:
-            - 'src/**'
-            - 'model_training/**'
-            - 'hack/**'
-            - '.github/workflows/train-model.yml'
-          s3:
-            - 'model_training/s3/**'
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            base:
+              - 'pyproject.toml'
+              - 'dockerfiles/Dockerfile.base'
+              - '.github/workflows/build-push.yml'
+            modeling:
+              - 'src/**'
+              - 'model_training/**'
+              - 'hack/**'
+              - '.github/workflows/train-model.yml'
+            s3:
+              - 'model_training/s3/**'
 
   build-push:
     needs: [check-change, check-branch]
@@ -80,7 +80,7 @@ jobs:
     with:
       pipeline_name: std_v0.7.11
       instance_type: ${{ matrix.instance_type }}
-      ami_id: 'ami-0e4d0bb9670ea8db0'
+      ami_id: ami-0e4d0bb9670ea8db0
       github_repo: ${{ github.repository }}
       model_server_image: ${{ vars.IMAGE_REPO }}/kepler_model_server:${{ needs.check-branch.outputs.tag }}
       trainers: LogisticRegressionTrainer,ExponentialRegressionTrainer,SGDRegressorTrainer,GradientBoostingRegressorTrainer,XgboostFitTrainer

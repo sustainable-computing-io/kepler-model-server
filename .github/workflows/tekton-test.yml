@@ -1,38 +1,38 @@
 name: Tekton Test
 
-on:
+on: # yamllint disable-line rule:truthy
   workflow_call:
     inputs:
       base_change:
-        description: 'Change flag on base image'
+        description: Change flag on base image
         required: true
         type: string
       docker_secret:
-        description: 'Secret check'
+        description: Secret check
         required: true
         type: string
       image_repo:
-        description: 'The image repo to use'
+        description: The image repo to use
         required: true
         type: string
       image_tag:
-        description: 'The image tag to use'
+        description: The image tag to use
         required: true
         type: string
-      pipeline_name: 
-        description: 'Pipeline name'
+      pipeline_name:
+        description: Pipeline name
         required: true
         type: string
       output_type:
-        description: 'Model output type (AbsPower, DynPower)'
+        description: Model output type (AbsPower, DynPower)
         required: false
         type: string
         default: AbsPower
       trainers:
-        description: 'Model trainer list (delimit: ,)'
+        description: Model trainer list (delimited by ,)
         required: false
         type: string
-        default: XgboostFitTrainer        
+        default: XgboostFitTrainer
 
 env:
   BASE_IMAGE: ${{ inputs.image_repo }}/kepler_model_server_base:${{ inputs.image_tag }}
@@ -52,7 +52,7 @@ jobs:
       - name: set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Replace value in file if base changes
-        if: ${{ (inputs.base_change == 'true') && (inputs.docker_secret == 'true') }} 
+        if: ${{ (inputs.base_change == 'true') && (inputs.docker_secret == 'true') }}
         run: |
           sed -i "s|quay.io/sustainable_computing_io/kepler_model_server_base:latest|${{ env.BASE_IMAGE }}|" dockerfiles/Dockerfile
       - name: Build image

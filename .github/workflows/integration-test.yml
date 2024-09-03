@@ -1,29 +1,29 @@
 name: Integration Test
-on:
+on: # yamllint disable-line rule:truthy
   workflow_call:
     inputs:
       base_change:
-        description: 'Change flag on base image'
+        description: Change flag on base image
         required: true
         type: string
       docker_secret:
-        description: 'Secret check'
+        description: Secret check
         required: true
         type: string
       image_repo:
-        description: 'The image repo to use'
+        description: The image repo to use
         required: true
         type: string
       image_tag:
-        description: 'The image tag to use'
+        description: The image tag to use
         required: true
         type: string
       kepler_tag:
-        description: 'Kepler image tag'
+        description: Kepler image tag
         required: true
         type: string
       additional_opts:
-        description: 'additional deployment opts'
+        description: additional deployment opts
         required: true
         type: string
 
@@ -77,21 +77,21 @@ jobs:
           make e2e-test
           make cleanup
         env:
-          OPTS: "ESTIMATOR${{ inputs.additional_opts }}"
-          KEPLER_IMAGE_VERSION: "${{ inputs.kepler_tag }}"
+          OPTS: ESTIMATOR${{ inputs.additional_opts }}
+          KEPLER_IMAGE_VERSION: ${{ inputs.kepler_tag }}
       - name: test deploying with only server
         run: |
           make deploy
           make e2e-test
           make cleanup
         env:
-          OPTS: "SERVER${{ inputs.additional_opts }}"
-          KEPLER_IMAGE_VERSION: "${{ inputs.kepler_tag }}"
+          OPTS: SERVER${{ inputs.additional_opts }}
+          KEPLER_IMAGE_VERSION: ${{ inputs.kepler_tag }}
       - name: test deploying with estimator and model server
         run: |
           make deploy
           make e2e-test
           make cleanup
         env:
-          OPTS: "ESTIMATOR SERVER${{ inputs.additional_opts }}"
-          KEPLER_IMAGE_VERSION: "${{ inputs.kepler_tag }}"
+          OPTS: ESTIMATOR SERVER${{ inputs.additional_opts }}
+          KEPLER_IMAGE_VERSION: ${{ inputs.kepler_tag }}

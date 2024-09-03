@@ -67,7 +67,7 @@ services:
           -v="8"
 
   estimator:
-    command: [estimator,  -l, debug ]
+    command: [estimator, -l, debug]
     build: &build
       context: ../../../
       dockerfile: dockerfiles/Dockerfile
@@ -85,8 +85,8 @@ services:
 
   model-server:
     ports:
-      - '8100:8100'
-    command: [model-server,  -l, debug ]
+      - 8100:8100
+    command: [model-server, -l, debug]
     build:
       <<: *build
     volumes:
