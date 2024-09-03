@@ -58,7 +58,7 @@ spec:
       when:
         - input: $(params.LOAD_DATA)
           operator: in
-          values: [true]
+          values: ["true"]
         - input: $(params.COS_PROVIDER)
           operator: in
           values: [ibmcloud]
@@ -80,7 +80,7 @@ spec:
       when:
         - input: $(params.LOAD_DATA)
           operator: in
-          values: [true]
+          values: ["true"]
         - input: $(params.COS_PROVIDER)
           operator: in
           values: [aws]
