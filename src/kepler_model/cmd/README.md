@@ -11,13 +11,13 @@ Use kepler model server function as a standalone docker container.
     Linux:
 
     ```bash
-    docker run --rm -v "$(pwd)/data":/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.7.11 query
+    docker run --rm -v "$(pwd)/data":/data --network=host quay.io/sustainable_computing_io/kepler_model_server:v0.7.11-2 query
     ```
 
     mac OS:
 
     ```bash
-    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11 query -s http://host.docker.internal:9090
+    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11-2 query -s http://host.docker.internal:9090
     ```
 
     output of query will be saved as `output.json` by default
@@ -25,7 +25,7 @@ Use kepler model server function as a standalone docker container.
 3. Run training pipeline
 
     ```bash
-    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11 train -i output_kepler_query
+    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11-2 train -i output_kepler_query
     ```
 
     output of trained model will be under pipeline folder `default` or can be specified by `-p`
@@ -57,7 +57,7 @@ Use kepler model server function as a standalone docker container.
 4. Test estimation
 
     ```bash
-    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11 estimate -i output_kepler_query
+    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11-2 estimate -i output_kepler_query
     ```
 
     output will be under the folder `output`.
@@ -73,25 +73,25 @@ Use kepler model server function as a standalone docker container.
    5.1. Plot extracted and isolated data (`preprocess`)
 
       ```bash
-      docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11 plot --target-data preprocess
+      docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11-2 plot --target-data preprocess
       ```
 
    5.2. Plot best prediction result (`estimate`)
 
       ```bash
-      docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11 plot --target-data estimate -i output_kepler_query
+      docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11-2 plot --target-data estimate -i output_kepler_query
       ```
 
    5.3. Plot prediction result on specific trainer model and feature group (`estimate`)
 
       ```bash
-      docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11 plot --target-data estimate -i output_kepler_query --model-name GradientBoostingRegressorTrainer_0 --feature-group BPFOnly
+      docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11-2 plot --target-data estimate -i output_kepler_query --model-name GradientBoostingRegressorTrainer_0 --feature-group BPFOnly
       ```
 
    5.4. Plot prediction error comparison among feature group and trainer model (`error`)
 
     ```bash
-    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11 plot --target-data error -i output_kepler_query
+    docker run --rm -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11-2 plot --target-data error -i output_kepler_query
     ```
 
     output will be under the folder `output`.
@@ -102,5 +102,5 @@ Use kepler model server function as a standalone docker container.
     KEPLER_MODEL_DB_MODELS_PATH= < path to kepler-model-db/models >
     MACHINE_ID= < machine id >
     GH_ACCOUNT= < github account >
-    docker run --rm -v "${KEPLER_MODEL_DB_MODELS_PATH}":/output -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11 export $MACHINE_ID /output $GH_ACCOUNT
+    docker run --rm -v "${KEPLER_MODEL_DB_MODELS_PATH}":/output -v "$(pwd)/data":/data quay.io/sustainable_computing_io/kepler_model_server:v0.7.11-2 export $MACHINE_ID /output $GH_ACCOUNT
     ```
