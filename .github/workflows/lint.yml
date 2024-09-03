@@ -9,7 +9,7 @@ jobs:
     steps:
       # checkout soruce code
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # setup Python environment
       - name: Set up Python
