@@ -65,7 +65,9 @@ def squeeze_data(container_level_data, label_cols):
     # ratio of each energy component for each container
     ratio_columns = [col for col in container_level_data.columns if "ratio" in col]
     # get feature columns
-    feature_columns = [col for col in container_level_data.columns if col not in node_level_columns and col not in ratio_columns and col not in container_indexes]
+    feature_columns = [
+        col for col in container_level_data.columns if col not in node_level_columns and col not in ratio_columns and col not in container_indexes
+    ]
     # sum ratio and feature columns over time
     groupped_sum_data = container_level_data.groupby([TIMESTAMP_COL]).sum()[ratio_columns + feature_columns]
     # re-normalize ratio column
@@ -98,7 +100,9 @@ class MinIdleIsolator(Isolator):
             min = extracted_data[target_cols].min().values.min()
             background_power_colname = get_predicted_background_power_colname(energy_component)
             reconstructed_data[background_power_colname] = min * num_of_unit
-            reconstructed_data[get_reconstructed_power_colname(energy_component)] = data_with_prediction[predicted_colname] + reconstructed_data[background_power_colname]
+            reconstructed_data[get_reconstructed_power_colname(energy_component)] = (
+                data_with_prediction[predicted_colname] + reconstructed_data[background_power_colname]
+            )
         return reconstructed_data
 
     def get_name(self):
@@ -160,7 +164,9 @@ class ProfileBackgroundIsolator(Isolator):
                 predicted_colname = get_predicted_power_colname[energy_source]
                 background_power_colname = get_predicted_background_power_colname(energy_component)
                 reconstructed_data[background_power_colname] = copy_data["profile"] * num_of_unit
-                reconstructed_data[get_reconstructed_power_colname(energy_component)] = data_with_prediction[predicted_colname] + reconstructed_data[background_power_colname]
+                reconstructed_data[get_reconstructed_power_colname(energy_component)] = (
+                    data_with_prediction[predicted_colname] + reconstructed_data[background_power_colname]
+                )
             except Exception as e:
                 print(e)
                 return None
@@ -181,4 +187,3 @@ class NoneIsolator(Isolator):
 
     def get_name(self):
         return "none"
-

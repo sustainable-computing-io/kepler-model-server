@@ -140,7 +140,9 @@ def metadata_plot(args, energy_source, metadata_df, output_folder, name):
             ax = axes
         else:
             ax = axes[i]
-        sns.barplot(data=metadata_df, x="feature_group", y="mae", hue="trainer", ax=ax, hue_order=sorted(metadata_df["trainer"].unique()), errorbar=None, palette="Set3")
+        sns.barplot(
+            data=metadata_df, x="feature_group", y="mae", hue="trainer", ax=ax, hue_order=sorted(metadata_df["trainer"].unique()), errorbar=None, palette="Set3"
+        )
         ax.set_title(component)
         ax.set_ylabel("MAE (Watt)")
         ax.set_xlabel("Feature Group")
@@ -166,7 +168,9 @@ def power_curve_plot(args, data_path, energy_source, output_folder, name):
     node_collection = NodeTypeIndexCollection(pipeline_path)
     all_node_types = sorted(list(node_collection.node_type_index.keys()))
     output_type = ModelOutputType[args.output_type]
-    models, _, cpu_ms_max = _load_all_models(model_toppath=model_toppath, output_type=output_type, name=pipeline_name, node_types=all_node_types, energy_source=energy_source)
+    models, _, cpu_ms_max = _load_all_models(
+        model_toppath=model_toppath, output_type=output_type, name=pipeline_name, node_types=all_node_types, energy_source=energy_source
+    )
     if len(models) > 0:
         _plot_models(models, cpu_ms_max, energy_source, output_folder, name)
 

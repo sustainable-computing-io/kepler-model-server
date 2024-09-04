@@ -28,3 +28,10 @@ jobs:
         shell: bash
         run: |
           make lint
+
+      # run hatch fmt
+      - name: Run formatter using hatch
+        shell: bash
+        run: |
+          make fmt
+          git diff --exit-code

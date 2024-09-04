@@ -32,7 +32,9 @@ def test_model(group_path, model_name, test_data_with_label, power_columns, powe
     for energy_component, _ in predicted_power_map.items():
         label_power_columns = [col for col in power_columns if energy_component in col]
         predicted_power_colname = default_predicted_col_func(energy_component)
-        sum_power_label = test_data_with_label.groupby([TIMESTAMP_COL])[label_power_columns].mean().sum(axis=1).sort_index()[label_power_columns].sum(axis=1).sort_index()
+        sum_power_label = (
+            test_data_with_label.groupby([TIMESTAMP_COL])[label_power_columns].mean().sum(axis=1).sort_index()[label_power_columns].sum(axis=1).sort_index()
+        )
         sum_predicted_power = data_with_prediction.groupby([TIMESTAMP_COL]).sum().sort_index()[predicted_power_colname]
         mae, mse, mape = compute_error(sum_power_label, sum_predicted_power)
         if power_range is None:

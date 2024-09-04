@@ -35,7 +35,15 @@ def assert_train(trainer, data, energy_components):
                 pass
 
 
-def process(node_level, feature_group, result, trainer_names=test_trainer_names, energy_source=test_energy_source, power_columns=get_expected_power_columns(), pipeline_name=default_train_output_pipeline):
+def process(
+    node_level,
+    feature_group,
+    result,
+    trainer_names=test_trainer_names,
+    energy_source=test_energy_source,
+    power_columns=get_expected_power_columns(),
+    pipeline_name=default_train_output_pipeline,
+):
     energy_components = PowerSourceMap[energy_source]
     train_items = []
     for trainer_name in trainer_names:
@@ -47,7 +55,14 @@ def process(node_level, feature_group, result, trainer_names=test_trainer_names,
     return pd.concat(train_items)
 
 
-def process_all(extractors=test_extractors, isolators=test_isolators, trainer_names=test_trainer_names, energy_source=test_energy_source, power_columns=get_expected_power_columns(), pipeline_name=default_train_output_pipeline):
+def process_all(
+    extractors=test_extractors,
+    isolators=test_isolators,
+    trainer_names=test_trainer_names,
+    energy_source=test_energy_source,
+    power_columns=get_expected_power_columns(),
+    pipeline_name=default_train_output_pipeline,
+):
     abs_train_list = []
     dyn_train_list = []
     for extractor in extractors:
@@ -55,7 +70,9 @@ def process_all(extractors=test_extractors, isolators=test_isolators, trainer_na
         extractor_results = get_extract_results(extractor_name, node_level=True)
         for feature_group, result in extractor_results.items():
             print("Extractor ", extractor_name)
-            metadata_df = process(True, feature_group, result, trainer_names=trainer_names, energy_source=energy_source, power_columns=power_columns, pipeline_name=pipeline_name)
+            metadata_df = process(
+                True, feature_group, result, trainer_names=trainer_names, energy_source=energy_source, power_columns=power_columns, pipeline_name=pipeline_name
+            )
             metadata_df["extractor"] = extractor_name
             metadata_df["feature_group"] = feature_group
             abs_train_list += [metadata_df]
@@ -65,7 +82,15 @@ def process_all(extractors=test_extractors, isolators=test_isolators, trainer_na
             isolator_results = get_isolate_results(isolator_name, extractor_name)
             for feature_group, result in isolator_results.items():
                 print("Isolator ", isolator_name)
-                metadata_df = process(False, feature_group, result, trainer_names=trainer_names, energy_source=energy_source, power_columns=power_columns, pipeline_name=pipeline_name)
+                metadata_df = process(
+                    False,
+                    feature_group,
+                    result,
+                    trainer_names=trainer_names,
+                    energy_source=energy_source,
+                    power_columns=power_columns,
+                    pipeline_name=pipeline_name,
+                )
                 metadata_df["extractor"] = extractor_name
                 metadata_df["isolator"] = isolator_name
                 metadata_df["feature_group"] = feature_group

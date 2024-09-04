@@ -24,4 +24,3 @@ class ExponentialRegressionTrainer(CurveFitTrainer):
 
     def init_model(self):
         return CurveFitModel(expo_func, p0_func=p0_func)
-

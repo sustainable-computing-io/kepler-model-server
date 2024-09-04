@@ -125,6 +125,11 @@ class CurveFitTrainer(Trainer):
 
         for component, model in self.node_models[node_type].items():
             scaler = self.node_scalers[node_type]
-            weight_dict[component] = {"All_Weights": {"Categorical_Variables": dict(), "Numerical_Variables": {self.features[i]: {"scale": scaler.scale_[i]} for i in range(len(self.features))}, "CurveFit_Weights": list(model.popt)}}
+            weight_dict[component] = {
+                "All_Weights": {
+                    "Categorical_Variables": dict(),
+                    "Numerical_Variables": {self.features[i]: {"scale": scaler.scale_[i]} for i in range(len(self.features))},
+                    "CurveFit_Weights": list(model.popt),
+                }
+            }
         return weight_dict
-

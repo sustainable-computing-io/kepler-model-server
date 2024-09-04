@@ -153,14 +153,27 @@ def get_init_model_url(energy_source, output_type, model_topurl=model_topurl):
         if get_energy_source(prefix) == energy_source:
             modelURL = get_init_url(prefix)
             print("get init url", modelURL)
-            url = get_url(feature_group=FeatureGroup.BPFOnly, output_type=ModelOutputType[output_type], energy_source=energy_source, model_topurl=model_topurl, pipeline_name=pipeline_name)
+            url = get_url(
+                feature_group=FeatureGroup.BPFOnly,
+                output_type=ModelOutputType[output_type],
+                energy_source=energy_source,
+                model_topurl=model_topurl,
+                pipeline_name=pipeline_name,
+            )
             if modelURL == "" and is_output_type_supported(output_type):
                 if energy_source in default_init_model_name:
                     model_name = default_init_model_name[energy_source]
-                    modelURL = get_url(feature_group=FeatureGroup.BPFOnly, output_type=ModelOutputType[output_type], energy_source=energy_source, model_topurl=model_topurl, pipeline_name=pipeline_name, model_name=model_name)
+                    modelURL = get_url(
+                        feature_group=FeatureGroup.BPFOnly,
+                        output_type=ModelOutputType[output_type],
+                        energy_source=energy_source,
+                        model_topurl=model_topurl,
+                        pipeline_name=pipeline_name,
+                        model_name=model_name,
+                    )
                     if url:
                         response = requests.get(url)
-                        if response.status_code== 200:
+                        if response.status_code == 200:
                             modelURL = url
                 print(f"init URL is not set, use {modelURL}")
             return modelURL

@@ -184,7 +184,11 @@ class Profile:
         return self.profile[source][component][min_watt_key]
 
     def print_profile(self):
-        print("Profile (node type={}): \n Available energy components: {}\n Available maxabs scalers: {}".format(self.node_type, [f"{key}/{list(self.profile[key].keys())}" for key in self.profile.keys()], self.max_scaler.keys()))
+        print(
+            "Profile (node type={}): \n Available energy components: {}\n Available maxabs scalers: {}".format(
+                self.node_type, [f"{key}/{list(self.profile[key].keys())}" for key in self.profile.keys()], self.max_scaler.keys()
+            )
+        )
 
 
 def generate_profiles(profile_map):

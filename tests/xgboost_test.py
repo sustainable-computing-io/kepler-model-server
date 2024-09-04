@@ -25,9 +25,13 @@ if __name__ == "__main__":
     assert len(query_results) > 0, "cannot read_sample_query_results"
     instance = DefaultExtractor()
     extracted_data, power_columns, _, _ = instance.extract(query_results, energy_components, feature_group, energy_source, node_level=True)
-    xgb_container_level_pipeline_kfold = XGBoostRegressionStandalonePipeline(XGBoostRegressionTrainType.KFoldCrossValidation, "test_models/XGBoost/", node_level=True)
+    xgb_container_level_pipeline_kfold = XGBoostRegressionStandalonePipeline(
+        XGBoostRegressionTrainType.KFoldCrossValidation, "test_models/XGBoost/", node_level=True
+    )
     xgb_node_pipeline_kfold = XGBoostRegressionStandalonePipeline(XGBoostRegressionTrainType.KFoldCrossValidation, "test_models/XGBoost/", node_level=False)
-    xgb_container_level_pipeline_tts = XGBoostRegressionStandalonePipeline(XGBoostRegressionTrainType.TrainTestSplitFit, "test_models/XGBoost/", node_level=False)
+    xgb_container_level_pipeline_tts = XGBoostRegressionStandalonePipeline(
+        XGBoostRegressionTrainType.TrainTestSplitFit, "test_models/XGBoost/", node_level=False
+    )
     xgb_node_pipeline_tts = XGBoostRegressionStandalonePipeline(XGBoostRegressionTrainType.TrainTestSplitFit, "test_models/XGBoost/", node_level=True)
     xgb_node_pipeline_kfold.train(None, query_results)
     xgb_container_level_pipeline_tts.train(None, query_results)

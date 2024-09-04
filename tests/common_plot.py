@@ -34,7 +34,16 @@ def preprocess_data(df):
 from extractor_test import get_expected_power_columns, get_extract_results, test_energy_source, test_extractors
 
 
-def plot_extract_result(extractor_name, feature_group, result, energy_source=test_energy_source, label_cols=get_expected_power_columns(), save_path=plot_output_path, features=None, title=None):
+def plot_extract_result(
+    extractor_name,
+    feature_group,
+    result,
+    energy_source=test_energy_source,
+    label_cols=get_expected_power_columns(),
+    save_path=plot_output_path,
+    features=None,
+    title=None,
+):
     energy_components = PowerSourceMap[energy_source]
     extracted_power_labels = get_extracted_power_labels(result, energy_components, label_cols)
     extracted_power_labels = preprocess_data(extracted_power_labels[5:])
@@ -42,7 +51,7 @@ def plot_extract_result(extractor_name, feature_group, result, energy_source=tes
     if features is None:
         features = FeatureGroups[FeatureGroup[feature_group]]
     ncols = max(len(features), len(energy_components))
-    fig, axes = plt.subplots(nrows=2, ncols=ncols, figsize=(5+2*len(features),5))
+    fig, axes = plt.subplots(nrows=2, ncols=ncols, figsize=(5 + 2 * len(features), 5))
     axes = np.array(axes).ravel()
     i = 0
     for feature in features:
@@ -60,7 +69,7 @@ def plot_extract_result(extractor_name, feature_group, result, energy_source=tes
         axes[i].set_title(f"{component_label_col}")
         axes[i].set_ylabel("")
         i += 1
-    while i < 2*ncols:
+    while i < 2 * ncols:
         fig.delaxes(axes[i])
         i += 1
     if title is None:

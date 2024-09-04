@@ -15,4 +15,3 @@ class PolynomialRegressionTrainer(ScikitTrainer):
 
     def init_model(self):
         return LinearRegression()
-

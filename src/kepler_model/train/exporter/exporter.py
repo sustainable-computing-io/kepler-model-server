@@ -69,4 +69,3 @@ def export(data_path, pipeline_path, db_path, publisher, collect_date, inputs):
     append_version_readme(local_version_path, pipeline_metadata)
 
     return local_export_path
-

@@ -12,4 +12,3 @@ class GradientBoostingRegressorTrainer(ScikitTrainer):
 
     def init_model(self):
         return GradientBoostingRegressor(n_estimators=100, max_depth=3, learning_rate=0.1)
-

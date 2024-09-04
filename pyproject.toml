@@ -111,7 +111,7 @@ exclude_lines = [
 ]
 
 [tool.ruff]
-line-length = 320
+line-length = 160
 
 [tool.pytest.ini_options]
 markers = [

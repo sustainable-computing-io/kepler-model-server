@@ -16,7 +16,14 @@ TMP_FILE = "tmp.zip"
 
 
 def get_model_request_json(metrics, output_type, node_type, weight, trainer_name, energy_source):
-    return {"metrics": metrics, "output_type": output_type.name, "node_type": node_type, "weight": weight, "trainer_name": trainer_name, "source": energy_source}
+    return {
+        "metrics": metrics,
+        "output_type": output_type.name,
+        "node_type": node_type,
+        "weight": weight,
+        "trainer_name": trainer_name,
+        "source": energy_source,
+    }
 
 
 def make_request(metrics, output_type, node_type=any_node_type, weight=False, trainer_name="", energy_source="rapl-sysfs"):
@@ -57,29 +64,18 @@ def get_models():
     response = json.loads(response.text)
     return response
 
+
 def test_attr_has_value():
     attrs = dict()
-    non_numerical_test_cases = {
-        "": False,
-        None: False,
-        "some": True
-    }
-    numerical_test_cases = {
-        "": False,
-        None: False,
-        "0": False,
-        0: False,
-        "-1": False,
-        -1: False,
-        "1": True,
-        1: True
-    }
+    non_numerical_test_cases = {"": False, None: False, "some": True}
+    numerical_test_cases = {"": False, None: False, "0": False, 0: False, "-1": False, -1: False, "1": True, 1: True}
     for tc, value in non_numerical_test_cases.items():
         attrs[NodeAttribute.PROCESSOR] = tc
         assert attr_has_value(attrs, NodeAttribute.PROCESSOR) == value
     for tc, value in numerical_test_cases.items():
         attrs[NodeAttribute.CORES] = tc
         assert attr_has_value(attrs, NodeAttribute.CORES) == value
+
 
 def test_model_request():
     models = get_models()
@@ -112,6 +108,7 @@ def test_model_request():
     make_request(metrics, output_type, trainer_name=trainer_name, node_type=1, weight=True)
     # with acpi source
     make_request(metrics, output_type, energy_source="acpi", trainer_name=trainer_name, node_type=1, weight=True)
+
 
 if __name__ == "__main__":
     test_attr_has_value()

@@ -84,7 +84,15 @@ class TrainRequest:
         profiles = generate_profiles(idle_profile_map)
         isolator = self.init_isolator(profiler, profiles, idle_data)
         valid_feature_groups = get_valid_feature_group_from_queries(idle_data.keys())
-        self.pipeline = NewPipeline(self.name, self.trainer.abs_trainers, self.trainer.dyn_trainers, extractor=DefaultExtractor(), isolator=isolator, target_energy_sources=[self.energy_source], valid_feature_groups=valid_feature_groups)
+        self.pipeline = NewPipeline(
+            self.name,
+            self.trainer.abs_trainers,
+            self.trainer.dyn_trainers,
+            extractor=DefaultExtractor(),
+            isolator=isolator,
+            target_energy_sources=[self.energy_source],
+            valid_feature_groups=valid_feature_groups,
+        )
 
     def get_model(self):
         self.init_pipeline()

@@ -54,7 +54,19 @@ logger = logging.getLogger(__name__)
 
 
 class ModelRequest:
-    def __init__(self, metrics, output_type, source="rapl-sysfs", node_type=-1, weight=False, trainer_name="", filter="", pipeline_name="", machine_spec=None, loose_node_type=True):
+    def __init__(
+        self,
+        metrics,
+        output_type,
+        source="rapl-sysfs",
+        node_type=-1,
+        weight=False,
+        trainer_name="",
+        filter="",
+        pipeline_name="",
+        machine_spec=None,
+        loose_node_type=True,
+    ):
         # target source of power metric to be predicted (e.g., rapl-sysfs, acpi)
         self.source = convert_enery_source(source)
         # type of node to select a model learned from similar nodes (default: -1, applied universal model learned by all node_type (TODO))
@@ -77,6 +89,7 @@ class ModelRequest:
             self.machine_spec = NodeTypeSpec(**machine_spec)
         self.loose_node_type = loose_node_type
 
+
 # ModelListParams defines parameters for /best-models API
 class ModelListParam(enum.Enum):
     EnergySource = "energy-source"
@@ -84,6 +97,7 @@ class ModelListParam(enum.Enum):
     FeatureGroup = "feature-group"
     NodeType = "node-type"
     Filter = "filter"
+
 
 ###########################################
 MODEL_SERVER_PORT = int(getConfig("MODEL_SERVER_PORT", "8100"))
@@ -106,13 +120,30 @@ select_best_model:
 """
 
 
-def select_best_model(spec, valid_group_path: str, filters: dict, energy_source: str, pipeline_name: str="", trainer_name: str="", node_type: int=any_node_type, weight: bool=False, loose_node_type: bool=True):
+def select_best_model(
+    spec,
+    valid_group_path: str,
+    filters: dict,
+    energy_source: str,
+    pipeline_name: str = "",
+    trainer_name: str = "",
+    node_type: int = any_node_type,
+    weight: bool = False,
+    loose_node_type: bool = True,
+):
     # Set default pipeline if not specified
     if pipeline_name == "" and energy_source in default_pipelines:
         pipeline_name = default_pipelines[energy_source]
 
     # Find initial model list filtered by trainer
-    initial_model_names = [f for f in os.listdir(valid_group_path) if f != CHECKPOINT_FOLDERNAME and not os.path.isfile(os.path.join(valid_group_path, f)) and os.path.exists(os.path.join(valid_group_path, f, METADATA_FILENAME + ".json")) and (trainer_name == "" or trainer_name in f)]
+    initial_model_names = [
+        f
+        for f in os.listdir(valid_group_path)
+        if f != CHECKPOINT_FOLDERNAME
+        and not os.path.isfile(os.path.join(valid_group_path, f))
+        and os.path.exists(os.path.join(valid_group_path, f, METADATA_FILENAME + ".json"))
+        and (trainer_name == "" or trainer_name in f)
+    ]
     if node_type != any_node_type:
         model_names = [name for name in initial_model_names if f"_{node_type}" in name]
         if len(model_names) == 0:
@@ -201,11 +232,21 @@ def get_model():
             uncertainty = 0
             looseness = 0
         if os.path.exists(valid_group_path):
-            best_candidate, response = select_best_model(req.machine_spec, valid_group_path, filters, energy_source, req.pipeline_name, req.trainer_name, node_type, req.weight, loose_node_type=req.loose_node_type)
+            best_candidate, response = select_best_model(
+                req.machine_spec,
+                valid_group_path,
+                filters,
+                energy_source,
+                req.pipeline_name,
+                req.trainer_name,
+                node_type,
+                req.weight,
+                loose_node_type=req.loose_node_type,
+            )
             if best_candidate is None:
                 continue
-            if node_type != any_node_type and best_model is not None and get_node_type_from_name(best_model['model_name']) == node_type:
-                if get_node_type_from_name(best_candidate['model_name']) != node_type:
+            if node_type != any_node_type and best_model is not None and get_node_type_from_name(best_model["model_name"]) == node_type:
+                if get_node_type_from_name(best_candidate["model_name"]) != node_type:
                     continue
             if best_model is None or best_model[ERROR_KEY] > best_candidate[ERROR_KEY]:
                 best_model = best_candidate
@@ -214,7 +255,9 @@ def get_model():
                 best_looseness = looseness
     if best_model is None:
         return make_response(f"cannot find model for {model_request} at the moment", 400)
-    logger.info(f"response: model {best_model['model_name']} by {best_model['features']} with {ERROR_KEY}={best_model[ERROR_KEY]} selected with uncertainty={best_uncertainty}, looseness={best_looseness}")
+    logger.info(
+        f"response: model {best_model['model_name']} by {best_model['features']} with {ERROR_KEY}={best_model[ERROR_KEY]} selected with uncertainty={best_uncertainty}, looseness={best_looseness}"
+    )
     if req.weight:
         try:
             # add this condition to provide compatibility to old version
@@ -354,6 +397,7 @@ def load_init_pipeline():
     set_pipelines()
     fill_machine_spec()
 
+
 def fill_machine_spec():
     for energy_source in PowerSourceMap.keys():
         if energy_source in pipelineName:
@@ -363,7 +407,7 @@ def fill_machine_spec():
                 for output_type in ModelOutputType:
                     for feature_group in FeatureGroup:
                         valid_group_path = get_model_group_path(model_toppath, output_type, feature_group, energy_source, pipeline_name=pipeline_name)
-                        for f in  os.listdir(valid_group_path):
+                        for f in os.listdir(valid_group_path):
                             path = os.path.join(valid_group_path, f)
                             if not os.path.isfile(path):
                                 metadata = load_metadata(path)
@@ -376,6 +420,7 @@ def fill_machine_spec():
                                             save_metadata(path, metadata)
                                             save_path = os.path.join(valid_group_path, model_name)
                                             shutil.make_archive(save_path, "zip", save_path)
+
 
 @click.command()
 @click.option(

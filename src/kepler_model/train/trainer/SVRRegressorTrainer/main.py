@@ -12,4 +12,3 @@ class SVRRegressorTrainer(ScikitTrainer):
 
     def init_model(self):
         return SVR(C=1.0, epsilon=0.2)
-

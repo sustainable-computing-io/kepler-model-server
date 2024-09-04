@@ -82,7 +82,9 @@ def assert_offline_trainer_output(target_path, energy_source, valid_fgs, pipelin
     _assert_offline_trainer(dyn_models)
 
 
-def process(dataset_name, train_prom_response, idle_prom_response, energy_source=test_energy_source, isolators=isolators, target_path=offline_trainer_output_path):
+def process(
+    dataset_name, train_prom_response, idle_prom_response, energy_source=test_energy_source, isolators=isolators, target_path=offline_trainer_output_path
+):
     idle_data = prom_responses_to_results(idle_prom_response)
     valid_fgs = get_valid_feature_group_from_queries(idle_data)
 

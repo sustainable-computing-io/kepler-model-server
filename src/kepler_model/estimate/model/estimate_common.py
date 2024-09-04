@@ -81,4 +81,3 @@ def compute_error(predicted_power, actual_powers):
             absolute_percentage_errors = np.abs((non_zero_y_test - non_zero_predicted_powers) / non_zero_y_test) * 100
             mape = np.mean(absolute_percentage_errors)
     return mae, mse, mape
-

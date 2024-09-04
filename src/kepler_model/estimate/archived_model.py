@@ -87,4 +87,3 @@ def get_achived_model(power_request):
             print("cannot validate the archived model")
             return None
     return output_path
-

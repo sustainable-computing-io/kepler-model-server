@@ -316,7 +316,9 @@ def get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_h
         profile_isolator = ProfileBackgroundIsolator(profiles, idle_data)
         supported_isolator[profile_isolator.get_name()] = profile_isolator
         if abs_pipeline_name != "":
-            trainer_isolator = TrainIsolator(idle_data=idle_data, profiler=DefaultProfiler, target_hints=target_hints, bg_hints=bg_hints, abs_pipeline_name=abs_pipeline_name)
+            trainer_isolator = TrainIsolator(
+                idle_data=idle_data, profiler=DefaultProfiler, target_hints=target_hints, bg_hints=bg_hints, abs_pipeline_name=abs_pipeline_name
+            )
             supported_isolator[trainer_isolator.get_name()] = trainer_isolator
     elif abs_pipeline_name != "":
         trainer_isolator = TrainIsolator(target_hints=target_hints, bg_hints=bg_hints, abs_pipeline_name=abs_pipeline_name)
@@ -338,10 +340,32 @@ def get_extractor(extractor):
     return supported_extractor[extractor]
 
 
-def get_pipeline(data_path, pipeline_name, extractor, profile, target_hints, bg_hints, abs_pipeline_name, isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups, replace_node_type=default_node_type):
+def get_pipeline(
+    data_path,
+    pipeline_name,
+    extractor,
+    profile,
+    target_hints,
+    bg_hints,
+    abs_pipeline_name,
+    isolator,
+    abs_trainer_names,
+    dyn_trainer_names,
+    energy_sources,
+    valid_feature_groups,
+    replace_node_type=default_node_type,
+):
     from kepler_model.train import NewPipeline
 
     isolator = get_isolator(data_path, isolator, profile, pipeline_name, target_hints, bg_hints, abs_pipeline_name, replace_node_type=replace_node_type)
     extractor = get_extractor(extractor)
-    pipeline = NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=energy_sources, valid_feature_groups=valid_feature_groups)
+    pipeline = NewPipeline(
+        pipeline_name,
+        abs_trainer_names,
+        dyn_trainer_names,
+        extractor=extractor,
+        isolator=isolator,
+        target_energy_sources=energy_sources,
+        valid_feature_groups=valid_feature_groups,
+    )
     return pipeline

@@ -22,4 +22,3 @@ class LogarithmicRegressionTrainer(CurveFitTrainer):
 
     def init_model(self):
         return CurveFitModel(log_func, p0_func=p0_func)
-

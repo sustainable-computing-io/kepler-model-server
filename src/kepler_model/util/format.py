@@ -10,7 +10,7 @@ def print_bounded_multiline_message(input_lines, maxlength=200):
             lines += [line]
 
     max_line_length = max(len(line) for line in lines)
-    border = '#' * (max_line_length + 4)
+    border = "#" * (max_line_length + 4)
     print(border)
 
     for line in lines:
@@ -18,6 +18,7 @@ def print_bounded_multiline_message(input_lines, maxlength=200):
         print(formatted_line)
 
     print(border)
+
 
 from datetime import datetime
 

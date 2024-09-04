@@ -81,7 +81,16 @@ def process(train_dataset_name, test_dataset_name, target_path):
 
                         # for each energy_component
                         for energy_component, values in predicted_data.items():
-                            item = {"train_dataset": train_dataset_name, "test_dataset": test_dataset_name, "isolator": isolator, "energy_source": energy_source, "feature_group": feature_group, "model": model.name, "model_path": model_path, "energy_component": energy_component}
+                            item = {
+                                "train_dataset": train_dataset_name,
+                                "test_dataset": test_dataset_name,
+                                "isolator": isolator,
+                                "energy_source": energy_source,
+                                "feature_group": feature_group,
+                                "model": model.name,
+                                "model_path": model_path,
+                                "energy_component": energy_component,
+                            }
 
                             label_power_columns = [col for col in power_columns if energy_component in col]
                             # sum label value for all unit
@@ -132,4 +141,3 @@ if __name__ == "__main__":
     target_path = offline_trainer_output_path
     # same train/test dataset
     process(dataset_name, dataset_name, target_path)
-

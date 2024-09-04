@@ -12,4 +12,3 @@ class KNeighborsRegressorTrainer(ScikitTrainer):
 
     def init_model(self):
         return KNeighborsRegressor(n_neighbors=6)
-

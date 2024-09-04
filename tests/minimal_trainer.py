@@ -6,4 +6,9 @@ trainer_names = ["GradientBoostingRegressorTrainer", "SGDRegressorTrainer", "Xgb
 valid_feature_groups = [FeatureGroup.BPFOnly]
 
 if __name__ == "__main__":
-    process(target_energy_sources=["acpi", "rapl-sysfs"], abs_trainer_names=trainer_names, dyn_trainer_names=trainer_names, valid_feature_groups=valid_feature_groups)
+    process(
+        target_energy_sources=["acpi", "rapl-sysfs"],
+        abs_trainer_names=trainer_names,
+        dyn_trainer_names=trainer_names,
+        valid_feature_groups=valid_feature_groups,
+    )
