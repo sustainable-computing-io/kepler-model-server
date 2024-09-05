@@ -26,7 +26,7 @@ PowerSourceMap = {
     "acpi": ["platform"],
     "hmc": ["platform"],
     "redfish": ["platform"],
-    "trained_power_model": ["package", "core", "uncore", "dram"]
+    "trained_power_model": ["package", "core", "uncore", "dram"],
 }
 
 PACKAGE_ENERGY_COMPONENT_LABEL = ["package"]
@@ -34,12 +34,19 @@ DRAM_ENERGY_COMPONENT_LABEL = ["dram"]
 CORE_ENERGY_COMPONENT_LABEL = ["core"]
 
 CATEGORICAL_LABEL_TO_VOCAB = {
-                    "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"],
-                    "node_info": ["1"],
-                    "cpu_scaling_frequency_hertz": ["1GHz", "2GHz", "3GHz"],
-                    }
+    "cpu_architecture": ["Sandy Bridge", "Ivy Bridge", "Haswell", "Broadwell", "Sky Lake", "Cascade Lake", "Coffee Lake", "Alder Lake"],
+    "node_info": ["1"],
+    "cpu_scaling_frequency_hertz": ["1GHz", "2GHz", "3GHz"],
+}
 
-no_weight_trainers = ["PolynomialRegressionTrainer", "GradientBoostingRegressorTrainer", "KNeighborsRegressorTrainer", "LinearRegressionTrainer", "SVRRegressorTrainer", "XgboostFitTrainer"]
+no_weight_trainers = [
+    "PolynomialRegressionTrainer",
+    "GradientBoostingRegressorTrainer",
+    "KNeighborsRegressorTrainer",
+    "LinearRegressionTrainer",
+    "SVRRegressorTrainer",
+    "XgboostFitTrainer",
+]
 weight_support_trainers = ["SGDRegressorTrainer", "LogarithmicRegressionTrainer", "LogisticRegressionTrainer", "ExponentialRegressionTrainer"]
 default_trainer_names = no_weight_trainers + weight_support_trainers
 default_trainers = ",".join(default_trainer_names)
@@ -70,12 +77,14 @@ class ModelOutputType(enum.Enum):
     AbsPower = 1
     DynPower = 2
 
+
 class NodeAttribute(str, enum.Enum):
     PROCESSOR = "processor"
     CORES = "cores"
     CHIPS = "chips"
     MEMORY = "memory"
     FREQ = "frequency"
+
 
 def is_output_type_supported(output_type_name):
     return any(output_type_name == item.name for item in ModelOutputType)
@@ -122,8 +131,9 @@ default_dram_feature_map = {
     FeatureGroup.BPFOnly: "bpf_page_cache_hit",
     FeatureGroup.BPFIRQ: "bpf_page_cache_hit",
     FeatureGroup.CounterIRQCombined: "cache_miss",
-    FeatureGroup.Basic: "cache_miss"
+    FeatureGroup.Basic: "cache_miss",
 }
+
 
 def main_feature(feature_group_name, energy_component):
     feature_group = FeatureGroup[feature_group_name]
@@ -164,7 +174,14 @@ class XGBoostModelFeatureOrLabelIncompatabilityException(Exception):
     features_incompatible: bool
     labels_incompatible: bool
 
-    def __init__(self, expected_features: list[str], expected_labels: list[str], received_features: list[str], received_labels: list[str], message="expected features/labels are the not the same as the features/labels of the training data") -> None:
+    def __init__(
+        self,
+        expected_features: list[str],
+        expected_labels: list[str],
+        received_features: list[str],
+        received_labels: list[str],
+        message="expected features/labels are the not the same as the features/labels of the training data",
+    ) -> None:
         self.expected_features = expected_features
         self.expected_labels = expected_labels
         self.received_features = received_features
@@ -240,11 +257,13 @@ def is_weight_output(output_type):
         return True
     return False
 
+
 def convert_enery_source(energy_source: str) -> str:
     # TODO: need revisit if get more than one rapl energy source
     if energy_source is None or "rapl" in energy_source:
         return "rapl-sysfs"
     return energy_source
+
 
 if __name__ == "__main__":
     for g, g_features in FeatureGroups.items():

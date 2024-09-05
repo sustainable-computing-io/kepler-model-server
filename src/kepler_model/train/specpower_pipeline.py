@@ -73,7 +73,15 @@ class SpecPipelineRun:
         self.power_labels = [acpi_label]
         self.energy_source = platform_energy_source
         # extractor is not used
-        self.pipeline = NewPipeline(name, abs_trainer_names=abs_trainer_names, dyn_trainer_names=dyn_trainer_names, extractor=DefaultExtractor(), isolator=isolator, target_energy_sources=[self.energy_source], valid_feature_groups=[self.feature_group])
+        self.pipeline = NewPipeline(
+            name,
+            abs_trainer_names=abs_trainer_names,
+            dyn_trainer_names=dyn_trainer_names,
+            extractor=DefaultExtractor(),
+            isolator=isolator,
+            target_energy_sources=[self.energy_source],
+            valid_feature_groups=[self.feature_group],
+        )
 
     def load_spec_data(self, spec_db_url):
         spec_extracted_data = dict()

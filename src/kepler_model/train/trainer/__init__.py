@@ -256,7 +256,11 @@ class Trainer(metaclass=ABCMeta):
         model_dict = dict()
         for component in self.energy_components:
             component_save_file = self.component_model_filename(component)
-            model_dict[component] = {"model_file": component_save_file, "features": self.features, "fe_files": [scaler_filename] + ([] if not hasattr(self, "fe_files") else self.fe_files)}
+            model_dict[component] = {
+                "model_file": component_save_file,
+                "features": self.features,
+                "fe_files": [scaler_filename] + ([] if not hasattr(self, "fe_files") else self.fe_files),
+            }
             # save component model
             self.save_model(save_path, node_type, component)
         # save model dict
@@ -315,4 +319,3 @@ class Trainer(metaclass=ABCMeta):
             item["node_type"] = node_type
             items += [item]
         return pd.DataFrame(items)
-

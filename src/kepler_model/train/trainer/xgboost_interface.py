@@ -105,6 +105,11 @@ class XgboostTrainer(Trainer):
                 return
             with open(filename) as f:
                 contents = f.read()
-            weight_dict[component] = {"All_Weights": {"Categorical_Variables": dict(), "Numerical_Variables": {self.features[i]: {"scale": scaler.scale_[i]} for i in range(len(self.features))}, "XGboost_Weights": base64.b64encode(contents.encode("utf-8")).decode("utf-8")}}
+            weight_dict[component] = {
+                "All_Weights": {
+                    "Categorical_Variables": dict(),
+                    "Numerical_Variables": {self.features[i]: {"scale": scaler.scale_[i]} for i in range(len(self.features))},
+                    "XGboost_Weights": base64.b64encode(contents.encode("utf-8")).decode("utf-8"),
+                }
+            }
         return weight_dict
-

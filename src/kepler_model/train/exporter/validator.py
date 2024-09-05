@@ -33,7 +33,9 @@ class ExportModel:
 
     # assure if version_path is local
     def get_export_path(self, version_path, assure):
-        target_model_path = get_model_group_path(version_path, self.output_type, self.feature_group, self.energy_source, assure=assure, pipeline_name=self.pipeline_name)
+        target_model_path = get_model_group_path(
+            version_path, self.output_type, self.feature_group, self.energy_source, assure=assure, pipeline_name=self.pipeline_name
+        )
         return target_model_path
 
     def export(self, local_version_path):
@@ -112,4 +114,3 @@ def get_validated_export_items(pipeline_path, pipeline_name):
                     valid_rows += [row]
             valid_metadata_df[energy_source][ot.name] = pd.DataFrame(valid_rows)
     return export_items, valid_metadata_df
-

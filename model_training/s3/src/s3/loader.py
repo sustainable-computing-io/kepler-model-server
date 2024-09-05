@@ -58,7 +58,9 @@ def aws_download(client, bucket_name, machine_id, mnt_path, pipeline_name):
 
 def ibm_download(client, bucket_name, machine_id, mnt_path, pipeline_name):
     print("IBM Download")
-    bucket_file_map = get_bucket_file_map(client, bucket_name, machine_id=machine_id, mnt_path=mnt_path, pipeline_name=pipeline_name, list_func=ibmcloud_list_keys)
+    bucket_file_map = get_bucket_file_map(
+        client, bucket_name, machine_id=machine_id, mnt_path=mnt_path, pipeline_name=pipeline_name, list_func=ibmcloud_list_keys
+    )
     for key, filepath in bucket_file_map.items():
         print(key, filepath)
         dir = os.path.dirname(filepath)

@@ -76,7 +76,9 @@ class XGBoostRegressionStandalonePipeline:
         # results can be used directly by extractor.py
         extractor = DefaultExtractor()
         # Train all models with extractor
-        extracted_data, _, _, _ = extractor.extract(results, self.energy_components_labels, self.feature_group.name, self.energy_source, node_level=self.node_level)
+        extracted_data, _, _, _ = extractor.extract(
+            results, self.energy_components_labels, self.feature_group.name, self.energy_source, node_level=self.node_level
+        )
 
         if extracted_data is not None:
             clean_df = self._generate_clean_model_training_data(extracted_data)
@@ -162,7 +164,9 @@ class XGBoostRegressionModelGenerationPipeline:
             with open(os.path.join(filename_path, self.model_desc)) as f:
                 json_data = json.load(f)
             if json_data["feature_names"] != self.feature_names or json_data["label_names"] != self.label_names:
-                raise XGBoostModelFeatureOrLabelIncompatabilityException(json_data["feature_names"], json_data["label_names"], self.feature_names, self.label_names)
+                raise XGBoostModelFeatureOrLabelIncompatabilityException(
+                    json_data["feature_names"], json_data["label_names"], self.feature_names, self.label_names
+                )
             return new_model, json_data
         return None, None
 
@@ -320,4 +324,3 @@ class XGBoostRegressionModelGenerationPipeline:
                 predicted_results.append(predicted_result.astype(float)[0])
             return predicted_results, retrieved_model_desc
         return None, None
-

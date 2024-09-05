@@ -64,7 +64,14 @@ class Ec2PipelineRun:
     def __init__(self, name, abs_trainer_names=default_trainer_names, dyn_trainer_names=default_trainer_names, isolator=MinIdleIsolator()):
         self.energy_source = "rapl-sysfs"
         self.energy_components = PowerSourceMap[self.energy_source]
-        self.pipeline = NewPipeline(name, abs_trainer_names=abs_trainer_names, dyn_trainer_names=dyn_trainer_names, extractor=DefaultExtractor(), isolator=isolator, target_energy_sources=[self.energy_source])
+        self.pipeline = NewPipeline(
+            name,
+            abs_trainer_names=abs_trainer_names,
+            dyn_trainer_names=dyn_trainer_names,
+            extractor=DefaultExtractor(),
+            isolator=isolator,
+            target_energy_sources=[self.energy_source],
+        )
 
     def process(self):
         for profile in node_profiles:
@@ -113,4 +120,3 @@ if __name__ == "__main__":
     item["endTimeUTC"] = last_modified.strftime("%Y-%m-%dT%H:%M:%SZ")
     print(item)
     save_json(path=data_path, name=pipeline_name, data=item)
-

@@ -16,12 +16,22 @@ import pyudev
 
 from kepler_model.util.loader import load_json, load_node_type_index
 from kepler_model.util.saver import save_machine_spec, save_node_type_index
-from kepler_model.util.similarity import compute_jaccard_similarity, compute_looseness, compute_similarity, compute_uncertainty, find_best_candidate, get_candidate_score, get_num_of_none, get_similarity_weight
+from kepler_model.util.similarity import (
+    compute_jaccard_similarity,
+    compute_looseness,
+    compute_similarity,
+    compute_uncertainty,
+    find_best_candidate,
+    get_candidate_score,
+    get_num_of_none,
+    get_similarity_weight,
+)
 from kepler_model.util.train_types import NodeAttribute
 
 logger = logging.getLogger(__name__)
 
 default_machine_spec_file = "/etc/kepler/models/machine/spec.json"
+
 
 def rename(name: str) -> str:
     name = name.replace("(R)", "")
@@ -40,7 +50,7 @@ def rename(name: str) -> str:
 
 
 def format_processor(processor):
-    if len(processor) < 2: # brand_raw is set to "-" on some machine
+    if len(processor) < 2:  # brand_raw is set to "-" on some machine
         return ""
     return "_".join(re.sub(r"\(.*\)", "", rename(processor)).split()).replace("-", "_").lower().replace("_v", "v")
 
@@ -50,6 +60,7 @@ def format_vendor(vendor):
 
 
 GB = 1024 * 1024 * 1024
+
 
 def discover_spec_values():
     processor = ""
@@ -71,24 +82,19 @@ def discover_spec_values():
     memory = psutil.virtual_memory().total
     memory_gb = int(memory / GB)
     freq = psutil.cpu_freq(percpu=False)
-    spec_values = {
-        "vendor": vendor,
-        "processor": processor,
-        "cores": cores,
-        "chips": chips,
-        "memory": memory_gb,
-        "threads_per_core": threads_per_core
-    }
+    spec_values = {"vendor": vendor, "processor": processor, "cores": cores, "chips": chips, "memory": memory_gb, "threads_per_core": threads_per_core}
     if freq is not None:
         cpu_freq_mhz = round(max(freq.max, freq.current) / 100) * 100  # round to one decimal of GHz
         spec_values["frequency"] = cpu_freq_mhz
     return spec_values
+
 
 def generate_spec(data_path, machine_id):
     spec_values = discover_spec_values()
     spec = NodeTypeSpec(**spec_values)
     logger.info(f"Save machine spec to {data_path}/{machine_id}")
     save_machine_spec(data_path, machine_id, spec)
+
 
 def get_machine_spec(cmd_machine_spec_file: str):
     if cmd_machine_spec_file:
@@ -101,6 +107,7 @@ def get_machine_spec(cmd_machine_spec_file: str):
             return spec
     return discover_spec_values()
 
+
 def load_node_type_spec(node_type_index_json):
     node_type_spec_index = dict()
     if node_type_index_json is not None:
@@ -110,7 +117,9 @@ def load_node_type_spec(node_type_index_json):
             node_type_spec_index[int(index)] = spec
     return node_type_spec_index
 
+
 no_data = None
+
 
 def attr_has_value(attrs: dict, key: NodeAttribute) -> bool:
     if key not in attrs:
@@ -122,6 +131,7 @@ def attr_has_value(attrs: dict, key: NodeAttribute) -> bool:
                 return False
         return True
     return False
+
 
 # NodeTypeSpec defines spec of each node_type index
 class NodeTypeSpec:
@@ -200,7 +210,7 @@ class NodeTypeSpec:
                 similarity = compute_similarity(self.attrs[attr], compare_spec.attrs[attr])
             if debug:
                 print(attr, self.attrs[attr], compare_spec.attrs[attr], similarity, get_similarity_weight(attr))
-            total_similarity += (similarity*get_similarity_weight(attr))
+            total_similarity += similarity * get_similarity_weight(attr)
         if total_similarity > 1:
             total_similarity = 1
         return total_similarity
@@ -251,12 +261,14 @@ class NodeTypeIndexCollection:
         self.node_type_index[covered_index].add_member(machine_id)
         return covered_index
 
-    def get_node_type(self, in_spec: NodeTypeSpec, loose_search: bool=False):
+    def get_node_type(self, in_spec: NodeTypeSpec, loose_search: bool = False):
         if len(self.node_type_index) == 0:
             return -1, -1, -1
         compare_spec = in_spec.copy()
         num_of_none = get_num_of_none(compare_spec)
-        similarity_map, max_similarity, most_similar_index, has_candidate, candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total = self._find_candidates(in_spec, loose_search)
+        similarity_map, max_similarity, most_similar_index, has_candidate, candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total = (
+            self._find_candidates(in_spec, loose_search)
+        )
         if max_similarity == 1:
             return most_similar_index, 0, 0
         if has_candidate:
@@ -267,7 +279,9 @@ class NodeTypeIndexCollection:
             return best_candidate_index, uncertainty, 0
         elif loose_search:
             if most_similar_index != -1:
-                candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total, num_of_none = self._loose_search(compare_spec, similarity_map, max_similarity, most_similar_index, candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total)
+                candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total, num_of_none = self._loose_search(
+                    compare_spec, similarity_map, max_similarity, most_similar_index, candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total
+                )
                 candidate_score = get_candidate_score(candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total)
                 logger.debug(f"candidate score: {candidate_score}")
                 most_similar_score = candidate_score[most_similar_index]
@@ -333,7 +347,9 @@ class NodeTypeIndexCollection:
                             has_candidate = True
         return similarity_map, max_similarity, most_similar_index, has_candidate, candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total
 
-    def _loose_search(self, compare_spec, similarity_map, max_similarity, most_similar_index, candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total):
+    def _loose_search(
+        self, compare_spec, similarity_map, max_similarity, most_similar_index, candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total
+    ):
         """
         This function tries loosing the attribute that doesn't match the spec with maximum similarility and recompute uncertainty value of selection.
         """

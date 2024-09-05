@@ -458,7 +458,20 @@ def train(args):
     pipeline = None
     if args.id:
         machine_id = args.id
-        pipeline = get_pipeline(data_path, pipeline_name, args.extractor, args.profile, args.target_hints, args.bg_hints, args.abs_pipeline_name, args.isolator, abs_trainer_names, dyn_trainer_names, energy_sources, valid_feature_groups)
+        pipeline = get_pipeline(
+            data_path,
+            pipeline_name,
+            args.extractor,
+            args.profile,
+            args.target_hints,
+            args.bg_hints,
+            args.abs_pipeline_name,
+            args.isolator,
+            abs_trainer_names,
+            dyn_trainer_names,
+            energy_sources,
+            valid_feature_groups,
+        )
         machine_spec_json = load_machine_spec(data_path, machine_id)
         if machine_spec_json is not None:
             new_spec = NodeTypeSpec()
@@ -475,7 +488,9 @@ def train(args):
     for energy_source in energy_sources:
         energy_components = PowerSourceMap[energy_source]
         for feature_group in valid_feature_groups:
-            success, abs_data, dyn_data = pipeline.process_multiple_query(input_query_results_list, energy_components, energy_source, feature_group=feature_group.name, replace_node_type=node_type)
+            success, abs_data, dyn_data = pipeline.process_multiple_query(
+                input_query_results_list, energy_components, energy_source, feature_group=feature_group.name, replace_node_type=node_type
+            )
             assert success, f"failed to process pipeline {pipeline.name}"
             for trainer in pipeline.trainers:
                 if trainer.feature_group == feature_group and trainer.energy_source == energy_source:
@@ -488,7 +503,11 @@ def train(args):
             if abs_data is not None:
                 save_csv(data_saved_path, get_general_filename("preprocess", energy_source, feature_group, ModelOutputType.AbsPower, args.extractor), abs_data)
             if dyn_data is not None:
-                save_csv(data_saved_path, get_general_filename("preprocess", energy_source, feature_group, ModelOutputType.DynPower, args.extractor, args.isolator), dyn_data)
+                save_csv(
+                    data_saved_path,
+                    get_general_filename("preprocess", energy_source, feature_group, ModelOutputType.DynPower, args.extractor, args.isolator),
+                    dyn_data,
+                )
 
         print(f"=========== Train {energy_source} Summary ============")
         # save args
@@ -580,7 +599,20 @@ def estimate(args):
             if pipeline_metadata is None:
                 print(f"no metadata for pipeline {pipeline_name}.")
                 continue
-            pipeline = get_pipeline(data_path, pipeline_name, pipeline_metadata["extractor"], args.profile, args.target_hints, args.bg_hints, args.abs_pipeline_name, pipeline_metadata["isolator"], pipeline_metadata["abs_trainers"], pipeline_metadata["dyn_trainers"], energy_sources, valid_fg)
+            pipeline = get_pipeline(
+                data_path,
+                pipeline_name,
+                pipeline_metadata["extractor"],
+                args.profile,
+                args.target_hints,
+                args.bg_hints,
+                args.abs_pipeline_name,
+                pipeline_metadata["isolator"],
+                pipeline_metadata["abs_trainers"],
+                pipeline_metadata["dyn_trainers"],
+                energy_sources,
+                valid_fg,
+            )
             if pipeline is None:
                 print(f"cannot get pipeline {pipeline_name}.")
                 continue
@@ -742,7 +774,16 @@ def plot(args):
                 predicted_power_cols += [predicted_power_colname]
             data_filename = get_general_filename(args.target_data, energy_source, fg, ot, args.extractor, args.isolator)
             # plot prediction
-            ts_plot(data, cols, f"{energy_source} {ot.name} Prediction Result \n by {model_id}", output_folder, f"{data_filename}_{model_id}", subtitles=subtitles, labels=plot_labels, ylabel="Power (W)")
+            ts_plot(
+                data,
+                cols,
+                f"{energy_source} {ot.name} Prediction Result \n by {model_id}",
+                output_folder,
+                f"{data_filename}_{model_id}",
+                subtitles=subtitles,
+                labels=plot_labels,
+                ylabel="Power (W)",
+            )
             # plot correlation to utilization if feature group is set
             if fg is not None:
                 feature_cols = FeatureGroups[fg]
@@ -751,7 +792,17 @@ def plot(args):
                 # plot raw feature data to confirm min-max value
                 ts_plot(data, feature_cols, f"Features {fg}", output_folder, f"{data_filename}_{fg}", labels=None, subtitles=None, ylabel=None)
                 data[feature_cols] = scaler.fit_transform(data[feature_cols])
-                feature_power_plot(data, model_id, ot.name, energy_source, feature_cols, actual_power_cols, predicted_power_cols, output_folder, f"{data_filename}_{model_id}_corr")
+                feature_power_plot(
+                    data,
+                    model_id,
+                    ot.name,
+                    energy_source,
+                    feature_cols,
+                    actual_power_cols,
+                    predicted_power_cols,
+                    output_folder,
+                    f"{data_filename}_{model_id}_corr",
+                )
 
     elif args.target_data == "error":
         from sklearn.preprocessing import MaxAbsScaler
@@ -964,7 +1015,9 @@ def run():
     parser.add_argument("-e", "--energy-source", type=str, help="Specify energy source.", default="rapl-sysfs")
     parser.add_argument("--abs-trainers", type=str, help="Specify trainer names for train command (use comma(,) as delimiter).", default="default")
     parser.add_argument("--dyn-trainers", type=str, help="Specify trainer names for train command (use comma(,) as delimiter).", default="default")
-    parser.add_argument("--trainers", type=str, help="Specify trainer names for train_from_data command (use comma(,) as delimiter).", default="XgboostFitTrainer")
+    parser.add_argument(
+        "--trainers", type=str, help="Specify trainer names for train_from_data command (use comma(,) as delimiter).", default="XgboostFitTrainer"
+    )
 
     # Validate arguments
     parser.add_argument("--benchmark", type=str, help="Specify benchmark file name.")

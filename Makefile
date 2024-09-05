@@ -15,6 +15,10 @@ PYTHON  := python3.10
 DOCKERFILES_PATH := ./dockerfiles
 MODEL_PATH := ${PWD}/tests/models
 
+.PHONY: fmt
+fmt:
+	@hatch fmt -f
+
 .PHONY: lint
 lint:
 	@hatch run pymarkdownlnt scan -r .

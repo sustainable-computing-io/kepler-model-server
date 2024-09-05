@@ -12,14 +12,16 @@ similarity_reference = {
 
 similarity_total_weight = sum(similarity_reference.values())
 
-def get_similarity_weight(attr):
-    return similarity_reference[attr]/similarity_total_weight
 
-def compute_jaccard_similarity(str1 :str, str2: str) -> float:
-    if str1.lower() == str2.lower(): # including the case of both are empty
+def get_similarity_weight(attr):
+    return similarity_reference[attr] / similarity_total_weight
+
+
+def compute_jaccard_similarity(str1: str, str2: str) -> float:
+    if str1.lower() == str2.lower():  # including the case of both are empty
         return 1
-    if len(str1) == 0 or len(str2)==0:
-       return 0
+    if len(str1) == 0 or len(str2) == 0:
+        return 0
     set1 = set(str1.lower())  # Convert to lowercase for case-insensitive comparison
     set2 = set(str2.lower())
 
@@ -29,19 +31,22 @@ def compute_jaccard_similarity(str1 :str, str2: str) -> float:
     similarity = intersection / union * 0.5
     return similarity
 
-def compute_similarity(base : float, cmp: float) -> float:
+
+def compute_similarity(base: float, cmp: float) -> float:
     base = float(base)
     cmp = float(cmp)
     diff_ratio = 0
     if base > 0 or cmp > 0:
-        diff_ratio = abs(cmp-base)/((base+cmp)/2)
+        diff_ratio = abs(cmp - base) / ((base + cmp) / 2)
     if diff_ratio >= 1:
         return 0
     else:
-        return 1-diff_ratio
+        return 1 - diff_ratio
+
 
 def compute_looseness(similarity):
-    return 1-similarity
+    return 1 - similarity
+
 
 # get_candidate_score returns certainty
 def get_candidate_score(candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total):
@@ -56,8 +61,9 @@ def get_candidate_score(candidate_uncertain_attribute_freq, candidate_uncertain_
             candidate_freq = candidate[1]
             if candidate_index not in candidate_score:
                 candidate_score[candidate_index] = 0
-            candidate_score[candidate_index] += float(candidate_freq)/total
+            candidate_score[candidate_index] += float(candidate_freq) / total
     return candidate_score
+
 
 def find_best_candidate(candidate_score):
     max_score = 0
@@ -68,11 +74,13 @@ def find_best_candidate(candidate_score):
             max_score = score
     return best_candidate_index, max_score
 
+
 def compute_uncertainty(max_score, num_of_none):
     if num_of_none == 0:
-        return 0 # covered
-    uncertainty = 1 - max_score/num_of_none
+        return 0  # covered
+    uncertainty = 1 - max_score / num_of_none
     return uncertainty
+
 
 def get_num_of_none(in_spec):
     num_of_none = 0

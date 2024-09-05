@@ -121,7 +121,14 @@ def generate_pipeline_page(version_path, pipeline_metadata, workload_content, sk
 ## Workload information
 
 {}
-    """.format(pipeline_name, pipeline_metadata["extractor"], pipeline_metadata["isolator"], format_trainer(pipeline_metadata["abs_trainers"]), "  (same as AbsPower Trainers)" if pipeline_metadata["abs_trainers"] == pipeline_metadata["dyn_trainers"] else pipeline_metadata["dyn_trainers"], workload_content)
+    """.format(
+        pipeline_name,
+        pipeline_metadata["extractor"],
+        pipeline_metadata["isolator"],
+        format_trainer(pipeline_metadata["abs_trainers"]),
+        "  (same as AbsPower Trainers)" if pipeline_metadata["abs_trainers"] == pipeline_metadata["dyn_trainers"] else pipeline_metadata["dyn_trainers"],
+        workload_content,
+    )
 
     write_markdown(markdown_filepath, markdown_content)
 
@@ -149,10 +156,24 @@ def get_error_dict(remote_version_path, best_model_collection):
             for feature_group_name, best_item in collection[energy_source][output_type_name].items():
                 best_item_with_weight = best_model_collection.get_best_item_with_weight(energy_source, output_type_name, feature_group_name)
                 if best_item is not None:
-                    items += [{"Feature group": feature_group_name, "Model name": best_item.model_name, "MAE": "{:.2f}".format(best_item.metadata["mae"]), "MAPE (%)": "{:.1f}".format(best_item.metadata["mape"]), "URL": best_item.get_archived_filepath(remote_version_path)}]
+                    items += [
+                        {
+                            "Feature group": feature_group_name,
+                            "Model name": best_item.model_name,
+                            "MAE": "{:.2f}".format(best_item.metadata["mae"]),
+                            "MAPE (%)": "{:.1f}".format(best_item.metadata["mape"]),
+                            "URL": best_item.get_archived_filepath(remote_version_path),
+                        }
+                    ]
                 if best_item_with_weight is not None:
                     weight_items += [
-                        {"Feature group": feature_group_name, "Model name": best_item_with_weight.model_name, "MAE": "{:.2f}".format(best_item_with_weight.metadata["mae"]), "MAPE (%)": "{:.1f}".format(best_item_with_weight.metadata["mape"]), "URL": best_item_with_weight.get_weight_filepath(remote_version_path)}
+                        {
+                            "Feature group": feature_group_name,
+                            "Model name": best_item_with_weight.model_name,
+                            "MAE": "{:.2f}".format(best_item_with_weight.metadata["mae"]),
+                            "MAPE (%)": "{:.1f}".format(best_item_with_weight.metadata["mape"]),
+                            "URL": best_item_with_weight.get_weight_filepath(remote_version_path),
+                        }
                     ]
             error_dict[energy_source][output_type_name] = pd.DataFrame(items)
             error_dict_with_weight[energy_source][output_type_name] = pd.DataFrame(weight_items)
@@ -230,7 +251,8 @@ def generate_pipeline_readme(pipeline_name, local_export_path, node_type_index_j
 # append_version_readme - version/README.md
 def append_version_readme(local_version_path, pipeline_metadata):
     readme_path = os.path.join(local_version_path, "README.md")
-    content_to_append = "[{0}](./.doc/{0}.md)|{1}|{2}|[{3}](https://github.com/{3})|[link](./{0})\n".format(pipeline_metadata["name"], pipeline_metadata["collect_time"], pipeline_metadata["last_update_time"], pipeline_metadata["publisher"])
+    content_to_append = "[{0}](./.doc/{0}.md)|{1}|{2}|[{3}](https://github.com/{3})|[link](./{0})\n".format(
+        pipeline_metadata["name"], pipeline_metadata["collect_time"], pipeline_metadata["last_update_time"], pipeline_metadata["publisher"]
+    )
     with open(readme_path, "a") as file:
         file.write(content_to_append)
-

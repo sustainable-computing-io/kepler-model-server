@@ -14,7 +14,9 @@ trainer_names = ["SGDRegressorTrainer"]
 test_energy_sources = ["acpi", "rapl-sysfs"]
 
 
-def generate_request(train_name, n=1, metrics=WORKLOAD_FEATURES, system_features=SYSTEM_FEATURES, output_type=ModelOutputType.DynPower.name, energy_source=test_energy_source):
+def generate_request(
+    train_name, n=1, metrics=WORKLOAD_FEATURES, system_features=SYSTEM_FEATURES, output_type=ModelOutputType.DynPower.name, energy_source=test_energy_source
+):
     request_json = dict()
     if train_name is not None:
         request_json["trainer_name"] = train_name

@@ -10,4 +10,3 @@ class SGDRegressorTrainer(ScikitTrainer):
 
     def init_model(self):
         return SGDRegressor(max_iter=1000)
-

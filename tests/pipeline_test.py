@@ -14,7 +14,9 @@ test_energy_sources = ["acpi", "rapl-sysfs"]
 
 
 def assert_pipeline(pipeline, query_results, feature_group, energy_source, energy_components):
-    success, abs_data, dyn_data = pipeline.process(query_results, energy_components, energy_source, feature_group=feature_group.name, replace_node_type=default_node_type)
+    success, abs_data, dyn_data = pipeline.process(
+        query_results, energy_components, energy_source, feature_group=feature_group.name, replace_node_type=default_node_type
+    )
     assert success, f"failed to process pipeline {pipeline.name}"
     for trainer in pipeline.trainers:
         if trainer.feature_group == feature_group and trainer.energy_source == energy_source:
@@ -40,7 +42,15 @@ def process(
         valid_feature_groups = get_valid_feature_group_from_queries(query_results.keys())
     for extractor in extractors:
         for isolator in isolators:
-            pipeline = NewPipeline(save_pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=extractor, isolator=isolator, target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
+            pipeline = NewPipeline(
+                save_pipeline_name,
+                abs_trainer_names,
+                dyn_trainer_names,
+                extractor=extractor,
+                isolator=isolator,
+                target_energy_sources=target_energy_sources,
+                valid_feature_groups=valid_feature_groups,
+            )
             global spec
             pipeline.node_collection.index_train_machine("test", spec)
             for energy_source in target_energy_sources:

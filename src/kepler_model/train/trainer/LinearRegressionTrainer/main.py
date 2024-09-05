@@ -12,4 +12,3 @@ class LinearRegressionTrainer(ScikitTrainer):
 
     def init_model(self):
         return LinearRegression(positive=True)
-

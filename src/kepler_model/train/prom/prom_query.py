@@ -42,4 +42,3 @@ class PrometheusClient:
 
     def snapshot_query_result(self):
         return {metric: data for metric, data in self.latest_query_result.items() if len(data) > 0}
-

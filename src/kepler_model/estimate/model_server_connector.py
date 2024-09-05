@@ -17,11 +17,13 @@ from kepler_model.util.train_types import ModelOutputType
 
 
 def make_model_request(power_request, machine_spec=None):
-    model_request = {"metrics": power_request.metrics + power_request.system_features,
-                     "output_type": power_request.output_type,
-                     "source": power_request.energy_source,
-                     "filter": power_request.filter,
-                     "trainer_name": power_request.trainer_name}
+    model_request = {
+        "metrics": power_request.metrics + power_request.system_features,
+        "output_type": power_request.output_type,
+        "source": power_request.energy_source,
+        "filter": power_request.filter,
+        "trainer_name": power_request.trainer_name,
+    }
     if machine_spec is not None:
         model_request["machine_spec"] = machine_spec
     return model_request
@@ -68,7 +70,7 @@ def list_all_models(energy_source=None, output_type=None, feature_group=None, no
         return dict()
     try:
         endpoint = get_model_server_list_endpoint()
-        params= {}
+        params = {}
         if energy_source:
             params[ModelListParam.EnergySource.value] = energy_source
         if output_type:
@@ -76,7 +78,7 @@ def list_all_models(energy_source=None, output_type=None, feature_group=None, no
         if feature_group:
             params[ModelListParam.FeatureGroup.value] = feature_group
         if node_type:
-           params[ModelListParam.NodeType.value] = node_type
+            params[ModelListParam.NodeType.value] = node_type
         if filter:
             params[ModelListParam.Filter.value] = filter
 

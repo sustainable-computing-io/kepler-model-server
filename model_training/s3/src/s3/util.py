@@ -7,7 +7,13 @@ def new_ibm_client(args):
     import ibm_boto3
     from ibm_botocore.client import Config
 
-    cos = ibm_boto3.resource("s3", ibm_api_key_id=args.api_key, ibm_service_instance_id=args.service_instance_id, config=Config(signature_version="oauth"), endpoint_url=args.service_endpoint)
+    cos = ibm_boto3.resource(
+        "s3",
+        ibm_api_key_id=args.api_key,
+        ibm_service_instance_id=args.service_instance_id,
+        config=Config(signature_version="oauth"),
+        endpoint_url=args.service_endpoint,
+    )
     return cos
 
 

@@ -233,8 +233,20 @@ def initial_trainers(trainer_names, node_level, pipeline_name, target_energy_sou
     return trainers
 
 
-def NewPipeline(pipeline_name, abs_trainer_names, dyn_trainer_names, extractor=DefaultExtractor(), isolator=MinIdleIsolator(), target_energy_sources=PowerSourceMap.keys(), valid_feature_groups=FeatureGroups.keys()):
-    abs_trainers = initial_trainers(abs_trainer_names, node_level=True, pipeline_name=pipeline_name, target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
-    dyn_trainers = initial_trainers(dyn_trainer_names, node_level=False, pipeline_name=pipeline_name, target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
+def NewPipeline(
+    pipeline_name,
+    abs_trainer_names,
+    dyn_trainer_names,
+    extractor=DefaultExtractor(),
+    isolator=MinIdleIsolator(),
+    target_energy_sources=PowerSourceMap.keys(),
+    valid_feature_groups=FeatureGroups.keys(),
+):
+    abs_trainers = initial_trainers(
+        abs_trainer_names, node_level=True, pipeline_name=pipeline_name, target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups
+    )
+    dyn_trainers = initial_trainers(
+        dyn_trainer_names, node_level=False, pipeline_name=pipeline_name, target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups
+    )
     trainers = abs_trainers + dyn_trainers
     return Pipeline(pipeline_name, trainers, extractor, isolator)

@@ -78,7 +78,12 @@ class ScikitTrainer(Trainer):
 
         for component, model in self.node_models[node_type].items():
             scaler = self.node_scalers[node_type]
-            if not hasattr(model, "intercept_") or not hasattr(model, "coef_") or len(model.coef_) != len(self.features) or (hasattr(model.intercept_, "__len__") and len(model.intercept_) != 1):
+            if (
+                not hasattr(model, "intercept_")
+                or not hasattr(model, "coef_")
+                or len(model.coef_) != len(self.features)
+                or (hasattr(model.intercept_, "__len__") and len(model.intercept_) != 1)
+            ):
                 return None
             else:
                 if isinstance(model.intercept_, np.float64):
@@ -104,4 +109,3 @@ class ScikitTrainer(Trainer):
                     }
                 }
         return weight_dict
-

@@ -23,4 +23,3 @@ if __name__ == "__main__":
             data = prom_client.get_data(query_metric, features)
             print(f"Query: {query_metric} Type: {fg.name} Features: {features}")
             print(None if data is None else data.head())
-

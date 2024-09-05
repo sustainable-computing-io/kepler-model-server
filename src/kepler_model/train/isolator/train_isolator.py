@@ -88,8 +88,12 @@ def get_target_data_with_dyn_power(model, energy_components, extracted_power_lab
 
 
 # traverse all abs_model with minimum mae for each energy_source
-def find_best_target_data_with_dyn_power(energy_source, energy_components, extracted_data, background_containers, label_cols, toppath=model_toppath, pipeline_name=default_train_output_pipeline):
-    workload_feature_cols = [col for col in extracted_data.columns if col not in label_cols and col not in container_level_index and "ratio" not in col and "node" not in col]
+def find_best_target_data_with_dyn_power(
+    energy_source, energy_components, extracted_data, background_containers, label_cols, toppath=model_toppath, pipeline_name=default_train_output_pipeline
+):
+    workload_feature_cols = [
+        col for col in extracted_data.columns if col not in label_cols and col not in container_level_index and "ratio" not in col and "node" not in col
+    ]
     curr_min_err = None
     curr_max_corr = None
     best_target_data_with_dyn_power = None
@@ -103,7 +107,9 @@ def find_best_target_data_with_dyn_power(energy_source, energy_components, extra
     for model in abs_models:
         err = model.mae
         # dynamic power = remove background power from label power
-        target_data_with_dyn_power, background_data_with_prediction = get_target_data_with_dyn_power(model, energy_components, extracted_power_labels, target_data, background_data)
+        target_data_with_dyn_power, background_data_with_prediction = get_target_data_with_dyn_power(
+            model, energy_components, extracted_power_labels, target_data, background_data
+        )
         # find correlation between dynamic power and target container usage
         dyn_power_cols = [get_dynamic_power_colname(energy_component) for energy_component in energy_components]
         corr_data = find_correlations(energy_source, target_data_with_dyn_power.groupby([TIMESTAMP_COL]).sum(), dyn_power_cols, workload_feature_cols).dropna()
@@ -158,7 +164,9 @@ class TrainIsolator(Isolator):
                 self.background_containers = get_background_container_from_target_hints(data, self.bg_hints)
         energy_components = PowerSourceMap[energy_source]
         label_cols = list(label_cols)
-        best_target_data_with_dyn_power, _ = find_best_target_data_with_dyn_power(energy_source, energy_components, data, self.background_containers, label_cols, pipeline_name=self.abs_pipeline_name)
+        best_target_data_with_dyn_power, _ = find_best_target_data_with_dyn_power(
+            energy_source, energy_components, data, self.background_containers, label_cols, pipeline_name=self.abs_pipeline_name
+        )
         if best_target_data_with_dyn_power is None:
             return None
         isolated_data = best_target_data_with_dyn_power.copy()
@@ -181,16 +189,19 @@ class TrainIsolator(Isolator):
     def reconstruct(self, extracted_data, data_with_prediction, energy_source, label_cols):
         reconstructed_data = data_with_prediction.groupby([TIMESTAMP_COL]).sum()
         energy_components = PowerSourceMap[energy_source]
-        _, background_data_with_prediction = find_best_target_data_with_dyn_power(energy_source, energy_components, extracted_data, self.background_containers, label_cols)
+        _, background_data_with_prediction = find_best_target_data_with_dyn_power(
+            energy_source, energy_components, extracted_data, self.background_containers, label_cols
+        )
         background_power_colnames = [get_predicted_background_power_colname(energy_component) for energy_component in energy_components]
         background_powers = background_data_with_prediction[background_power_colnames].groupby([TIMESTAMP_COL]).sum()
         reconstructed_data = reconstructed_data.join(background_powers)
         for energy_component in energy_components:
             predicted_colname = get_predicted_power_colname[energy_source]
             background_power_colname = get_predicted_background_power_colname(energy_component)
-            reconstructed_data[get_reconstructed_power_colname(energy_component)] = data_with_prediction[predicted_colname] + background_data_with_prediction[background_power_colname]
+            reconstructed_data[get_reconstructed_power_colname(energy_component)] = (
+                data_with_prediction[predicted_colname] + background_data_with_prediction[background_power_colname]
+            )
         return reconstructed_data
 
     def get_name(self):
         return "trainer"
-

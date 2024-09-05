@@ -82,10 +82,19 @@ def assert_extract(extracted_data, power_columns, energy_components, num_of_unit
     assert len(power_columns) == expected_power_column_length, f"unexpected power label columns {power_columns}, expected {expected_power_column_length}"
     # TODO: if ratio applied, expected_col_size must + 1 for power_ratio
     expected_col_size = expected_power_column_length + len(FeatureGroups[FeatureGroup[feature_group]]) + num_of_unit  # power ratio
-    assert len(extracted_data_column_names) == expected_col_size, f"unexpected column length: expected {expected_col_size}, got {extracted_data_column_names}({len(extracted_data_column_names)}) "
+    assert (
+        len(extracted_data_column_names) == expected_col_size
+    ), f"unexpected column length: expected {expected_col_size}, got {extracted_data_column_names}({len(extracted_data_column_names)}) "
 
 
-def process(query_results, feature_group, save_path=extractor_output_path, customize_extractors=test_customize_extractors, energy_source=test_energy_source, num_of_unit=2):
+def process(
+    query_results,
+    feature_group,
+    save_path=extractor_output_path,
+    customize_extractors=test_customize_extractors,
+    energy_source=test_energy_source,
+    num_of_unit=2,
+):
     energy_components = PowerSourceMap[energy_source]
     global test_extractors
     for extractor_name in customize_extractors:

@@ -49,4 +49,3 @@ def get_expected_power_columns(energy_components, num_of_unit=1):
     # TODO: if ratio applied,
     # return [component_to_col(component, "package", unit_val) for component in energy_components for unit_val in range(0,num_of_unit)]
     return [component_to_col(component) for component in energy_components]
-

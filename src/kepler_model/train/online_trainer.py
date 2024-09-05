@@ -25,8 +25,24 @@ def initial_pipelines():
     target_energy_sources = PowerSourceMap.keys()
     valid_feature_groups = FeatureGroups.keys()
     profiles = load_all_profiles()
-    profile_pipeline = NewPipeline(default_train_output_pipeline, abs_trainer_names, dyn_trainer_names, extractor=DefaultExtractor(), isolator=ProfileBackgroundIsolator(profiles), target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
-    non_profile_pipeline = NewPipeline(default_train_output_pipeline, abs_trainer_names, dyn_trainer_names, extractor=DefaultExtractor(), isolator=MinIdleIsolator(), target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups)
+    profile_pipeline = NewPipeline(
+        default_train_output_pipeline,
+        abs_trainer_names,
+        dyn_trainer_names,
+        extractor=DefaultExtractor(),
+        isolator=ProfileBackgroundIsolator(profiles),
+        target_energy_sources=target_energy_sources,
+        valid_feature_groups=valid_feature_groups,
+    )
+    non_profile_pipeline = NewPipeline(
+        default_train_output_pipeline,
+        abs_trainer_names,
+        dyn_trainer_names,
+        extractor=DefaultExtractor(),
+        isolator=MinIdleIsolator(),
+        target_energy_sources=target_energy_sources,
+        valid_feature_groups=valid_feature_groups,
+    )
     return profile_pipeline, non_profile_pipeline
 
 

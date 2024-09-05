@@ -35,10 +35,7 @@ PREPROCESS_FOLDERNAME = "preprocessed_data"
 
 ## default_train_output_pipeline: a default pipeline name which is output from the training pipeline
 default_train_output_pipeline = f"std_v{version}"
-default_pipelines = {
-    "rapl-sysfs": f"ec2-{version}",
-    "acpi": f"specpower-{version}"
-}
+default_pipelines = {"rapl-sysfs": f"ec2-{version}", "acpi": f"specpower-{version}"}
 base_model_url = f"https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/models/v{major_version}"
 
 
@@ -65,12 +62,10 @@ default_node_type = 0
 any_node_type = -1
 default_feature_group = FeatureGroup.BPFOnly
 # need to set as default node_type is not available in latest release DB
-default_init_model_name = {
-    "rapl-sysfs": "GradientBoostingRegressorTrainer_1",
-    "acpi": "XgboostFitTrainer_109"
-}
+default_init_model_name = {"rapl-sysfs": "GradientBoostingRegressorTrainer_1", "acpi": "XgboostFitTrainer_109"}
 
-def load_json(path: str, name: str=""):
+
+def load_json(path: str, name: str = ""):
     filepath = path
     if name:
         if name.endswith(".json") is False:
@@ -112,17 +107,19 @@ def load_remote_pkl(url_path):
         logger.error(f"failed to load pkl url {url_path}: {e}")
         return None
 
+
 def load_remote_json(url_path):
     if ".json" not in url_path:
         url_path = url_path + ".json"
     try:
         response = urlopen(url_path)
-        response_data = response.read().decode('utf-8')
+        response_data = response.read().decode("utf-8")
         json_data = json.loads(response_data)
         return json_data
     except Exception as e:
         logger.error(f"failed to load json url {url_path}: {e}")
         return None
+
 
 def load_machine_spec(data_path, machine_id):
     machine_spec_path = os.path.join(data_path, MACHINE_SPEC_PATH)
@@ -228,6 +225,7 @@ def is_matched_type(nodeCollection, spec, pipeline_name, model_name, node_type, 
             return True
     return False
 
+
 # get_largest_candidates return list of model_names that have maximum number of cores
 def get_largest_candidates(model_names, pipeline_name, nodeCollection, energy_source):
     pipeline_name = assure_pipeline_name(pipeline_name, energy_source, nodeCollection)
@@ -306,7 +304,9 @@ def list_pipelines(model_toppath, energy_source, model_type):
 def list_all_abs_models(model_toppath, energy_source, valid_fgs, pipeline_name):
     abs_models_map = dict()
     for fg in valid_fgs:
-        group_path = get_model_group_path(model_toppath, output_type=ModelOutputType.AbsPower, feature_group=fg, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
+        group_path = get_model_group_path(
+            model_toppath, output_type=ModelOutputType.AbsPower, feature_group=fg, energy_source=energy_source, pipeline_name=pipeline_name, assure=False
+        )
         model_names = list_model_names(group_path)
         abs_models_map[group_path] = model_names
     return abs_models_map
@@ -315,7 +315,9 @@ def list_all_abs_models(model_toppath, energy_source, valid_fgs, pipeline_name):
 def list_all_dyn_models(model_toppath, energy_source, valid_fgs, pipeline_name):
     dyn_models_map = dict()
     for fg in valid_fgs:
-        group_path = get_model_group_path(model_toppath, output_type=ModelOutputType.DynPower, feature_group=fg, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
+        group_path = get_model_group_path(
+            model_toppath, output_type=ModelOutputType.DynPower, feature_group=fg, energy_source=energy_source, pipeline_name=pipeline_name, assure=False
+        )
         model_names = list_model_names(group_path)
         dyn_models_map[group_path] = model_names
     return dyn_models_map
@@ -334,7 +336,14 @@ def _get_metadata_df(group_path):
 
 
 def get_metadata_df(model_toppath, model_type, fg, energy_source, pipeline_name):
-    group_path = get_model_group_path(model_toppath, output_type=ModelOutputType[model_type], feature_group=FeatureGroup[fg], energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
+    group_path = get_model_group_path(
+        model_toppath,
+        output_type=ModelOutputType[model_type],
+        feature_group=FeatureGroup[fg],
+        energy_source=energy_source,
+        pipeline_name=pipeline_name,
+        assure=False,
+    )
     metadata_df = _get_metadata_df(group_path)
     if len(metadata_df) > 0:
         metadata_df[["trainer", "node_type"]] = metadata_df["model_name"].str.split("_", n=1, expand=True)
@@ -374,10 +383,22 @@ def get_download_output_path(download_path, energy_source, output_type) -> str:
     return os.path.join(energy_source_path, output_type.name)
 
 
-def get_url(output_type, feature_group, energy_source, trainer_name=default_trainer_name, node_type=default_node_type, model_topurl=base_model_url, pipeline_name=None, model_name=None, weight=False):
+def get_url(
+    output_type,
+    feature_group,
+    energy_source,
+    trainer_name=default_trainer_name,
+    node_type=default_node_type,
+    model_topurl=base_model_url,
+    pipeline_name=None,
+    model_name=None,
+    weight=False,
+):
     if pipeline_name is None:
         pipeline_name = default_pipelines[energy_source]
-    group_path = get_model_group_path(model_topurl, output_type=output_type, feature_group=feature_group, energy_source=energy_source, pipeline_name=pipeline_name, assure=False)
+    group_path = get_model_group_path(
+        model_topurl, output_type=output_type, feature_group=feature_group, energy_source=energy_source, pipeline_name=pipeline_name, assure=False
+    )
     if model_name is None:
         model_name = get_model_name(trainer_name, node_type)
     file_ext = ".zip"

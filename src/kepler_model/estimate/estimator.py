@@ -42,6 +42,7 @@ class PowerRequest:
 
 loaded_model = dict()
 
+
 def handle_request(data: str, machine_spec=None, discovered_core=None) -> dict:
     try:
         power_request = json.loads(data, object_hook=lambda d: PowerRequest(**d))
@@ -72,7 +73,7 @@ def handle_request(data: str, machine_spec=None, discovered_core=None) -> dict:
                     logger.info(f"try obtaining the requesting trainer {power_request.trainer_name} (current: {current_trainer})")
     if power_request.energy_source not in loaded_model[output_type.name] or mismatch_trainer:
         output_path = get_download_output_path(download_path, power_request.energy_source, output_type)
-        if  mismatch_trainer and os.path.exists(output_path):
+        if mismatch_trainer and os.path.exists(output_path):
             # remove existing model if mismatch
             shutil.rmtree(output_path)
         if not os.path.exists(output_path):
@@ -114,12 +115,13 @@ def handle_request(data: str, machine_spec=None, discovered_core=None) -> dict:
             model_spec = NodeTypeSpec(**metadata["machine_spec"])
             model_cores = model_spec.get_cores()
             if model_cores > 0:
-                core_ratio = discovered_core/model_cores
+                core_ratio = discovered_core / model_cores
             logger.debug(f"model cores: {model_cores}")
         logger.debug(f"metadata: {metadata}")
     response["core_ratio"] = core_ratio
 
     return response
+
 
 class EstimatorServer:
     def __init__(self, socket_path, machine_spec):
@@ -157,6 +159,7 @@ class EstimatorServer:
         y = handle_request(decoded_data, self.machine_spec, self.discovered_core)
         response = json.dumps(y)
         connection.send(response.encode())
+
 
 def clean_socket():
     logger.info("clean socket")
