@@ -13,11 +13,15 @@
 #################################################
 
 import os
+import logging
 
 import requests
 
 from .loader import base_model_url, default_init_model_name, default_pipelines, default_train_output_pipeline, get_pipeline_url, get_url
 from .train_types import FeatureGroup, ModelOutputType, is_output_type_supported
+
+logger = logging.getLogger(__name__)
+
 
 # must be writable (for shared volume mount)
 MNT_PATH = "/mnt"
@@ -122,7 +126,7 @@ def set_env_from_model_config():
         splits = line.split("=")
         if len(splits) > 1:
             os.environ[splits[0].strip()] = splits[1].strip()
-            print(f"set {splits[0]} to {splits[1]}.")
+            logging.info(f"set {splits[0]} to {splits[1]}.")
 
 
 def is_estimator_enable(prefix):
@@ -152,7 +156,7 @@ def get_init_model_url(energy_source, output_type, model_topurl=model_topurl):
     for prefix in modelConfigPrefix:
         if get_energy_source(prefix) == energy_source:
             modelURL = get_init_url(prefix)
-            print("get init url", modelURL)
+            logger.info("get init url", modelURL)
             url = get_url(
                 feature_group=FeatureGroup.BPFOnly,
                 output_type=ModelOutputType[output_type],
@@ -175,7 +179,7 @@ def get_init_model_url(energy_source, output_type, model_topurl=model_topurl):
                         response = requests.get(url)
                         if response.status_code == 200:
                             modelURL = url
-                print(f"init URL is not set, use {modelURL}")
+                logger.info(f"init URL is not set, use {modelURL}")
             return modelURL
-    print(f"no match config for {output_type}, {energy_source}")
+    logger.info(f"no match config for {output_type}, {energy_source}")
     return ""
