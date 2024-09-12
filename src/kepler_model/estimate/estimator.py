@@ -13,7 +13,7 @@ from kepler_model.estimate.archived_model import get_achived_model
 from kepler_model.estimate.model.model import load_downloaded_model
 from kepler_model.estimate.model_server_connector import is_model_server_enabled, make_request
 from kepler_model.train.profiler.node_type_index import NodeTypeSpec, discover_spec_values, get_machine_spec
-from kepler_model.util.config import SERVE_SOCKET, download_path, set_env_from_model_config
+from kepler_model.util.config import CONFIG_PATH, SERVE_SOCKET, download_path, set_env_from_model_config, set_config_dir
 from kepler_model.util.loader import get_download_output_path, load_metadata
 from kepler_model.util.train_types import ModelOutputType, convert_enery_source, is_output_type_supported
 
@@ -185,7 +185,14 @@ def sig_handler(signum, frame) -> None:
     type=click.Path(exists=True),
     required=False,
 )
-def run(log_level: str, machine_spec: str):
+@click.option(
+    "--config-dir",
+    "-c",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False),
+    default=CONFIG_PATH,
+    required=False,
+)
+def run(log_level: str, machine_spec: str, config_dir: str) -> int:
     level = getattr(logging, log_level.upper())
     logging.basicConfig(
         level=level,
@@ -194,6 +201,8 @@ def run(log_level: str, machine_spec: str):
     )
 
     logger.info("starting estimator")
+    set_config_dir(config_dir)
+
     set_env_from_model_config()
     clean_socket()
     signal.signal(signal.SIGTERM, sig_handler)

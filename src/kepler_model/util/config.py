@@ -48,6 +48,11 @@ MODEL_SERVER_ENABLE = False
 SERVE_SOCKET = "/tmp/estimator.sock"
 
 
+def set_config_dir(config_dir: str):
+    global CONFIG_PATH
+    CONFIG_PATH = config_dir
+
+
 def getConfig(key: str, default):
     # check configmap path
     file = os.path.join(CONFIG_PATH, key)
@@ -73,8 +78,6 @@ MNT_PATH = getConfig("MNT_PATH", MNT_PATH)
 if not os.path.exists(MNT_PATH) or not os.access(MNT_PATH, os.W_OK):
     # use local path if not exists or cannot write
     MNT_PATH = os.path.join(os.path.dirname(__file__), "..")
-
-CONFIG_PATH = getConfig("CONFIG_PATH", CONFIG_PATH)
 
 model_topurl = getConfig("MODEL_TOPURL", base_model_url)
 initial_pipeline_urls = getConfig("INITIAL_PIPELINE_URL", "")
