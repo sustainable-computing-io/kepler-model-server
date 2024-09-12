@@ -76,7 +76,7 @@ def load_json(path: str, name: str = ""):
             res = json.load(f)
         return res
     except Exception as err:
-        logger.error(f"fail to load json {filepath}: {err}")
+        logger.error(f"failed to load json {filepath}: {err}")
         return None
 
 
