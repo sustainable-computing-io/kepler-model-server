@@ -1,9 +1,14 @@
 name: model-dev
+include:
+  - path:
+      - ../monitoring/compose.yaml
+      - ./overrides.yaml
+
 services:
   kepler:
     image: quay.io/sustainable_computing_io/kepler:latest
     ports:
-      - 9100:9100
+      - 19100:9100
     privileged: true
     pid: host
     networks:
@@ -85,7 +90,7 @@ services:
 
   model-server:
     ports:
-      - 8100:8100
+      - 18100:8100
     command: [model-server, -l, debug]
     build:
       <<: *build
