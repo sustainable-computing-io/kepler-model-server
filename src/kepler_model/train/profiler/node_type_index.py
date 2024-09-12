@@ -77,7 +77,7 @@ def discover_spec_values():
         vendor = format_vendor(cpu_info["vendor_id_raw"])
 
     cores = psutil.cpu_count(logical=True)
-    chips = max(1, int(subprocess.check_output('cat /proc/cpuinfo | grep "physical id" | sort -u | wc -l', shell=True)))
+    chips = max(1, int(subprocess.check_output('grep "physical id" /proc/cpuinfo | sort -u | wc -l', shell=True)))
     threads_per_core = max(1, cores // psutil.cpu_count(logical=False))
     memory = psutil.virtual_memory().total
     memory_gb = int(memory / GB)
