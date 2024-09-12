@@ -136,7 +136,7 @@ class EstimatorServer:
         s = self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.bind(self.socket_path)
         s.listen(1)
-        logger.info(f"started serving on {self.socket_path}")
+        logger.info(f"listening on {self.socket_path}")
         try:
             while True:
                 connection, _ = s.accept()
@@ -193,6 +193,7 @@ def run(log_level: str, machine_spec: str):
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
+    logger.info("starting estimator")
     set_env_from_model_config()
     clean_socket()
     signal.signal(signal.SIGTERM, sig_handler)
