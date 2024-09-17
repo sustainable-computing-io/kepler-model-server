@@ -10,6 +10,7 @@
 
 import enum
 import random
+import importlib.util as import_util
 
 SYSTEM_FEATURES = ["node_info", "cpu_scaling_frequency_hertz"]
 
@@ -45,8 +46,11 @@ no_weight_trainers = [
     "KNeighborsRegressorTrainer",
     "LinearRegressionTrainer",
     "SVRRegressorTrainer",
-    "XgboostFitTrainer",
 ]
+
+if import_util.find_spec("xgboost"):
+    no_weight_trainers.append("XgboostFitTrainer")
+
 weight_support_trainers = ["SGDRegressorTrainer", "LogarithmicRegressionTrainer", "LogisticRegressionTrainer", "ExponentialRegressionTrainer"]
 default_trainer_names = no_weight_trainers + weight_support_trainers
 default_trainers = ",".join(default_trainer_names)
