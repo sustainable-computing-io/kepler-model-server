@@ -1,15 +1,11 @@
 import json
 import logging
-import importlib.util as import_util
 
 import pandas as pd
 
 from kepler_model.estimate.model.curvefit_model import CurveFitModelEstimator
 from kepler_model.estimate.model.scikit_model import ScikitModelEstimator
-
-if import_util.find_spec("xgboost"):
-    from kepler_model.estimate.model.xgboost_model import XgboostModelEstimator
-
+from kepler_model.estimate.model.xgboost_model import XgboostModelEstimator
 from kepler_model.util.config import download_path
 from kepler_model.util.loader import get_download_output_path, load_metadata
 from kepler_model.util.prom_types import valid_container_query
@@ -21,12 +17,10 @@ logger = logging.getLogger(__name__)
 # model wrapper
 MODELCLASS = {
     "scikit": ScikitModelEstimator,
+    "xgboost": XgboostModelEstimator,
     "curvefit": CurveFitModelEstimator,
     # 'keras': KerasModelEstimator,
 }
-
-if import_util.find_spec("xgboost"):
-    MODELCLASS["xgboost"] = XgboostModelEstimator
 
 
 def default_predicted_col_func(energy_component):
