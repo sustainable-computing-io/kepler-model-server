@@ -126,10 +126,16 @@ def set_env_from_model_config():
         return
 
     for line in model_config.splitlines():
-        splits = line.split("=")
+        line = line.strip()
+        # ignore comments and blanks
+        if not line or line.startswith("#"):
+            continue
+
+        # pick only the first part until # and ignore the rest
+        splits = line.split("#")[0].strip().split("=")
         if len(splits) > 1:
             os.environ[splits[0].strip()] = splits[1].strip()
-            logging.info(f"set {splits[0]} to {splits[1]}.")
+            logging.info(f"set env {splits[0]} to '{splits[1]}'.")
 
 
 def is_estimator_enable(prefix):
