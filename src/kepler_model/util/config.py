@@ -165,7 +165,7 @@ def get_init_model_url(energy_source, output_type, model_topurl=model_topurl):
     for prefix in modelConfigPrefix:
         if get_energy_source(prefix) == energy_source:
             modelURL = get_init_url(prefix)
-            logger.info("get init url", modelURL)
+            logger.info(f"get init url: {modelURL}")
             url = get_url(
                 feature_group=FeatureGroup.BPFOnly,
                 output_type=ModelOutputType[output_type],

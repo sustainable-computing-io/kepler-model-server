@@ -1,4 +1,5 @@
 import requests
+from requests_file import FileAdapter
 
 from kepler_model.estimate.model_server_connector import unpack
 from kepler_model.util.config import get_init_model_url
