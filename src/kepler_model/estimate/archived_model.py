@@ -1,4 +1,5 @@
 import logging
+
 import requests
 from requests_file import FileAdapter
 
@@ -45,7 +46,7 @@ def is_valid_model(metrics, metadata, filters):
 
     for attrb, val in filters.items():
         if not hasattr(metadata, attrb) or getattr(metadata, attrb) is None:
-            logger.warn(f"{metadata['model_name']} has no {attrb}")
+            logger.warning(f"{metadata['model_name']} has no {attrb}")
             return False
 
         cmp_val = getattr(metadata, attrb)
@@ -73,7 +74,7 @@ def get_achived_model(power_request):
     output_type = ModelOutputType[power_request.output_type]
     url = get_init_model_url(power_request.energy_source, output_type_name)
     if url == "":
-        logger.warn("no URL set for ", output_type_name, power_request.energy_source)
+        logger.warning(f"no URL set for {output_type_name}, {power_request.energy_source}")
         return None
     logger.info(f"try getting archieved model from URL: {url} for {output_type_name}")
 
@@ -94,7 +95,7 @@ def get_achived_model(power_request):
                 failed_list += [output_type_name]
                 return None
         except Exception as e:
-            logger.warn(f"cannot validate the archived model: {e}")
+            logger.warning(f"cannot validate the archived model: {e}")
             return None
 
     return output_path
