@@ -71,11 +71,16 @@ def get_achived_model(power_request):
     if url == "":
         print("no URL set for ", output_type_name, power_request.energy_source)
         return None
-    print(f"try getting archieved model from URL: {url} for {output_type_name}")
-    response = requests.get(url)
-    print(response)
+    logger.info(f"try getting archieved model from URL: {url} for {output_type_name}")
+
+    s = requests.Session()
+    s.mount("file://", FileAdapter())
+    response = s.get(url)
+    logger.debug(f"response: {response}")
+
     if response.status_code != 200:
         return None
+
     output_path = unpack(power_request.energy_source, output_type, response, replace=False)
     if output_path is not None:
         metadata = load_metadata(output_path)
