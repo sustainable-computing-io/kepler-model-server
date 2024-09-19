@@ -1,7 +1,8 @@
 services:
   prometheus:
     networks:
-      - kepler-network
+      - kepler-models-network
+      - kepler-metal-network
       - model-server-network
 
     volumes:
@@ -14,5 +15,5 @@ services:
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/dev/dashboard.json
     volumes:
       - type: bind
-        source: ../dev/grafana/dashboards/dev
+        source: ../dev/grafana/dashboards/dev/
         target: /var/lib/grafana/dashboards/dev

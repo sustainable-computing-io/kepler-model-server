@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 5,
+  "id": 3,
   "links": [],
   "panels": [
     {
@@ -29,9 +29,9 @@
         "x": 0,
         "y": 0
       },
-      "id": 22,
+      "id": 28,
       "panels": [],
-      "title": "MAPE and MSE -  Metal vs VM",
+      "title": "Node - MAPE & MSE - Metal vs Model",
       "type": "row"
     },
     {
@@ -109,7 +109,7 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_process_package_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_package_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n       )\n       / on ()\n        rate(kepler_process_package_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n    )[$__range:]\n    \n) * 100",
+          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_node_package_joules_total{job='metal', mode='${mode}'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_package_joules_total{job='models', mode='${mode}'}[$__rate_interval])\n       )\n       / on ()\n        rate(kepler_node_package_joules_total{job='metal', mode='${mode}'}[$__rate_interval])\n    )[$__range:]\n    \n) * 100",
           "hide": false,
           "instant": false,
           "legendFormat": "Package",
@@ -122,7 +122,7 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_process_core_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_core_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n       )\n       / on ()\n        rate(kepler_process_core_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n    )[$__range:]\n    \n) * 100",
+          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_node_core_joules_total{job='metal', mode='${mode}'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_core_joules_total{job='models', mode='${mode}'}[$__rate_interval])\n       )\n       / on ()\n        rate(kepler_node_core_joules_total{job='metal', mode='${mode}'}[$__rate_interval])\n    )[$__range:]\n    \n) * 100",
           "hide": false,
           "instant": false,
           "legendFormat": "Core",
@@ -135,7 +135,7 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_process_dram_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_dram_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n       )\n       / on ()\n        rate(kepler_process_dram_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n    )[$__range:]\n    \n) * 100",
+          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_node_dram_joules_total{job='metal', mode='${mode}'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_dram_joules_total{job='models', mode='${mode}'}[$__rate_interval])\n       )\n       / on ()\n        rate(kepler_node_dram_joules_total{job='metal', mode='${mode}'}[$__rate_interval])\n    )[$__range:]\n    \n) * 100",
           "hide": false,
           "instant": false,
           "legendFormat": "DRAM",
@@ -148,7 +148,7 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(\n  abs(\n     (\n        rate(kepler_process_platform_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_platform_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n    )\n    / on ()\n    rate(kepler_process_platform_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n  )[$__range:]\n\n) * 100\n\n\n",
+          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_node_platform_joules_total{job='metal', mode='${mode}'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_platform_joules_total{job='models', mode='${mode}'}[$__rate_interval])\n       )\n       / on ()\n        rate(kepler_node_platform_joules_total{job='metal', mode='${mode}'}[$__rate_interval])\n    )[$__range:]\n    \n) * 100",
           "hide": false,
           "instant": false,
           "legendFormat": "Platform",
@@ -233,7 +233,7 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_process_package_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_node_package_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n        )^2\n    )[$__range:]\n)\n",
+          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_node_package_joules_total{mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_node_package_joules_total{mode='${mode}', job='models'}[$__rate_interval]) \n        )^2\n    )[$__range:]\n)\n",
           "hide": false,
           "instant": false,
           "legendFormat": "Package",
@@ -246,7 +246,7 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_process_core_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_node_core_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n        )^2\n    )[$__range:]\n)\n",
+          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_node_core_joules_total{mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_node_core_joules_total{mode='${mode}', job='models'}[$__rate_interval]) \n        )^2\n    )[$__range:]\n)\n",
           "hide": false,
           "instant": false,
           "legendFormat": "Core",
@@ -259,7 +259,7 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_process_dram_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_node_dram_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n        )^2\n    )[$__range:]\n)\n",
+          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_node_dram_joules_total{mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_node_dram_joules_total{mode='${mode}', job='models'}[$__rate_interval]) \n        )^2\n    )[$__range:]\n)\n",
           "hide": false,
           "instant": false,
           "legendFormat": "DRAM",
@@ -272,7 +272,7 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_process_platform_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_node_platform_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n        )^2\n    )[$__range:]\n)",
+          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_node_core_joules_total{mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_node_core_joules_total{mode='${mode}', job='models'}[$__rate_interval]) \n        )^2\n    )[$__range:]\n)\n",
           "hide": false,
           "instant": false,
           "legendFormat": "Platform",
@@ -284,831 +284,16 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PDE6745920139CE56"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 11,
-        "x": 0,
-        "y": 9
-      },
-      "id": 24,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_process_bpf_cpu_time_ms_total{pid='${process}', job='metal'}[$__rate_interval]) \n        - on() \n        sum(rate(kepler_process_bpf_cpu_time_ms_total{job='vm' }[$__rate_interval]))\n       )\n       / on ()\n        rate(kepler_process_bpf_cpu_time_ms_total{pid='${process}', job='metal'}[$__rate_interval]) \n    )[$__range:]\n    \n) * 100",
-          "instant": false,
-          "legendFormat": "MAPE - bpf_cpu_time",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "MSE Metal vs VM BPF CPU TIme (${process}) ",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PDE6745920139CE56"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 13,
-        "x": 11,
-        "y": 9
-      },
-      "id": 26,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "10.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "avg_over_time(\n   (\n       (\n        rate(kepler_process_bpf_cpu_time_ms_total{pid='${process}', job='metal'}[$__rate_interval]) \n        - on() \n        sum(rate(kepler_process_bpf_cpu_time_ms_total{job='vm' }[$__rate_interval]))\n       ) ^ 2\n    )[$__range:]   \n)",
-          "instant": false,
-          "legendFormat": "MAPE - bpf_cpu_time",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "title": "MSE Metal vs VM BPF CPU TIme (${process}) ",
-      "type": "stat"
-    },
-    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 9
       },
-      "id": 15,
+      "id": 31,
       "panels": [],
-      "title": "Error Metrics Metal vs VM",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PDE6745920139CE56"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "dashed"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 0.1
-              },
-              {
-                "color": "#6ED0E0",
-                "value": 0.2
-              },
-              {
-                "color": "#EF843C",
-                "value": 0.3
-              },
-              {
-                "color": "#E24D42",
-                "value": 0.4
-              },
-              {
-                "color": "#1F78C1",
-                "value": 0.5
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Core"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#0400fb",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Dram"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Package"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "super-light-purple",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Platform"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#0fe1d6",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "Package"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 14
-      },
-      "id": 17,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "abs(\n        rate(kepler_process_core_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_core_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n    ) \n    / on() \n    rate(kepler_process_core_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval])",
-          "instant": false,
-          "legendFormat": "Core",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "abs(\n        rate(kepler_process_dram_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_dram_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n    ) \n    / on() \n    rate(kepler_process_dram_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval])",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "Dram",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "abs(\n        rate(kepler_process_package_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_package_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n    ) \n    / on() \n    rate(kepler_process_package_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval])",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "Package",
-          "range": true,
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "abs(\n        rate(kepler_process_platform_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n        - on() \n        rate(kepler_node_platform_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n        ) \n    / on() \n    rate(kepler_process_platform_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval])",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "Platform",
-          "range": true,
-          "refId": "D"
-        }
-      ],
-      "title": "APE Metal vs VM ${mode} (${process}) ",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PDE6745920139CE56"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Core"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#0400fb",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Dram"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#c4162a",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Package"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#deb6f2",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Platform"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#0fe1d6",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 14
-      },
-      "id": 16,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "(\n    rate(kepler_process_core_joules_total{pid=\"${process}\", mode='${mode}', job='metal'}[$__rate_interval]) \n    - on() \n    rate(kepler_node_core_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n)^2",
-          "instant": false,
-          "legendFormat": "Core",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "(\n    rate(kepler_process_dram_joules_total{pid=\"${process}\", mode='${mode}', job='metal'}[$__rate_interval]) \n    - on() \n    rate(kepler_node_dram_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n)^2\n",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "Dram",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "(\n    rate(kepler_process_package_joules_total{pid=\"${process}\", mode='${mode}', job='metal'}[$__rate_interval]) \n    - on() \n    rate(kepler_node_package_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n)^2 \n",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "Package",
-          "range": true,
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "(\n    rate(kepler_process_platform_joules_total{pid=\"${process}\", mode='${mode}', job='metal'}[$__rate_interval]) \n    - on() \n    rate(kepler_node_platform_joules_total{job='vm', mode='${mode}'}[$__rate_interval])\n)^2",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "Platform",
-          "range": true,
-          "refId": "D"
-        }
-      ],
-      "title": "SE Metal vs VM ${mode} (${process}) ",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PDE6745920139CE56"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "cache_hit"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#d60864",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 20
-      },
-      "id": 19,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "(\n    rate(kepler_process_bpf_page_cache_hit_total{pid=\"${process}\", job=\"metal\"}[$__rate_interval]) \n    - on() \n    sum(\n        rate(kepler_process_bpf_page_cache_hit_total{job=\"vm\"}[$__rate_interval])\n    )    \n)^2",
-          "instant": false,
-          "legendFormat": "cache_hit",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "SE Metal vs VM BPF Cache Hit (${process}) ",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PDE6745920139CE56"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "process_bpf_cpu_time"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#f8af00",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 20
-      },
-      "id": 18,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "(\n    rate(kepler_process_bpf_cpu_time_ms_total{pid=\"${process}\", job=\"metal\"}[$__rate_interval]) \n    - on() \n    sum(\n        rate(kepler_process_bpf_cpu_time_ms_total{job=\"vm\"}[$__rate_interval])\n    )\n)^2",
-          "instant": false,
-          "legendFormat": "process_bpf_cpu_time",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "SE Metal vs VM BPF CPU TIme (${process}) ",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 26
-      },
-      "id": 6,
-      "panels": [],
-      "title": "Platform Usage - Metal vs VM vs Scaph",
+      "title": "Node  - Metal vs Model",
       "type": "row"
     },
     {
@@ -1172,7 +357,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "vm / dynamic"
+              "options": "models / dynamic"
             },
             "properties": [
               {
@@ -1216,14 +401,14 @@
           },
           {
             "matcher": {
-              "id": "byRegexp",
-              "options": "/scaph .*/"
+              "id": "byName",
+              "options": "models / idle"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "dark-purple",
+                  "fixedColor": "super-light-blue",
                   "mode": "fixed"
                 }
               }
@@ -1235,9 +420,773 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 10
       },
       "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "sum without(instance) (rate(kepler_node_package_joules_total{job=\"metal\"}[$__rate_interval]))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "metal / {{mode}}",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "sum without(instance) (rate(kepler_node_package_joules_total{job=\"models\"}[$__rate_interval]))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "models / {{mode}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Node / Package - Watts",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PDE6745920139CE56"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "models / dynamic"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metal / dynamic"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metal / idle"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "models / idle"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 33,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "sum without(instance) (rate(kepler_node_platform_joules_total{job=\"metal\"}[$__rate_interval]))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "metal / {{mode}}",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "sum without(instance) (rate(kepler_node_platform_joules_total{job=\"models\"}[$__rate_interval]))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "models / {{mode}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Node / Platform - Watts",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "id": 22,
+      "panels": [],
+      "title": "Process ($process) - MAPE & MSE -  Metal vs Model",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PDE6745920139CE56"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "super-light-green",
+                "value": 10
+              },
+              {
+                "color": "#EAB839",
+                "value": 25
+              },
+              {
+                "color": "super-light-orange",
+                "value": 50
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "id": 29,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_process_package_joules_total{job='metal', mode='${mode}', pid='${process}'}[$__rate_interval]) \n        - on() \n        rate(kepler_process_package_joules_total{job='models', mode='${mode}', pid='${process}'}[$__rate_interval])\n       )\n       / on ()\n        rate(kepler_process_package_joules_total{job='metal', mode='${mode}', pid='${process}'}[$__rate_interval])\n    )[$__range:]\n    \n) * 100",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "Package",
+          "range": true,
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_process_core_joules_total{job='metal', mode='${mode}', pid='${process}'}[$__rate_interval]) \n        - on() \n        rate(kepler_process_core_joules_total{job='models', mode='${mode}', pid='${process}'}[$__rate_interval])\n       )\n       / on ()\n        rate(kepler_process_core_joules_total{job='metal', mode='${mode}', pid='${process}'}[$__rate_interval])\n    )[$__range:]\n    \n) * 100",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "Core",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_process_dram_joules_total{job='metal', mode='${mode}', pid='${process}'}[$__rate_interval]) \n        - on() \n        rate(kepler_process_dram_joules_total{job='models', mode='${mode}', pid='${process}'}[$__rate_interval])\n       )\n       / on ()\n        rate(kepler_process_dram_joules_total{job='metal', mode='${mode}', pid='${process}'}[$__rate_interval])\n    )[$__range:]\n    \n) * 100",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "DRAM",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_process_platform_joules_total{job='metal', mode='${mode}', pid='${process}'}[$__rate_interval]) \n        - on() \n        rate(kepler_process_platform_joules_total{job='models', mode='${mode}', pid='${process}'}[$__rate_interval])\n       )\n       / on ()\n        rate(kepler_process_platform_joules_total{job='metal', mode='${mode}', pid='${process}'}[$__rate_interval])\n    )[$__range:]\n    \n) * 100",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "Platform",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "MAPE -  ${mode} (${process}) ",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PDE6745920139CE56"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "super-light-green",
+                "value": 10
+              },
+              {
+                "color": "#EAB839",
+                "value": 25
+              },
+              {
+                "color": "super-light-orange",
+                "value": 50
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "id": 30,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_process_package_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_process_package_joules_total{pid='${process}', mode='${mode}', job='models'}[$__rate_interval]) \n        )^2\n    )[$__range:]\n)\n",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "Package",
+          "range": true,
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_process_core_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_process_core_joules_total{pid='${process}', mode='${mode}', job='models'}[$__rate_interval]) \n        )^2\n    )[$__range:]\n)\n",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "Core",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_process_dram_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_process_dram_joules_total{pid='${process}', mode='${mode}', job='models'}[$__rate_interval]) \n        )^2\n    )[$__range:]\n)\n",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "DRAM",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "avg_over_time(\n    (\n        (\n            rate(kepler_process_platform_joules_total{pid='${process}', mode='${mode}', job='metal'}[$__rate_interval]) \n            - on() \n            rate(kepler_process_platform_joules_total{pid='${process}', mode='${mode}', job='models'}[$__rate_interval]) \n        )^2\n    )[$__range:]\n)",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "Platform",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "MSE - ${mode} (${process}) ",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PDE6745920139CE56"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 39
+      },
+      "id": 24,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "avg_over_time(\n   abs(\n       (\n        rate(kepler_process_bpf_cpu_time_ms_total{pid='${process}', job='metal'}[$__rate_interval]) \n        - on() \n        rate(kepler_process_bpf_cpu_time_ms_total{pid='${process}', job='models'}[$__rate_interval]) \n       )\n       / on ()\n        rate(kepler_process_bpf_cpu_time_ms_total{pid='${process}', job='metal'}[$__rate_interval]) \n    )[$__range:]\n    \n) * 100",
+          "instant": false,
+          "legendFormat": "MAPE - bpf_cpu_time",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "MSE Metal vs Model BPF CPU TIme (${process}) ",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PDE6745920139CE56"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 39
+      },
+      "id": 26,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "avg_over_time(\n   (\n       (\n        rate(kepler_process_bpf_cpu_time_ms_total{pid='${process}', job='metal'}[$__rate_interval]) \n        - on() \n        rate(kepler_process_bpf_cpu_time_ms_total{pid='${process}', job='models'}[$__rate_interval]) \n       ) ^ 2\n    )[$__range:]   \n)",
+          "instant": false,
+          "legendFormat": "MAPE - bpf_cpu_time",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "MSE Metal vs Model BPF CPU Time (${process}) ",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "id": 6,
+      "panels": [],
+      "title": "Process / Platform - Metal vs Model",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PDE6745920139CE56"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "models / dynamic"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metal / dynamic"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metal / idle"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "models / idle"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "id": 32,
       "options": {
         "legend": {
           "calcs": [],
@@ -1270,25 +1219,12 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "rate(kepler_node_platform_joules_total{job=\"vm\"}[$__rate_interval])",
+          "expr": "sum without(instance) (rate(kepler_process_platform_joules_total{pid=\"${process}\", job=\"models\"}[$__rate_interval]))",
           "hide": false,
           "instant": false,
-          "legendFormat": "vm / {{mode}}",
+          "legendFormat": "models / {{mode}}",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "scaph_process_power_consumption_microwatts{pid=\"${process}\"}/1000000",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "scaph / {{pid}} - {{exe}}",
-          "range": true,
-          "refId": "C"
         }
       ],
       "title": "Metal / VM Platform - ${process} / Watts",
@@ -1409,9 +1345,9 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 8,
+        "w": 12,
         "x": 0,
-        "y": 37
+        "y": 54
       },
       "id": 4,
       "options": {
@@ -1433,7 +1369,7 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "rate(kepler_process_package_joules_total{job=\"metal\", pid=\"${process}\"}[$__rate_interval])",
+          "expr": "rate(kepler_process_platform_joules_total{job=\"metal\", pid=\"${process}\"}[$__rate_interval])",
           "hide": false,
           "instant": false,
           "legendFormat": "{{mode}}",
@@ -1446,7 +1382,7 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "sum(rate(kepler_process_package_joules_total{job=\"metal\", pid=\"${process}\"}[$__rate_interval]))",
+          "expr": "sum(rate(kepler_process_platform_joules_total{job=\"metal\", pid=\"${process}\"}[$__rate_interval]))",
           "hide": false,
           "instant": false,
           "legendFormat": "idle + dyn - ${process}",
@@ -1529,119 +1465,42 @@
                 }
               }
             ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 8,
-        "x": 8,
-        "y": 37
-      },
-      "id": 2,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
           },
-          "disableTextWrap": false,
-          "editorMode": "code",
-          "expr": "rate(kepler_node_platform_joules_total{job=\"vm\"}[$__rate_interval])",
-          "fullMetaSearch": false,
-          "includeNullMetadata": false,
-          "instant": false,
-          "legendFormat": "{{mode}}",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "VM / Platform Watts",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PDE6745920139CE56"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
           {
             "matcher": {
-              "id": "byRegexp",
-              "options": "/.*/"
+              "id": "byName",
+              "options": "idle"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "dark-purple",
+                  "fixedColor": "super-light-blue",
                   "mode": "fixed"
                 }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/idle .+ dyn.*/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
               }
             ]
           }
@@ -1649,11 +1508,11 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 8,
-        "x": 16,
-        "y": 37
+        "w": 12,
+        "x": 12,
+        "y": 54
       },
-      "id": 10,
+      "id": 35,
       "options": {
         "legend": {
           "calcs": [],
@@ -1672,19 +1531,29 @@
             "type": "prometheus",
             "uid": "PDE6745920139CE56"
           },
-          "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "scaph_process_power_consumption_microwatts{pid=\"${process}\"}/1000000",
-          "fullMetaSearch": false,
-          "includeNullMetadata": false,
+          "expr": "rate(kepler_process_platform_joules_total{job=\"models\", pid=\"${process}\"}[$__rate_interval])",
+          "hide": false,
           "instant": false,
-          "legendFormat": "{{pid}} - {{exe}}",
+          "legendFormat": "{{mode}}",
           "range": true,
-          "refId": "A",
-          "useBackend": false
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(kepler_process_platform_joules_total{job=\"models\", pid=\"${process}\"}[$__rate_interval]))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "idle + dyn - ${process}",
+          "range": true,
+          "refId": "B"
         }
       ],
-      "title": "Scaph - ${process} Watts",
+      "title": "Models /  Process (${process}) W",
       "type": "timeseries"
     },
     {
@@ -1693,11 +1562,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 47
+        "y": 64
       },
       "id": 11,
       "panels": [],
-      "title": "Process Usage - Metal vs VM vs Scaph",
+      "title": "Process / Package - Metal vs Models",
       "type": "row"
     },
     {
@@ -1824,7 +1693,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 48
+        "y": 65
       },
       "id": 27,
       "options": {
@@ -1859,28 +1728,15 @@
             "uid": "PDE6745920139CE56"
           },
           "editorMode": "code",
-          "expr": "rate(kepler_node_package_joules_total{job=\"vm\"}[$__rate_interval])",
+          "expr": "sum without(instance) (rate(kepler_process_package_joules_total{pid=\"${process}\", job=\"models\"}[$__rate_interval]))",
           "hide": false,
           "instant": false,
           "legendFormat": "vm / {{mode}}",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PDE6745920139CE56"
-          },
-          "editorMode": "code",
-          "expr": "scaph_process_power_consumption_microwatts{pid=\"${process}\"}/1000000",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "scaph / {{pid}} - {{exe}}",
-          "range": true,
-          "refId": "C"
         }
       ],
-      "title": "Metal / VM Package - ${process} / Watts",
+      "title": "Metal / Model Package - ${process} / Watts",
       "type": "timeseries"
     },
     {
@@ -1944,14 +1800,491 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "{command=\"SPICE Worker\", container_id=\"system_processes\", instance=\"kepler-metal:8888\", job=\"metal\", pid=\"2093543\", source=\"bpf\"}"
+              "options": "dynamic"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "dark-yellow",
+                  "fixedColor": "semi-dark-yellow",
                   "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "idle"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/idle .+ dyn.*/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 75
+      },
+      "id": 36,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "rate(kepler_process_package_joules_total{job=\"metal\", pid=\"${process}\"}[$__rate_interval])",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "{{mode}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(kepler_process_package_joules_total{job=\"metal\", pid=\"${process}\"}[$__rate_interval]))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "idle + dyn - ${process}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Metal /  Process (${process}) W",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PDE6745920139CE56"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dynamic"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "idle"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/idle .+ dyn.*/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 75
+      },
+      "id": 37,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "rate(kepler_process_package_joules_total{job=\"models\", pid=\"${process}\"}[$__rate_interval])",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "{{mode}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(kepler_process_package_joules_total{job=\"models\", pid=\"${process}\"}[$__rate_interval]))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "idle + dyn - ${process}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Models /  Process (${process}) W",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PDE6745920139CE56"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "models"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 85
+      },
+      "id": 38,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PDE6745920139CE56"
+          },
+          "editorMode": "code",
+          "expr": "sum without(instance) (rate(kepler_process_bpf_cpu_time_ms_total{pid=\"${process}\"}[$__rate_interval]))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "{{job}}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Metal / Model  BPF time - ${process}",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PDE6745920139CE56"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "metal"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
                 }
               }
             ]
@@ -1962,7 +2295,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 58
+        "y": 95
       },
       "id": 5,
       "options": {
@@ -1987,7 +2320,7 @@
           "expr": "rate(kepler_process_bpf_cpu_time_ms_total{pid=\"${process}\", job=\"metal\"}[$__rate_interval])",
           "hide": false,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{{job}}",
           "range": true,
           "refId": "B"
         }
@@ -2056,13 +2389,13 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "vm"
+              "options": "models"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "red",
+                  "fixedColor": "super-light-green",
                   "mode": "fixed"
                 }
               }
@@ -2074,7 +2407,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 58
+        "y": 95
       },
       "id": 7,
       "options": {
@@ -2097,17 +2430,17 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sum by(__name__, job) (rate(kepler_process_bpf_cpu_time_ms_total{job=\"vm\"}[$__rate_interval]))",
+          "expr": "sum by(__name__, job) (rate(kepler_process_bpf_cpu_time_ms_total{job=\"models\"}[$__rate_interval]))",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{{job}}",
           "range": true,
           "refId": "A",
           "useBackend": false
         }
       ],
-      "title": "VM / Sum BPF CPU Time",
+      "title": "Models / Sum BPF CPU Time",
       "type": "timeseries"
     },
     {
@@ -2167,13 +2500,29 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 67
+        "y": 104
       },
       "id": 8,
       "options": {
@@ -2198,7 +2547,7 @@
           "expr": "rate(kepler_process_bpf_page_cache_hit_total{pid=\"${process}\", job=\"metal\"}[$__rate_interval])",
           "hide": false,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{{job}}",
           "range": true,
           "refId": "B"
         }
@@ -2267,13 +2616,13 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "vm"
+              "options": "models"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "semi-dark-red",
+                  "fixedColor": "super-light-green",
                   "mode": "fixed"
                 }
               }
@@ -2285,7 +2634,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 67
+        "y": 104
       },
       "id": 9,
       "options": {
@@ -2308,11 +2657,11 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sum by(__name__, job) (rate(kepler_process_bpf_page_cache_hit_total{job=\"vm\"}[$__rate_interval]))",
+          "expr": "rate(kepler_process_bpf_page_cache_hit_total{pid=\"${process}\", job=\"models\"}[$__rate_interval])",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{{job}}",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -2330,8 +2679,8 @@
       {
         "current": {
           "selected": false,
-          "text": "-zsh | 277431",
-          "value": "277431"
+          "text": "CPU 0/KVM | 744754",
+          "value": "744754"
         },
         "datasource": {
           "type": "prometheus",
@@ -2390,8 +2739,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Model Validation",
-  "uid": "bdtojiefhj5kwa",
+  "title": "Model Server Dev",
+  "uid": "ddybwzorsmccgc",
   "version": 12,
   "weekStart": ""
 }
