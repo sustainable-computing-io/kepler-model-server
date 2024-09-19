@@ -11,6 +11,7 @@ from flask import Flask, json, make_response, request, send_file
 
 from kepler_model.train import NodeTypeIndexCollection, NodeTypeSpec
 from kepler_model.util.config import (
+    CONFIG_PATH,
     ERROR_KEY,
     MODEL_SERVER_MODEL_LIST_PATH,
     MODEL_SERVER_MODEL_REQ_PATH,
@@ -18,6 +19,7 @@ from kepler_model.util.config import (
     getConfig,
     initial_pipeline_urls,
     model_toppath,
+    set_config_dir,
 )
 from kepler_model.util.loader import (
     CHECKPOINT_FOLDERNAME,
@@ -430,11 +432,25 @@ def fill_machine_spec():
     default="info",
     required=False,
 )
-def run(log_level: str):
+@click.option(
+    "--config-dir",
+    "-c",
+    type=click.Path(exists=False, dir_okay=True, file_okay=False),
+    default=CONFIG_PATH,
+    required=False,
+)
+def run(log_level: str, config_dir: str) -> int:
     level = getattr(logging, log_level.upper())
-    logging.basicConfig(level=level)
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s %(filename)s:%(lineno)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    set_config_dir(config_dir)
     load_init_pipeline()
     app.run(host="0.0.0.0", port=MODEL_SERVER_PORT)
+    return 0
 
 
 if __name__ == "__main__":
