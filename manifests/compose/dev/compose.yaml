@@ -1,13 +1,18 @@
 name: model-dev
+include:
+  - path:
+      - ../monitoring/compose.yaml
+      - ./overrides.yaml
+
 services:
-  kepler:
+  kepler-models:
     image: quay.io/sustainable_computing_io/kepler:latest
     ports:
-      - 9100:9100
+      - 19100:9100
     privileged: true
     pid: host
     networks:
-      - kepler-network
+      - kepler-models-network
       - model-server-network
     volumes:
       - type: bind
@@ -17,19 +22,16 @@ services:
         source: /sys
         target: /sys
       - type: bind
-        source: ./kepler/etc/kepler
+        source: ./kepler/models/etc/kepler
         target: /etc/kepler
 
       # NOTE: use the models from the local repo
       - type: bind
-        source: ./kepler/var/lib/kepler/data/model_weight/
+        source: ./kepler/common/var/lib/kepler/data
         target: /var/lib/kepler/data
-      - type: bind
-        source: ./kepler/var/lib/kepler/data/cpus.yaml
-        target: /var/lib/kepler/data/cpus.yaml
 
         # NOTE: for estimator - kepler communication
-      - kepler-tmp:/tmp
+      - estimator-tmp:/tmp
 
     healthcheck:
       test: curl -f http://localhost:9100/metrics || exit 1
@@ -66,6 +68,52 @@ services:
           -disable-power-meter \
           -v="8"
 
+  kepler-metal:
+    image: quay.io/sustainable_computing_io/kepler:latest
+    ports:
+      - 19200:9100
+    privileged: true
+    pid: host
+    networks:
+      - kepler-metal-network
+    volumes:
+      - type: bind
+        source: /proc
+        target: /proc
+      - type: bind
+        source: /sys
+        target: /sys
+      - type: bind
+        source: ./kepler/metal/etc/kepler
+        target: /etc/kepler
+
+      - type: bind
+        source: ./kepler/common/var/lib/kepler/data
+        target: /var/lib/kepler/data
+
+    healthcheck:
+      test: curl -f http://localhost:9100/metrics || exit 1
+      interval: ${HEALTHCHECK_INTERVAL:-50s}
+      timeout: ${HEALTHCHECK_TIMEOUT:-30s}
+      retries: ${HEALTHCHECK_RETRIES:-3}
+      start_period: ${HEALTHCHECK_START_PERIOD:-1m}
+
+    cap_add:
+      - ALL
+
+    entrypoint:
+      - /usr/bin/bash
+      - -c
+
+    command:
+      - |
+        echo "starting kepler metal";
+        set -x;
+        /usr/bin/kepler \
+          -address="0.0.0.0:9100" \
+          -v="8"
+
+
   estimator:
     command: [estimator, -l, debug]
     build: &build
@@ -74,24 +122,24 @@ services:
 
     volumes:
       - type: bind
-        source: ./kepler/etc/kepler
+        source: ./kepler/models/etc/kepler
         target: /etc/kepler
 
-      - kepler-tmp:/tmp
+      - estimator-tmp:/tmp
       - estimator-mnt:/mnt
     networks:
-      - kepler-network
+      - kepler-models-network
       - model-server-network
 
   model-server:
     ports:
-      - 8100:8100
+      - 18100:8100
     command: [model-server, -l, debug]
     build:
       <<: *build
     volumes:
       - type: bind
-        source: ./kepler/etc/kepler
+        source: ./kepler/models/etc/kepler
         target: /etc/kepler
       - model-server-mnt:/mnt
     networks:
@@ -99,12 +147,13 @@ services:
 
 volumes:
   # for kepler - estimator sock
-  kepler-tmp:
+  estimator-tmp:
 
   # for downloading models
   estimator-mnt:
   model-server-mnt:
 
 networks:
-  kepler-network:
+  kepler-models-network:
+  kepler-metal-network:
   model-server-network:
