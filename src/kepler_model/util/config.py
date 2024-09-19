@@ -48,6 +48,11 @@ MODEL_SERVER_ENABLE = False
 SERVE_SOCKET = "/tmp/estimator.sock"
 
 
+def set_config_dir(config_dir: str):
+    global CONFIG_PATH
+    CONFIG_PATH = config_dir
+
+
 def getConfig(key: str, default):
     # check configmap path
     file = os.path.join(CONFIG_PATH, key)
@@ -73,8 +78,6 @@ MNT_PATH = getConfig("MNT_PATH", MNT_PATH)
 if not os.path.exists(MNT_PATH) or not os.access(MNT_PATH, os.W_OK):
     # use local path if not exists or cannot write
     MNT_PATH = os.path.join(os.path.dirname(__file__), "..")
-
-CONFIG_PATH = getConfig("CONFIG_PATH", CONFIG_PATH)
 
 model_topurl = getConfig("MODEL_TOPURL", base_model_url)
 initial_pipeline_urls = getConfig("INITIAL_PIPELINE_URL", "")
@@ -123,10 +126,16 @@ def set_env_from_model_config():
         return
 
     for line in model_config.splitlines():
-        splits = line.split("=")
+        line = line.strip()
+        # ignore comments and blanks
+        if not line or line.startswith("#"):
+            continue
+
+        # pick only the first part until # and ignore the rest
+        splits = line.split("#")[0].strip().split("=")
         if len(splits) > 1:
             os.environ[splits[0].strip()] = splits[1].strip()
-            logging.info(f"set {splits[0]} to {splits[1]}.")
+            logging.info(f"set env {splits[0]} to '{splits[1]}'.")
 
 
 def is_estimator_enable(prefix):
