@@ -249,7 +249,7 @@ jobs:
   verify_model_training_script:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v4
       - name: local script test
         run: cd model_training && ./script.sh prepare_cluster
       - name: clean up
