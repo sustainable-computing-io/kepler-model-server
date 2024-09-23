@@ -1023,8 +1023,10 @@ def run():
         "--trainers", type=str, help="Specify trainer names for train_from_data command (use comma(,) as delimiter).", default="XgboostFitTrainer"
     )
     parser.add_argument(
-        "--vm-train", type=str, help="- --vm-train: specify whether to use vm feature and energy metrics for training - true: use vm feature metrics.",
-        default="false"
+        "--vm-train",
+        type=str,
+        help="- --vm-train: specify whether to use vm feature and energy metrics for training - true: use vm feature metrics.",
+        default="false",
     )
 
     # Validate arguments

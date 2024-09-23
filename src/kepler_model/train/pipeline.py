@@ -50,11 +50,15 @@ class Pipeline:
             trainer.set_node_type_index(self.node_collection.node_type_index)
 
     def get_abs_data(self, query_results, energy_components, feature_group, energy_source, aggr):
-        extracted_data, power_labels, _, _ = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=True, aggr=aggr, use_vm_metrics=self.use_vm_metrics)
+        extracted_data, power_labels, _, _ = self.extractor.extract(
+            query_results, energy_components, feature_group, energy_source, node_level=True, aggr=aggr, use_vm_metrics=self.use_vm_metrics
+        )
         return extracted_data, power_labels
 
     def get_dyn_data(self, query_results, energy_components, feature_group, energy_source):
-        extracted_data, power_labels, _, _ = self.extractor.extract(query_results, energy_components, feature_group, energy_source, node_level=False, use_vm_metrics=self.use_vm_metrics)
+        extracted_data, power_labels, _, _ = self.extractor.extract(
+            query_results, energy_components, feature_group, energy_source, node_level=False, use_vm_metrics=self.use_vm_metrics
+        )
         if extracted_data is None or power_labels is None:
             return None
         isolated_data = self.isolator.isolate(extracted_data, label_cols=power_labels, energy_source=energy_source)
@@ -202,7 +206,7 @@ class Pipeline:
                 f"    Input data size: {len(dyn_data)}",
                 f"    Model Trainers: {dyn_trainer_names}",
                 f"    Output: {dyn_group_path}",
-                "    Metric Type: {}".format(self.metadata["metric_type"])
+                "    Metric Type: {}".format(self.metadata["metric_type"]),
             ]
             for node_type in node_types:
                 filtered_data = dyn_metadata_df[dyn_metadata_df[node_info_column] == node_type]
@@ -245,7 +249,7 @@ def NewPipeline(
     isolator=MinIdleIsolator(),
     target_energy_sources=PowerSourceMap.keys(),
     valid_feature_groups=FeatureGroups.keys(),
-    use_vm_metrics=False
+    use_vm_metrics=False,
 ):
     abs_trainers = initial_trainers(
         abs_trainer_names, node_level=True, pipeline_name=pipeline_name, target_energy_sources=target_energy_sources, valid_feature_groups=valid_feature_groups

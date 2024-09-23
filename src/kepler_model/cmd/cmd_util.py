@@ -368,6 +368,6 @@ def get_pipeline(
         isolator=isolator,
         target_energy_sources=energy_sources,
         valid_feature_groups=valid_feature_groups,
-        use_vm_metrics=use_vm_metrics
+        use_vm_metrics=use_vm_metrics,
     )
     return pipeline
