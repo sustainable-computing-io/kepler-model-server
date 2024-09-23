@@ -17,6 +17,8 @@ PROM_QUERY_INTERVAL = 300
 PROM_QUERY_STEP = 3
 PROM_QUERY_START_TIME = ""
 PROM_QUERY_END_TIME = ""
+VM_JOB_NAME = "vm"
+METAL_JOB_NAME = "metal"
 
 PROM_SERVER = getConfig("PROM_SERVER", PROM_SERVER)
 PROM_HEADERS = getConfig("PROM_HEADERS", PROM_HEADERS)
@@ -29,6 +31,9 @@ PROM_QUERY_END_TIME = getConfig("PROM_QUERY_END_TIME", PROM_QUERY_END_TIME)
 
 PROM_THIRDPARTY_METRICS = getConfig("PROM_THIRDPARTY_METRICS", "").split(",")
 
+VM_JOB_NAME = getConfig("VM_JOB_NAME", VM_JOB_NAME)
+METAL_JOB_NAME = getConfig("METAL_JOB_NAME", METAL_JOB_NAME)
+
 metric_prefix = "kepler_"
 TIMESTAMP_COL = "timestamp"
 PACKAGE_COL = "package"
@@ -40,6 +45,8 @@ container_query_suffix = "total"
 
 node_query_prefix = "kepler_node"
 node_query_suffix = "joules_total"
+vm_query_prefix = "kepler_vm"
+vm_query_suffix = "joules_total"
 
 usage_ratio_query = "kepler_container_cpu_usage_per_package_ratio"
 # mostly available
@@ -70,6 +77,10 @@ def feature_to_query(feature):
 
 def energy_component_to_query(component):
     return f"{node_query_prefix}_{component}_{node_query_suffix}"
+
+
+def vm_energy_component_to_query(component):
+    return f"{vm_query_prefix}_{component}_{vm_query_suffix}"
 
 
 def update_thirdparty_metrics(metrics):

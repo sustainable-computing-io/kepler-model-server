@@ -15,8 +15,11 @@ from kepler_model.util.loader import default_node_type
 from kepler_model.util.prom_types import (
     SOURCE_COL,
     TIMESTAMP_COL,
+    VM_JOB_NAME,
+    METAL_JOB_NAME,
     container_id_cols,
     energy_component_to_query,
+    vm_energy_component_to_query,
     feature_to_query,
     get_energy_unit,
     node_info_column,
@@ -88,9 +91,9 @@ class DefaultExtractor(Extractor):
         return "default"
 
     # implement extract function
-    def extract(self, query_results, energy_components, feature_group, energy_source, node_level, aggr=True):
+    def extract(self, query_results, energy_components, feature_group, energy_source, node_level, aggr=True, use_vm_metrics=False):
         # 1. compute energy different per timestamp and concat all energy component and unit
-        power_data = self.get_power_data(query_results, energy_components, energy_source)
+        power_data = self.get_power_data(query_results, energy_components, energy_source, use_vm_metrics)
         if power_data is None:
             return None, None, None, None
         power_data = drop_zero_column(power_data, power_data.columns)
@@ -104,7 +107,7 @@ class DefaultExtractor(Extractor):
         if fg == FeatureGroup.AcceleratorOnly and node_level is not True:
             return None, None, None, None
         else:
-            feature_data, workload_features = self.get_workload_feature_data(query_results, workload_features)
+            feature_data, workload_features = self.get_workload_feature_data(query_results, workload_features, use_vm_metrics)
 
         if feature_data is None:
             return None, None, None, None
@@ -143,7 +146,7 @@ class DefaultExtractor(Extractor):
         feature_power_data = append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_columns)
         return feature_power_data, power_columns, corr, workload_features
 
-    def get_workload_feature_data(self, query_results, features):
+    def get_workload_feature_data(self, query_results, features, use_vm_metrics=False):
         feature_data = None
         container_df_map = dict()
         accelerator_df_list = []
@@ -160,6 +163,10 @@ class DefaultExtractor(Extractor):
             aggr_query_data = query_results[query].copy()
 
             if all(col in aggr_query_data.columns for col in container_id_cols):
+                if use_vm_metrics:
+                    aggr_query_data = aggr_query_data.loc[aggr_query_data['job'] == VM_JOB_NAME]
+                else:
+                    aggr_query_data = aggr_query_data.loc[aggr_query_data['job'] == METAL_JOB_NAME]
                 aggr_query_data.rename(columns={query: feature}, inplace=True)
                 aggr_query_data[container_id_colname] = aggr_query_data[container_id_cols].apply(lambda x: "/".join([str(xi) for xi in x]), axis=1)
                 # separate for each container_id
@@ -229,15 +236,20 @@ class DefaultExtractor(Extractor):
         return feature_data
 
     # return with timestamp index
-    def get_power_data(self, query_results, energy_components, source):
+    def get_power_data(self, query_results, energy_components, source, use_vm_metrics=False):
         power_data_list = []
         for component in energy_components:
             unit_col = get_energy_unit(component)  # such as package
-            query = energy_component_to_query(component)
+            if use_vm_metrics:
+                query = vm_energy_component_to_query(component)
+            else:
+                query = energy_component_to_query(component)
             if query not in query_results:
                 print(query, "not in", query_results)
                 return None
             aggr_query_data = query_results[query].copy()
+            if not use_vm_metrics:
+                aggr_query_data = aggr_query_data.loc[aggr_query_data['job'] == METAL_JOB_NAME]
             # filter source
             aggr_query_data = aggr_query_data[aggr_query_data[SOURCE_COL] == source]
             if len(aggr_query_data) == 0:

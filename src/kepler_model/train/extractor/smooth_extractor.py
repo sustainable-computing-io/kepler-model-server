@@ -11,8 +11,8 @@ class SmoothExtractor(DefaultExtractor):
         return "smooth"
 
     # implement extract function
-    def extract(self, query_results, energy_components, feature_group, energy_source, node_level, aggr=True):
-        feature_power_data, power_columns, _, features = super().extract(query_results, energy_components, feature_group, energy_source, node_level, aggr)
+    def extract(self, query_results, energy_components, feature_group, energy_source, node_level, aggr=True, use_vm_metrics=False):
+        feature_power_data, power_columns, _, features = super().extract(query_results, energy_components, feature_group, energy_source, node_level, aggr, use_vm_metrics=use_vm_metrics)
 
         features = FeatureGroups[FeatureGroup[feature_group]]
         smoothed_data = feature_power_data.copy()

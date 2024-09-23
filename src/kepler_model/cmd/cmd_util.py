@@ -354,6 +354,7 @@ def get_pipeline(
     energy_sources,
     valid_feature_groups,
     replace_node_type=default_node_type,
+    use_vm_metrics=False,
 ):
     from kepler_model.train import NewPipeline
 
@@ -367,5 +368,6 @@ def get_pipeline(
         isolator=isolator,
         target_energy_sources=energy_sources,
         valid_feature_groups=valid_feature_groups,
+        use_vm_metrics=use_vm_metrics
     )
     return pipeline
