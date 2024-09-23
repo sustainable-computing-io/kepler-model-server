@@ -21,7 +21,7 @@ authors = [
 
 classifiers = [
   "Programming Language :: Python",
-	"Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
 ]
 dependencies = [
@@ -66,8 +66,8 @@ path = "src/kepler_model/__about__.py"
 python = "3.10"
 extra-dependencies = [
   "coverage[toml]>=6.5",
-	"ipdb",
-	"ipython",
+    "ipdb",
+    "ipython",
   "pytest",
 ]
 
@@ -82,6 +82,27 @@ cov = [
   "test-cov",
   "cov-report",
 ]
+
+[tool.hatch.envs.lab]
+extra-dependencies = [
+  "jupyterlab",
+  "notebook",
+  "voila",
+  "ipywidgets",
+  # vim please
+  "jupyterlab-vim",
+
+  "beautifulsoup4",
+  # read parquet files
+  # "pyarrow",
+
+  # graphing
+  "matplotlib",
+  "graphviz",
+]
+
+[tool.hatch.envs.lab.scripts]
+note = "jupyter lab --NotebookApp.token='' --allow-root"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
@@ -114,7 +135,7 @@ line-length = 160
 
 [tool.pytest.ini_options]
 markers = [
-	"focus",  # used in development to mark focused tests
+    "focus",  # used in development to mark focused tests
 ]
 
 [tool.pymarkdown]
