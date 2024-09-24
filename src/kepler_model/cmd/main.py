@@ -1024,7 +1024,7 @@ def run():
     )
     parser.add_argument(
         "--vm-train",
-        action='store_true',
+        action="store_true",
         help="- --vm-train: specify whether to use vm feature and energy metrics for training - true: use vm feature metrics.",
     )
 
