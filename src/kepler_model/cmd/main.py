@@ -452,7 +452,7 @@ def train(args):
     if args.abs_trainers == "default":
         args.abs_trainers = default_trainers
 
-    use_vm_metrics = args.vm_train == "true"
+    use_vm_metrics = args.vm_train
 
     abs_trainer_names = args.abs_trainers.split(",")
     dyn_trainer_names = args.dyn_trainers.split(",")
@@ -1024,9 +1024,8 @@ def run():
     )
     parser.add_argument(
         "--vm-train",
-        type=str,
+        action='store_true',
         help="- --vm-train: specify whether to use vm feature and energy metrics for training - true: use vm feature metrics.",
-        default="false",
     )
 
     # Validate arguments
