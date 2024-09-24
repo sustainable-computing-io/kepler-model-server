@@ -16,7 +16,6 @@ from kepler_model.util.prom_types import (
     SOURCE_COL,
     TIMESTAMP_COL,
     VM_JOB_NAME,
-    METAL_JOB_NAME,
     container_id_cols,
     energy_component_to_query,
     vm_energy_component_to_query,
@@ -166,7 +165,8 @@ class DefaultExtractor(Extractor):
                 if use_vm_metrics:
                     aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] == VM_JOB_NAME]
                 else:
-                    aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] == METAL_JOB_NAME]
+                    aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] != VM_JOB_NAME]
+
                 aggr_query_data.rename(columns={query: feature}, inplace=True)
                 aggr_query_data[container_id_colname] = aggr_query_data[container_id_cols].apply(lambda x: "/".join([str(xi) for xi in x]), axis=1)
                 # separate for each container_id
@@ -249,7 +249,7 @@ class DefaultExtractor(Extractor):
                 return None
             aggr_query_data = query_results[query].copy()
             if not use_vm_metrics:
-                aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] == METAL_JOB_NAME]
+                aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] != VM_JOB_NAME]
             # filter source
             aggr_query_data = aggr_query_data[aggr_query_data[SOURCE_COL] == source]
             if len(aggr_query_data) == 0:
