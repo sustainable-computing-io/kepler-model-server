@@ -1227,7 +1227,7 @@
           "refId": "A"
         }
       ],
-      "title": "Metal / VM Platform - ${process} / Watts",
+      "title": "Metal / Model Platform - ${process} / Watts",
       "type": "timeseries"
     },
     {
@@ -2325,7 +2325,7 @@
           "refId": "B"
         }
       ],
-      "title": "Process - ${process} / BPF CPU Time",
+      "title": "Metal / Process  (${process}) / BPF CPU Time",
       "type": "timeseries"
     },
     {
@@ -2430,7 +2430,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sum by(__name__, job) (rate(kepler_process_bpf_cpu_time_ms_total{job=\"models\"}[$__rate_interval]))",
+          "expr": "sum by(job) (rate(kepler_process_bpf_cpu_time_ms_total{job=\"models\"}[$__rate_interval]))",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
           "instant": false,
@@ -2552,7 +2552,7 @@
           "refId": "B"
         }
       ],
-      "title": "Process - ${process} / BPF Page Cache Hit",
+      "title": "Metal / Process  (${process}) / BPF Page Cache Hit",
       "type": "timeseries"
     },
     {
@@ -2667,7 +2667,7 @@
           "useBackend": false
         }
       ],
-      "title": "VM / Sum BPF Page Cache Hit",
+      "title": "Models / Sum BPF Page Cache Hit",
       "type": "timeseries"
     }
   ],
