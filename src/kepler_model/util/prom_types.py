@@ -41,6 +41,9 @@ MODE_COL = "mode"
 container_query_prefix = "kepler_container"
 container_query_suffix = "total"
 
+process_query_prefix = "kepler_process"
+process_query_suffix = "total"
+
 node_query_prefix = "kepler_node"
 node_query_suffix = "joules_total"
 vm_query_prefix = "kepler_vm"
@@ -53,6 +56,7 @@ node_info_query = "kepler_node_node_info"
 cpu_frequency_info_query = "kepler_node_cpu_scaling_frequency_hertz"
 
 container_id_cols = ["container_id", "pod_name", "container_name", "container_namespace"]
+process_id_cols = ["container_id"]
 node_info_column = "node_type"
 pkg_id_column = "pkg_id"
 
@@ -63,13 +67,15 @@ def get_energy_unit(component):
     return None
 
 
-def feature_to_query(feature):
+def feature_to_query(feature, set_process=False):
     if feature in SYSTEM_FEATURES:
         return f"{node_query_prefix}_{feature}"
     if feature in FeatureGroups[FeatureGroup.AcceleratorOnly]:
         return f"{node_query_prefix}_{feature}"
     if FeatureGroup.ThirdParty in FeatureGroups is not None and feature in FeatureGroups[FeatureGroup.ThirdParty]:
         return feature
+    if set_process:
+        return f"{process_query_prefix}_{feature}_{process_query_suffix}"
     return f"{container_query_prefix}_{feature}_{container_query_suffix}"
 
 

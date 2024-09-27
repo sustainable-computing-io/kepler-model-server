@@ -17,6 +17,7 @@ from kepler_model.util.prom_types import (
     TIMESTAMP_COL,
     VM_JOB_NAME,
     container_id_cols,
+    process_id_cols,
     energy_component_to_query,
     vm_energy_component_to_query,
     feature_to_query,
@@ -106,7 +107,7 @@ class DefaultExtractor(Extractor):
         if fg == FeatureGroup.AcceleratorOnly and node_level is not True:
             return None, None, None, None
         else:
-            feature_data, workload_features = self.get_workload_feature_data(query_results, workload_features, use_vm_metrics)
+            feature_data, workload_features = self.get_workload_feature_data(query_results, workload_features, use_vm_metrics, is_aggr)
 
         if feature_data is None:
             return None, None, None, None
@@ -117,11 +118,25 @@ class DefaultExtractor(Extractor):
         # aggregate data if needed
         is_aggr = node_level and aggr
         if is_aggr:
+            # AbsPower
+            print("aggr res")
+            print(aggr)
+            print("is aggr set to true and these are workload features")
+            print(workload_features)
+            print(power_columns)
+            print(energy_components)
             # sum stat of all containers
             sum_feature = feature_power_data.groupby([TIMESTAMP_COL])[workload_features].sum()
             mean_power = feature_power_data.groupby([TIMESTAMP_COL])[power_columns].mean()
             feature_power_data = sum_feature.join(mean_power)
         else:
+            # DynPower
+            print("aggr res")
+            print(aggr)
+            print("is aggr set to false and is instead predicting non node level")
+            print(workload_features)
+            print(power_columns)
+            print(energy_components)
             feature_power_data = feature_power_data.groupby([TIMESTAMP_COL, container_id_colname]).sum()
 
         # 4. add system features (non aggregated data)
@@ -142,17 +157,19 @@ class DefaultExtractor(Extractor):
         # 6. validate input with correlation
         corr = find_correlations(energy_source, feature_power_data, power_columns, workload_features)
         # 7. apply utilization ratio to each power unit because the power unit is summation of all container utilization
-        feature_power_data = append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_columns)
+        #feature_power_data = append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_columns)
         return feature_power_data, power_columns, corr, workload_features
 
-    def get_workload_feature_data(self, query_results, features, use_vm_metrics=False):
+    def get_workload_feature_data(self, query_results, features, use_vm_metrics=False, is_aggr=False):
         feature_data = None
         container_df_map = dict()
         accelerator_df_list = []
         cur_accelerator_features = []
         feature_to_remove = []
+        cols_to_use = process_id_cols.copy() if is_aggr else container_id_cols.copy()
+        set_process = is_aggr
         for feature in features:
-            query = feature_to_query(feature)
+            query = feature_to_query(feature, set_process)
             if query not in query_results:
                 print(query, "not in", list(query_results.keys()))
                 return None
@@ -161,14 +178,14 @@ class DefaultExtractor(Extractor):
                 return None
             aggr_query_data = query_results[query].copy()
 
-            if all(col in aggr_query_data.columns for col in container_id_cols):
+            if all(col in aggr_query_data.columns for col in cols_to_use):
                 if use_vm_metrics:
                     aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] == VM_JOB_NAME]
                 else:
                     aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] != VM_JOB_NAME]
 
                 aggr_query_data.rename(columns={query: feature}, inplace=True)
-                aggr_query_data[container_id_colname] = aggr_query_data[container_id_cols].apply(lambda x: "/".join([str(xi) for xi in x]), axis=1)
+                aggr_query_data[container_id_colname] = aggr_query_data[cols_to_use].apply(lambda x: "/".join([str(xi) for xi in x]), axis=1)
                 # separate for each container_id
                 container_id_list = pd.unique(aggr_query_data[container_id_colname])
 
@@ -259,6 +276,8 @@ class DefaultExtractor(Extractor):
                     # sum over mode (idle, dynamic) and unit col
                     df = aggr_query_data.groupby([TIMESTAMP_COL]).sum().reset_index().set_index(TIMESTAMP_COL)
                     time_diff_values = df.reset_index()[[TIMESTAMP_COL]].diff().dropna().values.mean()
+                    print("print dataframe for power data")
+                    print(df.to_string())
                     df = df.loc[:, df.columns != unit_col]
                     # rename
                     colname = component_to_col(component)
