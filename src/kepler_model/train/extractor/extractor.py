@@ -92,6 +92,7 @@ class DefaultExtractor(Extractor):
 
     # implement extract function
     def extract(self, query_results, energy_components, feature_group, energy_source, node_level, aggr=True, use_vm_metrics=False):
+        is_aggr = node_level and aggr
         # 1. compute energy different per timestamp and concat all energy component and unit
         power_data = self.get_power_data(query_results, energy_components, energy_source, use_vm_metrics)
         if power_data is None:
@@ -116,7 +117,6 @@ class DefaultExtractor(Extractor):
         feature_power_data = feature_data.set_index(TIMESTAMP_COL).join(power_data).sort_index().dropna()
 
         # aggregate data if needed
-        is_aggr = node_level and aggr
         if is_aggr:
             # AbsPower
             print("aggr res")
