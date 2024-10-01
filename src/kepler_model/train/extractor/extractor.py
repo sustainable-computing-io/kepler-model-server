@@ -95,6 +95,7 @@ class DefaultExtractor(Extractor):
 
     # implement extract function
     def extract(self, query_results, energy_components, feature_group, energy_source, node_level, aggr=True, use_vm_metrics=False):
+        is_aggr = node_level and aggr
         # 1. compute energy different per timestamp and concat all energy component and unit
         power_data = self.get_power_data(query_results, energy_components, energy_source, use_vm_metrics)
         if power_data is None:
@@ -110,7 +111,7 @@ class DefaultExtractor(Extractor):
         if fg == FeatureGroup.AcceleratorOnly and node_level is not True:
             return None, None, None, None
         else:
-            feature_data, workload_features = self.get_workload_feature_data(query_results, workload_features, use_vm_metrics)
+            feature_data, workload_features = self.get_workload_feature_data(query_results, workload_features, use_vm_metrics, is_aggr)
 
         if feature_data is None:
             return None, None, None, None
@@ -119,13 +120,26 @@ class DefaultExtractor(Extractor):
         feature_power_data = feature_data.set_index(TIMESTAMP_COL).join(power_data).sort_index().dropna()
 
         # aggregate data if needed
-        is_aggr = node_level and aggr
         if is_aggr:
+            # AbsPower
+            print("aggr res")
+            print(aggr)
+            print("is aggr set to true and these are workload features")
+            print(workload_features)
+            print(power_columns)
+            print(energy_components)
             # sum stat of all containers
             sum_feature = feature_power_data.groupby([TIMESTAMP_COL])[workload_features].sum()
             mean_power = feature_power_data.groupby([TIMESTAMP_COL])[power_columns].mean()
             feature_power_data = sum_feature.join(mean_power)
         else:
+            # DynPower
+            print("aggr res")
+            print(aggr)
+            print("is aggr set to false and is instead predicting non node level")
+            print(workload_features)
+            print(power_columns)
+            print(energy_components)
             feature_power_data = feature_power_data.groupby([TIMESTAMP_COL, container_id_colname]).sum()
 
         # 4. add system features (non aggregated data)
@@ -146,10 +160,10 @@ class DefaultExtractor(Extractor):
         # 6. validate input with correlation
         corr = find_correlations(energy_source, feature_power_data, power_columns, workload_features)
         # 7. apply utilization ratio to each power unit because the power unit is summation of all container utilization
-        feature_power_data = append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_columns)
+        #feature_power_data = append_ratio_for_pkg(feature_power_data, is_aggr, query_results, power_columns)
         return feature_power_data, power_columns, corr, workload_features
 
-    def get_workload_feature_data(self, query_results, features, use_vm_metrics=False):
+    def get_workload_feature_data(self, query_results, features, use_vm_metrics=False, is_aggr=False):
         feature_data = None
         container_df_map = dict()
         accelerator_df_list = []
@@ -271,6 +285,8 @@ class DefaultExtractor(Extractor):
                     # sum over mode (idle, dynamic) and unit col
                     df = aggr_query_data.groupby([TIMESTAMP_COL]).sum().reset_index().set_index(TIMESTAMP_COL)
                     time_diff_values = df.reset_index()[[TIMESTAMP_COL]].diff().dropna().values.mean()
+                    print("print dataframe for power data")
+                    print(df.to_string())
                     df = df.loc[:, df.columns != unit_col]
                     # rename
                     colname = component_to_col(component)
