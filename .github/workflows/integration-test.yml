@@ -35,7 +35,6 @@ env:
 
 jobs:
   run-integration:
-    if: ${{ (inputs.base_change != 'true') || ( (inputs.base_change == 'true') && (inputs.docker_secret == 'true') ) }}
     runs-on: ubuntu-20.04
     steps:
       - name: use Kepler action to deploy cluster
