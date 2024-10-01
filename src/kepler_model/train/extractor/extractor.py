@@ -174,8 +174,8 @@ class DefaultExtractor(Extractor):
                     aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] == VM_JOB_NAME]
                 else:
                     aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] != VM_JOB_NAME]
-                #print("aggr query data feature")
-                #print(aggr_query_data.to_string())
+                print("aggr query data feature")
+                print(aggr_query_data.to_string())
                 aggr_query_data.rename(columns={query: feature}, inplace=True)
                 aggr_query_data[container_id_colname] = aggr_query_data[cols_to_use].apply(lambda x: "/".join([str(xi) for xi in x]), axis=1)
                 # separate for each container_id
