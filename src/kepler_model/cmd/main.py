@@ -406,6 +406,7 @@ arguments:
 - --energy-source : specify target energy sources (use comma(,) as delimiter) 
 - --thirdparty-metrics : specify list of third party metric to export (required only for ThirdParty feature group)
 - --id : specify machine ID 
+- --vm-train: specify whether to use vm feature and energy metrics for training - true: use vm feature metrics. Default is false
 """
 
 
@@ -451,6 +452,8 @@ def train(args):
     if args.abs_trainers == "default":
         args.abs_trainers = default_trainers
 
+    use_vm_metrics = args.vm_train
+
     abs_trainer_names = args.abs_trainers.split(",")
     dyn_trainer_names = args.dyn_trainers.split(",")
 
@@ -471,6 +474,7 @@ def train(args):
             dyn_trainer_names,
             energy_sources,
             valid_feature_groups,
+            use_vm_metrics=use_vm_metrics,
         )
         machine_spec_json = load_machine_spec(data_path, machine_id)
         if machine_spec_json is not None:
@@ -1017,6 +1021,11 @@ def run():
     parser.add_argument("--dyn-trainers", type=str, help="Specify trainer names for train command (use comma(,) as delimiter).", default="default")
     parser.add_argument(
         "--trainers", type=str, help="Specify trainer names for train_from_data command (use comma(,) as delimiter).", default="XgboostFitTrainer"
+    )
+    parser.add_argument(
+        "--vm-train",
+        action="store_true",
+        help="- --vm-train: specify whether to use vm feature and energy metrics for training - true: use vm feature metrics.",
     )
 
     # Validate arguments
