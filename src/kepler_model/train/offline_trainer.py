@@ -52,9 +52,10 @@ class TrainAttribute:
 
 
 class TrainRequest:
-    def __init__(self, name, energy_source, trainer, prom_response):
+    def __init__(self, name, energy_source, trainer, prom_response, use_vm_metrics=False):
         self.name = name
         self.energy_source = energy_source
+        self.use_vm_metrics = use_vm_metrics
         if trainer is not None:
             self.trainer = TrainAttribute(**trainer)
         self.prom_response = prom_response
@@ -92,6 +93,7 @@ class TrainRequest:
             isolator=isolator,
             target_energy_sources=[self.energy_source],
             valid_feature_groups=valid_feature_groups,
+            use_vm_metrics=self.use_vm_metrics,
         )
 
     def get_model(self):

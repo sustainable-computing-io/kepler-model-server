@@ -17,6 +17,7 @@ PROM_QUERY_INTERVAL = 300
 PROM_QUERY_STEP = 3
 PROM_QUERY_START_TIME = ""
 PROM_QUERY_END_TIME = ""
+VM_JOB_NAME = "vm"
 
 PROM_SERVER = getConfig("PROM_SERVER", PROM_SERVER)
 PROM_HEADERS = getConfig("PROM_HEADERS", PROM_HEADERS)
@@ -29,6 +30,8 @@ PROM_QUERY_END_TIME = getConfig("PROM_QUERY_END_TIME", PROM_QUERY_END_TIME)
 
 PROM_THIRDPARTY_METRICS = getConfig("PROM_THIRDPARTY_METRICS", "").split(",")
 
+VM_JOB_NAME = getConfig("VM_JOB_NAME", VM_JOB_NAME)
+
 metric_prefix = "kepler_"
 TIMESTAMP_COL = "timestamp"
 PACKAGE_COL = "package"
@@ -37,9 +40,13 @@ MODE_COL = "mode"
 
 container_query_prefix = "kepler_container"
 container_query_suffix = "total"
+process_query_prefix = "kepler_process"
+process_query_suffix = "total"
 
 node_query_prefix = "kepler_node"
 node_query_suffix = "joules_total"
+vm_query_prefix = "kepler_vm"
+vm_query_suffix = "joules_total"
 
 usage_ratio_query = "kepler_container_cpu_usage_per_package_ratio"
 # mostly available
@@ -48,6 +55,7 @@ node_info_query = "kepler_node_node_info"
 cpu_frequency_info_query = "kepler_node_cpu_scaling_frequency_hertz"
 
 container_id_cols = ["container_id", "pod_name", "container_name", "container_namespace"]
+process_id_cols = ["container_id", "pid"]
 node_info_column = "node_type"
 pkg_id_column = "pkg_id"
 
@@ -58,18 +66,24 @@ def get_energy_unit(component):
     return None
 
 
-def feature_to_query(feature):
+def feature_to_query(feature, use_process=False):
     if feature in SYSTEM_FEATURES:
         return f"{node_query_prefix}_{feature}"
     if feature in FeatureGroups[FeatureGroup.AcceleratorOnly]:
         return f"{node_query_prefix}_{feature}"
     if FeatureGroup.ThirdParty in FeatureGroups is not None and feature in FeatureGroups[FeatureGroup.ThirdParty]:
         return feature
+    if use_process:
+        return f"{process_query_prefix}_{feature}_{process_query_suffix}"
     return f"{container_query_prefix}_{feature}_{container_query_suffix}"
 
 
 def energy_component_to_query(component):
     return f"{node_query_prefix}_{component}_{node_query_suffix}"
+
+
+def vm_energy_component_to_query(component):
+    return f"{vm_query_prefix}_{component}_{vm_query_suffix}"
 
 
 def update_thirdparty_metrics(metrics):
