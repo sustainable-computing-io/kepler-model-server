@@ -35,7 +35,6 @@ env:
 
 jobs:
   run-integration:
-    if: ${{ (inputs.base_change != 'true') || ( (inputs.base_change == 'true') && (inputs.docker_secret == 'true') ) }}
     runs-on: ubuntu-20.04
     steps:
       - name: use Kepler action to deploy cluster
@@ -74,24 +73,31 @@ jobs:
       - name: test deploying with only estimator
         run: |
           make deploy
-          make e2e-test
+          ./tests/e2e_test.sh --estimator ${{ inputs.additional_opts }}
           make cleanup
         env:
-          OPTS: ESTIMATOR${{ inputs.additional_opts }}
+          OPTS: ESTIMATOR
           KEPLER_IMAGE_VERSION: ${{ inputs.kepler_tag }}
       - name: test deploying with only server
         run: |
           make deploy
-          make e2e-test
+          ./tests/e2e_test.sh --server ${{ inputs.additional_opts }}
           make cleanup
         env:
-          OPTS: SERVER${{ inputs.additional_opts }}
+          OPTS: SERVER
           KEPLER_IMAGE_VERSION: ${{ inputs.kepler_tag }}
       - name: test deploying with estimator and model server
         run: |
           make deploy
-          make e2e-test
+          ./tests/e2e_test.sh --estimator --server ${{ inputs.additional_opts }}
           make cleanup
         env:
-          OPTS: ESTIMATOR SERVER${{ inputs.additional_opts }}
+          OPTS: ESTIMATOR SERVER
           KEPLER_IMAGE_VERSION: ${{ inputs.kepler_tag }}
+
+      - name: upload artifacts on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-artifacts
+          path: tmp/e2e
