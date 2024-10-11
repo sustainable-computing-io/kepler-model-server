@@ -38,7 +38,6 @@ env:
   BASE_IMAGE: ${{ inputs.image_repo }}/kepler_model_server_base:${{ inputs.image_tag }}
   IMAGE: ${{ inputs.image_repo }}/kepler_model_server:${{ inputs.image_tag }}
   KIND_CLUSTER_NAME: kind
-  KUBECONFIG: /tmp/kubeconfig
 
 jobs:
   tekton-test:
@@ -73,6 +72,7 @@ jobs:
       - name: Install Kepler
         working-directory: model_training
         run: |
+          export KUBECONFIG_ROOT_DIR=/tmp/kubeconfig
           ./script.sh deploy_kepler
           ./script.sh deploy_prom_dependency
           podname=$(kubectl get pods -oname -nkepler)
@@ -84,17 +84,20 @@ jobs:
       - name: Prepare PVC
         working-directory: model_training/tekton
         run: |
+          export KUBECONFIG_ROOT_DIR=/tmp/kubeconfig
           kubectl apply -f pvc/hostpath.yaml
 
       - name: Deploy Tasks and Pipelines
         working-directory: model_training/tekton
         run: |
+          export KUBECONFIG_ROOT_DIR=/tmp/kubeconfig
           kubectl apply -f tasks
           kubectl apply -f tasks/s3
           kubectl apply -f pipelines
 
       - name: Run Tekton Collect
         run: |
+          export KUBECONFIG_ROOT_DIR=/tmp/kubeconfig
           cat <<EOF | kubectl apply -f -
           apiVersion: tekton.dev/v1
           kind: PipelineRun
@@ -131,6 +134,7 @@ jobs:
 
       - name: Run Tekton Retrain
         run: |
+          export KUBECONFIG_ROOT_DIR=/tmp/kubeconfig
           cat <<EOF | kubectl apply -f -
           apiVersion: tekton.dev/v1
           kind: PipelineRun
@@ -166,6 +170,7 @@ jobs:
 
       - name: Run Tekton Complete Retrain
         run: |
+          export KUBECONFIG_ROOT_DIR=/tmp/kubeconfig
           cat <<EOF | kubectl apply -f -
           apiVersion: tekton.dev/v1
           kind: PipelineRun
