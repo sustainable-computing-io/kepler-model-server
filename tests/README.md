@@ -320,20 +320,19 @@ hatch run test -vvv -s ./tests/model_select_test.py
 ## Integration Test
 
 ```bash
-./e2e_test.sh test "<deploy options>"  
-# e.g., ./e2e_test.sh test "ESTIMATOR TEST"
+./e2e_test.sh <options>
 ```
 
-| scenario                                    | test cases                                                            | deploy options        | status   |
-|---------------------------------------------|-----------------------------------------------------------------------|-----------------------|----------|
-| Kepler with estimator only                  | Latest Kepler image is connected to estimator                         | ESTIMATOR             | &#x2714; |
-|                                             | Estimator can load model from config                                  | ESTIMATOR             | &#x2714; |
-|                                             | Dummy power request can be made to estimator                          | ESTIMATOR TEST        | &#x2714; |
-| Kepler with model server only               | Latest Kepler image can request weight model from model server        | SERVER                | &#x2714; |
-|                                             | Dummy weight model request can be made to model server                | SERVER TEST           | &#x2714; |
-| Kepler with estimator and model server      | Estimator can load model from model server                            | ESTIMATOR SERVER      | &#x2714; |
-|                                             | Model server can load initial model                                   | ESTIMATOR SERVER      | &#x2714; |
-|                                             | Dummy power request can be made to estimator                          | ESTIMATOR SERVER TEST | &#x2714; |
-| Kepler with model server and online trainer | Kepler can provide metric to online trainer to train                  | ONLINE                | WIP      |
-|                                             | Dummy prometheus server can provide metric to online trainer to train | ONLINE TEST           | WIP      |
-|                                             | Trained model is updated to pipeline and availble on model server     |                       | WIP      |
+| scenario                                    | test cases                                                            | deploy options              | status   |
+|---------------------------------------------|-----------------------------------------------------------------------|-----------------------------|----------|
+| Kepler with estimator only                  | Latest Kepler image is connected to estimator                         | --estimator                 | &#x2714; |
+|                                             | Estimator can load model from config                                  | --estimator                 | &#x2714; |
+|                                             | Dummy power request can be made to estimator                          | --test --estimator          | &#x2714; |
+| Kepler with model server only               | Latest Kepler image can request weight model from model server        | --server                    | &#x2714; |
+|                                             | Dummy weight model request can be made to model server                | --test --server             | &#x2714; |
+| Kepler with estimator and model server      | Estimator can load model from model server                            | --estimator --server        | &#x2714; |
+|                                             | Model server can load initial model                                   | --estimator --server        | &#x2714; |
+|                                             | Dummy power request can be made to estimator                          | --test --estimator --server | &#x2714; |
+| Kepler with model server and online trainer | Kepler can provide metric to online trainer to train                  | ONLINE                      | WIP      |
+|                                             | Dummy prometheus server can provide metric to online trainer to train | ONLINE TEST                 | WIP      |
+|                                             | Trained model is updated to pipeline and availble on model server     |                             | WIP      |
