@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.13-slim
 #
 # NOTE: This file contains all tools and dependencies needed for
 # setting up the development and testing environment
