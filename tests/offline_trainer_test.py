@@ -11,6 +11,7 @@
 import codecs
 import os
 import shutil
+import pathlib
 
 import requests
 
@@ -21,7 +22,8 @@ from tests.extractor_test import test_energy_source
 from tests.model_server_test import TMP_FILE
 from tests.prom_test import get_prom_response
 
-offline_trainer_output_path = os.path.join(os.path.dirname(__file__), "data", "offline_trainer_output")
+offline_trainer_output_path = pathlib.Path("/tmp/model-server/tests") / pathlib.Path(__file__).name.replace(".py", "")
+os.makedirs(offline_trainer_output_path, exist_ok=True)
 
 if not os.path.exists(offline_trainer_output_path):
     os.mkdir(offline_trainer_output_path)

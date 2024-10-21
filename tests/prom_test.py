@@ -11,12 +11,15 @@
 # query_result = get_query_results()
 
 import os
+import pathlib
 
 from kepler_model.train.prom import PrometheusClient
 from kepler_model.util import load_json, save_json
 from kepler_model.util.prom_types import prom_responses_to_results
 
-prom_output_path = os.path.join(os.path.dirname(__file__), "data", "prom_output")
+prom_output_path = pathlib.Path("/tmp/model-server/tests") / pathlib.Path(__file__).name.replace(".py", "")
+os.makedirs(prom_output_path, exist_ok=True)
+
 prom_output_filename = "prom_response"
 
 
