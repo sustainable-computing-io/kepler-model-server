@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 import numpy as np
 
@@ -11,7 +12,7 @@ from kepler_model.train import (
     generate_profiles,
 )
 from kepler_model.train.extractor.preprocess import find_correlations
-from kepler_model.util import FeatureGroup, FeatureGroups, assure_path, load_csv, save_csv
+from kepler_model.util import FeatureGroup, FeatureGroups, load_csv, save_csv
 from kepler_model.util.extract_types import container_level_index, node_level_index
 from kepler_model.util.prom_types import prom_responses_to_results
 from kepler_model.util.train_types import all_feature_groups
@@ -24,8 +25,8 @@ from tests.extractor_test import (
 )
 from tests.prom_test import get_prom_response
 
-isolator_output_path = os.path.join(os.path.dirname(__file__), "data", "isolator_output")
-assure_path(isolator_output_path)
+isolator_output_path = pathlib.Path("/tmp/model-server/tests") / pathlib.Path(__file__).name.replace(".py", "")
+os.makedirs(isolator_output_path, exist_ok=True)
 
 test_idle_response = get_prom_response(save_name="idle")
 test_idle_data = prom_responses_to_results(test_idle_response)

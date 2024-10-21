@@ -10,7 +10,8 @@ energy_components = ["package", "core", "uncore", "dram"]
 feature_group = FeatureGroup.BPFIRQ.name
 energy_source = "rapl-sysfs"
 
-prom_response_file = os.path.join(os.path.dirname(__file__), "data", "prom_output", "prom_response.json")
+prom_response_file = pathlib.Path("/tmp/model-server/tests") / pathlib.Path(__file__).name.replace(".py") \
+    / "data" / "prom_output" / "prom_response.json"
 
 
 def read_sample_query_results():

@@ -1,6 +1,7 @@
 # plot.py
 # to visualize data
 import os
+import pathlib
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,7 +15,10 @@ from kepler_model.util import FeatureGroup, FeatureGroups, PowerSourceMap, assur
 from kepler_model.util.extract_types import col_to_component
 from kepler_model.util.prom_types import TIMESTAMP_COL
 
-plot_output_path = os.path.join(os.path.dirname(__file__), "data", "plot_output")
+plot_output_path = pathlib.Path("/tmp/model-server/tests") / \
+    pathlib.Path(__file__).name.replace(".py", "") / \
+    "data" / "plot_output"
+
 assure_path(plot_output_path)
 
 

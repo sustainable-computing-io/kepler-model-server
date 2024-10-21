@@ -3,6 +3,7 @@
 import codecs
 import os
 import shutil
+import pathlib
 
 import requests
 
@@ -17,7 +18,8 @@ from kepler_model.util.train_types import FeatureGroup, FeatureGroups, ModelOutp
 from tests.model_server_test import get_model_request_json
 
 TMP_FILE = "download.zip"
-test_data_path = os.path.join(os.path.dirname(__file__), "data")
+test_data_path = pathlib.Path("/tmp/model-server/tests") / pathlib.Path(__file__).name.replace(".py", "")
+os.makedirs(test_data_path, exist_ok=True)
 
 # set environment
 os.environ["MODEL_SERVER_URL"] = "http://localhost:8100"

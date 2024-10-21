@@ -7,6 +7,7 @@
 
 # import external src
 import os
+import pathlib
 
 from kepler_model.train import DefaultExtractor, SmoothExtractor
 from kepler_model.train.pipeline import load_class
@@ -14,7 +15,6 @@ from kepler_model.util import (
     FeatureGroup,
     FeatureGroups,
     PowerSourceMap,
-    assure_path,
     get_valid_feature_group_from_queries,
     load_csv,
     save_csv,
@@ -24,13 +24,8 @@ from kepler_model.util.prom_types import node_info_column
 from kepler_model.util.train_types import all_feature_groups
 from tests.prom_test import get_query_results
 
-data_path = os.path.join(os.path.dirname(__file__), "data")
-assure_path(data_path)
-extractor_output_path = os.path.join(data_path, "extractor_output")
-assure_path(extractor_output_path)
-
-if not os.path.exists(extractor_output_path):
-    os.mkdir(extractor_output_path)
+extractor_output_path = pathlib.Path("/tmp/model-server/tests") / pathlib.Path(__file__).name.replace(".py", "")
+os.makedirs(extractor_output_path, exist_ok=True)
 
 test_extractors = [DefaultExtractor(), SmoothExtractor()]
 
