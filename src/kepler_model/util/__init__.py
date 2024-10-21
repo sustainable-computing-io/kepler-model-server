@@ -1,5 +1,5 @@
 # commonly-used definitions
-from .config import getConfig, model_toppath
+from .config import get_config, model_toppath
 from .loader import (
     class_to_json,
     default_train_output_pipeline,
@@ -47,7 +47,7 @@ __all__ = [
     "save_metadata",
     "save_scaler",
     "save_weight",
-    "getConfig",
+    "get_config",
     "model_toppath",
     "SYSTEM_FEATURES",
     "COUNTER_FEAUTRES",

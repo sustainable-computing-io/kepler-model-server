@@ -6,14 +6,12 @@ from kepler_model.train.isolator.isolator import MinIdleIsolator, ProfileBackgro
 from kepler_model.train.pipeline import NewPipeline
 from kepler_model.train.profiler.profiler import load_all_profiles
 from kepler_model.train.prom.prom_query import PrometheusClient
-from kepler_model.util.config import getConfig
+from kepler_model.util.config import get_config
 from kepler_model.util.loader import default_train_output_pipeline
 from kepler_model.util.prom_types import PROM_QUERY_INTERVAL, get_valid_feature_group_from_queries
 from kepler_model.util.train_types import FeatureGroups, PowerSourceMap
 
-SAMPLING_INTERVAL = PROM_QUERY_INTERVAL
-SAMPLING_INTERVAL = getConfig("SAMPLING_INTERVAL", SAMPLING_INTERVAL)
-SAMPLING_INTERVAL = int(SAMPLING_INTERVAL)
+SAMPLING_INTERVAL = get_config("SAMPLING_INTERVAL", PROM_QUERY_INTERVAL)
 
 
 default_trainers = ["GradientBoostingRegressorTrainer"]

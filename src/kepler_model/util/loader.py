@@ -65,7 +65,7 @@ default_feature_group = FeatureGroup.BPFOnly
 default_init_model_name = {"rapl-sysfs": "GradientBoostingRegressorTrainer_1", "acpi": "XgboostFitTrainer_109"}
 
 
-def load_json(path: str, name: str = ""):
+def load_json(path: os.PathLike, name: str = ""):
     filepath = path
     if name:
         if name.endswith(".json") is False:
