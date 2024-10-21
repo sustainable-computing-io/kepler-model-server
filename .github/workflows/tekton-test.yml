@@ -41,7 +41,6 @@ env:
 
 jobs:
   tekton-test:
-    if: ${{ (inputs.base_change != 'true') || ( (inputs.base_change == 'true') && (inputs.docker_secret == 'true') ) }}
     runs-on: ubuntu-latest
     steps:
       - name: checkout
