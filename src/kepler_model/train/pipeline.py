@@ -209,11 +209,11 @@ class Pipeline:
         print_bounded_multiline_message(messages)
 
     def archive_pipeline(self):
-        save_path = os.path.join(model_toppath, self.name)
+        save_path = model_toppath / self.name
         archived_file = get_archived_file(model_toppath, self.name)
-        self.print_log("archive pipeline :" + archived_file)
-        self.print_log("save_path :" + save_path)
-        shutil.make_archive(save_path, "zip", save_path)
+        self.print_log(f"archive pipeline : {archived_file}")
+        self.print_log(f"save_path : {save_path}")
+        shutil.make_archive(str(save_path), "zip", save_path)
 
 
 def initial_trainers(trainer_names, node_level, pipeline_name, target_energy_sources, valid_feature_groups):
