@@ -32,7 +32,7 @@ dependencies = [
   "prometheus-api-client==0.5.5",
   "prometheus-client==0.21.0",
   "protobuf==5.28.2",
-  "psutil==6.0.0",
+  "psutil==6.1.0",
   "py-cpuinfo==9.0.0",
   "pyudev==0.24.3",
   "pyyaml_env_tag==0.1",
