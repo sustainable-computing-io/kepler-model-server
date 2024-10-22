@@ -27,10 +27,7 @@ from kepler_model.util.loader import (
     load_pipeline_metadata,
 )
 from kepler_model.util.prom_types import (
-    PROM_HEADERS,
-    PROM_QUERY_END_TIME,
     PROM_QUERY_INTERVAL,
-    PROM_QUERY_START_TIME,
     PROM_QUERY_STEP,
     PROM_SERVER,
     PROM_SSL_DISABLE,
@@ -85,7 +82,7 @@ query
 
 
 arguments:
-- --server : specify prometheus server URL (PROM_HEADERS and PROM_SSL_DISABLE configuration might be set via configmap or environment variables if needed)
+- --server : specify prometheus server URL (PROM_SSL_DISABLE configuration may be set via configmap or environment variables if needed)
 - --output : specify query output file name.  There will be two files generated: [output].json and [output]_validate_result.csv for kepler query response and validated results.
 - --metric-prefix : specify prefix to filter target query metrics (default: kepler)
 - --thirdparty-metrics : specify list of third party metrics to query in addition to the metrics with specified metric prefix (optional)
@@ -110,7 +107,7 @@ def query(args):
     generate_spec(data_path, machine_id)
     from prometheus_api_client import PrometheusConnect
 
-    prom = PrometheusConnect(url=args.server, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
+    prom = PrometheusConnect(url=args.server, disable_ssl=PROM_SSL_DISABLE)
     start = None
     end = None
     if args.input:
@@ -1001,8 +998,8 @@ def run():
     # Query arguments
     parser.add_argument("-s", "--server", type=str, help="Specify prometheus server.", default=PROM_SERVER)
     parser.add_argument("--interval", type=int, help="Specify query interval.", default=PROM_QUERY_INTERVAL)
-    parser.add_argument("--start-time", type=str, help="Specify query start time.", default=PROM_QUERY_START_TIME)
-    parser.add_argument("--end-time", type=str, help="Specify query end time.", default=PROM_QUERY_END_TIME)
+    parser.add_argument("--start-time", type=str, help="Specify query start time.", default="")
+    parser.add_argument("--end-time", type=str, help="Specify query end time.", default="")
     parser.add_argument("--step", type=str, help="Specify query step.", default=PROM_QUERY_STEP)
     parser.add_argument("--metric-prefix", type=str, help="Specify metrix prefix to filter.", default=KEPLER_METRIC_PREFIX)
     parser.add_argument("-tm", "--thirdparty-metrics", nargs="+", help="Specify the thirdparty metrics that are not included by Kepler", default="")

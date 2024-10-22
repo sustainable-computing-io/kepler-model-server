@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .config import getConfig
+from .config import get_config
 from .train_types import (
     SYSTEM_FEATURES,
     WORKLOAD_FEATURES,
@@ -10,27 +10,13 @@ from .train_types import (
     get_valid_feature_groups,
 )
 
-PROM_SERVER = "http://localhost:9090"
-PROM_SSL_DISABLE = "True"
-PROM_HEADERS = ""
-PROM_QUERY_INTERVAL = 300
-PROM_QUERY_STEP = 3
-PROM_QUERY_START_TIME = ""
-PROM_QUERY_END_TIME = ""
-VM_JOB_NAME = "vm"
+PROM_SERVER = get_config("PROM_SERVER", "http://localhost:9090")
+PROM_SSL_DISABLE = get_config("PROM_SSL_DISABLE", True)
+PROM_QUERY_INTERVAL = get_config("PROM_QUERY_INTERVAL", 300)
+PROM_QUERY_STEP = get_config("PROM_QUERY_STEP", 3)
 
-PROM_SERVER = getConfig("PROM_SERVER", PROM_SERVER)
-PROM_HEADERS = getConfig("PROM_HEADERS", PROM_HEADERS)
-PROM_HEADERS = None if PROM_HEADERS == "" else PROM_HEADERS
-PROM_SSL_DISABLE = True if getConfig("PROM_SSL_DISABLE", PROM_SSL_DISABLE).lower() == "true" else False
-PROM_QUERY_INTERVAL = getConfig("PROM_QUERY_INTERVAL", PROM_QUERY_INTERVAL)
-PROM_QUERY_STEP = getConfig("PROM_QUERY_STEP", PROM_QUERY_STEP)
-PROM_QUERY_START_TIME = getConfig("PROM_QUERY_START_TIME", PROM_QUERY_START_TIME)
-PROM_QUERY_END_TIME = getConfig("PROM_QUERY_END_TIME", PROM_QUERY_END_TIME)
-
-PROM_THIRDPARTY_METRICS = getConfig("PROM_THIRDPARTY_METRICS", "").split(",")
-
-VM_JOB_NAME = getConfig("VM_JOB_NAME", VM_JOB_NAME)
+PROM_THIRDPARTY_METRICS = get_config("PROM_THIRDPARTY_METRICS", list[str]([]))
+VM_JOB_NAME = get_config("VM_JOB_NAME", "vm")
 
 metric_prefix = "kepler_"
 TIMESTAMP_COL = "timestamp"

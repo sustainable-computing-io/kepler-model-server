@@ -21,27 +21,27 @@ authors = [
 
 classifiers = [
   "Programming Language :: Python",
-	"Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
 ]
 dependencies = [
   "flask==3.0.3",
   "joblib==1.4.2",
   "numpy==2.0.1",
-  "pandas==2.2.2",
+  "pandas==2.2.3",
   "prometheus-api-client==0.5.5",
-  "prometheus-client==0.20.0",
-  "protobuf==5.27.3",
-  "psutil==6.0.0",
+  "prometheus-client==0.21.0",
+  "protobuf==5.28.2",
+  "psutil==6.1.0",
   "py-cpuinfo==9.0.0",
   "pyudev==0.24.3",
   "pyyaml_env_tag==0.1",
-  "scikit-learn==1.5.1",
+  "scikit-learn==1.5.2",
   "scipy==1.14.1",
   "seaborn==0.13.2",
   "Werkzeug==3.0.4",
   "xgboost==2.1.1",
-  "boto3==1.34.155",
+  "boto3==1.35.43",
   "pymarkdownlnt==0.9.22",
   "yamllint==1.35.1",
   "requests-file==2.1.0",
@@ -66,8 +66,8 @@ path = "src/kepler_model/__about__.py"
 python = "3.10"
 extra-dependencies = [
   "coverage[toml]>=6.5",
-	"ipdb",
-	"ipython",
+    "ipdb",
+    "ipython",
   "pytest",
 ]
 
@@ -82,6 +82,27 @@ cov = [
   "test-cov",
   "cov-report",
 ]
+
+[tool.hatch.envs.lab]
+extra-dependencies = [
+  "jupyterlab",
+  "notebook",
+  "voila",
+  "ipywidgets",
+  # vim please
+  "jupyterlab-vim",
+
+  "beautifulsoup4",
+  # read parquet files
+  # "pyarrow",
+
+  # graphing
+  "matplotlib",
+  "graphviz",
+]
+
+[tool.hatch.envs.lab.scripts]
+note = "jupyter lab --NotebookApp.token='' --allow-root"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
@@ -114,7 +135,7 @@ line-length = 160
 
 [tool.pytest.ini_options]
 markers = [
-	"focus",  # used in development to mark focused tests
+    "focus",  # used in development to mark focused tests
 ]
 
 [tool.pymarkdown]

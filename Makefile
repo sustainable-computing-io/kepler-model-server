@@ -209,10 +209,6 @@ manifest:
 	@./manifests/set.sh "${OPTS}"
 	@$(MAKE) _print
 
-e2e-test:
-	chmod +x ./tests/e2e_test.sh
-	./tests/e2e_test.sh test "${OPTS}"
-
 patch-power-request-client:
 	kubectl patch ds kepler-exporter -n kepler --patch-file ./manifests/test/power-request-client.yaml
 

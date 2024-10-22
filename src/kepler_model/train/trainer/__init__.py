@@ -238,9 +238,9 @@ class Trainer(metaclass=ABCMeta):
         save_path = self._get_save_path(node_type)
         model_name, _ = self._model_filename(node_type)
         archived_file = get_archived_file(self.group_path, model_name)
-        self.print_log("archive model :" + archived_file)
-        self.print_log("save_path :" + save_path)
-        shutil.make_archive(save_path, "zip", save_path)
+        self.print_log(f"archive model :  {archived_file}")
+        self.print_log(f"save_path : {save_path}")
+        shutil.make_archive(str(save_path), "zip", save_path)
         weight_dict = self.get_weight_dict(node_type)
         if weight_dict is not None:
             save_weight(save_path, weight_dict)

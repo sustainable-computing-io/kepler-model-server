@@ -2,6 +2,7 @@ import codecs
 import enum
 import logging
 import os
+import pathlib
 import shutil
 import sys
 
@@ -16,7 +17,7 @@ from kepler_model.util.config import (
     MODEL_SERVER_MODEL_LIST_PATH,
     MODEL_SERVER_MODEL_REQ_PATH,
     download_path,
-    getConfig,
+    get_config,
     initial_pipeline_urls,
     model_toppath,
     set_config_dir,
@@ -102,7 +103,7 @@ class ModelListParam(enum.Enum):
 
 
 ###########################################
-MODEL_SERVER_PORT = int(getConfig("MODEL_SERVER_PORT", "8100"))
+MODEL_SERVER_PORT = get_config("MODEL_SERVER_PORT", 8100)
 
 # pipelineName and nodeCollection are global dict values set at initial state (load_init_pipeline)
 ## pipelineName: map of energy_source to target pipeline name
@@ -190,9 +191,9 @@ def select_best_model(
                 continue
         else:
             response = get_archived_file(valid_group_path, model_name)
-            if not os.path.exists(response):
+            if response.exists() is False:
                 # archived model file does not exists
-                logger.warning(f"archive failed: {response}")
+                logger.warning(f"archive file for {model_name}: {response} does not exist")
                 continue
         if best_cadidate is None or best_cadidate[ERROR_KEY] > metadata[ERROR_KEY]:
             best_cadidate = metadata
@@ -341,8 +342,7 @@ def unpack_zip_files(root_folder):
                 zip_file_path = os.path.join(folder, file)
                 extract_to = os.path.splitext(zip_file_path)[0]  # Extract to same location as the ZIP file
                 # Make sure the destination folder exists, if not, create it
-                if not os.path.exists(extract_to):
-                    os.makedirs(extract_to)
+                os.makedirs(extract_to, exist_ok=True)
                 shutil.unpack_archive(zip_file_path, extract_to)
                 weight_file = os.path.join(folder, file.replace(".zip", ".json"))
                 if os.path.exists(weight_file):
@@ -435,11 +435,11 @@ def fill_machine_spec():
 @click.option(
     "--config-dir",
     "-c",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False),
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, path_type=pathlib.Path),
     default=CONFIG_PATH,
     required=False,
 )
-def run(log_level: str, config_dir: str) -> int:
+def run(log_level: str, config_dir: pathlib.Path) -> int:
     level = getattr(logging, log_level.upper())
     logging.basicConfig(
         level=level,
