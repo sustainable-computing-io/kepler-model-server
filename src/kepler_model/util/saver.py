@@ -29,8 +29,9 @@ def assure_path(path):
 
 
 def save_json(path, name, data):
-    if ".json" not in name:
+    if name.endswith(".json") is False:
         name = name + ".json"
+
     assure_path(path)
     filename = os.path.join(path, name)
     with open(filename, "w") as f:

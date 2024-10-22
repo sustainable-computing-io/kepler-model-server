@@ -15,11 +15,13 @@
 
 import json
 import os
+import pathlib
 from urllib.request import urlopen
 
 import joblib
 import pandas as pd
 
+from kepler_model.util import config
 from kepler_model.util.extract_types import component_to_col
 from kepler_model.util.loader import default_node_type
 from kepler_model.util.prom_types import generate_dataframe_from_response, node_info_column, node_info_query
@@ -30,23 +32,13 @@ min_watt_key = "min_watt"
 max_watt_key = "max_watt"
 unit_num_key = "#unit"
 
-resource_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "resource")
-default_profile_top_path = os.path.join(resource_path, "profiles")
-
-if not os.path.exists(resource_path):
-    os.mkdir(resource_path)
-
+default_profile_top_path = config.RESOURCE_DIR / "profiles"
 profiler_registry = "https://raw.githubusercontent.com/sustainable-computing-io/kepler-model-db/main/profiles"
 
 
-def prepare_profile_path(profile_top_path):
-    if not os.path.exists(profile_top_path):
-        os.mkdir(profile_top_path)
-
-    profile_path = os.path.join(profile_top_path, "profile")
-    if not os.path.exists(profile_path):
-        os.mkdir(profile_path)
-
+def prepare_profile_path(profile_top_path: str | pathlib.Path) -> pathlib.Path:
+    profile_path = pathlib.Path(profile_top_path) / "profile"
+    os.makedirs(profile_path, exist_ok=True)
     return profile_path
 
 

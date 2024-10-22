@@ -1,6 +1,7 @@
 import codecs
 import json
 import logging
+import pathlib
 import os
 from urllib.request import urlopen
 
@@ -42,7 +43,7 @@ base_model_url = f"https://raw.githubusercontent.com/sustainable-computing-io/ke
 logger = logging.getLogger(__name__)
 
 
-def get_pipeline_url(model_topurl, pipeline_name):
+def get_pipeline_url(model_topurl, pipeline_name) -> str:
     file_ext = ".zip"
     return os.path.join(model_topurl, pipeline_name + file_ext)
 
@@ -65,12 +66,14 @@ default_feature_group = FeatureGroup.BPFOnly
 default_init_model_name = {"rapl-sysfs": "GradientBoostingRegressorTrainer_1", "acpi": "XgboostFitTrainer_109"}
 
 
-def load_json(path: str, name: str = ""):
-    filepath = path
+def load_json(path: str | os.PathLike, name: str = ""):
+    filepath = pathlib.Path(path)
+
     if name:
         if name.endswith(".json") is False:
             name = name + ".json"
-        filepath = os.path.join(path, name)
+        filepath = pathlib.Path(path) / name
+
     try:
         with open(filepath) as f:
             res = json.load(f)
@@ -247,11 +250,12 @@ def get_largest_candidates(model_names, pipeline_name, nodeCollection, energy_so
     return candidates[max_cores] if max_cores > 0 else None
 
 
-def get_pipeline_path(model_toppath, pipeline_name):
+def get_pipeline_path(model_toppath: os.PathLike, pipeline_name) -> str:
+    # NOTE: cannot convert to Path since model_toppath can be a URL
     return os.path.join(model_toppath, pipeline_name)
 
 
-def get_model_group_path(model_toppath, output_type, feature_group, energy_source, pipeline_name, assure=True):
+def get_model_group_path(model_toppath, output_type, feature_group, energy_source: str, pipeline_name, assure=True) -> str:
     pipeline_path = get_pipeline_path(model_toppath, pipeline_name)
     energy_source_path = os.path.join(pipeline_path, energy_source)
     output_path = os.path.join(energy_source_path, output_type.name)
@@ -264,13 +268,12 @@ def get_model_group_path(model_toppath, output_type, feature_group, energy_sourc
     return feature_path
 
 
-def get_save_path(group_path, trainer_name, node_type):
-    return os.path.join(group_path, get_model_name(trainer_name, node_type))
+def get_save_path(group_path, trainer_name, node_type) -> pathlib.Path:
+    return pathlib.Path(group_path) / get_model_name(trainer_name, node_type)
 
 
-def get_archived_file(group_path, model_name):
-    save_path = os.path.join(group_path, model_name)
-    return save_path + ".zip"
+def get_archived_file(group_path, model_name) -> pathlib.Path:
+    return pathlib.Path(group_path) / (model_name + ".zip")
 
 
 def download_and_save(url, filepath):
@@ -393,11 +396,16 @@ def get_url(
     pipeline_name=None,
     model_name=None,
     weight=False,
-):
+) -> str:
     if pipeline_name is None:
         pipeline_name = default_pipelines[energy_source]
     group_path = get_model_group_path(
-        model_topurl, output_type=output_type, feature_group=feature_group, energy_source=energy_source, pipeline_name=pipeline_name, assure=False
+        model_topurl,
+        output_type=output_type,
+        feature_group=feature_group,
+        energy_source=energy_source,
+        pipeline_name=pipeline_name,
+        assure=False,
     )
     if model_name is None:
         model_name = get_model_name(trainer_name, node_type)

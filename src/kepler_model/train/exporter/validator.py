@@ -22,7 +22,7 @@ class ExportModel:
         self.feature_group = feature_group
         self.model_name = model_name
         self.source_model_group_path = get_model_group_path(models_path, output_type, feature_group, energy_source, assure=False, pipeline_name=pipeline_name)
-        self.source_model_path = os.path.join(self.source_model_group_path, self.model_name)
+        self.source_model_path = self.source_model_group_path / self.model_name
         self.source_model_zip = get_archived_file(self.source_model_group_path, self.model_name)
         self.metadata = metadata
         self.node_type = metadata["node_type"]

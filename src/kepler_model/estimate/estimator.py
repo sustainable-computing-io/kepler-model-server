@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import pathlib
 import shutil
 import signal
 import socket
@@ -188,11 +189,11 @@ def sig_handler(signum, frame) -> None:
 @click.option(
     "--config-dir",
     "-c",
-    type=click.Path(exists=False, dir_okay=True, file_okay=False),
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, path_type=pathlib.Path),
     default=CONFIG_PATH,
     required=False,
 )
-def run(log_level: str, machine_spec: str, config_dir: str) -> int:
+def run(log_level: str, machine_spec: str, config_dir: pathlib.Path) -> int:
     level = getattr(logging, log_level.upper())
     logging.basicConfig(
         level=level,
