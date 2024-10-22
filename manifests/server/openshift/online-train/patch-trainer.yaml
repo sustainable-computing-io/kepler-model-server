@@ -7,7 +7,6 @@ data:
   PROM_SERVER: http://prometheus-operated.openshift-monitoring.svc.cluster.local:9090
   PROM_QUERY_INTERVAL: 20
   PROM_QUERY_STEP: 3
-  PROM_HEADERS: ""
   PROM_SSL_DISABLE: true
 ---
 apiVersion: apps/v1
