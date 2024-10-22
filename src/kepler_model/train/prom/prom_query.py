@@ -3,7 +3,6 @@ import datetime
 from prometheus_api_client import PrometheusConnect
 
 from kepler_model.util.prom_types import (
-    PROM_HEADERS,
     PROM_QUERY_INTERVAL,
     PROM_QUERY_STEP,
     PROM_SERVER,
@@ -24,9 +23,9 @@ def _range_queries(prom, metric_list, start, end, step, params=None):
 
 class PrometheusClient:
     def __init__(self):
-        self.prom = PrometheusConnect(url=PROM_SERVER, headers=PROM_HEADERS, disable_ssl=PROM_SSL_DISABLE)
-        self.interval = int(PROM_QUERY_INTERVAL)
-        self.step = int(PROM_QUERY_STEP)
+        self.prom = PrometheusConnect(url=PROM_SERVER, disable_ssl=PROM_SSL_DISABLE)
+        self.interval = PROM_QUERY_INTERVAL
+        self.step = PROM_QUERY_STEP
         self.latest_query_result = dict()
 
     def query(self):

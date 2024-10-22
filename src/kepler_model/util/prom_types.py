@@ -11,14 +11,9 @@ from .train_types import (
 )
 
 PROM_SERVER = get_config("PROM_SERVER", "http://localhost:9090")
-PROM_HEADERS: None | str = get_config("PROM_HEADERS", "")
-PROM_HEADERS = None if PROM_HEADERS == "" else PROM_HEADERS
-
 PROM_SSL_DISABLE = get_config("PROM_SSL_DISABLE", True)
 PROM_QUERY_INTERVAL = get_config("PROM_QUERY_INTERVAL", 300)
 PROM_QUERY_STEP = get_config("PROM_QUERY_STEP", 3)
-PROM_QUERY_START_TIME = get_config("PROM_QUERY_START_TIME", "")
-PROM_QUERY_END_TIME = get_config("PROM_QUERY_END_TIME", "")
 
 PROM_THIRDPARTY_METRICS = get_config("PROM_THIRDPARTY_METRICS", list[str]([]))
 
