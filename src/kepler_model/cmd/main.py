@@ -145,7 +145,7 @@ def query(args):
     queries = None
     if args.thirdparty_metrics != "":
         queries = [m for m in available_metrics if args.metric_prefix in m or m in args.thirdparty_metrics]
-    elif [""] != PROM_THIRDPARTY_METRICS:
+    elif len(PROM_THIRDPARTY_METRICS) > 0:
         queries = [m for m in available_metrics if args.metric_prefix in m or m in PROM_THIRDPARTY_METRICS]
     else:
         queries = [m for m in available_metrics if args.metric_prefix in m]
@@ -210,7 +210,7 @@ def extract(args):
     # Inject thirdparty_metrics to FeatureGroup
     if args.thirdparty_metrics != "":
         update_thirdparty_metrics(args.thirdparty_metrics)
-    elif [""] != PROM_THIRDPARTY_METRICS:
+    elif len(PROM_THIRDPARTY_METRICS) > 0:
         update_thirdparty_metrics(PROM_THIRDPARTY_METRICS)
     valid_fg = get_valid_feature_group_from_queries([query for query in query_results.keys() if len(query_results[query]) > 1])
     ot, fg = check_ot_fg(args, valid_fg)
@@ -328,7 +328,7 @@ def train_from_data(args):
     # Inject thirdparty_metrics to FeatureGroup
     if args.thirdparty_metrics != "":
         update_thirdparty_metrics(args.thirdparty_metrics)
-    elif [""] != PROM_THIRDPARTY_METRICS:
+    elif len(PROM_THIRDPARTY_METRICS) > 0:
         update_thirdparty_metrics(PROM_THIRDPARTY_METRICS)
     valid_fg = [fg_key for fg_key in FeatureGroups.keys()]
     ot, fg = check_ot_fg(args, valid_fg)
@@ -421,7 +421,7 @@ def train(args):
     # Inject thirdparty_metrics to FeatureGroup
     if args.thirdparty_metrics != "":
         update_thirdparty_metrics(args.thirdparty_metrics)
-    elif [""] != PROM_THIRDPARTY_METRICS:
+    elif len(PROM_THIRDPARTY_METRICS) > 0:
         update_thirdparty_metrics(PROM_THIRDPARTY_METRICS)
 
     pipeline_name = default_train_output_pipeline
@@ -564,7 +564,7 @@ def estimate(args):
     # Inject thirdparty_metrics to FeatureGroup
     if args.thirdparty_metrics != "":
         update_thirdparty_metrics(args.thirdparty_metrics)
-    elif [""] != PROM_THIRDPARTY_METRICS:
+    elif len(PROM_THIRDPARTY_METRICS) > 0:
         update_thirdparty_metrics(PROM_THIRDPARTY_METRICS)
 
     inputs = args.input.split(",")
