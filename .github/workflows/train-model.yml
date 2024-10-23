@@ -63,7 +63,6 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.aws_access_key_id }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_access_key }}
   KIND_CLUSTER_NAME: kind
-  KUBECONFIG: /tmp/kubeconfig
 
 jobs:
   check-data:
@@ -126,10 +125,12 @@ jobs:
       - name: Prepare PVC
         working-directory: model_training/tekton
         run: |
+          export KUBECONFIG_ROOT_DIR=/tmp/kubeconfig
           kubectl apply -f pvc/hostpath.yaml
 
       - name: Deploy S3 Secret
         run: |
+          export KUBECONFIG_ROOT_DIR=/tmp/kubeconfig
           cat <<EOF | kubectl apply -f -
           apiVersion: v1
           kind: Secret
@@ -146,12 +147,14 @@ jobs:
       - name: Deploy Tasks and Pipelines
         working-directory: model_training/tekton
         run: |
+          export KUBECONFIG_ROOT_DIR=/tmp/kubeconfig
           kubectl apply -f tasks
           kubectl apply -f tasks/s3
           kubectl apply -f pipelines
 
       - name: Run Tekton Pipeline with S3Push
         run: |
+          export KUBECONFIG_ROOT_DIR=/tmp/kubeconfig
           cat <<EOF | kubectl apply -f -
           apiVersion: tekton.dev/v1
           kind: PipelineRun
@@ -188,4 +191,5 @@ jobs:
 
       - name: Wait for PipelineRun
         run: |
+          export KUBECONFIG_ROOT_DIR=/tmp/kubeconfig
           ./hack/k8s_helper.sh wait_for_pipelinerun self-hosted-aws-train
