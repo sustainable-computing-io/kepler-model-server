@@ -266,9 +266,14 @@ class NodeTypeIndexCollection:
             return -1, -1, -1
         compare_spec = in_spec.copy()
         num_of_none = get_num_of_none(compare_spec)
-        similarity_map, max_similarity, most_similar_index, has_candidate, candidate_uncertain_attribute_freq, candidate_uncertain_attribute_total = (
-            self._find_candidates(in_spec, loose_search)
-        )
+        (
+            similarity_map,
+            max_similarity,
+            most_similar_index,
+            has_candidate,
+            candidate_uncertain_attribute_freq,
+            candidate_uncertain_attribute_total,
+        ) = self._find_candidates(in_spec, loose_search)
         if max_similarity == 1:
             return most_similar_index, 0, 0
         if has_candidate:
