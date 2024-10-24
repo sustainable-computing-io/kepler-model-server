@@ -228,7 +228,7 @@ class DefaultExtractor(Extractor):
         if len(feature_to_remove) != 0:
             features = self.process_feature(features, feature_to_remove, cur_accelerator_features)
         # return with reset index for later aggregation
-        #print(feature_data.reset_index().to_string())
+        # print(feature_data.reset_index().to_string())
         return feature_data.reset_index(), features
 
     def get_system_feature_data(self, query_results, features):
@@ -262,8 +262,8 @@ class DefaultExtractor(Extractor):
                 aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] != VM_JOB_NAME]
             # filter source
             aggr_query_data = aggr_query_data[aggr_query_data[SOURCE_COL] == source]
-            #print("aggr query data power")
-            #print(aggr_query_data.to_string())
+            # print("aggr query data power")
+            # print(aggr_query_data.to_string())
             if len(aggr_query_data) == 0:
                 return None
             if unit_col is not None:
@@ -311,7 +311,7 @@ class DefaultExtractor(Extractor):
         if len(power_data_list) == 0:
             return None
         power_data = pd.concat(power_data_list, axis=1).dropna()
-        #print(power_data.to_string())
+        # print(power_data.to_string())
         return power_data
 
     def get_system_category(self, query_results):
