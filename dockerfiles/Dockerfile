@@ -1,4 +1,4 @@
-FROM quay.io/sustainable_computing_io/kepler_model_server_base:latest
+FROM quay.io/sustainable_computing_io/kepler_model_server_base:v0.7.12
 
 WORKDIR /kepler_model
 ENV PYTHONPATH=/kepler_model
