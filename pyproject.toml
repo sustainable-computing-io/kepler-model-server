@@ -42,7 +42,7 @@ dependencies = [
   "Werkzeug==3.0.4",
   "xgboost==2.1.2",
   "boto3==1.35.43",
-  "pymarkdownlnt==0.9.22",
+  "pymarkdownlnt==0.9.24",
   "yamllint==1.35.1",
   "requests-file==2.1.0",
 ]
