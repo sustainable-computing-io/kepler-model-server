@@ -168,7 +168,6 @@ class DefaultExtractor(Extractor):
                 print("no data in ", query)
                 return None
             aggr_query_data = query_results[query].copy()
-
             if all(col in aggr_query_data.columns for col in cols_to_use):
                 if use_vm_metrics:
                     aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] == VM_JOB_NAME]
@@ -256,9 +255,9 @@ class DefaultExtractor(Extractor):
                 return None
             aggr_query_data = query_results[query].copy()
             if not use_vm_metrics:
-                aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] != VM_JOB_NAME]
-            # filter source
-            aggr_query_data = aggr_query_data[aggr_query_data[SOURCE_COL] == source]
+                # aggr_query_data = aggr_query_data.loc[aggr_query_data["job"] != VM_JOB_NAME]
+                # filter source
+                aggr_query_data = aggr_query_data[aggr_query_data[SOURCE_COL] == source]
             if len(aggr_query_data) == 0:
                 return None
             if unit_col is not None:
