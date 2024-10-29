@@ -156,7 +156,7 @@ def query(args):
     if args.to_csv:
         save_query_results(data_path, args.output, response)
     # try validation if applicable
-    validate_df = get_validate_df(data_path, benchmark_filename, response)
+    validate_df = get_validate_df(data_path, benchmark_filename, response, use_vm_metrics=args.vm_train)
     summary_validation(validate_df)
     save_csv(path=data_path, name=args.output + "_validate_result", data=validate_df)
 
@@ -487,7 +487,9 @@ def train(args):
         print("cannot get pipeline")
         exit()
     for energy_source in energy_sources:
+        print("energy source: ", energy_source)
         energy_components = PowerSourceMap[energy_source]
+        print("energy components: ", energy_components)
         for feature_group in valid_feature_groups:
             success, abs_data, dyn_data = pipeline.process_multiple_query(
                 input_query_results_list, energy_components, energy_source, feature_group=feature_group.name, replace_node_type=node_type

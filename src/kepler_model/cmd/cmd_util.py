@@ -7,6 +7,7 @@ from kepler_model.util.loader import default_node_type, get_pipeline_path, load_
 from kepler_model.util.prom_types import (
     SOURCE_COL,
     energy_component_to_query,
+    vm_energy_component_to_query,
     node_info_column,
     prom_responses_to_results,
 )
@@ -99,7 +100,7 @@ def summary_validation(validate_df):
         print("{} data: \t{}".format(metric, target_df[">0"].values))
 
 
-def get_validate_df(data_path, benchmark_filename, query_response):
+def get_validate_df(data_path, benchmark_filename, query_response, use_vm_metrics=False):
     items = []
     query_results = prom_responses_to_results(query_response)
     container_queries = [query for query in query_results.keys() if "container" in query]
@@ -175,10 +176,14 @@ def get_validate_df(data_path, benchmark_filename, query_response):
                     item["total"] = filtered_df[query].max()
                     items += [item]
     energy_queries = [query for query in query_results.keys() if "_joules" in query]
-    print("Energy Queries: ", container_queries)
+    print("Energy Queries: ", energy_queries)
     for energy_source, energy_components in PowerSourceMap.items():
         for component in energy_components:
             query = energy_component_to_query(component)
+            if use_vm_metrics:
+                query = vm_energy_component_to_query(component)
+            else:
+                query = energy_component_to_query(component)
             df = query_results[query]
             df = df[df[SOURCE_COL] == energy_source]
             if len(df) == 0:
