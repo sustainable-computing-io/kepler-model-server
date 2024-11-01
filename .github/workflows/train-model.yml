@@ -144,6 +144,14 @@ jobs:
             bucketName: kepler-power-model
           EOF
 
+      # TODO: Remove this once the fix is released in new kepler-action version
+      - name: Wait for Tekton to be ready
+        run: |
+          kubectl wait deployment tekton-pipelines-controller \
+            --for=condition=Available --namespace tekton-pipelines --timeout=5m
+          kubectl wait deployment tekton-pipelines-webhook \
+            --for=condition=Available --namespace tekton-pipelines --timeout=5m
+
       - name: Deploy Tasks and Pipelines
         working-directory: model_training/tekton
         run: |
