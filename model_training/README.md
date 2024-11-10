@@ -18,9 +18,10 @@
 ## Requirements
 
 - git > 2.22
+- hatch
 - kubectl
 - yq, jq
-- power meter is available
+- power meter if available
 
 ## Pre-step
 
@@ -71,7 +72,7 @@ There are two options to run the benchmark and collect the metrics, [CPE-operato
 
 ### With manual execution
 
-In addition to the above two automation approach, you can manually run your own benchmarks, then collect, train, and export the models by the entrypoint `cmd/main.py`
+In addition to the above two automation approach, you can manually run your own benchmarks, then collect, train, and export the models by the entrypoint
 
 [Manual Metric Collection and Training with Entrypoint](./cmd_instruction.md)
 

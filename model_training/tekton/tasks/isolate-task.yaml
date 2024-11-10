@@ -47,9 +47,8 @@ spec:
   steps:
     - name: isolate
       image: $(params.MODEL_SERVER_IMAGE)
-      command: [python3.10]
+      command: [kepler-model]
       args:
-        - cmd/main.py
         - isolate
         - --data-path=$(workspaces.mnt.path)/data
         - --input=kepler_query

@@ -88,7 +88,6 @@ spec:
           - name: collect-idle
             image: $(params.MODEL_SERVER_IMAGE)
             args:
-              - cmd/main.py
               - query
               - --data-path=$(workspaces.mnt.path)/data
               - --interval=$(params.IDLE_COLLECT_INTERVAL)
@@ -96,7 +95,7 @@ spec:
               - --benchmark=idle
               - -o=idle
               - --id=$(params.MACHINE_ID)
-            command: [python3.10]
+            command: [kepler-model]
             env:
               - name: PROM_SERVER
                 value: http://prometheus-k8s.monitoring.svc:9090
@@ -142,7 +141,6 @@ spec:
           - name: collect-stressng
             image: $(params.MODEL_SERVER_IMAGE)
             args:
-              - cmd/main.py
               - query
               - --data-path=$(workspaces.mnt.path)/data
               - --start-time=$(tasks.presteps.results.stress-start-time)
@@ -151,7 +149,7 @@ spec:
               - --id=$(params.MACHINE_ID)
               - --benchmark=stressng
               - -o=kepler_query
-            command: [python3.10]
+            command: [kepler-model]
             env:
               - name: PROM_SERVER
                 value: http://prometheus-k8s.monitoring.svc:9090
