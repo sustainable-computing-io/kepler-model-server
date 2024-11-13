@@ -8,11 +8,11 @@ before run:
 
 after run:
 example of plot command:
-DATAPATH=/path/to/models python cmd/main.py plot --target-data estimate --input /path/to/data/i3.metal/kepler_query.json --pipeline-name ec2 --energy-source rapl-sysfs --model-name LinearRegressionTrainer_4 --output-type AbsPower --output i3metal-ec2 --feature-group BPFOnly
-DATAPATH=/path/to/models python cmd/main.py plot --target-data estimate --input /path/to/data/i3.metal/kepler_query.json --pipeline-name ec2 --energy-source rapl-sysfs --model-name LogarithmicRegressionTrainer_4 --output-type AbsPower --output i3metal-ec2 --feature-group BPFOnly
+DATAPATH=/path/to/models kepler-model plot --target-data estimate --input /path/to/data/i3.metal/kepler_query.json --pipeline-name ec2 --energy-source rapl-sysfs --model-name LinearRegressionTrainer_4 --output-type AbsPower --output i3metal-ec2 --feature-group BPFOnly
+DATAPATH=/path/to/models kepler-model plot --target-data estimate --input /path/to/data/i3.metal/kepler_query.json --pipeline-name ec2 --energy-source rapl-sysfs --model-name LogarithmicRegressionTrainer_4 --output-type AbsPower --output i3metal-ec2 --feature-group BPFOnly
 
 example of export command:
-DATAPATH=/path/to/models python cmd/main.py export --pipeline-name ec2-0.7.11 -o /path/to/kepler-model-db/models --publisher sunya-ch --zip=true --collect-date "July 2024"
+DATAPATH=/path/to/models kepler-model export --pipeline-name ec2-0.7.11 -o /path/to/kepler-model-db/models --publisher sunya-ch --zip=true --collect-date "July 2024"
 """
 
 import json

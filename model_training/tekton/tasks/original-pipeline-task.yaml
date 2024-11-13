@@ -49,12 +49,11 @@ spec:
   steps:
     - name: pipeline-train
       image: $(params.MODEL_SERVER_IMAGE)
-      command: [python3.10]
+      command: [kepler-model]
       env:
         - name: MODEL_PATH
           value: $(workspaces.mnt.path)/models
       args:
-        - cmd/main.py
         - train
         - --data-path=$(workspaces.mnt.path)/data
         - --input=kepler_query
