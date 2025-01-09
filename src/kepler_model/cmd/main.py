@@ -87,8 +87,7 @@ arguments:
 - --metric-prefix : specify prefix to filter target query metrics (default: kepler)
 - --thirdparty-metrics : specify list of third party metrics to query in addition to the metrics with specified metric prefix (optional)
 - Time range of query can be specified by either of the following choices
-    - --input : file containing data of start time and end time which could be either of the following format
-                - CPE benchmark resource in json if you run workload with CPE-operator (https://github.com/IBM/cpe-operator)
+    - --input : file containing data of start time and end time which is in the following format
                 - custom benchmark in json with `startTimeUTC` and `endTimeUTC` data
     - --benchmark : file to save query timestamp according to either of the following raw parameters
         - --start-time, --end-time : start time and end time (date +%Y-%m-%dT%H:%M:%SZ) 
@@ -169,8 +168,7 @@ validate
 arguments:
 - --input : specify kepler query response file (output of `query` function)
 - --output : specify output file name. The output will be in csv format
-- --benchmark : if benchmark is based on CPE, the validated result will be groupped by the scenario. 
-                Otherwise, the validated result will be an accumulated of all containers.
+- --benchmark : the validated result will be an accumulated of all containers.
 """
 
 
@@ -837,8 +835,7 @@ arguments:
 - --pipeline-name : specify pipeline name that contains the trained models
 - --output : specify kepler-model-db/models in local path
 - --publisher : specify publisher (github) account
-- --benchmark : specify benchmark file that contains data of start time and end time which could be either of the following format
-                - CPE benchmark resource in json if you run workload with CPE-operator (https://github.com/IBM/cpe-operator)
+- --benchmark : specify benchmark file that contains data of start time and end time which is in the following format
                 - custom benchmark in json with `startTimeUTC` and `endTimeUTC` data
 - --collect-date : specify collection time manually in UTC
 - --input : specify kepler query response file (output of `query` function) - optional
@@ -897,93 +894,6 @@ def export(args):
         shutil.make_archive(local_export_path, "zip", local_export_path)
 
 
-"""
-plot_scenario
-
-    separatedly plot data on specified scenario. This function is now limited to only CPE-based benchmark.
-
-arguments:
-- --benchmark : specify CPE benchmark resource in json file
-- Please refer to `plot` function for the rest arguments.
-"""
-
-
-def plot_scenario(args):
-    if not args.benchmark:
-        print("Need --benchmark")
-        exit()
-
-    if not args.scenario:
-        print("Need --scenario")
-        exit()
-
-    # filter scenario
-    input_scenarios = args.scenario.split(",")
-    status_data = load_json(data_path, args.benchmark)
-    target_pods = []
-    cpe_results = status_data["status"]["results"]
-    for result in cpe_results:
-        scenarioID = result["scenarioID"]
-        target = False
-        for scenario in input_scenarios:
-            if scenario in scenarioID:
-                target = True
-                break
-        if not target:
-            continue
-
-        scenarios = result["scenarios"]
-        configurations = result["configurations"]
-        for k, v in scenarios.items():
-            result[k] = v
-        for k, v in configurations.items():
-            result[k] = v
-        repetitions = result["repetitions"]
-        for rep in repetitions:
-            podname = rep["pod"]
-            target_pods += [podname]
-
-    response = load_json(data_path, args.input)
-    query_results = prom_responses_to_results(response)
-    for query, data in query_results.items():
-        if "pod_name" in data.columns:
-            query_results[query] = data[data["pod_name"].isin(target_pods)]
-
-    valid_fg = [fg_key for fg_key in FeatureGroups.keys()]
-    ot, fg = check_ot_fg(args, valid_fg)
-    if fg is not None:
-        valid_fg = [fg]
-    energy_sources = args.energy_source.split(",")
-    output_folder = os.path.join(data_path, args.output)
-
-    print("Plot:", args)
-    feature_plot = []
-    for energy_source in energy_sources:
-        energy_components = PowerSourceMap[energy_source]
-        energy_plot = False
-        for fg in valid_fg:
-            if (len(valid_fg) > 1 and not is_single_source_feature_group(fg)) or (energy_plot and fg.name in feature_plot):
-                # no need to plot if it is a mixed source or already plotted
-                continue
-            data_filename = get_general_filename(args.target_data, energy_source, fg, ot, args.extractor, args.isolator) + "_" + args.scenario
-            if data_filename is None:
-                print("cannot get preprocessed data for ", ot.name)
-                return
-            from kepler_model.train import DefaultExtractor
-
-            extractor = DefaultExtractor()
-            data, power_cols, _, _ = extractor.extract(query_results, energy_components, fg.name, args.energy_source, node_level=True)
-            feature_plot += [fg.name]
-            feature_cols = FeatureGroups[fg]
-            power_cols = [col for col in data.columns if "power" in col]
-            feature_data = data.groupby([TIMESTAMP_COL]).sum()
-            ts_plot(feature_data, feature_cols, f"Feature group: {fg.name} ({args.scenario})", output_folder, data_filename)
-            if not energy_plot:
-                power_data = data.groupby([TIMESTAMP_COL]).max()
-                data_filename = get_general_filename(args.target_data, energy_source, None, ot, args.extractor, args.isolator) + "_" + args.scenario
-                ts_plot(power_data, power_cols, f"Power source: {energy_source} ({args.scenario})", output_folder, data_filename, ylabel="Power (W)")
-
-
 def run():
     # Create an ArgumentParser object
     global data_path
@@ -1036,8 +946,8 @@ def run():
     parser.add_argument("--model-name", type=str, help="Specify target model name for energy estimation.")
 
     # Plot arguments
-    parser.add_argument("--target-data", type=str, help="Speficy target plot data (preprocess, estimate)")
-    parser.add_argument("--scenario", type=str, help="Speficy scenario")
+    parser.add_argument("--target-data", type=str, help="Specify target plot data (preprocess, estimate)")
+    parser.add_argument("--scenario", type=str, help="Specify scenario")
 
     # Export arguments
     parser.add_argument("--publisher", type=str, help="Specify github account of model publisher")

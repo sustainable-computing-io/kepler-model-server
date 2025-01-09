@@ -105,76 +105,36 @@ def get_validate_df(data_path, benchmark_filename, query_response, use_vm_metric
     query_results = prom_responses_to_results(query_response)
     container_queries = [query for query in query_results.keys() if "container" in query]
     print("Container Queries: ", container_queries)
-    status_data = load_json(data_path, benchmark_filename)
     filter_by_benchmark = False
-    if status_data is None or "status" not in status_data:
-        # select all with keyword
-        for query in container_queries:
-            df = query_results[query]
-            if len(df) == 0:
-                # set validate item // no value
-                item = dict()
-                item["pod"] = benchmark_filename
-                item["scenarioID"] = ""
-                item["query"] = query
-                item["count"] = 0
-                item[">0"] = 0
-                item["total"] = 0
-                items += [item]
-                continue
-            filtered_df = df.copy()
-            if "pod_name" in df.columns:
-                # check if we can use inputted benchmark to filtered stressing pods
-                podname_filtered = filtered_df[filtered_df["pod_name"].str.contains(benchmark_filename)]
-                if len(podname_filtered) > 0:
-                    filter_by_benchmark = True
-                    filtered_df = podname_filtered
-            # set validate item
+    for query in container_queries:
+        df = query_results[query]
+        if len(df) == 0:
+            # set validate item // no value
             item = dict()
             item["pod"] = benchmark_filename
             item["scenarioID"] = ""
             item["query"] = query
-            item["count"] = len(filtered_df)
-            item[">0"] = len(filtered_df[filtered_df[query] > 0])
-            item["total"] = filtered_df[query].max()
+            item["count"] = 0
+            item[">0"] = 0
+            item["total"] = 0
             items += [item]
-    else:
-        filtered_by_benchmark = True
-        cpe_results = status_data["status"]["results"]
-        for result in cpe_results:
-            scenarioID = result["scenarioID"]
-            scenarios = result["scenarios"]
-            configurations = result["configurations"]
-            for k, v in scenarios.items():
-                result[k] = v
-            for k, v in configurations.items():
-                result[k] = v
-            repetitions = result["repetitions"]
-            for rep in repetitions:
-                podname = rep["pod"]
-                for query in container_queries:
-                    df = query_results[query]
-                    if len(df) == 0:
-                        # set validate item // no value
-                        item = dict()
-                        item["pod"] = podname
-                        item["scenarioID"] = scenarioID
-                        item["query"] = query
-                        item["count"] = 0
-                        item[">0"] = 0
-                        item["total"] = 0
-                        items += [item]
-                        continue
-                    filtered_df = df[df["pod_name"] == podname]
-                    # set validate item
-                    item = dict()
-                    item["pod"] = podname
-                    item["scenarioID"] = scenarioID
-                    item["query"] = query
-                    item["count"] = len(filtered_df)
-                    item[">0"] = len(filtered_df[filtered_df[query] > 0])
-                    item["total"] = filtered_df[query].max()
-                    items += [item]
+            continue
+        filtered_df = df.copy()
+        if "pod_name" in df.columns:
+            # check if we can use inputted benchmark to filtered stressing pods
+            podname_filtered = filtered_df[filtered_df["pod_name"].str.contains(benchmark_filename)]
+            if len(podname_filtered) > 0:
+                filter_by_benchmark = True
+                filtered_df = podname_filtered
+        # set validate item
+        item = dict()
+        item["pod"] = benchmark_filename
+        item["scenarioID"] = ""
+        item["query"] = query
+        item["count"] = len(filtered_df)
+        item[">0"] = len(filtered_df[filtered_df[query] > 0])
+        item["total"] = filtered_df[query].max()
+        items += [item]
     energy_queries = [query for query in query_results.keys() if "_joules" in query]
     print("Energy Queries: ", energy_queries)
     for energy_source, energy_components in PowerSourceMap.items():

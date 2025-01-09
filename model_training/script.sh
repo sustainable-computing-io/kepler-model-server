@@ -9,7 +9,6 @@ declare -r PROJECT_ROOT
 declare -r TMP_DIR="$PROJECT_ROOT/tmp"
 declare -r LOCAL_DEV_CLUSTER_DIR=${LOCAL_DEV_CLUSTER_DIR:-"$TMP_DIR/local-dev-cluster"}
 declare -r DEPOYMENT_DIR=${DEPOYMENT_DIR:-"$PROJECT_ROOT/model_training/deployment"}
-declare -r CPE_BENCHMARK_DIR=${CPE_BENCHMARK_DIR:-"$PROJECT_ROOT/model_training/cpe_benchmark"}
 declare -r LOCAL_DEV_CLUSTER_VERSION=${LOCAL_DEV_CLUSTER_VERSION:-"main"}
 
 declare KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-"kind-for-training"}
@@ -77,19 +76,6 @@ clean_deployment() {
 	kubectl delete -f "$DEPOYMENT_DIR"
 }
 
-clean_cpe_cr() {
-	kubectl delete -f "$CPE_BENCHMARK_DIR" || true
-	kubectl delete -f "$DEPOYMENT_DIR"/cpe-operator.yaml || true
-}
-
-deploy_cpe_operator() {
-	docker exec --privileged "$KIND_CLUSTER_NAME"-control-plane mkdir -p /cpe-local-log
-	docker exec --privileged "$KIND_CLUSTER_NAME"-control-plane chmod 777 /cpe-local-log
-	kubectl create -f "$DEPOYMENT_DIR"/cpe-operator.yaml
-	timeout 60s bash -c 'until kubectl get crd benchmarkoperators.cpe.cogadvisor.io 2>/dev/null; do sleep 1; done'
-	rollout_ns_status cpe-operator-system
-}
-
 reload_prometheus() {
 	sleep 5
 	curl -X POST localhost:9090/-/reload
@@ -154,12 +140,6 @@ collect_data() {
 	local benchmark_ns="$2"
 	local sleep_time="$3"
 	shift 3
-	[[ "$benchmark" != "customBenchmark" ]] && {
-		kubectl apply -f "$CPE_BENCHMARK_DIR"/"$benchmark".yaml
-		wait_for_benchmark "$benchmark" "$benchmark_ns" "$sleep_time"
-		save_benchmark "$benchmark" "$benchmark_ns"
-		kubectl delete -f "$CPE_BENCHMARK_DIR"/"$benchmark".yaml
-	}
 	local args=(
 		"-i" "$benchmark"
 		"-o" "${benchmark}_kepler_query"
@@ -212,17 +192,8 @@ watch_service() {
 	kubectl port-forward --address localhost -n "$ns" service/"$svn" "$port":"$port"
 }
 
-collect() {
-	collect_idle
-	collect_data stressng cpe-operator-system 60
-}
-
 custom_collect() {
 	collect_data customBenchmark
-}
-
-quick_collect() {
-	collect_data sample cpe-operator-system 10
 }
 
 train() {
@@ -304,7 +275,6 @@ export_models_with_raw() {
 }
 
 cleanup() {
-	clean_cpe_cr
 	clean_deployment || true
 	cluster_down
 }
