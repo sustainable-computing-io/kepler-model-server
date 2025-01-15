@@ -77,7 +77,7 @@ PUBLISHER= # github account of publisher
 
 ### 3.1. Extracting collect date from benchmark file
 
-The benchmark file is created by CPE operator or by query function from step 1.
+The benchmark file is created query function from step 1.
 
 ```bash
 # export execution

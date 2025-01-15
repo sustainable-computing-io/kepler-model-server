@@ -37,18 +37,6 @@ def data_to_markdown_table(data):
     return markdown_table
 
 
-def format_cpe_content(data):
-    spec = data["spec"]
-    iterations = spec["iterationSpec"]["iterations"]
-    items = dict()
-    for iteration in iterations:
-        items[iteration["name"]] = iteration["values"]
-    df = pd.DataFrame(items)
-    content = data_to_markdown_table(df)
-    content += "\nrepetition: {}".format(spec["repetition"])
-    return content
-
-
 def get_workload_content(data_path, inputs):
     workload_content = ""
 
@@ -57,10 +45,6 @@ def get_workload_content(data_path, inputs):
         benchmark_name = input
         if "_kepler_query" in input:
             benchmark_name = input.replace("_kepler_query", "")
-        data = load_json(data_path, benchmark_name)
-        if data is not None:
-            content = format_cpe_content(data)
-        else:
             # read file directly
             filepath = os.path.join(data_path, input)
             if os.path.exists(filepath):

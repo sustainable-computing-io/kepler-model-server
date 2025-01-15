@@ -43,13 +43,6 @@ Learn more details about [model training](./model_training/)
 
 ### Introduce new benchmarks
 
-The new benchmark must be supported by [CPE operator](https://github.com/IBM/cpe-operator) for automation.
-Find [examples](https://github.com/IBM/cpe-operator/tree/main/examples).
-
-### CPE-based (deprecated)
-
-`Benchmark` CR has a dependency on `BenchmarkOperator`. Default `BechmarkOperator` is to support [batch/v1/Job API](https://github.com/IBM/cpe-operator/blob/main/examples/none/cpe_v1_none_operator.yaml).
-
 ### Tekton
 
 Create workload `Task` and provide example `Pipeline` to run.

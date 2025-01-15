@@ -62,17 +62,11 @@ Please confirm the following requirements:
 
 ### Run benchmark and collect metrics
 
-There are two options to run the benchmark and collect the metrics, [CPE-operator](https://github.com/IBM/cpe-operator) with manual script and [Tekton Pipeline](https://github.com/tektoncd/pipeline).
-
-> The adoption of the CPE operator is slated for deprecation. We are on transitioning to the automation of collection and training processes through the Tekton pipeline. Nevertheless, the CPE operator might still be considered for usage in customized benchmarks requiring performance values per sub-workload within the benchmark suite.
-
 - [Tekton Pipeline Instruction](./tekton/README.md)
-
-- [CPE Operator Instruction](./cpe_script_instruction.md)
 
 ### With manual execution
 
-In addition to the above two automation approach, you can manually run your own benchmarks, then collect, train, and export the models by the entrypoint
+In addition to the above approach, you can manually run your own benchmarks, then collect, train, and export the models by the entrypoint
 
 [Manual Metric Collection and Training with Entrypoint](./cmd_instruction.md)
 
