@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: kepler-model-server-cfm
-  namespace: kepler
+  namespace: system
 data:
   PROM_SERVER: http://prometheus-k8s.monitoring.svc.cluster.local:9090
   PROM_QUERY_INTERVAL: 20
@@ -13,7 +13,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kepler-model-server
-  namespace: kepler
+  namespace: system
 spec:
   template:
     spec:
